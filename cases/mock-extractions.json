@@ -227,13 +227,20 @@
       },
       {
         "id": "c10-2",
-        "rawText": "pedir turno con el médico y aflojarle un poco al café",
-        "title": "Pedir turno médico y reducir café",
+        "rawText": "pedir turno con el médico",
+        "title": "Pedir turno médico",
         "type": "task",
         "status": "pending"
       },
       {
         "id": "c10-3",
+        "rawText": "aflojarle un poco al café",
+        "title": "Reducir el café",
+        "type": "task",
+        "status": "pending"
+      },
+      {
+        "id": "c10-4",
         "rawText": "terminar el issue #42 hoy",
         "title": "Terminar issue #42",
         "type": "task",
@@ -422,7 +429,7 @@
         "rawText": "decidimos no hacer la integración con Discord por ahora. Queda archivada",
         "title": "Integración con Discord archivada conscientemente",
         "type": "idea",
-        "status": "exploring"
+        "status": "archived"
       },
       {
         "id": "c18-2",

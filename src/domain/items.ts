@@ -9,7 +9,7 @@ export const ItemTypeSchema = z.enum([
 ]);
 export type ItemType = z.infer<typeof ItemTypeSchema>;
 
-export const ItemStatusSchema = z.enum(["pending", "started", "exploring"]);
+export const ItemStatusSchema = z.enum(["pending", "started", "exploring", "archived"]);
 export type ItemStatus = z.infer<typeof ItemStatusSchema>;
 
 export const CommitmentTypeSchema = z.enum(["external", "personal", "none"]);

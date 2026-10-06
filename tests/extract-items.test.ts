@@ -208,4 +208,24 @@ describe("ExtractItems Skill - Behavioral Tests", () => {
       service.execute({ text: "", currentDate })
     ).rejects.toThrow();
   });
+
+  it("21. Elemento conscientemente archivado conserva status archived", async () => {
+    const provider = new MockProvider(async () => ({
+      items: [
+        {
+          id: "item-1",
+          rawText: "decidimos no hacer la integración con Discord por ahora. Queda archivada",
+          title: "Integración con Discord archivada conscientemente",
+          type: "idea",
+          status: "archived",
+        },
+      ],
+    }));
+    const result = await extractItems(provider, {
+      text: "decidimos no hacer la integración con Discord por ahora",
+      currentDate,
+    });
+    expect(result.items[0]?.status).toBe("archived");
+    expect(result.items[0]?.type).toBe("idea");
+  });
 });

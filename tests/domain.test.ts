@@ -59,6 +59,28 @@ describe("Domain Schemas & Validation", () => {
     expect(parsed.success).toBe(false);
   });
 
+  it("validates allowed item statuses including archived", () => {
+    for (const status of ["pending", "started", "exploring", "archived"]) {
+      const item = {
+        id: "item-1",
+        rawText: "texto de prueba",
+        title: "Item de prueba",
+        type: "task",
+        status,
+      };
+      expect(ExtractedItemSchema.safeParse(item).success).toBe(true);
+    }
+
+    const invalidStatusItem = {
+      id: "item-1",
+      rawText: "texto de prueba",
+      title: "Item de prueba",
+      type: "task",
+      status: "discarded",
+    };
+    expect(ExtractedItemSchema.safeParse(invalidStatusItem).success).toBe(false);
+  });
+
   it("rejects items missing required rawText or id", () => {
     const missingRaw = {
       id: "item-1",

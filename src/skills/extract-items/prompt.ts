@@ -17,6 +17,7 @@ REGLAS FUNDAMENTALES:
    - "pending": no iniciado.
    - "started": ya iniciado o en curso ("seguir con", "terminar").
    - "exploring": evaluando o curioseando.
+   - "archived": conscientemente descartado o archivado por ahora ("no se hará por ahora", "queda archivada").
    - null: si no queda claro.
 6. COMPROMISO:
    - "external": con otra persona, cliente o entidad ("dar una clase", "entregar a cliente").
@@ -45,7 +46,7 @@ RESPONDE EXCLUSIVAMENTE CON UN OBJETO JSON VÁLIDO CON LA ESTRUCTURA:
       "title": "...",
       "type": "task" | "project" | "idea" | "commitment" | "concern",
       "project": "nombre del proyecto o null",
-      "status": "pending" | "started" | "exploring" | null,
+      "status": "pending" | "started" | "exploring" | "archived" | null,
       "deadline": { "raw": "...", "resolved": "...o null", "confidence": "high"|"medium"|"low" } | null,
       "estimatedEffort": { "value": 3, "unit": "hours", "source": "user" } | null,
       "importance": "high" | "medium" | "low" | null,
