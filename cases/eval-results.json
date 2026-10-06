@@ -95,7 +95,7 @@
   "case-03": {
     "title": "Dudas técnicas y pensamientos exploratorios",
     "input": "Estuve pensando si migrar la base de datos a Postgres o si con SQLite embebido nos sobra para el MVP. Igual no conviene complicarse ahora. También quería leer el paper de Google sobre agentes que guardé la semana pasada si me da tiempo.",
-    "elapsedMs": 1,
+    "elapsedMs": 0,
     "output": {
       "items": [
         {
