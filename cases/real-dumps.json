@@ -1,0 +1,127 @@
+[
+  {
+    "id": "case-01",
+    "title": "Compromiso externo + ideas + tareas mezcladas",
+    "text": "Tengo que preparar la clase de Cibervoluntarios para el martes. También quiero terminar la definición del MVP de Tecnología Consciente, estudiar SOLID y seguir con ArchitectAI. Además quería mirar Zapsac, pero eso no corre prisa."
+  },
+  {
+    "id": "case-02",
+    "title": "Sobrecarga con preocupación y fecha límite inminente",
+    "text": "Se me viene el cierre del trimestre y tengo que presentar el modelo 303 de Hacienda antes del 20. Me tiene muy agobiada el tema de los números. Aparte debería llamar a la gestoría hoy mismo a ver qué falta de facturas."
+  },
+  {
+    "id": "case-03",
+    "title": "Dudas técnicas y pensamientos exploratorios",
+    "text": "Estuve pensando si migrar la base de datos a Postgres o si con SQLite embebido nos sobra para el MVP. Igual no conviene complicarse ahora. También quería leer el paper de Google sobre agentes que guardé la semana pasada si me da tiempo."
+  },
+  {
+    "id": "case-04",
+    "title": "Estimación de tiempo explícita y compromiso personal",
+    "text": "Necesito sacar 4 horas bloqueadas el jueves por la mañana para reescribir la capa de autenticación con tokens seguros. Me prometí no posponerlo más porque es crítico para salir a producción."
+  },
+  {
+    "id": "case-05",
+    "title": "Pensamiento disperso con tareas domésticas y profesionales",
+    "text": "Comprar arena para el gato cuando salga. Hay que contestarle el correo a Martín sobre la propuesta de consultoría antes de las cinco. Y estuve dándole vueltas a escribir un post en LinkedIn sobre por qué odio los dashboards saturados."
+  },
+  {
+    "id": "case-06",
+    "title": "Proyecto iniciado con bloqueos y dependencias",
+    "text": "Seguir con la integración de Stripe en la tienda, pero estoy frenada porque falta que el cliente mande las credenciales de webhook. Mientras tanto podría avanzar en la página de agradecimiento."
+  },
+  {
+    "id": "case-07",
+    "title": "Reflexión filosófica vs tareas concretas",
+    "text": "Siento que estoy saltando de herramienta en herramienta sin profundizar. Quiero proteger al menos dos mañanas solo para programar sin notificaciones. Y tengo que revisar las PRs pendientes de Conscious Tech."
+  },
+  {
+    "id": "case-08",
+    "title": "Doble compromiso con fechas relativas",
+    "text": "El viernes a las 11 reunión con el equipo de diseño para ver el Figma. El finde quiero desconectar completamente, así que dejar cerrada la documentación de la API antes de salir el viernes por la tarde."
+  },
+  {
+    "id": "case-09",
+    "title": "Idea vaga de negocio sin compromiso",
+    "text": "Se me ocurrió que podríamos armar una newsletter semanal con reflexiones de calma digital. Capaz sea buena idea para captar los primeros 100 usuarios, o capaz es mucho laburo ahora mismo."
+  },
+  {
+    "id": "case-10",
+    "title": "Preocupación de salud / energía personal",
+    "text": "Vengo durmiendo fatal esta semana y me cuesta concentrarme por las tardes. Tengo que pedir turno con el médico y aflojarle un poco al café. A ver si logro terminar el issue #42 hoy."
+  },
+  {
+    "id": "case-11",
+    "title": "Múltiples microtareas de seguimiento",
+    "text": "Escribirle a Juan por Telegram, revisar si se acreditó la transferencia del cliente de México y actualizar el archivo de finanzas del mes."
+  },
+  {
+    "id": "case-12",
+    "title": "Proyecto grande sin estructurar",
+    "text": "Queremos lanzar la beta cerrada de la app en noviembre. Faltan un montón de cosas: testing de usuarios, pulir el onboarding, arreglar los bugs de Safari en mobile y redactar los términos de privacidad."
+  },
+  {
+    "id": "case-13",
+    "title": "Charla o evento público confirmado",
+    "text": "Confirmé mi participación en el meetup de TypeScript del mes que viene. Tengo que definir el título de la charla antes del lunes que me lo pide la organización."
+  },
+  {
+    "id": "case-14",
+    "title": "Duda recurrente que NO es tarea",
+    "text": "No sé si tiene sentido seguir con React Native para la app o si conviene esperar a que madure el framework nuevo. Cada vez que toco Gradle pierdo medio día."
+  },
+  {
+    "id": "case-15",
+    "title": "Esfuerzo explícito breve y tarea pequeña",
+    "text": "Me lleva 15 minutos subir la versión nueva a npm, pero antes tengo que correr todos los tests de integración para no romper nada."
+  },
+  {
+    "id": "case-16",
+    "title": "Brain dump largo de lunes por la mañana",
+    "text": "Arranca la semana y tengo la cabeza llena. Prioridad uno: preparar la demo para inversores del jueves a las 16h. Segundo: terminar el refactor de los providers de IA que empecé el sábado. Tercero: me preocupa que no lleguemos con el presupuesto para contratar a la diseñadora. Si sobra tiempo, capaz chusmear la nueva versión de Astro."
+  },
+  {
+    "id": "case-17",
+    "title": "Reestructuración y limpieza de deuda técnica",
+    "text": "Hay que borrar las tablas viejas de la base de datos que quedaron deprecadas del sprint pasado. Y limpiar las variables de entorno que ya no se usan en producción."
+  },
+  {
+    "id": "case-18",
+    "title": "Cosas descartadas conscientemente",
+    "text": "Hablé con el equipo y decidimos no hacer la integración con Discord por ahora. Queda archivada. En cambio, sí hay que arreglar el bug de inicio de sesión con Google que reportaron dos usuarios."
+  },
+  {
+    "id": "case-19",
+    "title": "Entrada caótica con modismos y corrección sobre la marcha",
+    "text": "Che, acordarme de mandar el presupuesto a Lucía... bah, mejor se lo mando mañana después de hablar con Pablo. Lo que sí es para hoy es subir el hotfix del checkout que está tirando 500 a veces."
+  },
+  {
+    "id": "case-10-bis",
+    "title": "Volcado con emociones encontradas",
+    "text": "Tengo mil ganas de avanzar con el motor de capacidad semanal de Conscious Tech, pero me da miedo que sea demasiado complejo para los usuarios al principio. Quiero escribir unas notas primero para bajarlo a tierra."
+  },
+  {
+    "id": "case-21",
+    "title": "Compromiso de entrega con cliente exigente",
+    "text": "Entregar el entregable final del diseño de arquitectura a Banco Galicia el 24 de octubre sin falta. Es el hito del contrato."
+  },
+  {
+    "id": "case-22",
+    "title": "Mezcla de hobbies y trabajo",
+    "text": "Cambiarle las cuerdas a la guitarra este finde si tengo un rato. Y no olvidarme de renovar el dominio conscious-tech.org antes de que venza el domingo."
+  },
+  {
+    "id": "case-23",
+    "title": "Volcado puramente exploratorio de fin de semana",
+    "text": "Estuve leyendo sobre computación local y modelos cuantizados en GGUF. Capaz se podría correr un Llama pequeño directo en el cliente con WebGPU. Estaría bueno probar un prototipo cuando estemos más tranquilos."
+  },
+  {
+    "id": "case-24",
+    "title": "Delegación y coordinación con terceros",
+    "text": "Pedirle a Sofía que revise las traducciones al inglés del README. Yo mientras me pongo a escribir los tests unitarios de las skills."
+  },
+  {
+    "id": "case-25",
+    "title": "Cierre de semana y revisión",
+    "text": "Revisar todo lo que quedó sin hacer de esta semana, rescatar lo que todavía vale la pena y pasar a limpio las notas del cuaderno."
+  }
+]
