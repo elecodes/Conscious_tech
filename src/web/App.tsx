@@ -64,22 +64,7 @@ export function App() {
       } else if (providerType === "gemini") {
         providerInstance = new GeminiProvider({ apiKey: geminiKey });
       } else {
-        // Mock provider: returns structured items based on sample cases or heuristics
-        providerInstance = new MockProvider(async (input) => {
-          // If input text matches a preset case, we can provide a rich mock structure
-          return {
-            items: [
-              {
-                id: "item-1",
-                rawText: input.text.slice(0, 45) + "...",
-                title: "Elemento detectado (modo Mock)",
-                type: "task",
-                status: "pending",
-                commitment: "personal",
-              },
-            ],
-          };
-        });
+        providerInstance = new MockProvider();
       }
 
       const currentDate = new Date().toISOString().split("T")[0] || "2026-10-06";
