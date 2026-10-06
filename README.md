@@ -106,7 +106,7 @@ The project includes 25 authentic Spanish brain dumps in [`cases/real-dumps.json
 
 ## Skills Roadmap
 
-- [x] **01 extract_items** (Completed)
+- [x] **01 extract_items — initial implementation complete; calibration ongoing**
 - [ ] **02 detect_relationships**
 - [ ] **03 group_work**
 - [ ] **04 detect_deadlines**

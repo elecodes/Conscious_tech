@@ -19,7 +19,7 @@ export class GroqProvider implements AIProvider {
     if (!apiKey) {
       throw new Error("GROQ_API_KEY is required for GroqProvider");
     }
-    this.model = options.model || (typeof process !== "undefined" ? process.env?.GROQ_MODEL : undefined) || "llama-3.3-70b-versatile";
+    this.model = options.model || (typeof process !== "undefined" ? process.env?.GROQ_MODEL : undefined) || "qwen/qwen3.8-27b";
     this.client = new Groq({ apiKey });
   }
 
