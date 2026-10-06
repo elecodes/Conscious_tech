@@ -114,6 +114,10 @@ async function main() {
       };
     }
     console.log();
+
+    if (providerArg !== "mock") {
+      await new Promise((r) => setTimeout(r, 2000));
+    }
   }
 
   const outPath = path.resolve(__dirname, "../cases/eval-results.json");

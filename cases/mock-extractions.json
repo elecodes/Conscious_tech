@@ -18,7 +18,7 @@
         "type": "task",
         "project": "Tecnología Consciente",
         "status": "started",
-        "commitment": "personal"
+        "commitment": "none"
       },
       {
         "id": "c01-3",
@@ -119,8 +119,8 @@
         "id": "c05-2",
         "rawText": "contestarle el correo a Martín sobre la propuesta de consultoría antes de las cinco",
         "title": "Contestar correo a Martín sobre propuesta",
-        "type": "commitment",
-        "commitment": "external",
+        "type": "task",
+        "commitment": "none",
         "status": "pending",
         "deadline": { "raw": "antes de las cinco", "confidence": "high" }
       },
@@ -281,7 +281,7 @@
         "rawText": "lanzar la beta cerrada de la app en noviembre",
         "title": "Lanzamiento beta cerrada",
         "type": "project",
-        "deadline": { "raw": "en noviembre", "confidence": "high" },
+        "deadline": { "raw": "en noviembre", "confidence": "low" },
         "status": "started"
       },
       {
@@ -550,7 +550,7 @@
         "rawText": "Pedirle a Sofía que revise las traducciones al inglés del README",
         "title": "Pedir a Sofía revisión de traducciones",
         "type": "task",
-        "commitment": "external",
+        "commitment": "none",
         "status": "pending"
       },
       {
