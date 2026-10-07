@@ -20,21 +20,28 @@ This repository is built incrementally following clean architecture principles:
 ```text
 docs/
 └── adr/                     # Architectural Decision Records
-    └── 0001-conservative-semantic-extraction-and-provider-architecture.md
+    ├── 0001-conservative-semantic-extraction-and-provider-architecture.md
+    └── 0002-detect-relationships-conservative-semantic-links.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
-│   └── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
+│   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
+│   └── relationships.ts     # RelationshipType, Relationship, DetectedRelationships
 ├── providers/               # AI Provider abstraction layer
 │   ├── ai-provider.ts       # AIProvider interface
 │   ├── groq-provider.ts     # Groq implementation (qwen/qwen3.8-27b)
 │   ├── gemini-provider.ts   # Google Gemini implementation (gemini-2.5-flash)
-│   ├── mock-provider.ts     # Zero-token deterministic provider with 25 golden cases
+│   ├── mock-provider.ts     # Zero-token deterministic provider with golden cases
 │   └── factory.ts           # Provider factory driven by env / options
 ├── skills/
-│   └── extract-items/       # Skill 01: Semantic brain dump extraction
-│       ├── prompt.ts        # Conservative prompt (Extract, don't interpret)
+│   ├── extract-items/       # Skill 01: Semantic brain dump extraction
+│   │   ├── prompt.ts        # Conservative prompt (Extract, don't interpret)
+│   │   ├── parser.ts        # Markdown stripping & Zod schema validation
+│   │   └── index.ts         # ExtractItemsService with structured retry
+│   └── detect-relationships/# Skill 02: Semantic relationship detection
+│       ├── prompt.ts        # Conservative prompt (Detect relationships, don't group)
 │       ├── parser.ts        # Markdown stripping & Zod schema validation
-│       └── index.ts         # ExtractItemsService with structured retry
+│       ├── deterministic.ts # Canonicalization, deduplication, same_project inference
+│       └── index.ts         # DetectRelationshipsService
 └── web/                     # Lightweight testing UI & data inspector
     ├── App.tsx
     ├── main.tsx
@@ -42,7 +49,9 @@ src/
 cases/
 ├── real-dumps.json          # 25 authentic Spanish brain dumps for calibration
 ├── mock-extractions.json    # Golden reference extractions for zero-token tests
-└── eval-results.json        # Evaluation output logs
+├── mock-relationships.json  # Golden reference relationships for zero-token tests
+├── eval-results.json        # Evaluation output logs (Skill 01)
+└── eval-relationships-results.json # Evaluation output logs (Skill 02)
 ```
 
 ### Skill 01: `extract_items`
@@ -52,6 +61,12 @@ Converts unstructured natural language (brain dumps) into structured, faithful i
 - **Commitments**: `external` (strict third-party commitments only), `personal` (explicit self-promises only), `none`
 - **Deadlines**: Preserves raw text, resolves ISO dates only when completely unambiguous
 - **Effort & Importance**: Extracted exclusively when explicitly declared by the user
+
+### Skill 02: `detect_relationships`
+Detects semantic links between items without grouping or prioritizing:
+- **Relationship Types**: `same_project`, `same_objective`, `related_to`, `part_of`, `depends_on`, `blocks` (canonicalized to `depends_on`), `duplicate`
+- **Deterministic post-processing**: Short-circuits inputs < 2 items, strips self-relations and invalid IDs, deduplicates symmetric edges, infers `same_project` from metadata.
+
 
 ---
 
@@ -126,7 +141,7 @@ npm run build
 ## Skills Roadmap
 
 - [x] **01 extract_items** (Completed & calibrated)
-- [ ] **02 detect_relationships**
+- [x] **02 detect_relationships** (Completed & calibrated)
 - [ ] **03 group_work**
 - [ ] **04 detect_deadlines**
 - [ ] **05 evaluate_context**

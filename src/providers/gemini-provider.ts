@@ -1,8 +1,17 @@
 import { GoogleGenAI } from "@google/genai";
 import { AIProvider } from "./ai-provider";
 import { ExtractItemsInput, ExtractedItems } from "../domain/items";
-import { SYSTEM_PROMPT, buildUserPrompt } from "../skills/extract-items/prompt";
+import { DetectRelationshipsInput, DetectedRelationships } from "../domain/relationships";
+import {
+  SYSTEM_PROMPT as EXTRACT_SYSTEM_PROMPT,
+  buildUserPrompt as buildExtractUserPrompt,
+} from "../skills/extract-items/prompt";
 import { parseAndValidateExtractedItems } from "../skills/extract-items/parser";
+import {
+  SYSTEM_PROMPT as REL_SYSTEM_PROMPT,
+  buildUserPrompt as buildRelUserPrompt,
+} from "../skills/detect-relationships/prompt";
+import { parseAndValidateRelationships } from "../skills/detect-relationships/parser";
 
 export interface GeminiProviderOptions {
   apiKey?: string;
@@ -26,9 +35,9 @@ export class GeminiProvider implements AIProvider {
   async extractItems(input: ExtractItemsInput): Promise<ExtractedItems> {
     const response = await this.client.models.generateContent({
       model: this.model,
-      contents: buildUserPrompt(input),
+      contents: buildExtractUserPrompt(input),
       config: {
-        systemInstruction: SYSTEM_PROMPT,
+        systemInstruction: EXTRACT_SYSTEM_PROMPT,
         responseMimeType: "application/json",
         temperature: 0.1,
       },
@@ -40,5 +49,24 @@ export class GeminiProvider implements AIProvider {
     }
 
     return parseAndValidateExtractedItems(content);
+  }
+
+  async detectRelationships(input: DetectRelationshipsInput): Promise<DetectedRelationships> {
+    const response = await this.client.models.generateContent({
+      model: this.model,
+      contents: buildRelUserPrompt(input),
+      config: {
+        systemInstruction: REL_SYSTEM_PROMPT,
+        responseMimeType: "application/json",
+        temperature: 0.1,
+      },
+    });
+
+    const content = response.text;
+    if (!content) {
+      throw new Error("Gemini returned an empty response");
+    }
+
+    return parseAndValidateRelationships(content);
   }
 }

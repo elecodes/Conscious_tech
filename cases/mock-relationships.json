@@ -1,0 +1,77 @@
+{
+  "case-06": {
+    "relationships": [
+      {
+        "sourceItemId": "c06-1",
+        "targetItemId": "c06-2",
+        "type": "depends_on",
+        "confidence": "high",
+        "reason": "La integración de Stripe está explícitamente frenada a la espera de las credenciales de webhook"
+      }
+    ]
+  },
+  "case-12": {
+    "relationships": [
+      {
+        "sourceItemId": "c12-2",
+        "targetItemId": "c12-1",
+        "type": "part_of",
+        "confidence": "high",
+        "reason": "El testing de usuarios es parte constitutiva del lanzamiento de la beta"
+      },
+      {
+        "sourceItemId": "c12-3",
+        "targetItemId": "c12-1",
+        "type": "part_of",
+        "confidence": "high",
+        "reason": "Pulir el onboarding es una tarea constitutiva del lanzamiento de la beta"
+      },
+      {
+        "sourceItemId": "c12-4",
+        "targetItemId": "c12-1",
+        "type": "part_of",
+        "confidence": "high",
+        "reason": "Arreglar bugs de Safari es un hito necesario para el lanzamiento de la beta"
+      },
+      {
+        "sourceItemId": "c12-5",
+        "targetItemId": "c12-1",
+        "type": "part_of",
+        "confidence": "high",
+        "reason": "Redactar términos de privacidad es parte de la entrega para el lanzamiento de la beta"
+      }
+    ]
+  },
+  "case-19": {
+    "relationships": [
+      {
+        "sourceItemId": "c19-1",
+        "targetItemId": "c19-2",
+        "type": "depends_on",
+        "confidence": "high",
+        "reason": "Mandar el presupuesto a Lucía se hará explícitamente después de hablar con Pablo"
+      }
+    ]
+  },
+  "case-20": {
+    "relationships": [
+      {
+        "sourceItemId": "c20-2",
+        "targetItemId": "c20-1",
+        "type": "related_to",
+        "confidence": "high",
+        "reason": "El temor a la sobrecomplejidad refiere directamente al desarrollo del motor de capacidad"
+      },
+      {
+        "sourceItemId": "c20-3",
+        "targetItemId": "c20-1",
+        "type": "related_to",
+        "confidence": "high",
+        "reason": "Escribir notas de diseño conceptual apunta a bajar a tierra el motor de capacidad"
+      }
+    ]
+  },
+  "case-03": {
+    "relationships": []
+  }
+}

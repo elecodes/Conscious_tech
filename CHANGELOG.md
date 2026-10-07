@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0] - 2026-10-07
+
+### Added
+- **Domain Modeling for Relationships**: Strict Zod schemas and types in `src/domain/relationships.ts` covering `RelationshipType` (`same_project`, `same_objective`, `related_to`, `part_of`, `depends_on`, `blocks`, `duplicate`), `Relationship`, `DetectedRelationships`, and `DetectRelationshipsInput`.
+- **Skill 02 (`detect_relationships`)**:
+  - Implemented `DetectRelationshipsService` adhering to "Detect relationships, don't group".
+  - Structured prompt in `src/skills/detect-relationships/prompt.ts` enforcing conservative semantic relationship extraction.
+  - Robust parser in `src/skills/detect-relationships/parser.ts` with error handling and retry mechanism.
+  - Deterministic engine in `src/skills/detect-relationships/deterministic.ts`:
+    - Short-circuits inputs with fewer than 2 items to empty array (0ms, 0 tokens).
+    - Drops self-referencing relationships and unknown item IDs.
+    - Canonicalizes `blocks` relations into `depends_on`.
+    - Deduplicates symmetric relationships (`same_project`, `same_objective`, `related_to`, `duplicate`).
+    - Deterministically infers `same_project` from shared non-empty item metadata.
+- **Provider Support for Skill 02**:
+  - `MockProvider`: Token-free relationship resolution using golden fixture `cases/mock-relationships.json`.
+  - `GroqProvider`: Structured JSON inference with `qwen/qwen3.8-27b`.
+  - `GeminiProvider`: Google GenAI structured output with `gemini-2.5-flash`.
+- **Testing & Evaluation**:
+  - 18 unit and behavioral tests across `tests/relationships-domain.test.ts` and `tests/detect-relationships.test.ts`.
+  - CLI evaluation script `scripts/eval-relationships.ts` with `npm run eval:relationships`.
+- **Architecture Documentation**:
+  - ADR 0002: Detect Relationships — Conservative Semantic Links and Deterministic Post-Processing.
+
 ## [0.1.0] - 2026-10-06
 
 ### Added

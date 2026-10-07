@@ -1,8 +1,17 @@
 import Groq from "groq-sdk";
 import { AIProvider } from "./ai-provider";
 import { ExtractItemsInput, ExtractedItems } from "../domain/items";
-import { SYSTEM_PROMPT, buildUserPrompt } from "../skills/extract-items/prompt";
+import { DetectRelationshipsInput, DetectedRelationships } from "../domain/relationships";
+import {
+  SYSTEM_PROMPT as EXTRACT_SYSTEM_PROMPT,
+  buildUserPrompt as buildExtractUserPrompt,
+} from "../skills/extract-items/prompt";
 import { parseAndValidateExtractedItems } from "../skills/extract-items/parser";
+import {
+  SYSTEM_PROMPT as REL_SYSTEM_PROMPT,
+  buildUserPrompt as buildRelUserPrompt,
+} from "../skills/detect-relationships/prompt";
+import { parseAndValidateRelationships } from "../skills/detect-relationships/parser";
 
 export interface GroqProviderOptions {
   apiKey?: string;
@@ -27,8 +36,8 @@ export class GroqProvider implements AIProvider {
     const response = await this.client.chat.completions.create({
       model: this.model,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: buildUserPrompt(input) },
+        { role: "system", content: EXTRACT_SYSTEM_PROMPT },
+        { role: "user", content: buildExtractUserPrompt(input) },
       ],
       response_format: { type: "json_object" },
       temperature: 0.1,
@@ -41,5 +50,25 @@ export class GroqProvider implements AIProvider {
     }
 
     return parseAndValidateExtractedItems(content);
+  }
+
+  async detectRelationships(input: DetectRelationshipsInput): Promise<DetectedRelationships> {
+    const response = await this.client.chat.completions.create({
+      model: this.model,
+      messages: [
+        { role: "system", content: REL_SYSTEM_PROMPT },
+        { role: "user", content: buildRelUserPrompt(input) },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+      max_tokens: 1000,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("Groq returned an empty response");
+    }
+
+    return parseAndValidateRelationships(content);
   }
 }
