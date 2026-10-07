@@ -1,9 +1,38 @@
 {
-  "case-03": {
-    "itemCount": 2,
-    "elapsedMs": 1688,
+  "case-12": {
+    "itemCount": 5,
+    "elapsedMs": 1008,
     "output": {
-      "relationships": []
+      "relationships": [
+        {
+          "sourceItemId": "c12-2",
+          "targetItemId": "c12-1",
+          "type": "part_of",
+          "confidence": "high",
+          "reason": "El testing con usuarios es una actividad constitutiva necesaria para el lanzamiento de la beta cerrada."
+        },
+        {
+          "sourceItemId": "c12-3",
+          "targetItemId": "c12-1",
+          "type": "part_of",
+          "confidence": "high",
+          "reason": "Pulir el onboarding es una tarea de preparación directa para el lanzamiento de la beta cerrada."
+        },
+        {
+          "sourceItemId": "c12-4",
+          "targetItemId": "c12-1",
+          "type": "part_of",
+          "confidence": "high",
+          "reason": "Corregir bugs de Safari mobile es una tarea de estabilización requerida para el lanzamiento de la beta cerrada."
+        },
+        {
+          "sourceItemId": "c12-5",
+          "targetItemId": "c12-1",
+          "type": "part_of",
+          "confidence": "high",
+          "reason": "Redactar los términos de privacidad es un requisito legal y funcional constitutivo para el lanzamiento de la beta cerrada."
+        }
+      ]
     }
   }
 }

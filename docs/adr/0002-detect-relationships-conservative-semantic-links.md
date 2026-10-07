@@ -25,20 +25,18 @@ Defined clear, explicit relation types:
 - `related_to`: Generic topical or conceptual connection.
 - `part_of`: Constituent task belonging to a parent deliverable/project item.
 - `depends_on`: Direct prerequisite relationship (`source` requires `target`).
-- `blocks`: Inverse causal edge (`source` blocks `target`), canonicalized in code to `depends_on`.
 - `duplicate`: Near-identical repetition of the same intention.
 
-Relationships include `confidence` (`high | medium | low`) and an explicit `reason` string explaining why the link exists.
+Relationships include `confidence` (`high | medium | low`), an explicit `reason` string, and a Zod `.refine()` constraint rejecting self-relations (`sourceItemId !== targetItemId`).
 
-### 2. Deterministic Cleaning & Guardrails (`deterministic.ts`)
+### 2. Deterministic Cleaning & Guardrails (`deterministic.ts` & `parser.ts`)
 
-All candidate relationships pass through deterministic cleanup before reaching the consumer:
 - **Short-circuiting**: Inputs with fewer than 2 items immediately return `{ relationships: [] }` in 0ms without invoking the AI provider.
 - **Validation**: Relationships referencing unknown IDs or linking an item to itself are stripped.
-- **Canonicalization**:
-  - `blocks` relationships are flipped to `depends_on` (`A blocks B` becomes `B depends_on A`) to preserve a unified direction for dependency graphs.
+- **Canonicalization & Normalization**:
+  - The parser normalizes any raw `blocks` occurrence (`A blocks B`) into canonical `depends_on` (`B depends_on A`) before schema parsing so that dependency graphs have a single canonical direction.
   - Symmetric relations (`same_project`, `same_objective`, `related_to`, `duplicate`) are canonicalized by sorting item IDs to prevent duplicate bidirectional edges (`A <-> B` and `B <-> A`).
-- **Deterministic `same_project` Inference**: When two items share an identical non-empty `project` field, `same_project` is automatically generated with high confidence if not already covered.
+- **Code vs AI Separation**: Semantic discovery (including `same_project` and `same_objective`) is performed by the LLM with factual reasons, while deterministic code validates schemas, normalizes directions, strips phantom IDs, and prevents duplicate pairs.
 
 ### 3. AI Prompting & Architecture (`src/skills/detect-relationships/`)
 

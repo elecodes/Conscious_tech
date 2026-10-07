@@ -7,7 +7,6 @@ export const RelationshipTypeSchema = z.enum([
   "related_to",
   "part_of",
   "depends_on",
-  "blocks",
   "duplicate",
 ]);
 export type RelationshipType = z.infer<typeof RelationshipTypeSchema>;
@@ -15,13 +14,21 @@ export type RelationshipType = z.infer<typeof RelationshipTypeSchema>;
 export const RelationshipConfidenceSchema = z.enum(["high", "medium", "low"]);
 export type RelationshipConfidence = z.infer<typeof RelationshipConfidenceSchema>;
 
-export const RelationshipSchema = z.object({
-  sourceItemId: z.string().min(1),
-  targetItemId: z.string().min(1),
-  type: RelationshipTypeSchema,
-  confidence: RelationshipConfidenceSchema,
-  reason: z.string().min(1),
-});
+export const RelationshipSchema = z
+  .object({
+    sourceItemId: z.string().min(1),
+    targetItemId: z.string().min(1),
+    type: RelationshipTypeSchema,
+    confidence: RelationshipConfidenceSchema,
+    reason: z.string().min(1),
+  })
+  .refine(
+    (relationship) => relationship.sourceItemId !== relationship.targetItemId,
+    {
+      message: "sourceItemId and targetItemId must be different",
+      path: ["targetItemId"],
+    }
+  );
 export type Relationship = z.infer<typeof RelationshipSchema>;
 
 export const DetectedRelationshipsSchema = z.object({

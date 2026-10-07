@@ -3,6 +3,7 @@ import {
   DetectRelationshipsInput,
   DetectRelationshipsInputSchema,
   DetectedRelationships,
+  DetectedRelationshipsSchema,
 } from "../../domain/relationships";
 import { RelationshipValidationError } from "./parser";
 import { cleanAndValidateRelationships, CleanRelationshipsOptions } from "./deterministic";
@@ -34,6 +35,13 @@ export class DetectRelationshipsService {
       attempts++;
       try {
         rawResult = await this.provider.detectRelationships(validatedInput);
+        const parseCheck = DetectedRelationshipsSchema.safeParse(rawResult);
+        if (!parseCheck.success) {
+          throw new RelationshipValidationError(
+            "Relationships failed schema validation",
+            parseCheck.error.issues
+          );
+        }
         break;
       } catch (error) {
         lastError = error;
@@ -49,9 +57,7 @@ export class DetectRelationshipsService {
     }
 
     // Apply deterministic cleaning, validation, deduplication and canonicalization
-    return cleanAndValidateRelationships(rawResult.relationships, validatedInput.items, {
-      inferSameProject: this.options.inferSameProject ?? true,
-    });
+    return cleanAndValidateRelationships(rawResult.relationships, validatedInput.items, this.options);
   }
 }
 

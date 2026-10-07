@@ -2,8 +2,10 @@ import { describe, it, expect } from "vitest";
 import {
   RelationshipSchema,
   RelationshipTypeSchema,
+  DetectedRelationshipsSchema,
 } from "../src/domain/relationships";
 import { cleanAndValidateRelationships } from "../src/skills/detect-relationships/deterministic";
+import { parseAndValidateRelationships } from "../src/skills/detect-relationships/parser";
 import { ExtractedItem } from "../src/domain/items";
 
 describe("Relationships Domain & Deterministic Cleaning", () => {
@@ -30,30 +32,49 @@ describe("Relationships Domain & Deterministic Cleaning", () => {
       reason: "Item 1 requiere a Item 2",
     };
     expect(RelationshipSchema.safeParse(valid).success).toBe(true);
+    expect(DetectedRelationshipsSchema.safeParse({ relationships: [valid] }).success).toBe(true);
   });
 
-  it("rejects invalid relationship types", () => {
-    const invalid = {
+  it("rejects self-relations via schema refine (sourceItemId === targetItemId)", () => {
+    const selfRel = {
       sourceItemId: "item-1",
-      targetItemId: "item-2",
-      type: "causes", // not in enum
+      targetItemId: "item-1",
+      type: "related_to",
       confidence: "high",
-      reason: "explicación",
+      reason: "Auto-relación inválida",
     };
-    expect(RelationshipSchema.safeParse(invalid).success).toBe(false);
+    const result = RelationshipSchema.safeParse(selfRel);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe("sourceItemId and targetItemId must be different");
+      expect(result.error.issues[0]?.path).toEqual(["targetItemId"]);
+    }
   });
 
-  it("validates all supported RelationshipTypes", () => {
-    const types = [
+  it("rejects invalid relationship types including 'blocks'", () => {
+    expect(RelationshipTypeSchema.safeParse("blocks").success).toBe(false);
+    expect(RelationshipTypeSchema.safeParse("causes").success).toBe(false);
+    expect(
+      RelationshipSchema.safeParse({
+        sourceItemId: "item-1",
+        targetItemId: "item-2",
+        type: "blocks",
+        confidence: "high",
+        reason: "inválido",
+      }).success
+    ).toBe(false);
+  });
+
+  it("validates all 6 supported RelationshipTypes", () => {
+    const supportedTypes = [
       "same_project",
       "same_objective",
       "related_to",
       "part_of",
       "depends_on",
-      "blocks",
       "duplicate",
     ];
-    for (const t of types) {
+    for (const t of supportedTypes) {
       expect(RelationshipTypeSchema.safeParse(t).success).toBe(true);
     }
   });
@@ -74,7 +95,7 @@ describe("Relationships Domain & Deterministic Cleaning", () => {
     expect(result.relationships).toEqual([]);
   });
 
-  it("filters out self-relations (sourceItemId === targetItemId)", () => {
+  it("filters out self-relations in deterministic cleaner", () => {
     const raw = [
       {
         sourceItemId: "item-1",
@@ -84,9 +105,7 @@ describe("Relationships Domain & Deterministic Cleaning", () => {
         reason: "auto-relacion",
       },
     ];
-    const result = cleanAndValidateRelationships(raw, [dummyItem1, dummyItem2], {
-      inferSameProject: false,
-    });
+    const result = cleanAndValidateRelationships(raw, [dummyItem1, dummyItem2]);
     expect(result.relationships).toHaveLength(0);
   });
 
@@ -100,69 +119,49 @@ describe("Relationships Domain & Deterministic Cleaning", () => {
         reason: "id fantasma",
       },
     ];
-    const result = cleanAndValidateRelationships(raw, [dummyItem1, dummyItem2], {
-      inferSameProject: false,
-    });
+    const result = cleanAndValidateRelationships(raw, [dummyItem1, dummyItem2]);
     expect(result.relationships).toHaveLength(0);
   });
 
-  it("canonicalizes 'blocks' into 'depends_on'", () => {
-    const raw = [
-      {
-        sourceItemId: "item-2", // B blocks A
-        targetItemId: "item-1",
-        type: "blocks" as const,
-        confidence: "high" as const,
-        reason: "B bloquea a A",
-      },
-    ];
-    const result = cleanAndValidateRelationships(raw, [dummyItem1, dummyItem2], {
-      inferSameProject: false,
+  it("parser canonicalizes raw 'blocks' into 'depends_on'", () => {
+    const rawJson = JSON.stringify({
+      relationships: [
+        {
+          sourceItemId: "item-2", // B blocks A
+          targetItemId: "item-1",
+          type: "blocks",
+          confidence: "high",
+          reason: "B bloquea a A",
+        },
+      ],
     });
-    expect(result.relationships).toHaveLength(1);
-    expect(result.relationships[0]?.sourceItemId).toBe("item-1"); // A depends_on B
-    expect(result.relationships[0]?.targetItemId).toBe("item-2");
-    expect(result.relationships[0]?.type).toBe("depends_on");
+    const parsed = parseAndValidateRelationships(rawJson);
+    expect(parsed.relationships).toHaveLength(1);
+    expect(parsed.relationships[0]?.sourceItemId).toBe("item-1"); // canonical: A depends_on B
+    expect(parsed.relationships[0]?.targetItemId).toBe("item-2");
+    expect(parsed.relationships[0]?.type).toBe("depends_on");
   });
 
-  it("deduplicates identical relationships", () => {
+  it("deduplicates identical relationships and canonicalizes symmetric types", () => {
     const raw = [
       {
-        sourceItemId: "item-1",
-        targetItemId: "item-2",
-        type: "related_to" as const,
+        sourceItemId: "item-2",
+        targetItemId: "item-1",
+        type: "same_project" as const,
         confidence: "high" as const,
         reason: "razon 1",
       },
       {
         sourceItemId: "item-1",
         targetItemId: "item-2",
-        type: "related_to" as const,
+        type: "same_project" as const,
         confidence: "medium" as const,
-        reason: "razon duplicada",
+        reason: "razon redundante",
       },
     ];
-    const result = cleanAndValidateRelationships(raw, [dummyItem1, dummyItem2], {
-      inferSameProject: false,
-    });
+    const result = cleanAndValidateRelationships(raw, [dummyItem1, dummyItem2]);
     expect(result.relationships).toHaveLength(1);
-  });
-
-  it("deterministically detects same_project when items share the exact project name", () => {
-    const itemA: ExtractedItem = {
-      ...dummyItem1,
-      project: "Conscious Tech",
-    };
-    const itemB: ExtractedItem = {
-      ...dummyItem2,
-      project: "Conscious Tech",
-    };
-    const result = cleanAndValidateRelationships([], [itemA, itemB], {
-      inferSameProject: true,
-    });
-    expect(result.relationships).toHaveLength(1);
-    expect(result.relationships[0]?.type).toBe("same_project");
-    expect(result.relationships[0]?.confidence).toBe("high");
-    expect(result.relationships[0]?.reason).toContain("Conscious Tech");
+    expect(result.relationships[0]?.sourceItemId).toBe("item-1");
+    expect(result.relationships[0]?.targetItemId).toBe("item-2");
   });
 });

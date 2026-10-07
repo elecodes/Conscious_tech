@@ -10,17 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2026-10-07
 
 ### Added
-- **Domain Modeling for Relationships**: Strict Zod schemas and types in `src/domain/relationships.ts` covering `RelationshipType` (`same_project`, `same_objective`, `related_to`, `part_of`, `depends_on`, `blocks`, `duplicate`), `Relationship`, `DetectedRelationships`, and `DetectRelationshipsInput`.
+- **Domain Modeling for Relationships**: Strict Zod schemas and types in `src/domain/relationships.ts` covering `RelationshipType` (`same_project`, `same_objective`, `related_to`, `part_of`, `depends_on`, `duplicate`), `Relationship` (with `.refine` rejecting self-relations), `DetectedRelationships`, and `DetectRelationshipsInput`.
 - **Skill 02 (`detect_relationships`)**:
   - Implemented `DetectRelationshipsService` adhering to "Detect relationships, don't group".
   - Structured prompt in `src/skills/detect-relationships/prompt.ts` enforcing conservative semantic relationship extraction.
-  - Robust parser in `src/skills/detect-relationships/parser.ts` with error handling and retry mechanism.
+  - Robust parser in `src/skills/detect-relationships/parser.ts` with error handling, retry mechanism, and normalization of any legacy `blocks` into `depends_on`.
   - Deterministic engine in `src/skills/detect-relationships/deterministic.ts`:
     - Short-circuits inputs with fewer than 2 items to empty array (0ms, 0 tokens).
     - Drops self-referencing relationships and unknown item IDs.
-    - Canonicalizes `blocks` relations into `depends_on`.
-    - Deduplicates symmetric relationships (`same_project`, `same_objective`, `related_to`, `duplicate`).
-    - Deterministically infers `same_project` from shared non-empty item metadata.
+    - Deduplicates symmetric relationships (`same_project`, `same_objective`, `related_to`, `duplicate`) with canonical sorted direction.
 - **Provider Support for Skill 02**:
   - `MockProvider`: Token-free relationship resolution using golden fixture `cases/mock-relationships.json`.
   - `GroqProvider`: Structured JSON inference with `qwen/qwen3.8-27b`.

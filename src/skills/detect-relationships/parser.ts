@@ -9,6 +9,37 @@ export class RelationshipValidationError extends Error {
 }
 
 /**
+ * Normalizes raw relationship objects before schema parsing:
+ * - If an item uses type "blocks" (A blocks B), canonicalizes to "depends_on" (B depends_on A).
+ */
+function normalizeRawRelationships(data: unknown): unknown {
+  if (!data || typeof data !== "object") return data;
+
+  const maybeObj = data as Record<string, unknown>;
+  if (!Array.isArray(maybeObj.relationships)) return data;
+
+  const normalizedRels = maybeObj.relationships.map((rel) => {
+    if (!rel || typeof rel !== "object") return rel;
+    const r = rel as Record<string, unknown>;
+
+    if (r.type === "blocks" && typeof r.sourceItemId === "string" && typeof r.targetItemId === "string") {
+      return {
+        ...r,
+        sourceItemId: r.targetItemId,
+        targetItemId: r.sourceItemId,
+        type: "depends_on",
+      };
+    }
+    return r;
+  });
+
+  return {
+    ...maybeObj,
+    relationships: normalizedRels,
+  };
+}
+
+/**
  * Parses and validates raw LLM output against the DetectedRelationshipsSchema.
  */
 export function parseAndValidateRelationships(rawResponse: string): DetectedRelationships {
@@ -24,7 +55,9 @@ export function parseAndValidateRelationships(rawResponse: string): DetectedRela
     );
   }
 
-  const result = DetectedRelationshipsSchema.safeParse(parsed);
+  const normalized = normalizeRawRelationships(parsed);
+
+  const result = DetectedRelationshipsSchema.safeParse(normalized);
   if (!result.success) {
     throw new RelationshipValidationError(
       "Relationships failed schema validation",
