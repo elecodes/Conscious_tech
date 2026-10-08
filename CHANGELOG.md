@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-10-08
+
+### Added
+- **Domain Modeling for Work Groups**: Zod schemas and TypeScript types in `src/domain/work-groups.ts` for `WorkGroup`, `GroupedWork`, and `GroupWorkInput`.
+- **Skill 03 (`group_work`)**:
+  - Implemented `GroupWorkService` answering *"What elements belong to the same coherent line of work?"* without prioritizing or weekly planning.
+  - Semantic prompt in `src/skills/group-work/prompt.ts` with strict relationship weighting (`same_project`, `same_objective`, `part_of`, `depends_on`, `related_to`, `duplicate`) and isolation of emotional `concern` items.
+  - Robust JSON parser with Markdown fence stripping in `src/skills/group-work/parser.ts`.
+  - Deterministic invariant engine in `src/skills/group-work/deterministic.ts`:
+    - Full conservation guarantee (no lost items, no phantom items).
+    - Disjoint group guarantee (no items shared across groups; no items simultaneously in a group and ungrouped).
+    - Threshold enforcement ($\ge 2$ items per group; degenerate 1-item groups disbanded to ungrouped).
+    - Fast short-circuits (0 tokens, 0ms) for empty inputs, 1-item inputs, and items with zero relationships.
+- **Provider Support for Skill 03**:
+  - `MockProvider`: Token-free reference groupings via `cases/mock-groupings.json`.
+  - `GroqProvider`: Structured JSON inference with `qwen/qwen3.8-27b`.
+  - `GeminiProvider`: Google GenAI structured output with `gemini-2.5-flash`.
+- **Testing & Invariant Verification**:
+  - 24 unit and behavioral tests across `tests/work-groups-domain.test.ts` and `tests/group-work.test.ts` covering 15 specific edge-case scenarios.
+  - Entire suite running 87 tests in < 400ms with zero token expenditure.
+- **Evaluation Pipeline**:
+  - Added Skill 03 pipeline evaluation in `scripts/eval-cases.ts` supporting `--skill=group_work` and comma-separated case filters.
+  - Reference outputs logged to `cases/eval-group-work-results.json`.
+- **Architecture Documentation**:
+  - ADR 0003: Group Work — Coherent Lines of Attention and Deterministic Invariants.
+
 ## [0.2.0] - 2026-10-07
 
 ### Added
