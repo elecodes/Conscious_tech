@@ -258,8 +258,35 @@ describe("Skill 02: detect_relationships - Behavioral & Minimum Test Suite", () 
     expect(hotfixRel).toBeUndefined();
   });
 
-  // Real Case: Caso 20 — Conscious Tech (Concern isolated, precondition is depends_on)
-  it("Real Case: Caso 20 isolates concern and detects 'motor depends_on notas'", async () => {
+  // Real Case: Caso 06 — Stripe & Tienda (Rule 1: no related_to for 'mientras tanto' workaround)
+  it("Real Case: Caso 06 links webhook dependency and same_project, rejecting related_to on workaround", async () => {
+    const case06Items = mockCasesData["case-06"]!.items as ExtractedItem[];
+    const provider = new MockProvider();
+
+    const result = await detectRelationships(provider, { items: case06Items });
+    expect(result.relationships).toHaveLength(2);
+
+    const dep = result.relationships.find(
+      (r) => r.sourceItemId === "c06-1" && r.targetItemId === "c06-2" && r.type === "depends_on"
+    );
+    expect(dep).toBeDefined();
+
+    const sameProj = result.relationships.find(
+      (r) => r.sourceItemId === "c06-1" && r.targetItemId === "c06-3" && r.type === "same_project"
+    );
+    expect(sameProj).toBeDefined();
+
+    // c06-2 (creds) and c06-3 (thank you page) must NOT have related_to
+    const workaroundRel = result.relationships.find(
+      (r) =>
+        (r.sourceItemId === "c06-2" && r.targetItemId === "c06-3") ||
+        (r.sourceItemId === "c06-3" && r.targetItemId === "c06-2")
+    );
+    expect(workaroundRel).toBeUndefined();
+  });
+
+  // Real Case: Caso 20 — Conscious Tech (Concern isolated, precondition is depends_on, not part_of)
+  it("Real Case: Caso 20 isolates concern, detects 'motor depends_on notas', and rejects part_of", async () => {
     const case20Items = mockCasesData["case-20"]!.items as ExtractedItem[];
     const provider = new MockProvider();
 
@@ -382,5 +409,13 @@ describe("Skill 02: detect_relationships - Behavioral & Minimum Test Suite", () 
     expect(result.relationships).toHaveLength(1);
     expect(result.relationships[0]?.sourceItemId).toBe("item-1");
     expect(result.relationships[0]?.targetItemId).toBe("item-2");
+  });
+
+  // Prompt Calibration Rules
+  it("Semantic prompt includes hardened rules for related_to, part_of vs depends_on, and mutual exclusion", async () => {
+    const { SYSTEM_PROMPT } = await import("../src/skills/detect-relationships/prompt");
+    expect(SYSTEM_PROMPT).toContain("REGLA RELATED_TO (NO POR COEXISTENCIA O DESVÍOS TEMPORALES)");
+    expect(SYSTEM_PROMPT).toContain("REGLA PART_OF VS DEPENDS_ON (PRECONDICIÓN NO ES PARTE CONSTITUTIVA)");
+    expect(SYSTEM_PROMPT).toContain("Avoid emitting both A depends_on B and B part_of A unless the source text clearly establishes both meanings");
   });
 });
