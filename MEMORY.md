@@ -217,13 +217,14 @@ The conceptual model is a starting point, not a reason to over-engineer.
 
 The repository is being built incrementally.
 
-The first implementation area is the **extract_items** skill:
+Implemented and calibrated skills:
+1. **Skill 01: `extract_items`**: Convert free-form user input into structured items (`task`, `idea`, `concern`, `commitment`, `project`) without prioritizing or planning.
+2. **Skill 02: `detect_relationships`**: Detect semantic links (`same_project`, `same_objective`, `related_to`, `part_of`, `depends_on`, `duplicate`) with strict boundaries (concerns isolated, preconditions as `depends_on`, workarounds not linked, zero grouping).
 
-> Convert free-form user input into structured items without prioritizing or planning.
+Next implementation focus:
+- **Skill 03: `group_work`**: Group items into coherent areas of attention without deciding weekly priority or capacity.
 
-This is an implementation detail of the larger product, not the definition of the product itself.
-
-Detailed specifications for individual skills should live separately from this file.
+Detailed specifications for individual skills live separately from this file.
 
 ---
 

@@ -24,19 +24,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `GroqProvider`: Structured JSON inference with `qwen/qwen3.8-27b`.
   - `GeminiProvider`: Google GenAI structured output with `gemini-2.5-flash`.
 - **Testing & Evaluation**:
-  - 18 unit and behavioral tests across `tests/relationships-domain.test.ts` and `tests/detect-relationships.test.ts`.
-  - CLI evaluation script `scripts/eval-relationships.ts` with `npm run eval:relationships`.
+  - 29 unit and behavioral tests across `tests/relationships-domain.test.ts` and `tests/detect-relationships.test.ts` (63 total suite tests).
+  - CLI evaluation script `scripts/eval-cases.ts` with rate-limit backoff supporting `--provider=mock|groq|gemini` and `--case=case-XX`.
 - **Architecture Documentation**:
   - ADR 0002: Detect Relationships — Conservative Semantic Links and Deterministic Post-Processing.
 
 ### Changed
 - **Calibrated `detect_relationships` Semantic Prompt & Evaluation**:
   - Enforced strict isolation of `CONCERN` elements: emotional/cognitive load reflections remain excluded from task dependency graphs.
-  - Explicit prerequisite capture: functional preconditions ("antes tengo que X para Y", "primero X para Y", "después de X") are declared as canonical `depends_on`.
+  - Hardened `related_to` boundaries (Rule 1): prohibited links driven merely by co-existence in the same dump/sprint or temporary workarounds ("mientras tanto").
+  - Hardened `part_of` vs `depends_on` (Rule 2): clarified that prerequisites are not constituent parts; preconditions must map to `depends_on`.
+  - Added mutual exclusion rule avoiding simultaneous `A depends_on B` and `B part_of A`.
   - Demoted chained brainstorming thoughts to `related_to` rather than artificial causal `depends_on`.
   - Refined `part_of` for constituent preparatory/delivery subtasks.
   - Enhanced unified evaluation pipeline (`scripts/eval-cases.ts`) with backoff rate-limit handling and real-time schema validation across 25 real dumps.
-  - Expanded behavioral test suite to 61 deterministic tests.
+  - Expanded behavioral test suite to 63 deterministic tests passing in < 400ms.
 
 ## [0.1.0] - 2026-10-06
 

@@ -49,11 +49,19 @@ Relationships include `confidence` (`high | medium | low`), an explicit `reason`
 ### 4. Zero-Token Deterministic Testing & Evaluation
 
 - Implemented `MockProvider.detectRelationships` leveraging `cases/mock-relationships.json`.
-- Added 18 discrete tests in `tests/relationships-domain.test.ts` and `tests/detect-relationships.test.ts`.
-- Created `scripts/eval-relationships.ts` supporting `--provider=mock|groq|gemini` and `--case=case-XX`.
+- Added 29 discrete tests across `tests/relationships-domain.test.ts` and `tests/detect-relationships.test.ts`.
+- Integrated relationship evaluation into `scripts/eval-cases.ts` supporting `--provider=mock|groq|gemini` and `--case=case-XX`.
+
+### 5. Semantic Calibration & Boundary Hardening
+
+Through evaluation of 25 real brain dumps, three edge-case failure modes were identified and hardened:
+- **Rule 1 (`related_to`)**: Prohibit `related_to` purely because two items share context, a sprint/project, or because one serves as a workaround while another is blocked (e.g. "mientras tanto..."). An intrinsic semantic connection is required.
+- **Rule 2 (`part_of` vs `depends_on`)**: Clarified that a prerequisite/precondition is not automatically a constituent part. If item B must occur before A but does not form part of A's deliverable, use `depends_on`, not `part_of`.
+- **Mutual Exclusion Rule**: Prohibit emitting both `A depends_on B` and `B part_of A` unless the source text explicitly and unambiguously establishes both meanings.
 
 ## Consequences
 
 - **Positive**: Clean separation of concerns between extraction (01), relationship detection (02), and future grouping (03).
-- **Positive**: Deterministic test suite executes in < 350ms with 0 token spend.
-- **Positive**: Resilient against LLM hallucinations (phantom IDs, loops, redundant opposite edges).
+- **Positive**: Deterministic test suite executes in < 400ms with 0 token spend.
+- **Positive**: Resilient against LLM hallucinations (phantom IDs, loops, redundant opposite edges, and spurious workaround links).
+- **Positive**: Evaluation across 25 real dumps produces faithful dependency and constituent graphs without artificial clustering.
