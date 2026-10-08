@@ -51,5 +51,73 @@
       "valid": true,
       "errors": []
     }
+  },
+  "case-23": {
+    "caseId": "case-23",
+    "input": "Estuve leyendo sobre computación local y modelos cuantizados en GGUF. Capaz se podría correr un Llama pequeño directo en el cliente con WebGPU. Estaría bueno probar un prototipo cuando estemos más tranquilos.",
+    "elapsedMs": 6685,
+    "itemsCount": 3,
+    "relationshipsCount": 3,
+    "groupsCount": 1,
+    "groups": [
+      {
+        "id": "group-1",
+        "title": "Exploración de IA local en WebGPU",
+        "itemIds": [
+          "item-1",
+          "item-2",
+          "item-3"
+        ],
+        "rationale": "Los tres elementos forman un hilo de exploración coherente centrado en la viabilidad técnica de ejecutar modelos de IA localmente, progresando desde la lectura teórica sobre GGUF hasta la evaluación y prototipado específico con WebGPU."
+      }
+    ],
+    "ungroupedItemIds": [],
+    "validation": {
+      "valid": true,
+      "errors": []
+    }
+  },
+  "case-24": {
+    "caseId": "case-24",
+    "input": "Pedirle a Sofía que revise las traducciones al inglés del README. Yo mientras me pongo a escribir los tests unitarios de las skills.",
+    "elapsedMs": 7138,
+    "itemsCount": 2,
+    "relationshipsCount": 0,
+    "groupsCount": 0,
+    "groups": [],
+    "ungroupedItemIds": [
+      "item-1",
+      "item-2"
+    ],
+    "validation": {
+      "valid": true,
+      "errors": []
+    }
+  },
+  "case-25": {
+    "caseId": "case-25",
+    "input": "Revisar todo lo que quedó sin hacer de esta semana, rescatar lo que todavía vale la pena y pasar a limpio las notas del cuaderno.",
+    "elapsedMs": 36885,
+    "itemsCount": 3,
+    "relationshipsCount": 1,
+    "groupsCount": 1,
+    "groups": [
+      {
+        "id": "group-1",
+        "title": "Revisión y depuración de pendientes",
+        "itemIds": [
+          "item-1",
+          "item-2"
+        ],
+        "rationale": "Item-2 es una subtarea constitutiva (part_of) de Item-1, ya que rescatar lo valioso es parte integral del proceso de revisar los pendientes de la semana."
+      }
+    ],
+    "ungroupedItemIds": [
+      "item-3"
+    ],
+    "validation": {
+      "valid": true,
+      "errors": []
+    }
   }
 }

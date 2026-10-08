@@ -557,10 +557,11 @@ async function main() {
 
   const casesPath = path.resolve(__dirname, "../cases/real-dumps.json");
   const cases: CaseDump[] = JSON.parse(fs.readFileSync(casesPath, "utf-8"));
-  const filteredCases = caseArg ? cases.filter((c) => c.id === caseArg) : cases;
+  const targetCaseIds = caseArg ? new Set(caseArg.split(",").map((c) => c.trim())) : null;
+  const filteredCases = targetCaseIds ? cases.filter((c) => targetCaseIds.has(c.id)) : cases;
 
   if (filteredCases.length === 0) {
-    console.error(`No se encontró el caso "${caseArg}".`);
+    console.error(`No se encontraron casos para "${caseArg}".`);
     process.exit(1);
   }
 
