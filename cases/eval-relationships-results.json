@@ -1,38 +1,1535 @@
 {
+  "case-01": {
+    "title": "Compromiso externo + ideas + tareas mezcladas",
+    "input": "Tengo que preparar la clase de Cibervoluntarios para el martes. También quiero terminar la definición del MVP de Tecnología Consciente, estudiar SOLID y seguir con ArchitectAI. Además quería mirar Zapsac, pero eso no corre prisa.",
+    "elapsedMs": 4062,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Tengo que preparar la clase de Cibervoluntarios para el martes.",
+        "title": "Preparar la clase de Cibervoluntarios",
+        "type": "commitment",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "el martes",
+          "resolved": "2026-10-13",
+          "confidence": "high"
+        },
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "external"
+      },
+      {
+        "id": "item-2",
+        "rawText": "También quiero terminar la definición del MVP de Tecnología Consciente",
+        "title": "Terminar la definición del MVP de Tecnología Consciente",
+        "type": "task",
+        "project": "Tecnología Consciente",
+        "status": "started",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-3",
+        "rawText": "estudiar SOLID",
+        "title": "Estudiar SOLID",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-4",
+        "rawText": "seguir con ArchitectAI",
+        "title": "Seguir con ArchitectAI",
+        "type": "task",
+        "project": "ArchitectAI",
+        "status": "started",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-5",
+        "rawText": "Además quería mirar Zapsac, pero eso no corre prisa.",
+        "title": "Mirar Zapsac",
+        "type": "idea",
+        "project": null,
+        "status": "exploring",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-02": {
+    "title": "Sobrecarga con preocupación y fecha límite inminente",
+    "input": "Se me viene el cierre del trimestre y tengo que presentar el modelo 303 de Hacienda antes del 20. Me tiene muy agobiada el tema de los números. Aparte debería llamar a la gestoría hoy mismo a ver qué falta de facturas.",
+    "elapsedMs": 3275,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "tengo que presentar el modelo 303 de Hacienda antes del 20",
+        "title": "Presentar modelo 303 de Hacienda",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "antes del 20",
+          "resolved": "2026-10-20",
+          "confidence": "high"
+        },
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "external"
+      },
+      {
+        "id": "item-2",
+        "rawText": "Me tiene muy agobiada el tema de los números",
+        "title": "Agobio por el tema de los números",
+        "type": "concern",
+        "project": null,
+        "status": null,
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": null
+      },
+      {
+        "id": "item-3",
+        "rawText": "debería llamar a la gestoría hoy mismo a ver qué falta de facturas",
+        "title": "Llamar a la gestoría para revisar facturas",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "hoy mismo",
+          "resolved": "2026-10-08",
+          "confidence": "high"
+        },
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-03": {
+    "title": "Dudas técnicas y pensamientos exploratorios",
+    "input": "Estuve pensando si migrar la base de datos a Postgres o si con SQLite embebido nos sobra para el MVP. Igual no conviene complicarse ahora. También quería leer el paper de Google sobre agentes que guardé la semana pasada si me da tiempo.",
+    "elapsedMs": 36369,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Estuve pensando si migrar la base de datos a Postgres o si con SQLite embebido nos sobra para el MVP. Igual no conviene complicarse ahora.",
+        "title": "Evaluar migración de base de datos a Postgres vs SQLite",
+        "type": "idea",
+        "project": null,
+        "status": "exploring",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-2",
+        "rawText": "También quería leer el paper de Google sobre agentes que guardé la semana pasada si me da tiempo.",
+        "title": "Leer paper de Google sobre agentes",
+        "type": "idea",
+        "project": null,
+        "status": "exploring",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-04": {
+    "title": "Estimación de tiempo explícita y compromiso personal",
+    "input": "Necesito sacar 4 horas bloqueadas el jueves por la mañana para reescribir la capa de autenticación con tokens seguros. Me prometí no posponerlo más porque es crítico para salir a producción.",
+    "elapsedMs": 2702,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Necesito sacar 4 horas bloqueadas el jueves por la mañana para reescribir la capa de autenticación con tokens seguros.",
+        "title": "Reescribir la capa de autenticación con tokens seguros",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "el jueves por la mañana",
+          "resolved": "2026-10-08",
+          "confidence": "high"
+        },
+        "estimatedEffort": {
+          "value": 4,
+          "unit": "hours",
+          "source": "user"
+        },
+        "importance": "high",
+        "commitment": "personal"
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-05": {
+    "title": "Pensamiento disperso con tareas domésticas y profesionales",
+    "input": "Comprar arena para el gato cuando salga. Hay que contestarle el correo a Martín sobre la propuesta de consultoría antes de las cinco. Y estuve dándole vueltas a escribir un post en LinkedIn sobre por qué odio los dashboards saturados.",
+    "elapsedMs": 30532,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Comprar arena para el gato cuando salga.",
+        "title": "Comprar arena para el gato",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "cuando salga",
+          "resolved": null,
+          "confidence": "low"
+        },
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-2",
+        "rawText": "Hay que contestarle el correo a Martín sobre la propuesta de consultoría antes de las cinco.",
+        "title": "Contestar correo a Martín sobre propuesta de consultoría",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "antes de las cinco",
+          "resolved": "2026-10-08",
+          "confidence": "medium"
+        },
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-3",
+        "rawText": "estuve dándole vueltas a escribir un post en LinkedIn sobre por qué odio los dashboards saturados.",
+        "title": "Escribir post en LinkedIn sobre dashboards saturados",
+        "type": "idea",
+        "project": null,
+        "status": "exploring",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-06": {
+    "title": "Proyecto iniciado con bloqueos y dependencias",
+    "input": "Seguir con la integración de Stripe en la tienda, pero estoy frenada porque falta que el cliente mande las credenciales de webhook. Mientras tanto podría avanzar en la página de agradecimiento.",
+    "elapsedMs": 10771,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Seguir con la integración de Stripe en la tienda",
+        "title": "Integración de Stripe en la tienda",
+        "type": "task",
+        "project": "Tienda",
+        "status": "started",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-2",
+        "rawText": "estoy frenada porque falta que el cliente mande las credenciales de webhook",
+        "title": "Falta de credenciales de webhook del cliente",
+        "type": "concern",
+        "project": "Tienda",
+        "status": null,
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-3",
+        "rawText": "Mientras tanto podría avanzar en la página de agradecimiento",
+        "title": "Avanzar en la página de agradecimiento",
+        "type": "idea",
+        "project": "Tienda",
+        "status": "exploring",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [
+      {
+        "sourceItemId": "item-1",
+        "targetItemId": "item-2",
+        "type": "depends_on",
+        "confidence": "high",
+        "reason": "El texto indica explícitamente que la integración de Stripe está 'frenada' porque falta que el cliente mande las credenciales de webhook, lo que establece una precondición operativa."
+      },
+      {
+        "sourceItemId": "item-1",
+        "targetItemId": "item-3",
+        "type": "same_project",
+        "confidence": "high",
+        "reason": "Ambos elementos pertenecen al proyecto 'Tienda' y se refieren a componentes de la misma funcionalidad de compra (pago y post-compra)."
+      },
+      {
+        "sourceItemId": "item-2",
+        "targetItemId": "item-3",
+        "type": "related_to",
+        "confidence": "medium",
+        "reason": "La página de agradecimiento es una alternativa de trabajo ('mientras tanto') mientras se resuelve el bloqueo de credenciales, vinculando conceptualmente la exploración con la situación actual del proyecto."
+      }
+    ],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-07": {
+    "title": "Reflexión filosófica vs tareas concretas",
+    "input": "Siento que estoy saltando de herramienta en herramienta sin profundizar. Quiero proteger al menos dos mañanas solo para programar sin notificaciones. Y tengo que revisar las PRs pendientes de Conscious Tech.",
+    "elapsedMs": 33522,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Siento que estoy saltando de herramienta en herramienta sin profundizar.",
+        "title": "Frustración por falta de profundidad en herramientas",
+        "type": "concern",
+        "project": null,
+        "status": null,
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": null
+      },
+      {
+        "id": "item-2",
+        "rawText": "Quiero proteger al menos dos mañanas solo para programar sin notificaciones.",
+        "title": "Proteger dos mañanas para programar sin notificaciones",
+        "type": "idea",
+        "project": null,
+        "status": "exploring",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": null
+      },
+      {
+        "id": "item-3",
+        "rawText": "Y tengo que revisar las PRs pendientes de Conscious Tech.",
+        "title": "Revisar PRs pendientes de Conscious Tech",
+        "type": "task",
+        "project": "Conscious Tech",
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-08": {
+    "title": "Doble compromiso con fechas relativas",
+    "input": "El viernes a las 11 reunión con el equipo de diseño para ver el Figma. El finde quiero desconectar completamente, así que dejar cerrada la documentación de la API antes de salir el viernes por la tarde.",
+    "elapsedMs": 17422,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "El viernes a las 11 reunión con el equipo de diseño para ver el Figma",
+        "title": "Reunión con el equipo de diseño para ver el Figma",
+        "type": "commitment",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "El viernes a las 11",
+          "resolved": "2026-10-09",
+          "confidence": "high"
+        },
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "external"
+      },
+      {
+        "id": "item-2",
+        "rawText": "dejar cerrada la documentación de la API antes de salir el viernes por la tarde",
+        "title": "Cerrar la documentación de la API",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "antes de salir el viernes por la tarde",
+          "resolved": "2026-10-09",
+          "confidence": "medium"
+        },
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-09": {
+    "title": "Idea vaga de negocio sin compromiso",
+    "input": "Se me ocurrió que podríamos armar una newsletter semanal con reflexiones de calma digital. Capaz sea buena idea para captar los primeros 100 usuarios, o capaz es mucho laburo ahora mismo.",
+    "elapsedMs": 2516,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Se me ocurrió que podríamos armar una newsletter semanal con reflexiones de calma digital. Capaz sea buena idea para captar los primeros 100 usuarios, o capaz es mucho laburo ahora mismo.",
+        "title": "Evaluar idea de newsletter semanal de calma digital",
+        "type": "idea",
+        "project": null,
+        "status": "exploring",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-10": {
+    "title": "Preocupación de salud / energía personal",
+    "input": "Vengo durmiendo fatal esta semana y me cuesta concentrarme por las tardes. Tengo que pedir turno con el médico y aflojarle un poco al café. A ver si logro terminar el issue #42 hoy.",
+    "elapsedMs": 19702,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Vengo durmiendo fatal esta semana y me cuesta concentrarme por las tardes.",
+        "title": "Problemas de sueño y concentración por las tardes",
+        "type": "concern",
+        "project": null,
+        "status": null,
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": null
+      },
+      {
+        "id": "item-2",
+        "rawText": "Tengo que pedir turno con el médico",
+        "title": "Pedir turno con el médico",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "external"
+      },
+      {
+        "id": "item-3",
+        "rawText": "aflojarle un poco al café",
+        "title": "Reducir el consumo de café",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": null
+      },
+      {
+        "id": "item-4",
+        "rawText": "A ver si logro terminar el issue #42 hoy.",
+        "title": "Terminar el issue #42",
+        "type": "task",
+        "project": null,
+        "status": "started",
+        "deadline": {
+          "raw": "hoy",
+          "resolved": "2026-10-08",
+          "confidence": "high"
+        },
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": null
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-11": {
+    "title": "Múltiples microtareas de seguimiento",
+    "input": "Escribirle a Juan por Telegram, revisar si se acreditó la transferencia del cliente de México y actualizar el archivo de finanzas del mes.",
+    "elapsedMs": 23409,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Escribirle a Juan por Telegram",
+        "title": "Escribirle a Juan por Telegram",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-2",
+        "rawText": "revisar si se acreditó la transferencia del cliente de México",
+        "title": "Revisar acreditación de transferencia del cliente de México",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-3",
+        "rawText": "actualizar el archivo de finanzas del mes",
+        "title": "Actualizar archivo de finanzas del mes",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
   "case-12": {
-    "itemCount": 5,
-    "elapsedMs": 1008,
-    "output": {
-      "relationships": [
-        {
-          "sourceItemId": "c12-2",
-          "targetItemId": "c12-1",
-          "type": "part_of",
-          "confidence": "high",
-          "reason": "El testing con usuarios es una actividad constitutiva necesaria para el lanzamiento de la beta cerrada."
+    "title": "Proyecto grande sin estructurar",
+    "input": "Queremos lanzar la beta cerrada de la app en noviembre. Faltan un montón de cosas: testing de usuarios, pulir el onboarding, arreglar los bugs de Safari en mobile y redactar los términos de privacidad.",
+    "elapsedMs": 45600,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Queremos lanzar la beta cerrada de la app en noviembre.",
+        "title": "Lanzar beta cerrada de la app",
+        "type": "project",
+        "project": "App",
+        "status": "pending",
+        "deadline": {
+          "raw": "en noviembre",
+          "resolved": null,
+          "confidence": "low"
         },
-        {
-          "sourceItemId": "c12-3",
-          "targetItemId": "c12-1",
-          "type": "part_of",
-          "confidence": "high",
-          "reason": "Pulir el onboarding es una tarea de preparación directa para el lanzamiento de la beta cerrada."
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-2",
+        "rawText": "testing de usuarios",
+        "title": "Realizar testing de usuarios",
+        "type": "task",
+        "project": "App",
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-3",
+        "rawText": "pulir el onboarding",
+        "title": "Pulir el onboarding",
+        "type": "task",
+        "project": "App",
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-4",
+        "rawText": "arreglar los bugs de Safari en mobile",
+        "title": "Arreglar bugs de Safari en mobile",
+        "type": "task",
+        "project": "App",
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-5",
+        "rawText": "redactar los términos de privacidad",
+        "title": "Redactar términos de privacidad",
+        "type": "task",
+        "project": "App",
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [
+      {
+        "sourceItemId": "item-2",
+        "targetItemId": "item-1",
+        "type": "part_of",
+        "confidence": "high",
+        "reason": "El testing de usuarios es una actividad constitutiva y preparatoria necesaria para el hito de lanzar la beta cerrada."
+      },
+      {
+        "sourceItemId": "item-3",
+        "targetItemId": "item-1",
+        "type": "part_of",
+        "confidence": "high",
+        "reason": "Pulir el onboarding es una tarea de preparación directa para el lanzamiento de la beta cerrada."
+      },
+      {
+        "sourceItemId": "item-4",
+        "targetItemId": "item-1",
+        "type": "part_of",
+        "confidence": "high",
+        "reason": "Arreglar bugs críticos (Safari mobile) es una tarea de estabilización constitutiva del lanzamiento de la beta."
+      },
+      {
+        "sourceItemId": "item-5",
+        "targetItemId": "item-1",
+        "type": "part_of",
+        "confidence": "high",
+        "reason": "Redactar los términos de privacidad es un requisito legal y operativo constitutivo para el lanzamiento de la beta."
+      }
+    ],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-13": {
+    "title": "Charla o evento público confirmado",
+    "input": "Confirmé mi participación en el meetup de TypeScript del mes que viene. Tengo que definir el título de la charla antes del lunes que me lo pide la organización.",
+    "elapsedMs": 18512,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Confirmé mi participación en el meetup de TypeScript del mes que viene.",
+        "title": "Participar en el meetup de TypeScript",
+        "type": "commitment",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "del mes que viene",
+          "resolved": null,
+          "confidence": "low"
         },
-        {
-          "sourceItemId": "c12-4",
-          "targetItemId": "c12-1",
-          "type": "part_of",
-          "confidence": "high",
-          "reason": "Corregir bugs de Safari mobile es una tarea de estabilización requerida para el lanzamiento de la beta cerrada."
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "external"
+      },
+      {
+        "id": "item-2",
+        "rawText": "Tengo que definir el título de la charla antes del lunes que me lo pide la organización.",
+        "title": "Definir el título de la charla",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "antes del lunes",
+          "resolved": "2026-10-12",
+          "confidence": "high"
         },
-        {
-          "sourceItemId": "c12-5",
-          "targetItemId": "c12-1",
-          "type": "part_of",
-          "confidence": "high",
-          "reason": "Redactar los términos de privacidad es un requisito legal y funcional constitutivo para el lanzamiento de la beta cerrada."
-        }
-      ]
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "external"
+      }
+    ],
+    "relationships": [
+      {
+        "sourceItemId": "item-2",
+        "targetItemId": "item-1",
+        "type": "part_of",
+        "confidence": "high",
+        "reason": "Definir el título de la charla es una tarea preparatoria y constitutiva necesaria para poder participar en el meetup, tal como se indica en el texto ('me lo pide la organización')."
+      }
+    ],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-14": {
+    "title": "Duda recurrente que NO es tarea",
+    "input": "No sé si tiene sentido seguir con React Native para la app o si conviene esperar a que madure el framework nuevo. Cada vez que toco Gradle pierdo medio día.",
+    "elapsedMs": 26501,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "No sé si tiene sentido seguir con React Native para la app o si conviene esperar a que madure el framework nuevo.",
+        "title": "Evaluar continuidad de React Native vs. esperar framework nuevo",
+        "type": "idea",
+        "project": null,
+        "status": "exploring",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-2",
+        "rawText": "Cada vez que toco Gradle pierdo medio día.",
+        "title": "Fricción con Gradle",
+        "type": "concern",
+        "project": null,
+        "status": null,
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-15": {
+    "title": "Esfuerzo explícito breve y tarea pequeña",
+    "input": "Me lleva 15 minutos subir la versión nueva a npm, pero antes tengo que correr todos los tests de integración para no romper nada.",
+    "elapsedMs": 12329,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "correr todos los tests de integración para no romper nada",
+        "title": "Correr tests de integración",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-2",
+        "rawText": "subir la versión nueva a npm",
+        "title": "Subir versión nueva a npm",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": {
+          "value": 15,
+          "unit": "minutes",
+          "source": "user"
+        },
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [
+      {
+        "sourceItemId": "item-2",
+        "targetItemId": "item-1",
+        "type": "depends_on",
+        "confidence": "high",
+        "reason": "El texto de 'Correr tests de integración' indica explícitamente la intención de hacerlo 'para no romper nada', lo que establece una precondición funcional para 'Subir versión nueva a npm'."
+      }
+    ],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-16": {
+    "title": "Brain dump largo de lunes por la mañana",
+    "input": "Arranca la semana y tengo la cabeza llena. Prioridad uno: preparar la demo para inversores del jueves a las 16h. Segundo: terminar el refactor de los providers de IA que empecé el sábado. Tercero: me preocupa que no lleguemos con el presupuesto para contratar a la diseñadora. Si sobra tiempo, capaz chusmear la nueva versión de Astro.",
+    "elapsedMs": 41108,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Prioridad uno: preparar la demo para inversores del jueves a las 16h.",
+        "title": "Preparar demo para inversores",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "del jueves a las 16h",
+          "resolved": "2026-10-09",
+          "confidence": "high"
+        },
+        "estimatedEffort": null,
+        "importance": "high",
+        "commitment": "external"
+      },
+      {
+        "id": "item-2",
+        "rawText": "Segundo: terminar el refactor de los providers de IA que empecé el sábado.",
+        "title": "Terminar refactor de providers de IA",
+        "type": "task",
+        "project": null,
+        "status": "started",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-3",
+        "rawText": "Tercero: me preocupa que no lleguemos con el presupuesto para contratar a la diseñadora.",
+        "title": "Preocupación por presupuesto para diseñadora",
+        "type": "concern",
+        "project": null,
+        "status": null,
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-4",
+        "rawText": "Si sobra tiempo, capaz chusmear la nueva versión de Astro.",
+        "title": "Chusmear nueva versión de Astro",
+        "type": "idea",
+        "project": null,
+        "status": "exploring",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-17": {
+    "title": "Reestructuración y limpieza de deuda técnica",
+    "input": "Hay que borrar las tablas viejas de la base de datos que quedaron deprecadas del sprint pasado. Y limpiar las variables de entorno que ya no se usan en producción.",
+    "elapsedMs": 13313,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Hay que borrar las tablas viejas de la base de datos que quedaron deprecadas del sprint pasado.",
+        "title": "Borrar tablas viejas de la base de datos",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-2",
+        "rawText": "Y limpiar las variables de entorno que ya no se usan en producción.",
+        "title": "Limpiar variables de entorno obsoletas en producción",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [
+      {
+        "sourceItemId": "item-1",
+        "targetItemId": "item-2",
+        "type": "related_to",
+        "confidence": "high",
+        "reason": "Ambos elementos son tareas de limpieza y deuda técnica (borrar tablas deprecadas y limpiar variables obsoletas) que comparten el mismo contexto de mantenimiento del sistema, sin que exista una dependencia causal explícita entre ellas."
+      }
+    ],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-18": {
+    "title": "Cosas descartadas conscientemente",
+    "input": "Hablé con el equipo y decidimos no hacer la integración con Discord por ahora. Queda archivada. En cambio, sí hay que arreglar el bug de inicio de sesión con Google que reportaron dos usuarios.",
+    "elapsedMs": 11095,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Hablé con el equipo y decidimos no hacer la integración con Discord por ahora. Queda archivada.",
+        "title": "Integración con Discord",
+        "type": "project",
+        "project": null,
+        "status": "archived",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-2",
+        "rawText": "En cambio, sí hay que arreglar el bug de inicio de sesión con Google que reportaron dos usuarios.",
+        "title": "Arreglar bug de inicio de sesión con Google",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-19": {
+    "title": "Entrada caótica con modismos y corrección sobre la marcha",
+    "input": "Che, acordarme de mandar el presupuesto a Lucía... bah, mejor se lo mando mañana después de hablar con Pablo. Lo que sí es para hoy es subir el hotfix del checkout que está tirando 500 a veces.",
+    "elapsedMs": 26317,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "acordarme de mandar el presupuesto a Lucía... bah, mejor se lo mando mañana después de hablar con Pablo",
+        "title": "Mandar el presupuesto a Lucía",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "mañana",
+          "resolved": "2026-10-09",
+          "confidence": "high"
+        },
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-2",
+        "rawText": "después de hablar con Pablo",
+        "title": "Hablar con Pablo",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-3",
+        "rawText": "Lo que sí es para hoy es subir el hotfix del checkout que está tirando 500 a veces",
+        "title": "Subir el hotfix del checkout",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "hoy",
+          "resolved": "2026-10-08",
+          "confidence": "high"
+        },
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [
+      {
+        "sourceItemId": "item-1",
+        "targetItemId": "item-2",
+        "type": "depends_on",
+        "confidence": "high",
+        "reason": "El texto indica explícitamente que el presupuesto se enviará 'después de hablar con Pablo', estableciendo una precondición temporal y operativa."
+      }
+    ],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-20": {
+    "title": "Volcado con emociones encontradas",
+    "input": "Tengo mil ganas de avanzar con el motor de capacidad semanal de Conscious Tech, pero me da miedo que sea demasiado complejo para los usuarios al principio. Quiero escribir unas notas primero para bajarlo a tierra.",
+    "elapsedMs": 21950,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Tengo mil ganas de avanzar con el motor de capacidad semanal de Conscious Tech",
+        "title": "Avanzar con el motor de capacidad semanal de Conscious Tech",
+        "type": "task",
+        "project": "Conscious Tech",
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-2",
+        "rawText": "me da miedo que sea demasiado complejo para los usuarios al principio",
+        "title": "Preocupación por la complejidad inicial para los usuarios",
+        "type": "concern",
+        "project": "Conscious Tech",
+        "status": null,
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-3",
+        "rawText": "Quiero escribir unas notas primero para bajarlo a tierra",
+        "title": "Escribir notas para bajar a tierra el motor de capacidad",
+        "type": "task",
+        "project": "Conscious Tech",
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [
+      {
+        "sourceItemId": "item-1",
+        "targetItemId": "item-3",
+        "type": "depends_on",
+        "confidence": "high",
+        "reason": "El texto de item-3 indica explícitamente la intención de escribir notas 'primero' para 'bajarlo a tierra', estableciendo una precondición operativa para avanzar con el motor (item-1)."
+      },
+      {
+        "sourceItemId": "item-3",
+        "targetItemId": "item-1",
+        "type": "part_of",
+        "confidence": "high",
+        "reason": "Escribir las notas para 'bajar a tierra' el motor es una actividad preparatoria y constitutiva necesaria para el desarrollo del motor de capacidad semanal."
+      }
+    ],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-21": {
+    "title": "Compromiso de entrega con cliente exigente",
+    "input": "Entregar el entregable final del diseño de arquitectura a Banco Galicia el 24 de octubre sin falta. Es el hito del contrato.",
+    "elapsedMs": 13741,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Entregar el entregable final del diseño de arquitectura a Banco Galicia el 24 de octubre sin falta. Es el hito del contrato.",
+        "title": "Entregar diseño de arquitectura final a Banco Galicia",
+        "type": "commitment",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "el 24 de octubre",
+          "resolved": "2026-10-24",
+          "confidence": "high"
+        },
+        "estimatedEffort": null,
+        "importance": "high",
+        "commitment": "external"
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-22": {
+    "title": "Mezcla de hobbies y trabajo",
+    "input": "Cambiarle las cuerdas a la guitarra este finde si tengo un rato. Y no olvidarme de renovar el dominio conscious-tech.org antes de que venza el domingo.",
+    "elapsedMs": 23534,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Cambiarle las cuerdas a la guitarra este finde si tengo un rato",
+        "title": "Cambiar cuerdas de la guitarra",
+        "type": "idea",
+        "project": null,
+        "status": "exploring",
+        "deadline": {
+          "raw": "este finde",
+          "resolved": null,
+          "confidence": "low"
+        },
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-2",
+        "rawText": "no olvidarme de renovar el dominio conscious-tech.org antes de que venza el domingo",
+        "title": "Renovar dominio conscious-tech.org",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "antes de que venza el domingo",
+          "resolved": "2026-10-11",
+          "confidence": "high"
+        },
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-23": {
+    "title": "Volcado puramente exploratorio de fin de semana",
+    "input": "Estuve leyendo sobre computación local y modelos cuantizados en GGUF. Capaz se podría correr un Llama pequeño directo en el cliente con WebGPU. Estaría bueno probar un prototipo cuando estemos más tranquilos.",
+    "elapsedMs": 22932,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Estuve leyendo sobre computación local y modelos cuantizados en GGUF.",
+        "title": "Lectura sobre computación local y modelos GGUF",
+        "type": "idea",
+        "project": null,
+        "status": "exploring",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-2",
+        "rawText": "Capaz se podría correr un Llama pequeño directo en el cliente con WebGPU.",
+        "title": "Evaluación de ejecución de Llama pequeño con WebGPU en cliente",
+        "type": "idea",
+        "project": null,
+        "status": "exploring",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-3",
+        "rawText": "Estaría bueno probar un prototipo cuando estemos más tranquilos.",
+        "title": "Probar prototipo de Llama/WebGPU",
+        "type": "idea",
+        "project": null,
+        "status": "exploring",
+        "deadline": {
+          "raw": "cuando estemos más tranquilos",
+          "resolved": null,
+          "confidence": "low"
+        },
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [
+      {
+        "sourceItemId": "item-1",
+        "targetItemId": "item-2",
+        "type": "related_to",
+        "confidence": "high",
+        "reason": "Ambos son ideas exploratorias conectadas temáticamente sobre la ejecución de modelos de IA localmente (GGUF y WebGPU), sin dependencia causal explícita."
+      },
+      {
+        "sourceItemId": "item-2",
+        "targetItemId": "item-3",
+        "type": "related_to",
+        "confidence": "high",
+        "reason": "La evaluación de la viabilidad técnica (item-2) y la intención de probar un prototipo (item-3) son exploraciones relacionadas sobre el mismo tema (Llama/WebGPU), sin que una bloquee operativamente a la otra según el texto."
+      },
+      {
+        "sourceItemId": "item-1",
+        "targetItemId": "item-3",
+        "type": "related_to",
+        "confidence": "medium",
+        "reason": "La lectura sobre modelos GGUF y la prueba de un prototipo de Llama/WebGPU comparten el contexto temático de computación local y modelos cuantizados."
+      }
+    ],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-24": {
+    "title": "Delegación y coordinación con terceros",
+    "input": "Pedirle a Sofía que revise las traducciones al inglés del README. Yo mientras me pongo a escribir los tests unitarios de las skills.",
+    "elapsedMs": 32131,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Pedirle a Sofía que revise las traducciones al inglés del README.",
+        "title": "Pedir a Sofía que revise las traducciones del README",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-2",
+        "rawText": "Yo mientras me pongo a escribir los tests unitarios de las skills.",
+        "title": "Escribir tests unitarios de las skills",
+        "type": "task",
+        "project": null,
+        "status": "started",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
+    }
+  },
+  "case-25": {
+    "title": "Cierre de semana y revisión",
+    "input": "Revisar todo lo que quedó sin hacer de esta semana, rescatar lo que todavía vale la pena y pasar a limpio las notas del cuaderno.",
+    "elapsedMs": 14830,
+    "extractedItems": [
+      {
+        "id": "item-1",
+        "rawText": "Revisar todo lo que quedó sin hacer de esta semana",
+        "title": "Revisar pendientes de la semana",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": {
+          "raw": "esta semana",
+          "resolved": null,
+          "confidence": "low"
+        },
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-2",
+        "rawText": "rescatar lo que todavía vale la pena",
+        "title": "Rescatar elementos valiosos de los pendientes",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      },
+      {
+        "id": "item-3",
+        "rawText": "pasar a limpio las notas del cuaderno",
+        "title": "Pasar a limpio las notas del cuaderno",
+        "type": "task",
+        "project": null,
+        "status": "pending",
+        "deadline": null,
+        "estimatedEffort": null,
+        "importance": null,
+        "commitment": "none"
+      }
+    ],
+    "relationships": [
+      {
+        "sourceItemId": "item-2",
+        "targetItemId": "item-1",
+        "type": "part_of",
+        "confidence": "high",
+        "reason": "El texto de item-2 ('rescatar lo que todavía vale la pena') describe una acción específica que forma parte constitutiva de la revisión general de pendientes descrita en item-1 ('Revisar todo lo que quedó sin hacer')."
+      }
+    ],
+    "validation": {
+      "valid": true,
+      "errors": [],
+      "checks": {
+        "validIds": true,
+        "noSelfRelations": true,
+        "noDuplicateRelations": true,
+        "canonicalTypes": true,
+        "nonEmptyReasons": true,
+        "validConfidence": true,
+        "schemaCompliant": true
+      }
     }
   }
 }

@@ -29,6 +29,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Architecture Documentation**:
   - ADR 0002: Detect Relationships — Conservative Semantic Links and Deterministic Post-Processing.
 
+### Changed
+- **Calibrated `detect_relationships` Semantic Prompt & Evaluation**:
+  - Enforced strict isolation of `CONCERN` elements: emotional/cognitive load reflections remain excluded from task dependency graphs.
+  - Explicit prerequisite capture: functional preconditions ("antes tengo que X para Y", "primero X para Y", "después de X") are declared as canonical `depends_on`.
+  - Demoted chained brainstorming thoughts to `related_to` rather than artificial causal `depends_on`.
+  - Refined `part_of` for constituent preparatory/delivery subtasks.
+  - Enhanced unified evaluation pipeline (`scripts/eval-cases.ts`) with backoff rate-limit handling and real-time schema validation across 25 real dumps.
+  - Expanded behavioral test suite to 61 deterministic tests.
+
 ## [0.1.0] - 2026-10-06
 
 ### Added

@@ -258,20 +258,76 @@ describe("Skill 02: detect_relationships - Behavioral & Minimum Test Suite", () 
     expect(hotfixRel).toBeUndefined();
   });
 
-  // Real Case: Caso 20 — Conscious Tech
-  it("Real Case: Caso 20 detects semantic links between Capacity Engine and notes without creating a group", async () => {
+  // Real Case: Caso 20 — Conscious Tech (Concern isolated, precondition is depends_on)
+  it("Real Case: Caso 20 isolates concern and detects 'motor depends_on notas'", async () => {
     const case20Items = mockCasesData["case-20"]!.items as ExtractedItem[];
     const provider = new MockProvider();
 
     const result = await detectRelationships(provider, { items: case20Items });
-    expect(result.relationships.length).toBeGreaterThanOrEqual(2);
-    const capacityRel = result.relationships.find(
-      (r) =>
-        ((r.sourceItemId === "c20-1" && r.targetItemId === "c20-3") ||
-          (r.sourceItemId === "c20-3" && r.targetItemId === "c20-1")) &&
-        r.type === "related_to"
+    expect(result.relationships).toHaveLength(1);
+
+    const dep = result.relationships.find(
+      (r) => r.sourceItemId === "c20-1" && r.targetItemId === "c20-3" && r.type === "depends_on"
     );
-    expect(capacityRel).toBeDefined();
+    expect(dep).toBeDefined();
+    expect(dep?.reason).toContain("notas");
+
+    // Concern (c20-2) must be completely isolated
+    const concernRel = result.relationships.find(
+      (r) => r.sourceItemId === "c20-2" || r.targetItemId === "c20-2"
+    );
+    expect(concernRel).toBeUndefined();
+  });
+
+  // Real Case: Caso 02 — Hacienda (Concern isolated, tasks linked)
+  it("Real Case: Caso 02 isolates agobio concern and links fiscal tasks", async () => {
+    const case02Items = mockCasesData["case-02"]!.items as ExtractedItem[];
+    const provider = new MockProvider();
+
+    const result = await detectRelationships(provider, { items: case02Items });
+    expect(result.relationships).toHaveLength(1);
+
+    const taskRel = result.relationships.find(
+      (r) =>
+        ((r.sourceItemId === "c02-1" && r.targetItemId === "c02-3") ||
+          (r.sourceItemId === "c02-3" && r.targetItemId === "c02-1")) &&
+        r.type === "same_objective"
+    );
+    expect(taskRel).toBeDefined();
+
+    // Concern (c02-2) must have no relationships
+    const concernRel = result.relationships.find(
+      (r) => r.sourceItemId === "c02-2" || r.targetItemId === "c02-2"
+    );
+    expect(concernRel).toBeUndefined();
+  });
+
+  // Real Case: Caso 15 — Precondition 'antes tengo que' is depends_on
+  it("Real Case: Caso 15 detects 'subir npm depends_on correr tests'", async () => {
+    const case15Items = mockCasesData["case-15"]!.items as ExtractedItem[];
+    const provider = new MockProvider();
+
+    const result = await detectRelationships(provider, { items: case15Items });
+    expect(result.relationships).toHaveLength(1);
+
+    const npmDep = result.relationships.find(
+      (r) => r.sourceItemId === "c15-2" && r.targetItemId === "c15-1" && r.type === "depends_on"
+    );
+    expect(npmDep).toBeDefined();
+  });
+
+  // Real Case: Caso 25 — Constituent task is part_of
+  it("Real Case: Caso 25 detects 'rescatar valiosos part_of revisar pendientes'", async () => {
+    const case25Items = mockCasesData["case-25"]!.items as ExtractedItem[];
+    const provider = new MockProvider();
+
+    const result = await detectRelationships(provider, { items: case25Items });
+    expect(result.relationships).toHaveLength(1);
+
+    const partOfRel = result.relationships.find(
+      (r) => r.sourceItemId === "c25-2" && r.targetItemId === "c25-1" && r.type === "part_of"
+    );
+    expect(partOfRel).toBeDefined();
   });
 
   // Real Case: Caso 03 — Independent items

@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "eval": "tsx scripts/eval-cases.ts",
-    "eval:relationships": "tsx scripts/eval-relationships.ts"
+    "eval:items": "tsx scripts/eval-cases.ts --skill=extract_items",
+    "eval:relationships": "tsx scripts/eval-cases.ts --skill=detect_relationships"
   },
   "dependencies": {
     "@google/genai": "^2.27.0",

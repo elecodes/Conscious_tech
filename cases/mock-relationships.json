@@ -1,4 +1,27 @@
 {
+  "case-01": {
+    "relationships": []
+  },
+  "case-02": {
+    "relationships": [
+      {
+        "sourceItemId": "c02-1",
+        "targetItemId": "c02-3",
+        "type": "same_objective",
+        "confidence": "medium",
+        "reason": "Ambas tareas apuntan directamente al cierre contable y fiscal del trimestre"
+      }
+    ]
+  },
+  "case-03": {
+    "relationships": []
+  },
+  "case-04": {
+    "relationships": []
+  },
+  "case-05": {
+    "relationships": []
+  },
   "case-06": {
     "relationships": [
       {
@@ -7,8 +30,30 @@
         "type": "depends_on",
         "confidence": "high",
         "reason": "La integración de Stripe está explícitamente frenada a la espera de las credenciales de webhook"
+      },
+      {
+        "sourceItemId": "c06-1",
+        "targetItemId": "c06-3",
+        "type": "same_project",
+        "confidence": "high",
+        "reason": "Ambas tareas pertenecen al desarrollo de la tienda online"
       }
     ]
+  },
+  "case-07": {
+    "relationships": []
+  },
+  "case-08": {
+    "relationships": []
+  },
+  "case-09": {
+    "relationships": []
+  },
+  "case-10": {
+    "relationships": []
+  },
+  "case-11": {
+    "relationships": []
   },
   "case-12": {
     "relationships": [
@@ -42,6 +87,48 @@
       }
     ]
   },
+  "case-13": {
+    "relationships": [
+      {
+        "sourceItemId": "c13-2",
+        "targetItemId": "c13-1",
+        "type": "part_of",
+        "confidence": "high",
+        "reason": "Definir el título de la charla es una tarea constitutiva y preparatoria para la participación en el meetup"
+      }
+    ]
+  },
+  "case-14": {
+    "relationships": []
+  },
+  "case-15": {
+    "relationships": [
+      {
+        "sourceItemId": "c15-2",
+        "targetItemId": "c15-1",
+        "type": "depends_on",
+        "confidence": "high",
+        "reason": "Subir la versión a npm requiere explícitamente correr los tests de integración antes para no romper nada"
+      }
+    ]
+  },
+  "case-16": {
+    "relationships": []
+  },
+  "case-17": {
+    "relationships": [
+      {
+        "sourceItemId": "c17-1",
+        "targetItemId": "c17-2",
+        "type": "related_to",
+        "confidence": "high",
+        "reason": "Ambas tareas corresponden a limpieza y resolución de deuda técnica del sprint pasado"
+      }
+    ]
+  },
+  "case-18": {
+    "relationships": []
+  },
   "case-19": {
     "relationships": [
       {
@@ -56,22 +143,50 @@
   "case-20": {
     "relationships": [
       {
-        "sourceItemId": "c20-2",
-        "targetItemId": "c20-1",
-        "type": "related_to",
+        "sourceItemId": "c20-1",
+        "targetItemId": "c20-3",
+        "type": "depends_on",
         "confidence": "high",
-        "reason": "El temor a la sobrecomplejidad refiere directamente al desarrollo del motor de capacidad"
-      },
-      {
-        "sourceItemId": "c20-3",
-        "targetItemId": "c20-1",
-        "type": "related_to",
-        "confidence": "high",
-        "reason": "Escribir notas de diseño conceptual apunta a bajar a tierra el motor de capacidad"
+        "reason": "Avanzar con el motor de capacidad requiere explícitamente escribir las notas de diseño conceptual primero"
       }
     ]
   },
-  "case-03": {
+  "case-21": {
     "relationships": []
+  },
+  "case-22": {
+    "relationships": []
+  },
+  "case-23": {
+    "relationships": [
+      {
+        "sourceItemId": "c23-1",
+        "targetItemId": "c23-2",
+        "type": "related_to",
+        "confidence": "high",
+        "reason": "Ambos elementos son exploraciones conceptuales conectadas sobre modelos locales y WebGPU"
+      },
+      {
+        "sourceItemId": "c23-2",
+        "targetItemId": "c23-3",
+        "type": "related_to",
+        "confidence": "high",
+        "reason": "La idea del prototipo surge directamente de la exploración de WebGPU"
+      }
+    ]
+  },
+  "case-24": {
+    "relationships": []
+  },
+  "case-25": {
+    "relationships": [
+      {
+        "sourceItemId": "c25-2",
+        "targetItemId": "c25-1",
+        "type": "part_of",
+        "confidence": "high",
+        "reason": "Rescatar tareas valiosas es una subtarea constitutiva de la revisión de pendientes de la semana"
+      }
+    ]
   }
 }
