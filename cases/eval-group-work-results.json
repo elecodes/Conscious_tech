@@ -1,0 +1,28 @@
+{
+  "case-20": {
+    "caseId": "case-20",
+    "input": "Tengo mil ganas de avanzar con el motor de capacidad semanal de Conscious Tech, pero me da miedo que sea demasiado complejo para los usuarios al principio. Quiero escribir unas notas primero para bajarlo a tierra.",
+    "elapsedMs": 14623,
+    "itemsCount": 3,
+    "relationshipsCount": 2,
+    "groupsCount": 1,
+    "groups": [
+      {
+        "id": "group-1",
+        "title": "Desarrollo del motor de capacidad semanal",
+        "itemIds": [
+          "item-1",
+          "item-3"
+        ],
+        "rationale": "Ambos elementos se centran en el mismo entregable específico (el motor de capacidad). La escritura de notas (item-3) es una actividad preparatoria y constitutiva (part_of) para avanzar con el desarrollo del motor (item-1), formando una línea de trabajo coherente de diseño y ejecución."
+      }
+    ],
+    "ungroupedItemIds": [
+      "item-2"
+    ],
+    "validation": {
+      "valid": true,
+      "errors": []
+    }
+  }
+}

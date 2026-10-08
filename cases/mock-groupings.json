@@ -1,0 +1,79 @@
+{
+  "case-02": {
+    "groups": [
+      {
+        "id": "group-cierre-fiscal",
+        "title": "Cierre contable y fiscal trimestral",
+        "itemIds": ["c02-1", "c02-3"],
+        "rationale": "Ambas tareas persiguen directamente el mismo objetivo de completar la presentación tributaria y facturación del trimestre"
+      }
+    ],
+    "ungroupedItemIds": ["c02-2"]
+  },
+  "case-06": {
+    "groups": [
+      {
+        "id": "group-tienda-online",
+        "title": "Desarrollo de la tienda online",
+        "itemIds": ["c06-1", "c06-3"],
+        "rationale": "Ambas tareas corresponden al mismo proyecto de tienda online y avanzan en su desarrollo"
+      }
+    ],
+    "ungroupedItemIds": ["c06-2"]
+  },
+  "case-12": {
+    "groups": [
+      {
+        "id": "group-lanzamiento-beta",
+        "title": "Lanzamiento beta cerrada",
+        "itemIds": ["c12-1", "c12-2", "c12-3", "c12-4", "c12-5"],
+        "rationale": "Todas las subtareas son constitutivas y preparatorias para la puesta en marcha de la beta cerrada"
+      }
+    ],
+    "ungroupedItemIds": []
+  },
+  "case-13": {
+    "groups": [
+      {
+        "id": "group-charla-meetup",
+        "title": "Participación en meetup de IA",
+        "itemIds": ["c13-1", "c13-2"],
+        "rationale": "Definir el título es una subtarea preparatoria directa para la participación en el meetup"
+      }
+    ],
+    "ungroupedItemIds": []
+  },
+  "case-17": {
+    "groups": [
+      {
+        "id": "group-limpieza-deuda",
+        "title": "Limpieza y deuda técnica de infraestructura",
+        "itemIds": ["c17-1", "c17-2"],
+        "rationale": "Ambas tareas comparten el mismo hilo de mantenimiento y resolución de deuda técnica del sprint anterior"
+      }
+    ],
+    "ungroupedItemIds": []
+  },
+  "case-20": {
+    "groups": [
+      {
+        "id": "group-motor-capacidad",
+        "title": "Diseño conceptual del motor de capacidad",
+        "itemIds": ["c20-1", "c20-3"],
+        "rationale": "Escribir las notas es la actividad preparatoria indispensable para avanzar con el motor de capacidad"
+      }
+    ],
+    "ungroupedItemIds": ["c20-2"]
+  },
+  "case-25": {
+    "groups": [
+      {
+        "id": "group-cierre-semana",
+        "title": "Revisión semanal de pendientes",
+        "itemIds": ["c25-1", "c25-2"],
+        "rationale": "Rescatar notas valiosas es una subtarea constitutiva de la revisión de pendientes de la semana"
+      }
+    ],
+    "ungroupedItemIds": []
+  }
+}

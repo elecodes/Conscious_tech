@@ -12,6 +12,12 @@ import {
   buildUserPrompt as buildRelUserPrompt,
 } from "../skills/detect-relationships/prompt";
 import { parseAndValidateRelationships } from "../skills/detect-relationships/parser";
+import { GroupWorkInput, GroupedWork } from "../domain/work-groups";
+import {
+  SYSTEM_PROMPT as GROUP_SYSTEM_PROMPT,
+  buildUserPrompt as buildGroupUserPrompt,
+} from "../skills/group-work/prompt";
+import { parseAndValidateGroupedWork } from "../skills/group-work/parser";
 
 export interface GeminiProviderOptions {
   apiKey?: string;
@@ -68,5 +74,24 @@ export class GeminiProvider implements AIProvider {
     }
 
     return parseAndValidateRelationships(content);
+  }
+
+  async groupWork(input: GroupWorkInput): Promise<GroupedWork> {
+    const response = await this.client.models.generateContent({
+      model: this.model,
+      contents: buildGroupUserPrompt(input),
+      config: {
+        systemInstruction: GROUP_SYSTEM_PROMPT,
+        responseMimeType: "application/json",
+        temperature: 0.1,
+      },
+    });
+
+    const content = response.text;
+    if (!content) {
+      throw new Error("Gemini returned an empty response");
+    }
+
+    return parseAndValidateGroupedWork(content);
   }
 }

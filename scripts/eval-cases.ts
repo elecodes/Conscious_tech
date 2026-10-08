@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 import { createAIProvider, ProviderType } from "../src/providers/factory";
 import { extractItems } from "../src/skills/extract-items";
 import { detectRelationships } from "../src/skills/detect-relationships";
+import { groupWork } from "../src/skills/group-work";
+import { validateGroupWorkInvariants } from "../src/skills/group-work/deterministic";
 import { ExtractedItem } from "../src/domain/items";
 import {
   Relationship,
@@ -352,6 +354,175 @@ async function runSkill02Evaluation(
   console.log(`✅ Resultados guardados en: cases/eval-relationships-results.json`);
 }
 
+async function runSkill03Evaluation(
+  provider: ReturnType<typeof createAIProvider>,
+  providerArg: string,
+  filteredCases: CaseDump[],
+  currentDate: string
+) {
+  console.log(`\n======================================================`);
+  console.log(`📦 EVALUANDO SKILL: group_work`);
+  console.log(`🤖 Proveedor: ${providerArg}`);
+  if (providerArg === "mock") {
+    console.log(`ℹ️ Modo mock determinista (fixtures para casos conocidos, 0 tokens)`);
+  }
+  console.log(`======================================================\n`);
+
+  const results: Record<string, unknown> = {};
+
+  let casesWithGroups = 0;
+  let casesWithoutGroups = 0;
+  let totalGroups = 0;
+  let totalItemsInGroups = 0;
+  let totalUngroupedItems = 0;
+  let totalValidationErrors = 0;
+
+  for (const c of filteredCases) {
+    const caseIndex = c.id.replace("case-", "");
+    console.log(`------------------------------------------------------`);
+    console.log(`CASE ${caseIndex}`);
+    console.log(`Input:\n"${c.text}"\n`);
+
+    let success = false;
+    let attempt = 0;
+    while (!success && attempt < 4) {
+      attempt++;
+      const start = Date.now();
+      try {
+        // 1. extract_items
+        const extractionOutput = await extractItems(provider, {
+          text: c.text,
+          currentDate,
+          locale: "es-ES",
+        });
+
+        if (providerArg !== "mock") {
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+
+        // 2. detect_relationships
+        const relationshipsOutput = await detectRelationships(provider, {
+          items: extractionOutput.items,
+        });
+
+        if (providerArg !== "mock") {
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+
+        // 3. group_work
+        const groupedOutput = await groupWork(provider, {
+          items: extractionOutput.items,
+          relationships: relationshipsOutput.relationships,
+        });
+        const elapsed = Date.now() - start;
+
+        console.log(`Extracted items (${extractionOutput.items.length}):`);
+        for (const item of extractionOutput.items) {
+          console.log(`- ${item.id}: ${item.title}`);
+        }
+
+        console.log(`\nDetected relationships (${relationshipsOutput.relationships.length}):`);
+        if (relationshipsOutput.relationships.length === 0) {
+          console.log(`- none`);
+        } else {
+          for (const rel of relationshipsOutput.relationships) {
+            console.log(`- ${rel.sourceItemId} --(${rel.type})--> ${rel.targetItemId}`);
+          }
+        }
+
+        console.log(`\nGrouped work:`);
+        if (groupedOutput.groups.length === 0) {
+          console.log(`- no groups formed`);
+        } else {
+          for (const g of groupedOutput.groups) {
+            console.log(`📁 Grupo: "${g.title}" [${g.id}]`);
+            console.log(`   Items (${g.itemIds.length}): ${g.itemIds.join(", ")}`);
+            console.log(`   Rationale: ${g.rationale}`);
+          }
+        }
+
+        console.log(`Ungrouped items (${groupedOutput.ungroupedItemIds.length}):`);
+        if (groupedOutput.ungroupedItemIds.length === 0) {
+          console.log(`- none`);
+        } else {
+          console.log(`- ${groupedOutput.ungroupedItemIds.join(", ")}`);
+        }
+
+        // Deterministic domain invariant check
+        const invariants = validateGroupWorkInvariants(groupedOutput, extractionOutput.items);
+        console.log(`\nValidation:`);
+        if (invariants.valid) {
+          console.log(`✓ all invariants satisfied`);
+          console.log(`✓ disjoint groups (no items in multiple groups)`);
+          console.log(`✓ conservation verified (0 items lost, 0 phantoms)`);
+        } else {
+          console.log(`❌ Invariant errors:`);
+          for (const err of invariants.errors) {
+            console.log(`  - ${err}`);
+          }
+          totalValidationErrors++;
+        }
+
+        if (groupedOutput.groups.length > 0) {
+          casesWithGroups++;
+        } else {
+          casesWithoutGroups++;
+        }
+
+        totalGroups += groupedOutput.groups.length;
+        totalItemsInGroups += groupedOutput.groups.reduce((acc, g) => acc + g.itemIds.length, 0);
+        totalUngroupedItems += groupedOutput.ungroupedItemIds.length;
+
+        results[c.id] = {
+          caseId: c.id,
+          input: c.text,
+          elapsedMs: elapsed,
+          itemsCount: extractionOutput.items.length,
+          relationshipsCount: relationshipsOutput.relationships.length,
+          groupsCount: groupedOutput.groups.length,
+          groups: groupedOutput.groups,
+          ungroupedItemIds: groupedOutput.ungroupedItemIds,
+          validation: invariants,
+        };
+
+        success = true;
+      } catch (err) {
+        const errorMsg = (err as Error).message;
+        if (errorMsg.includes("rate_limit_exceeded") || errorMsg.includes("429")) {
+          const waitSec = attempt * 12;
+          console.warn(`⏳ Rate limit alcanzado en ${c.id}. Reintentando en ${waitSec}s (intento ${attempt}/4)...`);
+          await new Promise((r) => setTimeout(r, waitSec * 1000));
+        } else {
+          console.error(`\n❌ Error en pipeline: ${errorMsg}`);
+          totalValidationErrors++;
+          success = true;
+        }
+      }
+    }
+
+    if (providerArg !== "mock") {
+      await new Promise((r) => setTimeout(r, 2500));
+    }
+  }
+
+  console.log(`\n======================================================`);
+  console.log(`📊 RESUMEN DE EVALUACIÓN: group_work`);
+  console.log(`🤖 Proveedor: ${providerArg}`);
+  console.log(`======================================================`);
+  console.log(`Total cases: ${filteredCases.length}`);
+  console.log(`Cases with groups: ${casesWithGroups}`);
+  console.log(`Cases without groups: ${casesWithoutGroups}`);
+  console.log(`Total groups formed: ${totalGroups}`);
+  console.log(`Total items in groups: ${totalItemsInGroups}`);
+  console.log(`Total ungrouped items: ${totalUngroupedItems}`);
+  console.log(`Validation errors: ${totalValidationErrors}`);
+  console.log(`======================================================\n`);
+
+  const outPath = path.resolve(__dirname, "../cases/eval-group-work-results.json");
+  fs.writeFileSync(outPath, JSON.stringify(results, null, 2), "utf-8");
+  console.log(`✅ Resultados guardados en: cases/eval-group-work-results.json`);
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const providerArg =
@@ -362,7 +533,7 @@ async function main() {
   const skillArg =
     args.find((a) => a.startsWith("--skill="))?.split("=")[1] ||
     process.env.EVAL_SKILL ||
-    "detect_relationships";
+    "group_work";
 
   let provider;
   try {
@@ -390,8 +561,10 @@ async function main() {
 
   if (skillArg === "extract_items") {
     await runSkill01Evaluation(provider, providerArg, filteredCases, currentDate);
-  } else {
+  } else if (skillArg === "detect_relationships") {
     await runSkill02Evaluation(provider, providerArg, filteredCases, currentDate);
+  } else {
+    await runSkill03Evaluation(provider, providerArg, filteredCases, currentDate);
   }
 }
 
@@ -399,3 +572,4 @@ main().catch((err) => {
   console.error("Fatal error:", err);
   process.exit(1);
 });
+

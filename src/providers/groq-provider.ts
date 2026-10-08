@@ -12,6 +12,12 @@ import {
   buildUserPrompt as buildRelUserPrompt,
 } from "../skills/detect-relationships/prompt";
 import { parseAndValidateRelationships } from "../skills/detect-relationships/parser";
+import { GroupWorkInput, GroupedWork } from "../domain/work-groups";
+import {
+  SYSTEM_PROMPT as GROUP_SYSTEM_PROMPT,
+  buildUserPrompt as buildGroupUserPrompt,
+} from "../skills/group-work/prompt";
+import { parseAndValidateGroupedWork } from "../skills/group-work/parser";
 
 export interface GroqProviderOptions {
   apiKey?: string;
@@ -70,5 +76,25 @@ export class GroqProvider implements AIProvider {
     }
 
     return parseAndValidateRelationships(content);
+  }
+
+  async groupWork(input: GroupWorkInput): Promise<GroupedWork> {
+    const response = await this.client.chat.completions.create({
+      model: this.model,
+      messages: [
+        { role: "system", content: GROUP_SYSTEM_PROMPT },
+        { role: "user", content: buildGroupUserPrompt(input) },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+      max_tokens: 1200,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("Groq returned an empty response");
+    }
+
+    return parseAndValidateGroupedWork(content);
   }
 }
