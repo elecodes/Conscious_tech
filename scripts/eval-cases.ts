@@ -519,7 +519,14 @@ async function runSkill03Evaluation(
   console.log(`======================================================\n`);
 
   const outPath = path.resolve(__dirname, "../cases/eval-group-work-results.json");
-  fs.writeFileSync(outPath, JSON.stringify(results, null, 2), "utf-8");
+  let finalResults = results;
+  if (filteredCases.length < 25 && fs.existsSync(outPath)) {
+    try {
+      const prev = JSON.parse(fs.readFileSync(outPath, "utf-8"));
+      finalResults = { ...prev, ...results };
+    } catch {}
+  }
+  fs.writeFileSync(outPath, JSON.stringify(finalResults, null, 2), "utf-8");
   console.log(`✅ Resultados guardados en: cases/eval-group-work-results.json`);
 }
 

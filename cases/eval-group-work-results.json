@@ -24,5 +24,32 @@
       "valid": true,
       "errors": []
     }
+  },
+  "case-12": {
+    "caseId": "case-12",
+    "input": "Queremos lanzar la beta cerrada de la app en noviembre. Faltan un montón de cosas: testing de usuarios, pulir el onboarding, arreglar los bugs de Safari en mobile y redactar los términos de privacidad.",
+    "elapsedMs": 27160,
+    "itemsCount": 5,
+    "relationshipsCount": 4,
+    "groupsCount": 1,
+    "groups": [
+      {
+        "id": "group-1",
+        "title": "Lanzamiento beta cerrada",
+        "itemIds": [
+          "item-1",
+          "item-2",
+          "item-3",
+          "item-4",
+          "item-5"
+        ],
+        "rationale": "Todos los elementos están vinculados por relaciones 'part_of' al hito principal del lanzamiento de la beta cerrada, constituyendo las tareas preparatorias y operativas necesarias para dicho entregable."
+      }
+    ],
+    "ungroupedItemIds": [],
+    "validation": {
+      "valid": true,
+      "errors": []
+    }
   }
 }
