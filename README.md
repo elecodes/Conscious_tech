@@ -97,7 +97,7 @@ Detects and normalizes explicit and relative temporal constraints without priori
 - **Output**: Structured `DetectedDeadlines` (`itemId`, `raw`, `kind`, `resolvedStart`, `resolvedEnd`, `confidence`).
 - **Core Principle**: Never invent a date. Distinguishes deadlines from past narrative context ("El viernes estuve hablando con Marta"). Discards vague desires ("algún día", "cuando estemos más tranquilos").
 - **Deterministic Engine**: Pure UTC date math relative to `currentDate` ("hoy", "mañana", "este fin de semana", weekdays), calendar validity verification (`YYYY-MM-DD`), and range consistency (`resolvedStart <= resolvedEnd`).
-- **Test Suite**: 113 passing unit and behavioral tests running in < 500ms with zero token expenditure.
+- **Test Suite**: 130 passing unit and behavioral tests running in < 500ms with zero token expenditure.
 
 ---
 

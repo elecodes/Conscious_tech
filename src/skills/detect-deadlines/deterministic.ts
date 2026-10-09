@@ -73,6 +73,41 @@ export function parseIsoDate(iso: string): Date {
   return new Date(Date.UTC(y!, m! - 1, d!));
 }
 
+export interface DeterministicDateResolution {
+  resolvedStart?: string | null;
+  resolvedEnd?: string | null;
+  kind?: DeadlineKind;
+  confidence?: "high" | "medium" | "low";
+}
+
+const MONTH_NAMES_MAP: Record<string, number> = {
+  enero: 1,
+  febrero: 2,
+  marzo: 3,
+  abril: 4,
+  mayo: 5,
+  junio: 6,
+  julio: 7,
+  agosto: 8,
+  septiembre: 9,
+  setiembre: 9,
+  octubre: 10,
+  noviembre: 11,
+  diciembre: 12,
+};
+
+const DAY_OF_WEEK_MAP: Record<string, number> = {
+  domingo: 0,
+  lunes: 1,
+  martes: 2,
+  miércoles: 3,
+  miercoles: 3,
+  jueves: 4,
+  viernes: 5,
+  sábado: 6,
+  sabado: 6,
+};
+
 /**
  * Deterministically resolves common relative and calendar expressions
  * against an explicit currentDate (YYYY-MM-DD) anchor.
@@ -80,84 +115,280 @@ export function parseIsoDate(iso: string): Date {
 export function resolveDateDeterministically(
   raw: string,
   currentDate: string
-): { resolvedStart?: string; resolvedEnd?: string; kind?: DeadlineKind } | null {
+): DeterministicDateResolution | null {
   if (!isValidIsoDate(currentDate)) {
     return null;
   }
 
   const norm = raw.trim().toLowerCase();
   const anchor = parseIsoDate(currentDate);
+  const anchorYear = anchor.getUTCFullYear();
+  const anchorMonth = anchor.getUTCMonth(); // 0-indexed
 
-  // 1. "hoy" / "hoy mismo"
-  if (norm === "hoy" || norm === "hoy mismo" || norm.startsWith("hoy ")) {
+  // 1. "hoy" / "hoy mismo" / "para hoy"
+  if (norm === "hoy" || norm === "hoy mismo" || norm === "para hoy" || norm.startsWith("hoy ")) {
     return {
       resolvedStart: formatIsoDate(anchor),
+      resolvedEnd: null,
       kind: "relative_date",
+      confidence: "high",
     };
   }
 
-  // 2. "mañana" / "para mañana"
+  // 2. "mañana" / "para mañana" / "mañana después de..."
   if (norm === "mañana" || norm === "para mañana" || norm.startsWith("mañana ")) {
     const d = new Date(anchor);
     d.setUTCDate(d.getUTCDate() + 1);
     return {
       resolvedStart: formatIsoDate(d),
+      resolvedEnd: null,
       kind: "relative_date",
+      confidence: "high",
     };
   }
 
-  // 3. "pasado mañana"
+  // 3. "pasado mañana" / "para pasado mañana"
   if (norm === "pasado mañana" || norm === "para pasado mañana") {
     const d = new Date(anchor);
     d.setUTCDate(d.getUTCDate() + 2);
     return {
       resolvedStart: formatIsoDate(d),
+      resolvedEnd: null,
       kind: "relative_date",
+      confidence: "high",
     };
   }
 
-  // 4. Day of week mapping
-  const dayOfWeekMap: Record<string, number> = {
-    domingo: 0,
-    lunes: 1,
-    martes: 2,
-    miércoles: 3,
-    miercoles: 3,
-    jueves: 4,
-    viernes: 5,
-    sábado: 6,
-    sabado: 6,
-  };
-
-  // "este fin de semana" / "el finde" / "durante este fin de semana"
+  // 4. "este fin de semana" / "este finde" / "el finde"
   if (norm.includes("fin de semana") || norm.includes("finde")) {
     const currentDay = anchor.getUTCDay(); // 0 (Sun) - 6 (Sat)
-    const daysUntilSaturday = (6 - currentDay + 7) % 7;
-    const sat = new Date(anchor);
-    sat.setUTCDate(sat.getUTCDate() + daysUntilSaturday);
-    const sun = new Date(sat);
-    sun.setUTCDate(sun.getUTCDate() + 1);
+    if (currentDay === 0) {
+      // Today is Sunday: current weekend is today
+      return {
+        resolvedStart: formatIsoDate(anchor),
+        resolvedEnd: formatIsoDate(anchor),
+        kind: "date_range",
+        confidence: "high",
+      };
+    } else if (currentDay === 6) {
+      // Today is Saturday: Saturday to Sunday
+      const sun = new Date(anchor);
+      sun.setUTCDate(sun.getUTCDate() + 1);
+      return {
+        resolvedStart: formatIsoDate(anchor),
+        resolvedEnd: formatIsoDate(sun),
+        kind: "date_range",
+        confidence: "high",
+      };
+    } else {
+      // Mon - Fri: upcoming Saturday and Sunday of this week
+      const daysUntilSaturday = 6 - currentDay;
+      const sat = new Date(anchor);
+      sat.setUTCDate(sat.getUTCDate() + daysUntilSaturday);
+      const sun = new Date(sat);
+      sun.setUTCDate(sun.getUTCDate() + 1);
+      return {
+        resolvedStart: formatIsoDate(sat),
+        resolvedEnd: formatIsoDate(sun),
+        kind: "date_range",
+        confidence: "high",
+      };
+    }
+  }
+
+  // 5. Explicit date range with month: "del 10 al 12 de noviembre"
+  const rangeWithMonthRegex = /^del\s+(\d{1,2})\s+al\s+(\d{1,2})\s+de\s+([a-záéíóú]+)/i;
+  const rangeMatch = norm.match(rangeWithMonthRegex);
+  if (rangeMatch && rangeMatch[1] && rangeMatch[2] && rangeMatch[3]) {
+    const startDay = Number(rangeMatch[1]);
+    const endDay = Number(rangeMatch[2]);
+    const monthNum = MONTH_NAMES_MAP[rangeMatch[3]];
+    if (monthNum) {
+      const year = monthNum < anchorMonth + 1 ? anchorYear + 1 : anchorYear;
+      const startIso = `${year}-${String(monthNum).padStart(2, "0")}-${String(startDay).padStart(2, "0")}`;
+      const endIso = `${year}-${String(monthNum).padStart(2, "0")}-${String(endDay).padStart(2, "0")}`;
+      if (isValidIsoDate(startIso) && isValidIsoDate(endIso)) {
+        return {
+          resolvedStart: startIso,
+          resolvedEnd: endIso,
+          kind: "date_range",
+          confidence: "high",
+        };
+      }
+    }
+  }
+
+  // 6. Explicit exact date with month: "el 15 de noviembre", "24 de octubre", "el 24 de octubre sin falta"
+  const exactWithMonthRegex = /(?:el\s+)?(\d{1,2})\s+de\s+([a-záéíóú]+)/i;
+  const exactMatch = norm.match(exactWithMonthRegex);
+  if (exactMatch && exactMatch[1] && exactMatch[2]) {
+    const day = Number(exactMatch[1]);
+    const monthNum = MONTH_NAMES_MAP[exactMatch[2]];
+    if (monthNum) {
+      const year = monthNum < anchorMonth + 1 ? anchorYear + 1 : anchorYear;
+      const iso = `${year}-${String(monthNum).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      if (isValidIsoDate(iso)) {
+        return {
+          resolvedStart: iso,
+          resolvedEnd: null,
+          kind: "exact_date",
+          confidence: "high",
+        };
+      }
+    }
+  }
+
+  // 7. Month intervals: "este mes", "el mes que viene"
+  if (norm === "este mes" || norm.includes("este mes")) {
+    const firstDay = `${anchorYear}-${String(anchorMonth + 1).padStart(2, "0")}-01`;
+    const lastDayDate = new Date(Date.UTC(anchorYear, anchorMonth + 1, 0));
     return {
-      resolvedStart: formatIsoDate(sat),
-      resolvedEnd: formatIsoDate(sun),
-      kind: "date_range",
+      resolvedStart: firstDay,
+      resolvedEnd: formatIsoDate(lastDayDate),
+      kind: "relative_date",
+      confidence: "medium",
     };
   }
 
-  // Single weekday relative target: "este viernes", "el martes", "el próximo lunes"
-  for (const [dayName, targetDayNum] of Object.entries(dayOfWeekMap)) {
-    const regex = new RegExp(`(?:el|este|para el|antes del)?\\s*${dayName}\\b`, "i");
-    if (regex.test(norm)) {
-      const currentDay = anchor.getUTCDay();
+  if (norm.includes("mes que viene") || norm.includes("el mes próximo") || norm.includes("mes proximo")) {
+    const nextMonthAnchor = new Date(Date.UTC(anchorYear, anchorMonth + 1, 1));
+    const nextY = nextMonthAnchor.getUTCFullYear();
+    const nextM = nextMonthAnchor.getUTCMonth();
+    const firstDay = `${nextY}-${String(nextM + 1).padStart(2, "0")}-01`;
+    const lastDayDate = new Date(Date.UTC(nextY, nextM + 1, 0));
+    return {
+      resolvedStart: firstDay,
+      resolvedEnd: formatIsoDate(lastDayDate),
+      kind: "relative_date",
+      confidence: "medium",
+    };
+  }
+
+  // 8. "antes del [día número]" without explicit month: "antes del 20"
+  const antesDelNumeroRegex = /^antes\s+del\s+(\d{1,2})$/i;
+  const antesNumMatch = norm.match(antesDelNumeroRegex);
+  if (antesNumMatch && antesNumMatch[1]) {
+    const targetDay = Number(antesNumMatch[1]);
+    if (targetDay >= 1 && targetDay <= 31) {
+      // If target day has already passed in this month, project to next month
+      let targetYear = anchorYear;
+      let targetMonth = anchorMonth;
+      if (targetDay <= anchor.getUTCDate()) {
+        targetMonth += 1;
+        if (targetMonth > 11) {
+          targetMonth = 0;
+          targetYear += 1;
+        }
+      }
+      const iso = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}-${String(targetDay).padStart(2, "0")}`;
+      if (isValidIsoDate(iso)) {
+        return {
+          resolvedStart: null,
+          resolvedEnd: iso,
+          kind: "relative_date",
+          confidence: "medium",
+        };
+      }
+    }
+  }
+
+  // 9. Weekdays with semantic modifiers
+  for (const [dayName, targetDayNum] of Object.entries(DAY_OF_WEEK_MAP)) {
+    if (!norm.includes(dayName)) continue;
+
+    const currentDay = anchor.getUTCDay();
+
+    // Pattern A: "el próximo [día]" / "el [día] que viene" / "[día] próximo"
+    const isNextWeek =
+      norm.includes(`próximo ${dayName}`) ||
+      norm.includes(`proximo ${dayName}`) ||
+      norm.includes(`${dayName} que viene`) ||
+      norm.includes(`${dayName} próximo`) ||
+      norm.includes(`${dayName} proximo`);
+
+    if (isNextWeek) {
       let diff = targetDayNum - currentDay;
       if (diff <= 0) {
-        diff += 7; // next occurrence
+        diff += 7;
+      } else {
+        diff += 7; // Specifically next week
       }
       const targetDate = new Date(anchor);
       targetDate.setUTCDate(targetDate.getUTCDate() + diff);
       return {
         resolvedStart: formatIsoDate(targetDate),
+        resolvedEnd: null,
         kind: "relative_date",
+        confidence: "high",
+      };
+    }
+
+    // Pattern B: "antes del [día]" / "antes de que venza el [día]"
+    const isBeforeDay =
+      norm.includes(`antes del ${dayName}`) ||
+      norm.includes(`antes de ${dayName}`) ||
+      norm.includes(`antes de que venza el ${dayName}`);
+
+    if (isBeforeDay) {
+      let diff = targetDayNum - currentDay;
+      let conf: "high" | "medium" = "high";
+      if (diff <= 0) {
+        diff += 7;
+        conf = "medium";
+      }
+      const targetDate = new Date(anchor);
+      targetDate.setUTCDate(targetDate.getUTCDate() + diff);
+      return {
+        resolvedStart: null,
+        resolvedEnd: formatIsoDate(targetDate),
+        kind: "relative_date",
+        confidence: conf,
+      };
+    }
+
+    // Pattern C: "este [día]"
+    const isThisDay = norm.includes(`este ${dayName}`);
+    if (isThisDay) {
+      let diff = targetDayNum - currentDay;
+      let conf: "high" | "medium" = "high";
+      if (diff === 0) {
+        // Today is this day
+        diff = 0;
+      } else if (diff < 0) {
+        // Already passed in current week: project forward with medium confidence
+        diff += 7;
+        conf = "medium";
+      }
+      const targetDate = new Date(anchor);
+      targetDate.setUTCDate(targetDate.getUTCDate() + diff);
+      return {
+        resolvedStart: formatIsoDate(targetDate),
+        resolvedEnd: null,
+        kind: "relative_date",
+        confidence: conf,
+      };
+    }
+
+    // Pattern D: "el [día]" / "para el [día]" / "[día] por la mañana"
+    const isGenericDay = new RegExp(`(?:el|para el)?\\s*${dayName}\\b`, "i").test(norm);
+    if (isGenericDay) {
+      let diff = targetDayNum - currentDay;
+      let conf: "high" | "medium" = "high";
+      if (diff === 0) {
+        // Today
+        diff = 0;
+      } else if (diff < 0) {
+        // Already passed in current week: in a future plan, it means next occurrence, but medium confidence
+        diff += 7;
+        conf = "medium";
+      }
+      const targetDate = new Date(anchor);
+      targetDate.setUTCDate(targetDate.getUTCDate() + diff);
+      return {
+        resolvedStart: formatIsoDate(targetDate),
+        resolvedEnd: null,
+        kind: "relative_date",
+        confidence: conf,
       };
     }
   }
@@ -259,14 +490,15 @@ export function cleanAndValidateDeadlines(
       continue;
     }
 
-    // 2. Reject vague non-deadlines without concrete dates
-    if (isVagueNonDeadline(raw) && !rawDeadline.resolvedStart) {
+    // 2. Reject vague non-deadlines unconditionally
+    if (isVagueNonDeadline(raw)) {
       continue;
     }
 
     let resolvedStart = rawDeadline.resolvedStart?.trim() || null;
     let resolvedEnd = rawDeadline.resolvedEnd?.trim() || null;
     let kind = rawDeadline.kind;
+    let confidence = rawDeadline.confidence;
 
     // Validate ISO dates, strip if invalid
     if (resolvedStart && !isValidIsoDate(resolvedStart)) {
@@ -280,9 +512,10 @@ export function cleanAndValidateDeadlines(
     if (!resolvedStart && !resolvedEnd && isValidIsoDate(currentDate)) {
       const deterministicRes = resolveDateDeterministically(raw, currentDate);
       if (deterministicRes) {
-        if (deterministicRes.resolvedStart) resolvedStart = deterministicRes.resolvedStart;
-        if (deterministicRes.resolvedEnd) resolvedEnd = deterministicRes.resolvedEnd;
+        if (deterministicRes.resolvedStart !== undefined) resolvedStart = deterministicRes.resolvedStart;
+        if (deterministicRes.resolvedEnd !== undefined) resolvedEnd = deterministicRes.resolvedEnd;
         if (deterministicRes.kind) kind = deterministicRes.kind;
+        if (deterministicRes.confidence) confidence = deterministicRes.confidence;
       }
     }
 
@@ -306,7 +539,7 @@ export function cleanAndValidateDeadlines(
       kind,
       resolvedStart: resolvedStart || null,
       resolvedEnd: resolvedEnd || null,
-      confidence: rawDeadline.confidence,
+      confidence,
     });
   }
 

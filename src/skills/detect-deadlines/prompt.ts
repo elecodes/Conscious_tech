@@ -41,27 +41,39 @@ REGLAS DE DETECCIÓN Y RESOLUCIÓN:
    - "No corre prisa..."
    Para estas expresiones devuelve lista vacía {"deadlines": []}.
 
-4. HORIZONTES TEMPORALES DÉBILES:
-   Expresiones como "antes de diciembre", "este mes", "la semana que viene":
-   - Conserva la expresión exacta en "raw".
-   - Usa "relative_date" o "unspecified".
-   - NO inventes un día exacto si la persona no lo dio (ej. "antes de diciembre" NO debe convertirse en 2026-11-30). En ese caso, deja resolvedStart en null o en el mes correspondiente.
-   - Usa confidence "medium".
+4. HORIZONTES TEMPORALES DÉBILES Y LÍMITES TEMPORALES:
+   - "antes de X": Si se expresa un límite superior o tope temporal ("antes del 20", "antes del martes", "antes de que venza el domingo"):
+     - Regístralo en resolvedEnd (dejando resolvedStart en null).
+     - Si el mes no está explícito ("antes del 20"), usa kind "relative_date" y confidence "medium".
+     - NUNCA lo conviertas en una exact_date equivalente al día X.
+   - "este mes", "el mes que viene":
+     - Conserva la expresión exacta en "raw".
+     - Emite el intervalo mensual en resolvedStart y resolvedEnd.
+     - Usa kind "relative_date" y confidence "medium". NUNCA inventes un día concreto dentro del mes.
 
-5. INTERVALOS TEMPORALES:
+5. DÍAS DE LA SEMANA:
+   - "este [día]" cuando hoy es ese día significa HOY (confidence "high").
+   - "el próximo [día]" o "el [día] que viene" se refiere a la semana entrante (confidence "high").
+   - Si el día ya pasó en la semana actual y la persona dice "el [día]" para una tarea futura, proyéctalo a la próxima ocurrencia pero con confidence "medium" por la ambigüedad implícita.
+
+6. INTERVALOS TEMPORALES:
    Expresiones como "entre el lunes y el miércoles", "durante este fin de semana", "del 10 al 12 de noviembre":
    - Emite un ÚNICO deadline con resolvedStart y resolvedEnd. No los dividas en dos deadlines separados.
 
-6. CONFIANZA:
-   - "high": Fecha inequívoca ("15 de noviembre", "mañana", "viernes 9 de octubre").
-   - "medium": Interpretación razonable pero con menor precisión ("la semana que viene", "este mes", "antes del martes").
+7. CONFIANZA:
+   - "high": Fecha o día inequívocamente claro ("15 de noviembre", "mañana", "este viernes" cuando hoy es viernes).
+   - "medium": Interpretación razonable pero con limitación o mes/semana implícita ("la semana que viene", "este mes", "antes del 20", "el jueves" cuando el jueves ya pasó).
    - "low": Ambigüedad considerable pero con restricción temporal real.
+   - Expresiones vagas de postergación ("algún día", "cuando estemos más tranquilos") NO llevan low: devuelven lista vacía.
 
-7. SIN PRIORIZACIÓN NI INFERENCIAS TRANSITIVAS:
+8. SIN PRIORIZACIÓN NI INFERENCIAS TRANSITIVAS:
    - Una fecha no es una prioridad. No califiques nada como urgente ni alta prioridad.
    - Si B depende de A (depends_on) y B tiene fecha, NO le inventes fecha a A.
 
-8. CONSERVACIÓN DE TEXTO:
+9. EVENTOS VS COMPROMISOS:
+   - Distingue la fecha de un evento ("meetup el mes que viene" -> horizonte del evento) de una fecha límite de entrega ("definir título antes del lunes" -> deadline terminal resolvedEnd).
+
+10. CONSERVACIÓN DE TEXTO:
    Conserva siempre el fragmento original de la expresión temporal en "raw".
 
 RESPONDE EXCLUSIVAMENTE CON UN OBJETO JSON VÁLIDO CON LA ESTRUCTURA:

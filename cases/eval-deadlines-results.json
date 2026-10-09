@@ -16,16 +16,16 @@
       {
         "itemId": "c02-1",
         "raw": "antes del 20",
-        "kind": "exact_date",
-        "resolvedStart": "2026-10-20",
-        "resolvedEnd": null,
-        "confidence": "high"
+        "kind": "relative_date",
+        "resolvedStart": null,
+        "resolvedEnd": "2026-10-20",
+        "confidence": "medium"
       },
       {
         "itemId": "c02-3",
         "raw": "hoy mismo",
         "kind": "relative_date",
-        "resolvedStart": "2026-10-08",
+        "resolvedStart": "2026-10-09",
         "resolvedEnd": null,
         "confidence": "high"
       }
@@ -40,9 +40,9 @@
         "itemId": "c04-1",
         "raw": "el jueves por la mañana",
         "kind": "relative_date",
-        "resolvedStart": "2026-10-08",
+        "resolvedStart": "2026-10-15",
         "resolvedEnd": null,
-        "confidence": "high"
+        "confidence": "medium"
       }
     ]
   },
@@ -52,7 +52,7 @@
         "itemId": "c05-2",
         "raw": "antes de las cinco",
         "kind": "relative_date",
-        "resolvedStart": "2026-10-08",
+        "resolvedStart": "2026-10-09",
         "resolvedEnd": null,
         "confidence": "high"
       }
@@ -78,8 +78,8 @@
         "itemId": "c08-2",
         "raw": "antes de salir el viernes por la tarde",
         "kind": "relative_date",
-        "resolvedStart": "2026-10-09",
-        "resolvedEnd": null,
+        "resolvedStart": null,
+        "resolvedEnd": "2026-10-09",
         "confidence": "high"
       }
     ]
@@ -90,10 +90,10 @@
   "case-10": {
     "deadlines": [
       {
-        "itemId": "c10-3",
+        "itemId": "c10-4",
         "raw": "hoy",
         "kind": "relative_date",
-        "resolvedStart": "2026-10-08",
+        "resolvedStart": "2026-10-09",
         "resolvedEnd": null,
         "confidence": "high"
       }
@@ -118,11 +118,19 @@
     "deadlines": [
       {
         "itemId": "c13-1",
-        "raw": "este mes",
+        "raw": "el mes que viene",
         "kind": "relative_date",
-        "resolvedStart": "2026-10-01",
-        "resolvedEnd": "2026-10-31",
+        "resolvedStart": "2026-11-01",
+        "resolvedEnd": "2026-11-30",
         "confidence": "medium"
+      },
+      {
+        "itemId": "c13-2",
+        "raw": "antes del lunes",
+        "kind": "relative_date",
+        "resolvedStart": null,
+        "resolvedEnd": "2026-10-12",
+        "confidence": "high"
       }
     ]
   },
@@ -156,7 +164,7 @@
         "itemId": "c19-1",
         "raw": "mañana después de hablar con Pablo",
         "kind": "relative_date",
-        "resolvedStart": "2026-10-09",
+        "resolvedStart": "2026-10-10",
         "resolvedEnd": null,
         "confidence": "high"
       },
@@ -164,7 +172,7 @@
         "itemId": "c19-3",
         "raw": "para hoy",
         "kind": "relative_date",
-        "resolvedStart": "2026-10-08",
+        "resolvedStart": "2026-10-09",
         "resolvedEnd": null,
         "confidence": "high"
       }
@@ -199,8 +207,8 @@
         "itemId": "c22-2",
         "raw": "antes de que venza el domingo",
         "kind": "relative_date",
-        "resolvedStart": "2026-10-11",
-        "resolvedEnd": null,
+        "resolvedStart": null,
+        "resolvedEnd": "2026-10-11",
         "confidence": "high"
       }
     ]

@@ -26,14 +26,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `MockProvider`: Token-free reference deadlines via golden dataset `cases/mock-deadlines.json` (cases 01–25).
   - `GroqProvider`: Structured JSON completions with `qwen/qwen3.8-27b`.
   - `GeminiProvider`: Google GenAI structured output with `gemini-2.5-flash`.
+- **Semantic Microcalibration & Temporal Precision**:
+  - Calibrated weekday resolution against explicit anchors: "este viernes" resolves to today when anchor is Friday; passed days like "el jueves" resolve to next Thursday (`confidence: "medium"`); "el próximo jueves" resolves to the following week (`confidence: "high"`).
+  - Explicit terminal bounds: "antes del 20" resolves to `resolvedEnd: "YYYY-MM-20"` (`confidence: "medium"`); "antes de que venza el domingo" resolves to `resolvedEnd: "YYYY-MM-11"`.
+  - Added 16 deterministic regression tests in `tests/deadlines-microcalibration.test.ts` covering month transitions, leap-year boundaries, intentions vs commitments, and vague expressions.
 - **Testing & Verification**:
-  - Added 26 unit and behavioral tests across `tests/deadlines-domain.test.ts` and `tests/detect-deadlines.test.ts`.
-  - Total test suite expanded to 113 tests passing in < 500ms with zero token expenditure.
+  - Added 42 unit and behavioral tests across `tests/deadlines-domain.test.ts`, `tests/detect-deadlines.test.ts`, and `tests/deadlines-microcalibration.test.ts`.
+  - Total test suite expanded to 130 tests passing in < 500ms with zero token expenditure.
 - **Evaluation Pipeline**:
-  - Extended `scripts/eval-cases.ts` with `runSkill04Evaluation` and npm script `npm run eval:deadlines`.
+  - Extended `scripts/eval-cases.ts` with `runSkill04Evaluation`, `--date=` anchor flag (defaulting to `2026-10-09`), and npm script `npm run eval:deadlines`.
   - Verified 100% invariant compliance (0 errors) across all 25 calibration brain dumps in `cases/eval-deadlines-results.json`.
 - **Architecture Documentation**:
-  - ADR 0004: Detect Deadlines — Temporal Reference Normalization without Prioritization.
+  - ADR 0004: Detect Deadlines — Temporal Reference Normalization without Prioritization (updated with Section 5: pending domain decisions and product conventions).
 
 ## [0.3.0] - 2026-10-08
 

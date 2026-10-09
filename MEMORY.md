@@ -223,6 +223,10 @@ Implemented and calibrated skills:
 3. **Skill 03: `group_work`**: Synthesize items into coherent lines of attention (`WorkGroup` and `ungroupedItemIds`) without deciding weekly priorities or capacities, backed by a deterministic invariant engine.
 4. **Skill 04: `detect_deadlines`**: Detect and normalize temporal references and deadlines anchored to an explicit `currentDate`, without inventing dates, inferring priority/urgency, or estimating effort. Vague expressions discarded deterministically.
 
+### Key Decisions & Conventions (Skill 04)
+- **No premature domain bloat for exclusive limits**: Cases like "antes del 20" stay mapped to terminal limit in `resolvedEnd` with `confidence: "medium"`. The addition of `operator` or `isExclusive` is deferred as an open domain decision to be re-evaluated when Skill 05 (`evaluate_context`) needs to compare dates against real calendar commitments and capacity.
+- **Product convention for "el próximo [día]"**: Interpreting "el próximo martes" as the following week is documented as an explicit product convention for weekly focus, not an absolute linguistic rule. It remains transparent, calibrated, and revisable.
+
 Next implementation focus:
 - **Skill 05: `evaluate_context`**: Evaluate personal context, available energy, constraints, and commitments.
 

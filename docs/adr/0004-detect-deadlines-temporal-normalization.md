@@ -61,13 +61,24 @@ Implemented pure UTC deterministic logic:
 
 ### 4. Testing & Evaluation Suite
 
-- Added `tests/deadlines-domain.test.ts` (15 unit tests covering Zod schemas, ISO calendar validation, vague expression filters, deterministic date math, and chronological ordering).
-- Added `tests/detect-deadlines.test.ts` (11 behavioral tests covering exact dates, relative anchors, ranges, weak horizons, past narrative context distinction, phantom stripping, and mock integration).
-- Total test suite expanded to 113 tests passing in < 500ms.
+- Added `tests/deadlines-domain.test.ts` and `tests/detect-deadlines.test.ts`.
+- Added `tests/deadlines-microcalibration.test.ts` covering 16 deterministic regression scenarios (anchor dates, weekday boundaries, vague filters, month/year transitions).
+- Total test suite expanded to 130 tests passing in < 550ms.
 - Integrated `runSkill04Evaluation` into `scripts/eval-cases.ts` with dedicated script `npm run eval:deadlines`.
+
+### 5. Explicit Product Conventions & Pending Domain Decisions
+
+- **Exclusive vs. Inclusive Limits (`operator` / `isExclusive`)**:
+  - Decision: **Do not prematurely add domain fields** like `operator?: "before" | "on"` or `isExclusive?: boolean` to resolve cases like "antes del 20".
+  - Rationale: In line with incremental design, Skill 04's responsibility is solely faithful temporal normalization, not deadline arithmetic. The terminal bound is recorded in `resolvedEnd` with `confidence: "medium"`.
+  - Next step: Revisit this decision if and when Skill 05 (`evaluate_context`) genuinely requires comparing dates against hard capacity limits and calendar obligations.
+- **Product Convention for "el próximo [día]"**:
+  - Decision: Resolving "el próximo martes" to the following week is documented as an **explicit product convention for weekly focus planning**, not an immutable universal linguistic law.
+  - Rationale: Depending on Spanish dialect and speaker habits, "el próximo martes" can colloquially mean tomorrow or next week. The planner assumes forward planning by default, but keeps confidence calibrated and the convention fully revisable.
 
 ## Consequences
 
 - **Positive**: Clean temporal normalization contract ready for downstream consumption by Skill 05 (`evaluate_context`) and Skill 06 (`build_week`).
 - **Positive**: Zero hallucinated deadlines: system remains faithful to user statements and respects calm AI principles.
 - **Positive**: Full test coverage and offline reproducibility with `MockProvider`.
+- **Positive**: Domain remains lean and unbloated, deferring complex temporal algebra until justified by product needs.

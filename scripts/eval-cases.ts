@@ -707,7 +707,8 @@ async function main() {
     process.exit(1);
   }
 
-  const currentDate = new Date().toISOString().split("T")[0] || "2026-10-06";
+  const dateArg = args.find((a) => a.startsWith("--date="))?.split("=")[1];
+  const currentDate = dateArg || process.env.EVAL_DATE || "2026-10-09";
 
   if (skillArg === "extract_items") {
     await runSkill01Evaluation(provider, providerArg, filteredCases, currentDate);
