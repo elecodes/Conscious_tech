@@ -2,9 +2,11 @@ import { AIProvider } from "./ai-provider";
 import { ExtractItemsInput, ExtractedItems } from "../domain/items";
 import { DetectRelationshipsInput, DetectedRelationships } from "../domain/relationships";
 import { GroupWorkInput, GroupedWork } from "../domain/work-groups";
+import { DetectDeadlinesInput, DetectedDeadlines } from "../domain/deadlines";
 import mockCasesData from "../../cases/mock-extractions.json";
 import mockRelationshipsData from "../../cases/mock-relationships.json";
 import mockGroupingsData from "../../cases/mock-groupings.json";
+import mockDeadlinesData from "../../cases/mock-deadlines.json";
 import realDumpsData from "../../cases/real-dumps.json";
 
 export type MockHandler = (input: ExtractItemsInput) => Promise<ExtractedItems> | ExtractedItems;
@@ -14,6 +16,9 @@ export type MockRelationshipsHandler = (
 export type MockGroupWorkHandler = (
   input: GroupWorkInput
 ) => Promise<GroupedWork> | GroupedWork;
+export type MockDeadlinesHandler = (
+  input: DetectDeadlinesInput
+) => Promise<DetectedDeadlines> | DetectedDeadlines;
 
 export class MockProvider implements AIProvider {
   readonly id = "mock" as const;
@@ -22,15 +27,18 @@ export class MockProvider implements AIProvider {
   private handler?: MockHandler;
   private relationshipsHandler?: MockRelationshipsHandler;
   private groupWorkHandler?: MockGroupWorkHandler;
+  private deadlinesHandler?: MockDeadlinesHandler;
 
   constructor(
     handler?: MockHandler,
     relationshipsHandler?: MockRelationshipsHandler,
-    groupWorkHandler?: MockGroupWorkHandler
+    groupWorkHandler?: MockGroupWorkHandler,
+    deadlinesHandler?: MockDeadlinesHandler
   ) {
     this.handler = handler;
     this.relationshipsHandler = relationshipsHandler;
     this.groupWorkHandler = groupWorkHandler;
+    this.deadlinesHandler = deadlinesHandler;
   }
 
   setHandler(handler: MockHandler): void {
@@ -43,6 +51,10 @@ export class MockProvider implements AIProvider {
 
   setGroupWorkHandler(handler: MockGroupWorkHandler): void {
     this.groupWorkHandler = handler;
+  }
+
+  setDeadlinesHandler(handler: MockDeadlinesHandler): void {
+    this.deadlinesHandler = handler;
   }
 
   async extractItems(input: ExtractItemsInput): Promise<ExtractedItems> {
@@ -135,5 +147,38 @@ export class MockProvider implements AIProvider {
       groups: [],
       ungroupedItemIds: input.items.map((i) => i.id),
     };
+  }
+
+  async detectDeadlines(input: DetectDeadlinesInput): Promise<DetectedDeadlines> {
+    if (this.deadlinesHandler) {
+      return await this.deadlinesHandler(input);
+    }
+
+    if (!input.items || input.items.length === 0) {
+      return { deadlines: [] };
+    }
+
+    const itemIds = new Set(input.items.map((i) => i.id));
+
+    // 1. Check if matches any predefined mock deadlines in mockDeadlinesData
+    for (const [caseId, data] of Object.entries(mockDeadlinesData)) {
+      if (data.deadlines.length > 0) {
+        const matches = data.deadlines.some((d) => itemIds.has(d.itemId));
+        if (matches) {
+          // Filter out any deadlines whose items are not in the current input
+          const validDeadlines = data.deadlines.filter((d) => itemIds.has(d.itemId));
+          return { deadlines: validDeadlines as DetectedDeadlines["deadlines"] };
+        }
+      } else {
+        // Empty deadlines case (e.g., case-03, case-09, case-21): check if items match the case in mockCasesData
+        const caseExtraction = (mockCasesData as Record<string, { items: Array<{ id: string }> }>)[caseId];
+        if (caseExtraction && caseExtraction.items.some((i) => itemIds.has(i.id))) {
+          return { deadlines: [] };
+        }
+      }
+    }
+
+    // Default: no deadlines detected
+    return { deadlines: [] };
   }
 }

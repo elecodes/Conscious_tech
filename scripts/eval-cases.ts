@@ -11,6 +11,9 @@ import {
   Relationship,
   DetectedRelationshipsSchema,
 } from "../src/domain/relationships";
+import { detectDeadlines } from "../src/skills/detect-deadlines";
+import { validateDeadlinesInvariants } from "../src/skills/detect-deadlines/deterministic";
+import { DetectedDeadline, DetectedDeadlines } from "../src/domain/deadlines";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -530,6 +533,145 @@ async function runSkill03Evaluation(
   console.log(`✅ Resultados guardados en: cases/eval-group-work-results.json`);
 }
 
+async function runSkill04Evaluation(
+  provider: any,
+  providerArg: string,
+  filteredCases: CaseDump[],
+  currentDate: string
+) {
+  console.log(`\n======================================================`);
+  console.log(`🔍 EVALUACIÓN: Skill 04 — detect_deadlines`);
+  console.log(`🤖 Proveedor: ${providerArg}`);
+  console.log(`📅 Fecha base de anclaje: ${currentDate}`);
+  console.log(`📋 Total casos a evaluar: ${filteredCases.length}`);
+  console.log(`======================================================\n`);
+
+  const mockExtractionsPath = path.resolve(__dirname, "../cases/mock-extractions.json");
+  const mockExtractions: Record<string, { items: ExtractedItem[] }> = JSON.parse(
+    fs.readFileSync(mockExtractionsPath, "utf-8")
+  );
+
+  let totalDeadlines = 0;
+  let casesWithDeadlines = 0;
+  let casesWithoutDeadlines = 0;
+  let totalValidationErrors = 0;
+  const byKind: Record<string, number> = {
+    exact_date: 0,
+    relative_date: 0,
+    date_range: 0,
+    recurring: 0,
+    unspecified: 0,
+  };
+  const byConfidence: Record<string, number> = {
+    high: 0,
+    medium: 0,
+    low: 0,
+  };
+
+  const results: Record<string, DetectedDeadlines> = {};
+
+  for (const c of filteredCases) {
+    console.log(`\n------------------------------------------------------`);
+    console.log(`📌 Evaluando [${c.id}] — "${c.title}"`);
+    console.log(`------------------------------------------------------`);
+
+    const start = Date.now();
+    try {
+      // 1. Obtain input items (from mock extractions for stability, or extract dynamically)
+      let items: ExtractedItem[];
+      if (mockExtractions[c.id]) {
+        items = mockExtractions[c.id].items;
+      } else {
+        const ext = await extractItems(provider, { text: c.text });
+        items = ext.items;
+      }
+
+      console.log(`Extracted items (${items.length}):`);
+      for (const item of items) {
+        console.log(`- ${item.id} [${item.type}]: ${item.title}`);
+      }
+
+      // 2. detect_deadlines
+      const deadlinesOutput = await detectDeadlines(provider, {
+        items,
+        currentDate,
+      });
+      const elapsed = Date.now() - start;
+
+      console.log(`\nDetected deadlines (${deadlinesOutput.deadlines.length}):`);
+      if (deadlinesOutput.deadlines.length === 0) {
+        console.log(`- none (no temporal anchors found)`);
+        casesWithoutDeadlines++;
+      } else {
+        casesWithDeadlines++;
+        for (const d of deadlinesOutput.deadlines) {
+          const item = items.find((i) => i.id === d.itemId);
+          const title = item ? item.title : "(unknown item)";
+          console.log(`⏰ [${d.kind}] "${d.raw}" -> ${title} (${d.itemId})`);
+          if (d.resolvedStart || d.resolvedEnd) {
+            console.log(`   Resolved: ${d.resolvedStart || "null"} .. ${d.resolvedEnd || "null"}`);
+          }
+          console.log(`   Confidence: ${d.confidence}`);
+
+          byKind[d.kind] = (byKind[d.kind] || 0) + 1;
+          byConfidence[d.confidence] = (byConfidence[d.confidence] || 0) + 1;
+          totalDeadlines++;
+        }
+      }
+
+      // 3. Validation of invariants
+      const invariants = validateDeadlinesInvariants(deadlinesOutput, items);
+      console.log(`\nValidation:`);
+      if (invariants.valid) {
+        console.log(`✓ all deadlines invariants satisfied`);
+        console.log(`✓ valid item IDs (0 phantoms)`);
+        console.log(`✓ valid calendar dates (start <= end)`);
+        console.log(`✓ no invented dates`);
+      } else {
+        totalValidationErrors += invariants.errors.length;
+        console.log(`❌ Invariant errors (${invariants.errors.length}):`);
+        for (const err of invariants.errors) {
+          console.log(`   - ${err}`);
+        }
+      }
+
+      console.log(`⏱ Tiempo: ${elapsed}ms`);
+      results[c.id] = deadlinesOutput;
+    } catch (err) {
+      console.error(`❌ Error procesando [${c.id}]: ${(err as Error).message}`);
+      totalValidationErrors++;
+    }
+
+    if (providerArg !== "mock") {
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  }
+
+  console.log(`\n======================================================`);
+  console.log(`📊 RESUMEN DE EVALUACIÓN: detect_deadlines`);
+  console.log(`🤖 Proveedor: ${providerArg}`);
+  console.log(`======================================================`);
+  console.log(`Total cases: ${filteredCases.length}`);
+  console.log(`Cases with deadlines: ${casesWithDeadlines}`);
+  console.log(`Cases without deadlines: ${casesWithoutDeadlines}`);
+  console.log(`Total deadlines detected: ${totalDeadlines}`);
+  console.log(`Deadlines by kind:`, byKind);
+  console.log(`Deadlines by confidence:`, byConfidence);
+  console.log(`Validation errors: ${totalValidationErrors}`);
+  console.log(`======================================================\n`);
+
+  const outPath = path.resolve(__dirname, "../cases/eval-deadlines-results.json");
+  let finalResults = results;
+  if (filteredCases.length < 25 && fs.existsSync(outPath)) {
+    try {
+      const prev = JSON.parse(fs.readFileSync(outPath, "utf-8"));
+      finalResults = { ...prev, ...results };
+    } catch {}
+  }
+  fs.writeFileSync(outPath, JSON.stringify(finalResults, null, 2), "utf-8");
+  console.log(`✅ Resultados guardados en: cases/eval-deadlines-results.json`);
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const providerArg =
@@ -540,7 +682,7 @@ async function main() {
   const skillArg =
     args.find((a) => a.startsWith("--skill="))?.split("=")[1] ||
     process.env.EVAL_SKILL ||
-    "group_work";
+    "detect_deadlines";
 
   let provider;
   try {
@@ -571,8 +713,10 @@ async function main() {
     await runSkill01Evaluation(provider, providerArg, filteredCases, currentDate);
   } else if (skillArg === "detect_relationships") {
     await runSkill02Evaluation(provider, providerArg, filteredCases, currentDate);
-  } else {
+  } else if (skillArg === "group_work") {
     await runSkill03Evaluation(provider, providerArg, filteredCases, currentDate);
+  } else {
+    await runSkill04Evaluation(provider, providerArg, filteredCases, currentDate);
   }
 }
 

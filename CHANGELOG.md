@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2026-10-09
+
+### Added
+- **Domain Modeling for Deadlines**: Zod schemas and TypeScript types in `src/domain/deadlines.ts` for `DeadlineKind`, `DetectedDeadline`, `DetectedDeadlines`, and `DetectDeadlinesInput`.
+- **Skill 04 (`detect_deadlines`)**:
+  - Implemented `DetectDeadlinesService` answering *"When does this need to happen according to what the person said?"* without prioritizing, scheduling, or estimating effort.
+  - Semantic prompt in `src/skills/detect-deadlines/prompt.ts` with strict rules: never invent dates, anchor relative dates to explicit `currentDate`, treat intervals as single entities, and separate future deadlines from past narrative context.
+  - JSON parser with Markdown fence extraction in `src/skills/detect-deadlines/parser.ts`.
+  - Deterministic engine in `src/skills/detect-deadlines/deterministic.ts`:
+    - Strict Gregorian calendar validation (`YYYY-MM-DD`).
+    - Vague desire filter: purges non-actionable expressions ("cuando estemos más tranquilos", "algún día", "más adelante", "cuando pueda").
+    - Pure UTC deterministic date calculation for relative anchors ("hoy", "mañana", "pasado mañana", "este fin de semana", weekdays).
+    - Range integrity validation (`resolvedStart <= resolvedEnd`, auto-swapping if inverted).
+    - Invariant validator and cleaner: drops phantom item IDs, empty raw strings, and duplicate entries.
+    - Zero-token short-circuit for empty input items.
+- **Provider Support for Skill 04**:
+  - `MockProvider`: Token-free reference deadlines via golden dataset `cases/mock-deadlines.json` (cases 01–25).
+  - `GroqProvider`: Structured JSON completions with `qwen/qwen3.8-27b`.
+  - `GeminiProvider`: Google GenAI structured output with `gemini-2.5-flash`.
+- **Testing & Verification**:
+  - Added 26 unit and behavioral tests across `tests/deadlines-domain.test.ts` and `tests/detect-deadlines.test.ts`.
+  - Total test suite expanded to 113 tests passing in < 500ms with zero token expenditure.
+- **Evaluation Pipeline**:
+  - Extended `scripts/eval-cases.ts` with `runSkill04Evaluation` and npm script `npm run eval:deadlines`.
+  - Verified 100% invariant compliance (0 errors) across all 25 calibration brain dumps in `cases/eval-deadlines-results.json`.
+- **Architecture Documentation**:
+  - ADR 0004: Detect Deadlines — Temporal Reference Normalization without Prioritization.
+
 ## [0.3.0] - 2026-10-08
 
 ### Added

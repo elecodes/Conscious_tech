@@ -13,7 +13,8 @@
     "eval": "tsx scripts/eval-cases.ts",
     "eval:items": "tsx scripts/eval-cases.ts --skill=extract_items",
     "eval:relationships": "tsx scripts/eval-cases.ts --skill=detect_relationships",
-    "eval:groups": "tsx scripts/eval-cases.ts --skill=group_work"
+    "eval:groups": "tsx scripts/eval-cases.ts --skill=group_work",
+    "eval:deadlines": "tsx scripts/eval-cases.ts --skill=detect_deadlines"
   },
   "dependencies": {
     "@google/genai": "^2.27.0",

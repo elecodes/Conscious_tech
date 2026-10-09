@@ -1,0 +1,217 @@
+{
+  "case-01": {
+    "deadlines": [
+      {
+        "itemId": "c01-1",
+        "raw": "para el martes",
+        "kind": "relative_date",
+        "resolvedStart": "2026-10-13",
+        "resolvedEnd": null,
+        "confidence": "high"
+      }
+    ]
+  },
+  "case-02": {
+    "deadlines": [
+      {
+        "itemId": "c02-1",
+        "raw": "antes del 20",
+        "kind": "exact_date",
+        "resolvedStart": "2026-10-20",
+        "resolvedEnd": null,
+        "confidence": "high"
+      },
+      {
+        "itemId": "c02-3",
+        "raw": "hoy mismo",
+        "kind": "relative_date",
+        "resolvedStart": "2026-10-08",
+        "resolvedEnd": null,
+        "confidence": "high"
+      }
+    ]
+  },
+  "case-03": {
+    "deadlines": []
+  },
+  "case-04": {
+    "deadlines": [
+      {
+        "itemId": "c04-1",
+        "raw": "el jueves por la mañana",
+        "kind": "relative_date",
+        "resolvedStart": "2026-10-08",
+        "resolvedEnd": null,
+        "confidence": "high"
+      }
+    ]
+  },
+  "case-05": {
+    "deadlines": [
+      {
+        "itemId": "c05-2",
+        "raw": "antes de las cinco",
+        "kind": "relative_date",
+        "resolvedStart": "2026-10-08",
+        "resolvedEnd": null,
+        "confidence": "high"
+      }
+    ]
+  },
+  "case-06": {
+    "deadlines": []
+  },
+  "case-07": {
+    "deadlines": []
+  },
+  "case-08": {
+    "deadlines": [
+      {
+        "itemId": "c08-1",
+        "raw": "el viernes a las 11",
+        "kind": "relative_date",
+        "resolvedStart": "2026-10-09",
+        "resolvedEnd": null,
+        "confidence": "high"
+      },
+      {
+        "itemId": "c08-2",
+        "raw": "antes de salir el viernes por la tarde",
+        "kind": "relative_date",
+        "resolvedStart": "2026-10-09",
+        "resolvedEnd": null,
+        "confidence": "high"
+      }
+    ]
+  },
+  "case-09": {
+    "deadlines": []
+  },
+  "case-10": {
+    "deadlines": [
+      {
+        "itemId": "c10-3",
+        "raw": "hoy",
+        "kind": "relative_date",
+        "resolvedStart": "2026-10-08",
+        "resolvedEnd": null,
+        "confidence": "high"
+      }
+    ]
+  },
+  "case-11": {
+    "deadlines": []
+  },
+  "case-12": {
+    "deadlines": [
+      {
+        "itemId": "c12-1",
+        "raw": "en noviembre",
+        "kind": "relative_date",
+        "resolvedStart": "2026-11-01",
+        "resolvedEnd": "2026-11-30",
+        "confidence": "medium"
+      }
+    ]
+  },
+  "case-13": {
+    "deadlines": [
+      {
+        "itemId": "c13-1",
+        "raw": "este mes",
+        "kind": "relative_date",
+        "resolvedStart": "2026-10-01",
+        "resolvedEnd": "2026-10-31",
+        "confidence": "medium"
+      }
+    ]
+  },
+  "case-14": {
+    "deadlines": []
+  },
+  "case-15": {
+    "deadlines": []
+  },
+  "case-16": {
+    "deadlines": [
+      {
+        "itemId": "c16-1",
+        "raw": "el jueves a las 16h",
+        "kind": "relative_date",
+        "resolvedStart": "2026-10-15",
+        "resolvedEnd": null,
+        "confidence": "high"
+      }
+    ]
+  },
+  "case-17": {
+    "deadlines": []
+  },
+  "case-18": {
+    "deadlines": []
+  },
+  "case-19": {
+    "deadlines": [
+      {
+        "itemId": "c19-1",
+        "raw": "mañana después de hablar con Pablo",
+        "kind": "relative_date",
+        "resolvedStart": "2026-10-09",
+        "resolvedEnd": null,
+        "confidence": "high"
+      },
+      {
+        "itemId": "c19-3",
+        "raw": "para hoy",
+        "kind": "relative_date",
+        "resolvedStart": "2026-10-08",
+        "resolvedEnd": null,
+        "confidence": "high"
+      }
+    ]
+  },
+  "case-20": {
+    "deadlines": []
+  },
+  "case-21": {
+    "deadlines": [
+      {
+        "itemId": "c21-1",
+        "raw": "el 24 de octubre sin falta",
+        "kind": "exact_date",
+        "resolvedStart": "2026-10-24",
+        "resolvedEnd": null,
+        "confidence": "high"
+      }
+    ]
+  },
+  "case-22": {
+    "deadlines": [
+      {
+        "itemId": "c22-1",
+        "raw": "este finde",
+        "kind": "date_range",
+        "resolvedStart": "2026-10-10",
+        "resolvedEnd": "2026-10-11",
+        "confidence": "high"
+      },
+      {
+        "itemId": "c22-2",
+        "raw": "antes de que venza el domingo",
+        "kind": "relative_date",
+        "resolvedStart": "2026-10-11",
+        "resolvedEnd": null,
+        "confidence": "high"
+      }
+    ]
+  },
+  "case-23": {
+    "deadlines": []
+  },
+  "case-24": {
+    "deadlines": []
+  },
+  "case-25": {
+    "deadlines": []
+  }
+}

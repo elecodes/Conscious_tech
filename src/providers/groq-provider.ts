@@ -18,6 +18,12 @@ import {
   buildUserPrompt as buildGroupUserPrompt,
 } from "../skills/group-work/prompt";
 import { parseAndValidateGroupedWork } from "../skills/group-work/parser";
+import { DetectDeadlinesInput, DetectedDeadlines } from "../domain/deadlines";
+import {
+  SYSTEM_PROMPT as DEADLINES_SYSTEM_PROMPT,
+  buildUserPrompt as buildDeadlinesUserPrompt,
+} from "../skills/detect-deadlines/prompt";
+import { parseAndValidateDeadlines } from "../skills/detect-deadlines/parser";
 
 export interface GroqProviderOptions {
   apiKey?: string;
@@ -96,5 +102,25 @@ export class GroqProvider implements AIProvider {
     }
 
     return parseAndValidateGroupedWork(content);
+  }
+
+  async detectDeadlines(input: DetectDeadlinesInput): Promise<DetectedDeadlines> {
+    const response = await this.client.chat.completions.create({
+      model: this.model,
+      messages: [
+        { role: "system", content: DEADLINES_SYSTEM_PROMPT },
+        { role: "user", content: buildDeadlinesUserPrompt(input) },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+      max_tokens: 1200,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("Groq returned an empty response");
+    }
+
+    return parseAndValidateDeadlines(content);
   }
 }

@@ -18,6 +18,12 @@ import {
   buildUserPrompt as buildGroupUserPrompt,
 } from "../skills/group-work/prompt";
 import { parseAndValidateGroupedWork } from "../skills/group-work/parser";
+import { DetectDeadlinesInput, DetectedDeadlines } from "../domain/deadlines";
+import {
+  SYSTEM_PROMPT as DEADLINES_SYSTEM_PROMPT,
+  buildUserPrompt as buildDeadlinesUserPrompt,
+} from "../skills/detect-deadlines/prompt";
+import { parseAndValidateDeadlines } from "../skills/detect-deadlines/parser";
 
 export interface GeminiProviderOptions {
   apiKey?: string;
@@ -93,5 +99,24 @@ export class GeminiProvider implements AIProvider {
     }
 
     return parseAndValidateGroupedWork(content);
+  }
+
+  async detectDeadlines(input: DetectDeadlinesInput): Promise<DetectedDeadlines> {
+    const response = await this.client.models.generateContent({
+      model: this.model,
+      contents: buildDeadlinesUserPrompt(input),
+      config: {
+        systemInstruction: DEADLINES_SYSTEM_PROMPT,
+        responseMimeType: "application/json",
+        temperature: 0.1,
+      },
+    });
+
+    const content = response.text;
+    if (!content) {
+      throw new Error("Gemini returned an empty response");
+    }
+
+    return parseAndValidateDeadlines(content);
   }
 }

@@ -221,9 +221,10 @@ Implemented and calibrated skills:
 1. **Skill 01: `extract_items`**: Convert free-form user input into structured items (`task`, `idea`, `concern`, `commitment`, `project`) without prioritizing or planning.
 2. **Skill 02: `detect_relationships`**: Detect semantic links (`same_project`, `same_objective`, `related_to`, `part_of`, `depends_on`, `duplicate`) with strict boundaries (concerns isolated, preconditions as `depends_on`, workarounds not linked, zero grouping).
 3. **Skill 03: `group_work`**: Synthesize items into coherent lines of attention (`WorkGroup` and `ungroupedItemIds`) without deciding weekly priorities or capacities, backed by a deterministic invariant engine.
+4. **Skill 04: `detect_deadlines`**: Detect and normalize temporal references and deadlines anchored to an explicit `currentDate`, without inventing dates, inferring priority/urgency, or estimating effort. Vague expressions discarded deterministically.
 
 Next implementation focus:
-- **Skill 04: `detect_deadlines`**: Extract and classify explicit deadlines, time windows, and temporal commitments.
+- **Skill 05: `evaluate_context`**: Evaluate personal context, available energy, constraints, and commitments.
 
 Detailed specifications for individual skills live separately from this file.
 

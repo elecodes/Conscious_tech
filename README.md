@@ -22,12 +22,14 @@ docs/
 └── adr/                     # Architectural Decision Records
     ├── 0001-conservative-semantic-extraction-and-provider-architecture.md
     ├── 0002-detect-relationships-conservative-semantic-links.md
-    └── 0003-group-work-coherent-lines-of-attention.md
+    ├── 0003-group-work-coherent-lines-of-attention.md
+    └── 0004-detect-deadlines-temporal-normalization.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
 │   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
 │   ├── relationships.ts     # RelationshipType, Relationship, DetectedRelationships
-│   └── work-groups.ts       # WorkGroup, GroupedWork, GroupWorkInput
+│   ├── work-groups.ts       # WorkGroup, GroupedWork, GroupWorkInput
+│   └── deadlines.ts         # DeadlineKind, DetectedDeadline, DetectedDeadlines
 ├── providers/               # AI Provider abstraction layer
 │   ├── ai-provider.ts       # AIProvider interface
 │   ├── groq-provider.ts     # Groq implementation (qwen/qwen3.8-27b)
@@ -44,11 +46,16 @@ src/
 │   │   ├── parser.ts        # Markdown stripping & Zod schema validation
 │   │   ├── deterministic.ts # Canonicalization, deduplication, same_project inference
 │   │   └── index.ts         # DetectRelationshipsService
-│   └── group-work/          # Skill 03: Coherent lines of attention
-│       ├── prompt.ts        # Grouping prompt (lines of work, not planning)
+│   ├── group-work/          # Skill 03: Coherent lines of attention
+│   │   ├── prompt.ts        # Grouping prompt (lines of work, not planning)
+│   │   ├── parser.ts        # Markdown stripping & Zod schema validation
+│   │   ├── deterministic.ts # Invariant engine: conservation, disjoint groups
+│   │   └── index.ts         # GroupWorkService with short-circuits
+│   └── detect-deadlines/    # Skill 04: Temporal references & deadline normalization
+│       ├── prompt.ts        # Strict prompt (Never invent dates, anchor to currentDate)
 │       ├── parser.ts        # Markdown stripping & Zod schema validation
-│       ├── deterministic.ts # Invariant engine: conservation, disjoint groups
-│       └── index.ts         # GroupWorkService with short-circuits
+│       ├── deterministic.ts # UTC calendar resolver, vague filter, range validator
+│       └── index.ts         # DetectDeadlinesService with short-circuits
 └── web/                     # Lightweight testing UI & data inspector
     ├── App.tsx
     ├── main.tsx
@@ -58,9 +65,11 @@ cases/
 ├── mock-extractions.json    # Golden reference extractions for zero-token tests
 ├── mock-relationships.json  # Golden reference relationships for zero-token tests
 ├── mock-groupings.json      # Golden reference work groups for zero-token tests
+├── mock-deadlines.json      # Golden reference deadlines for zero-token tests
 ├── eval-results.json        # Evaluation output logs (Skill 01)
 ├── eval-relationships-results.json # Evaluation output logs (Skill 02)
-└── eval-group-work-results.json    # Evaluation output logs (Skill 03)
+├── eval-group-work-results.json    # Evaluation output logs (Skill 03)
+└── eval-deadlines-results.json     # Evaluation output logs (Skill 04)
 ```
 
 ### Skill 01: `extract_items`
@@ -82,7 +91,13 @@ Synthesizes items into coherent lines of attention without deciding weekly prior
 - **Output**: Disjoint `WorkGroup` entities (`title`, `itemIds`, `rationale`) and `ungroupedItemIds`.
 - **Deterministic Invariant Engine**: Guarantees total item conservation (no lost items, no phantom items), disjoint partitions (no item in two groups), and group dissolution if $< 2$ items.
 - **Short-circuits**: Returns in 0ms (0 tokens) for empty inputs, single items, or items with zero relationships.
-- **Test Suite**: 87 passing unit and behavioral tests running in < 400ms with zero token expenditure.
+
+### Skill 04: `detect_deadlines`
+Detects and normalizes explicit and relative temporal constraints without prioritizing or scheduling:
+- **Output**: Structured `DetectedDeadlines` (`itemId`, `raw`, `kind`, `resolvedStart`, `resolvedEnd`, `confidence`).
+- **Core Principle**: Never invent a date. Distinguishes deadlines from past narrative context ("El viernes estuve hablando con Marta"). Discards vague desires ("algún día", "cuando estemos más tranquilos").
+- **Deterministic Engine**: Pure UTC date math relative to `currentDate` ("hoy", "mañana", "este fin de semana", weekdays), calendar validity verification (`YYYY-MM-DD`), and range consistency (`resolvedStart <= resolvedEnd`).
+- **Test Suite**: 113 passing unit and behavioral tests running in < 500ms with zero token expenditure.
 
 ---
 
@@ -159,7 +174,7 @@ npm run build
 - [x] **01 extract_items** (Completed & calibrated)
 - [x] **02 detect_relationships** (Completed & calibrated)
 - [x] **03 group_work** (Completed & calibrated)
-- [ ] **04 detect_deadlines**
+- [x] **04 detect_deadlines** (Completed & calibrated)
 - [ ] **05 evaluate_context**
 - [ ] **06 build_week**
 - [ ] **07 analyze_change**
