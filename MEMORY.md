@@ -222,13 +222,16 @@ Implemented and calibrated skills:
 2. **Skill 02: `detect_relationships`**: Detect semantic links (`same_project`, `same_objective`, `related_to`, `part_of`, `depends_on`, `duplicate`) with strict boundaries (concerns isolated, preconditions as `depends_on`, workarounds not linked, zero grouping).
 3. **Skill 03: `group_work`**: Synthesize items into coherent lines of attention (`WorkGroup` and `ungroupedItemIds`) without deciding weekly priorities or capacities, backed by a deterministic invariant engine.
 4. **Skill 04: `detect_deadlines`**: Detect and normalize temporal references and deadlines anchored to an explicit `currentDate`, without inventing dates, inferring priority/urgency, or estimating effort. Vague expressions discarded deterministically.
+5. **Skill 05: `evaluate_context`**: Evaluate situational context, gravity, dependencies, and open questions without building weekly plans or making choices for the user (`ItemContextAssessment`, `GroupContextAssessment`, `OpenQuestion`).
 
-### Key Decisions & Conventions (Skill 04)
-- **No premature domain bloat for exclusive limits**: Cases like "antes del 20" stay mapped to terminal limit in `resolvedEnd` with `confidence: "medium"`. The addition of `operator` or `isExclusive` is deferred as an open domain decision to be re-evaluated when Skill 05 (`evaluate_context`) needs to compare dates against real calendar commitments and capacity.
-- **Product convention for "el próximo [día]"**: Interpreting "el próximo martes" as the following week is documented as an explicit product convention for weekly focus, not an absolute linguistic rule. It remains transparent, calibrated, and revisable.
+### Key Decisions & Conventions (Skill 05)
+- **Strict "Code before AI" for `dependency`**: The `dependency` signal requires an explicit, valid `depends_on` relationship between input items. Spurious signals derived from `part_of`, `related_to`, or `same_project` are strictly filtered out by the deterministic invariant engine.
+- **`waiting` does not penalize attention**: Being blocked by an external party describes objective context, not lower user attention. Items in `waiting` preserve `high` or `medium` attention when deadlines or gravity dictate it.
+- **Exploratory / Optional items**: Items conditioned by "si tengo tiempo" or "si me da tiempo" preserve `low` attention even when nearing calendar horizons.
+- **Calibration validated with Groq & Mock**: 25/25 cases verified with 100% item (63/63) and group (7/7) coverage, 0 phantom IDs, and 0 duplicate entries.
 
 Next implementation focus:
-- **Skill 05: `evaluate_context`**: Evaluate personal context, available energy, constraints, and commitments.
+- **Skill 06: `build_week`**: Build realistic weekly focus and allocations respecting capacity, protected space, and user sovereignty ("AI proposes. The person decides.").
 
 Detailed specifications for individual skills live separately from this file.
 

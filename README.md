@@ -23,13 +23,15 @@ docs/
     ├── 0001-conservative-semantic-extraction-and-provider-architecture.md
     ├── 0002-detect-relationships-conservative-semantic-links.md
     ├── 0003-group-work-coherent-lines-of-attention.md
-    └── 0004-detect-deadlines-temporal-normalization.md
+    ├── 0004-detect-deadlines-temporal-normalization.md
+    └── 0005-evaluate-context-functional-contract.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
 │   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
 │   ├── relationships.ts     # RelationshipType, Relationship, DetectedRelationships
 │   ├── work-groups.ts       # WorkGroup, GroupedWork, GroupWorkInput
-│   └── deadlines.ts         # DeadlineKind, DetectedDeadline, DetectedDeadlines
+│   ├── deadlines.ts         # DeadlineKind, DetectedDeadline, DetectedDeadlines
+│   └── context.ts           # ContextSignal, Item/GroupContextAssessment, OpenQuestion
 ├── providers/               # AI Provider abstraction layer
 │   ├── ai-provider.ts       # AIProvider interface
 │   ├── groq-provider.ts     # Groq implementation (qwen/qwen3.8-27b)
@@ -51,11 +53,16 @@ src/
 │   │   ├── parser.ts        # Markdown stripping & Zod schema validation
 │   │   ├── deterministic.ts # Invariant engine: conservation, disjoint groups
 │   │   └── index.ts         # GroupWorkService with short-circuits
-│   └── detect-deadlines/    # Skill 04: Temporal references & deadline normalization
-│       ├── prompt.ts        # Strict prompt (Never invent dates, anchor to currentDate)
+│   ├── detect-deadlines/    # Skill 04: Temporal references & deadline normalization
+│   │   ├── prompt.ts        # Strict prompt (Never invent dates, anchor to currentDate)
+│   │   ├── parser.ts        # Markdown stripping & Zod schema validation
+│   │   ├── deterministic.ts # UTC calendar resolver, vague filter, range validator
+│   │   └── index.ts         # DetectDeadlinesService with short-circuits
+│   └── evaluate-context/    # Skill 05: Situational context & attention signals
+│       ├── prompt.ts        # Contextual gravity prompt (Explain, don't plan)
 │       ├── parser.ts        # Markdown stripping & Zod schema validation
-│       ├── deterministic.ts # UTC calendar resolver, vague filter, range validator
-│       └── index.ts         # DetectDeadlinesService with short-circuits
+│       ├── deterministic.ts # Invariant engine: 1:1 coverage, phantom purger
+│       └── index.ts         # EvaluateContextService with short-circuits
 └── web/                     # Lightweight testing UI & data inspector
     ├── App.tsx
     ├── main.tsx
@@ -69,7 +76,8 @@ cases/
 ├── eval-results.json        # Evaluation output logs (Skill 01)
 ├── eval-relationships-results.json # Evaluation output logs (Skill 02)
 ├── eval-group-work-results.json    # Evaluation output logs (Skill 03)
-└── eval-deadlines-results.json     # Evaluation output logs (Skill 04)
+├── eval-deadlines-results.json     # Evaluation output logs (Skill 04)
+└── eval-context-results.json       # Evaluation output logs (Skill 05)
 ```
 
 ### Skill 01: `extract_items`
@@ -97,7 +105,20 @@ Detects and normalizes explicit and relative temporal constraints without priori
 - **Output**: Structured `DetectedDeadlines` (`itemId`, `raw`, `kind`, `resolvedStart`, `resolvedEnd`, `confidence`).
 - **Core Principle**: Never invent a date. Distinguishes deadlines from past narrative context ("El viernes estuve hablando con Marta"). Discards vague desires ("algún día", "cuando estemos más tranquilos").
 - **Deterministic Engine**: Pure UTC date math relative to `currentDate` ("hoy", "mañana", "este fin de semana", weekdays), calendar validity verification (`YYYY-MM-DD`), and range consistency (`resolvedStart <= resolvedEnd`).
-- **Test Suite**: 130 passing unit and behavioral tests running in < 500ms with zero token expenditure.
+
+### Skill 05: `evaluate_context`
+Evaluates situational context, attention levels, and relevance for tasks and work groups without deciding weekly focus or schedules:
+- **Output**: Structured `EvaluateContextOutput` (`itemAssessments`, `groupAssessments`, `openQuestions`).
+- **Signal Taxonomy**: `external_commitment`, `approaching_deadline`, `overdue_deadline`, `explicit_importance`, `already_started`, `dependency`, `supports_declared_goal`, `waiting`, `insufficient_information`.
+- **Core Principles**: Never plan or allocate hours; never invent unstated goals or deadlines; treat missing data as `unclear` instead of low importance; dependencies do not symmetrically clone deadline dates.
+- **Deterministic Invariant Engine & "Code before AI"**:
+  - Guarantees exact 1:1 item and group coverage (0 missing, 0 phantoms, 0 duplicates).
+  - Purges phantom/duplicate IDs and validates open question references.
+  - Strictly enforces that `dependency` requires an explicit, valid `depends_on` relationship (purging spurious signals inferred from `part_of`, `related_to`, or `same_project`).
+  - Treats `waiting` as an objective situation descriptor that does not automatically penalize attention level.
+  - Zero-token short-circuits for empty inputs.
+- **Test Suite**: 169 passing unit and behavioral tests running in < 700ms with zero token expenditure.
+- **Calibration**: Validated across all 25 calibration brain dumps with Mock and Groq (`qwen/qwen3.8-27b`) with 0 invariant violations.
 
 ---
 
@@ -175,7 +196,7 @@ npm run build
 - [x] **02 detect_relationships** (Completed & calibrated)
 - [x] **03 group_work** (Completed & calibrated)
 - [x] **04 detect_deadlines** (Completed & calibrated)
-- [ ] **05 evaluate_context**
+- [x] **05 evaluate_context** (Completed & calibrated)
 - [ ] **06 build_week**
 - [ ] **07 analyze_change**
 - [ ] **08 detect_conflict**

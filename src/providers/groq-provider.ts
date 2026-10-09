@@ -24,6 +24,12 @@ import {
   buildUserPrompt as buildDeadlinesUserPrompt,
 } from "../skills/detect-deadlines/prompt";
 import { parseAndValidateDeadlines } from "../skills/detect-deadlines/parser";
+import { EvaluateContextInput, EvaluateContextOutput } from "../domain/context";
+import {
+  SYSTEM_PROMPT as CONTEXT_SYSTEM_PROMPT,
+  buildUserPrompt as buildContextUserPrompt,
+} from "../skills/evaluate-context/prompt";
+import { parseAndValidateContextOutput } from "../skills/evaluate-context/parser";
 
 export interface GroqProviderOptions {
   apiKey?: string;
@@ -122,5 +128,25 @@ export class GroqProvider implements AIProvider {
     }
 
     return parseAndValidateDeadlines(content);
+  }
+
+  async evaluateContext(input: EvaluateContextInput): Promise<EvaluateContextOutput> {
+    const response = await this.client.chat.completions.create({
+      model: this.model,
+      messages: [
+        { role: "system", content: CONTEXT_SYSTEM_PROMPT },
+        { role: "user", content: buildContextUserPrompt(input) },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+      max_tokens: 1500,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("Groq returned an empty response");
+    }
+
+    return parseAndValidateContextOutput(content);
   }
 }

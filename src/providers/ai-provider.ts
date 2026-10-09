@@ -2,6 +2,7 @@ import { ExtractItemsInput, ExtractedItems } from "../domain/items";
 import { DetectRelationshipsInput, DetectedRelationships } from "../domain/relationships";
 import { GroupWorkInput, GroupedWork } from "../domain/work-groups";
 import { DetectDeadlinesInput, DetectedDeadlines } from "../domain/deadlines";
+import { EvaluateContextInput, EvaluateContextOutput } from "../domain/context";
 
 export interface ProviderExecutionMeta {
   provider: string;
@@ -21,5 +22,6 @@ export interface AIProvider {
   detectRelationships(input: DetectRelationshipsInput): Promise<DetectedRelationships>;
   groupWork(input: GroupWorkInput): Promise<GroupedWork>;
   detectDeadlines(input: DetectDeadlinesInput): Promise<DetectedDeadlines>;
+  evaluateContext(input: EvaluateContextInput): Promise<EvaluateContextOutput>;
 }
 

@@ -24,6 +24,12 @@ import {
   buildUserPrompt as buildDeadlinesUserPrompt,
 } from "../skills/detect-deadlines/prompt";
 import { parseAndValidateDeadlines } from "../skills/detect-deadlines/parser";
+import { EvaluateContextInput, EvaluateContextOutput } from "../domain/context";
+import {
+  SYSTEM_PROMPT as CONTEXT_SYSTEM_PROMPT,
+  buildUserPrompt as buildContextUserPrompt,
+} from "../skills/evaluate-context/prompt";
+import { parseAndValidateContextOutput } from "../skills/evaluate-context/parser";
 
 export interface GeminiProviderOptions {
   apiKey?: string;
@@ -118,5 +124,24 @@ export class GeminiProvider implements AIProvider {
     }
 
     return parseAndValidateDeadlines(content);
+  }
+
+  async evaluateContext(input: EvaluateContextInput): Promise<EvaluateContextOutput> {
+    const response = await this.client.models.generateContent({
+      model: this.model,
+      contents: buildContextUserPrompt(input),
+      config: {
+        systemInstruction: CONTEXT_SYSTEM_PROMPT,
+        responseMimeType: "application/json",
+        temperature: 0.1,
+      },
+    });
+
+    const content = response.text;
+    if (!content) {
+      throw new Error("Gemini returned an empty response");
+    }
+
+    return parseAndValidateContextOutput(content);
   }
 }

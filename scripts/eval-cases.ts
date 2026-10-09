@@ -14,6 +14,9 @@ import {
 import { detectDeadlines } from "../src/skills/detect-deadlines";
 import { validateDeadlinesInvariants } from "../src/skills/detect-deadlines/deterministic";
 import { DetectedDeadline, DetectedDeadlines } from "../src/domain/deadlines";
+import { evaluateContext } from "../src/skills/evaluate-context";
+import { validateContextInvariants } from "../src/skills/evaluate-context/deterministic";
+import { EvaluateContextOutput } from "../src/domain/context";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -672,6 +675,153 @@ async function runSkill04Evaluation(
   console.log(`✅ Resultados guardados en: cases/eval-deadlines-results.json`);
 }
 
+async function runSkill05Evaluation(
+  provider: ReturnType<typeof createAIProvider>,
+  providerArg: string,
+  filteredCases: CaseDump[],
+  currentDate: string
+) {
+  console.log(`\n======================================================`);
+  console.log(`🚀 EVALUANDO SKILL 05: evaluate_context`);
+  console.log(`🤖 Proveedor: ${providerArg}`);
+  console.log(`📅 Fecha base: ${currentDate}`);
+  console.log(`📋 Total casos: ${filteredCases.length}`);
+  console.log(`======================================================\n`);
+
+  const results: Record<string, EvaluateContextOutput> = {};
+  let totalValidationErrors = 0;
+  let totalItemsAssessed = 0;
+  let totalGroupsAssessed = 0;
+  let totalQuestions = 0;
+  const attentionCounts: Record<string, number> = {};
+  const relevanceCounts: Record<string, number> = {};
+  const signalCounts: Record<string, number> = {};
+
+  const mockItemsMap: Record<string, { items: ExtractedItem[] }> = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, "../cases/mock-extractions.json"), "utf-8")
+  );
+  const mockRelsMap: Record<string, { relationships: Relationship[] }> = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, "../cases/mock-relationships.json"), "utf-8")
+  );
+  const mockGroupsMap: Record<string, { groups: any[]; ungroupedItemIds: string[] }> = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, "../cases/mock-groupings.json"), "utf-8")
+  );
+  const mockDeadlinesMap: Record<string, { deadlines: DetectedDeadline[] }> = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, "../cases/mock-deadlines.json"), "utf-8")
+  );
+
+  for (const c of filteredCases) {
+    console.log(`\n------------------------------------------------------`);
+    console.log(`📦 CASO [${c.id}]: ${c.title}`);
+    console.log(`------------------------------------------------------`);
+
+    const start = Date.now();
+    try {
+      const items = mockItemsMap[c.id]?.items || [];
+      const relationships = mockRelsMap[c.id]?.relationships || [];
+      const groupedWork = mockGroupsMap[c.id] || { groups: [], ungroupedItemIds: items.map((i) => i.id) };
+      const deadlines = mockDeadlinesMap[c.id] || { deadlines: [] };
+
+      console.log(`Items: ${items.length}, Grupos: ${groupedWork.groups.length}, Deadlines: ${deadlines.deadlines.length}`);
+
+      const contextOutput = await evaluateContext(provider, {
+        currentDate,
+        items,
+        relationships,
+        groupedWork,
+        deadlines,
+      });
+      const elapsed = Date.now() - start;
+
+      console.log(`\nItem assessments (${contextOutput.itemAssessments.length}):`);
+      for (const ia of contextOutput.itemAssessments) {
+        const item = items.find((i) => i.id === ia.itemId);
+        console.log(`- [${ia.attention.toUpperCase()}] ${item?.title || ia.itemId}: signals=[${ia.signals.join(", ")}]`);
+        attentionCounts[ia.attention] = (attentionCounts[ia.attention] || 0) + 1;
+        for (const s of ia.signals) {
+          signalCounts[s] = (signalCounts[s] || 0) + 1;
+        }
+        totalItemsAssessed++;
+      }
+
+      console.log(`\nGroup assessments (${contextOutput.groupAssessments.length}):`);
+      for (const ga of contextOutput.groupAssessments) {
+        console.log(`- [${ga.relevance.toUpperCase()}] Group ${ga.groupId}: ${ga.rationale}`);
+        relevanceCounts[ga.relevance] = (relevanceCounts[ga.relevance] || 0) + 1;
+        totalGroupsAssessed++;
+      }
+
+      if (contextOutput.openQuestions.length > 0) {
+        console.log(`\nOpen questions (${contextOutput.openQuestions.length}):`);
+        for (const q of contextOutput.openQuestions) {
+          console.log(`❓ [${q.topic}] ${q.question} (reason: ${q.reason})`);
+          totalQuestions++;
+        }
+      }
+
+      const invariants = validateContextInvariants(contextOutput, {
+        currentDate,
+        items,
+        relationships,
+        groupedWork,
+        deadlines,
+      });
+
+      console.log(`\nValidation:`);
+      if (invariants.valid) {
+        console.log(`✓ 100% item coverage (1:1, 0 phantoms, 0 duplicates)`);
+        console.log(`✓ 100% group coverage (1:1, 0 phantoms, 0 duplicates)`);
+        console.log(`✓ all question references exist`);
+        console.log(`✓ no scheduling/capacity leakage`);
+      } else {
+        totalValidationErrors += invariants.errors.length;
+        console.log(`❌ Invariant errors (${invariants.errors.length}):`);
+        for (const err of invariants.errors) {
+          console.log(`   - ${err}`);
+        }
+      }
+
+      console.log(`⏱ Tiempo: ${elapsed}ms`);
+      results[c.id] = contextOutput;
+    } catch (err) {
+      console.error(`❌ Error procesando [${c.id}]: ${(err as Error).message}`);
+      if ((err as any).issues) {
+        console.error(`   Issues:`, JSON.stringify((err as any).issues, null, 2));
+      }
+      totalValidationErrors++;
+    }
+
+    if (providerArg !== "mock") {
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  }
+
+  console.log(`\n======================================================`);
+  console.log(`📊 RESUMEN DE EVALUACIÓN: evaluate_context`);
+  console.log(`🤖 Proveedor: ${providerArg}`);
+  console.log(`======================================================`);
+  console.log(`Total cases: ${filteredCases.length}`);
+  console.log(`Total items assessed: ${totalItemsAssessed}`);
+  console.log(`Total groups assessed: ${totalGroupsAssessed}`);
+  console.log(`Total open questions: ${totalQuestions}`);
+  console.log(`Attention distribution:`, attentionCounts);
+  console.log(`Relevance distribution:`, relevanceCounts);
+  console.log(`Signals detected:`, signalCounts);
+  console.log(`Validation errors: ${totalValidationErrors}`);
+  console.log(`======================================================\n`);
+
+  const outPath = path.resolve(__dirname, "../cases/eval-context-results.json");
+  let finalResults = results;
+  if (filteredCases.length < 25 && fs.existsSync(outPath)) {
+    try {
+      const prev = JSON.parse(fs.readFileSync(outPath, "utf-8"));
+      finalResults = { ...prev, ...results };
+    } catch {}
+  }
+  fs.writeFileSync(outPath, JSON.stringify(finalResults, null, 2), "utf-8");
+  console.log(`✅ Resultados guardados en: cases/eval-context-results.json`);
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const providerArg =
@@ -682,7 +832,7 @@ async function main() {
   const skillArg =
     args.find((a) => a.startsWith("--skill="))?.split("=")[1] ||
     process.env.EVAL_SKILL ||
-    "detect_deadlines";
+    "evaluate_context";
 
   let provider;
   try {
@@ -716,8 +866,10 @@ async function main() {
     await runSkill02Evaluation(provider, providerArg, filteredCases, currentDate);
   } else if (skillArg === "group_work") {
     await runSkill03Evaluation(provider, providerArg, filteredCases, currentDate);
-  } else {
+  } else if (skillArg === "detect_deadlines") {
     await runSkill04Evaluation(provider, providerArg, filteredCases, currentDate);
+  } else {
+    await runSkill05Evaluation(provider, providerArg, filteredCases, currentDate);
   }
 }
 

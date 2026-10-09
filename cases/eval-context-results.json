@@ -1,0 +1,680 @@
+{
+  "case-01": {
+    "itemAssessments": [
+      {
+        "itemId": "c01-1",
+        "attention": "high",
+        "signals": [
+          "external_commitment",
+          "approaching_deadline"
+        ],
+        "rationale": "Es un compromiso externo con un plazo próximo (martes 2026-10-13, dentro de los próximos 7 días desde el 2026-10-09)."
+      },
+      {
+        "itemId": "c01-2",
+        "attention": "medium",
+        "signals": [
+          "already_started"
+        ],
+        "rationale": "La tarea ya está en progreso (status: started) y no presenta señales de urgencia inminente ni compromisos externos explícitos."
+      },
+      {
+        "itemId": "c01-3",
+        "attention": "low",
+        "signals": [],
+        "rationale": "Es una tarea de estudio sin plazos, compromisos externos ni estado de inicio. Se clasifica como trabajo flexible/exploratorio."
+      },
+      {
+        "itemId": "c01-4",
+        "attention": "medium",
+        "signals": [
+          "already_started"
+        ],
+        "rationale": "Es un proyecto en curso (status: started) sin plazos inminentes ni compromisos externos declarados."
+      },
+      {
+        "itemId": "c01-5",
+        "attention": "low",
+        "signals": [],
+        "rationale": "Es una idea en exploración y el texto original indica explícitamente que 'no corre prisa', lo que la sitúa en la categoría de actividades opcionales/flexibles."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-02": {
+    "itemAssessments": [
+      {
+        "itemId": "c02-1",
+        "attention": "high",
+        "signals": [
+          "external_commitment",
+          "approaching_deadline"
+        ],
+        "rationale": "Es un compromiso externo con un plazo límite el 2026-10-20, que está dentro de los próximos 7 días desde la fecha actual (2026-10-09)."
+      },
+      {
+        "itemId": "c02-2",
+        "attention": "medium",
+        "signals": [],
+        "rationale": "Es una preocupación emocional ('agobio') sin fecha límite ni compromiso externo explícito. Requiere atención para gestionar el estado, pero no tiene la urgencia situacional de un plazo inminente o un bloqueo técnico directo."
+      },
+      {
+        "itemId": "c02-3",
+        "attention": "high",
+        "signals": [
+          "approaching_deadline"
+        ],
+        "rationale": "La tarea tiene un plazo explícito de 'hoy mismo' (2026-10-09), lo que la hace urgente para el día actual. Además, es un paso necesario para el cierre fiscal."
+      }
+    ],
+    "groupAssessments": [
+      {
+        "groupId": "group-cierre-fiscal",
+        "relevance": "high",
+        "rationale": "El grupo contiene un compromiso externo con plazo próximo (c02-1) y una tarea urgente para hoy (c02-3), lo que indica una línea de trabajo crítica y activa."
+      }
+    ],
+    "openQuestions": []
+  },
+  "case-03": {
+    "itemAssessments": [
+      {
+        "itemId": "c03-1",
+        "attention": "low",
+        "signals": [],
+        "rationale": "Es una idea en fase de exploración sin plazos, compromisos externos ni importancia explícita declarada. No hay señales de urgencia o gravedad situacional."
+      },
+      {
+        "itemId": "c03-2",
+        "attention": "low",
+        "signals": [],
+        "rationale": "Es una idea en exploración con la indicación explícita de 'si me da tiempo', lo que la clasifica como actividad opcional y flexible, sin plazos ni compromisos."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-04": {
+    "itemAssessments": [
+      {
+        "itemId": "c04-1",
+        "attention": "high",
+        "signals": [
+          "explicit_importance",
+          "approaching_deadline"
+        ],
+        "rationale": "El item tiene una importancia explícita declarada como 'high' y un plazo resuelto para el 2026-10-15, que se encuentra dentro de los próximos 7 días a partir de la fecha actual (2026-10-09)."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-05": {
+    "itemAssessments": [
+      {
+        "itemId": "c05-1",
+        "attention": "low",
+        "signals": [],
+        "rationale": "Tarea doméstica flexible sin plazos, compromisos externos ni importancia declarada. Es una actividad rutinaria que puede realizarse cuando surja la oportunidad."
+      },
+      {
+        "itemId": "c05-2",
+        "attention": "high",
+        "signals": [
+          "approaching_deadline"
+        ],
+        "rationale": "Tiene un plazo explícito para hoy (2026-10-09) antes de las 5:00 PM. Al ser un compromiso con un tercero (Martín) con fecha límite inminente, requiere atención alta para asegurar su cumplimiento a tiempo."
+      },
+      {
+        "itemId": "c05-3",
+        "attention": "low",
+        "signals": [],
+        "rationale": "Idea en estado de exploración sin plazos, compromisos ni objetivos declarados asociados. Es una actividad opcional y flexible."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-06": {
+    "itemAssessments": [
+      {
+        "itemId": "c06-1",
+        "attention": "medium",
+        "signals": [
+          "already_started",
+          "waiting",
+          "dependency"
+        ],
+        "rationale": "La tarea está en progreso pero se encuentra explícitamente frenada a la espera de un entregable de un tercero (credenciales). Existe una dependencia explícita con el item c06-2. No hay plazos inminentes ni importancia alta declarada, por lo que la atención es media, permitiendo acciones de seguimiento o avance parcial si es posible."
+      },
+      {
+        "itemId": "c06-2",
+        "attention": "medium",
+        "signals": [
+          "waiting",
+          "dependency"
+        ],
+        "rationale": "Este item representa el bloqueo activo (falta de credenciales). Es el origen de la dependencia que frena a c06-1. Al ser un 'concern' que describe una situación de espera, requiere atención media para gestionar el seguimiento con el cliente, aunque no haya un plazo explícito definido en la entrada."
+      },
+      {
+        "itemId": "c06-3",
+        "attention": "medium",
+        "signals": [
+          "already_started"
+        ],
+        "rationale": "Tarea en progreso dentro del mismo proyecto. No tiene dependencias explícitas que la frenen, ni plazos inminentes, ni importancia alta declarada. Es trabajo activo normal sin fricción inminente."
+      }
+    ],
+    "groupAssessments": [
+      {
+        "groupId": "group-tienda-online",
+        "relevance": "medium",
+        "rationale": "Línea de trabajo cohesionada y estable. Contiene tareas en progreso, una de las cuales está bloqueada por un tercero, pero no hay señales de crisis inmediata, plazos críticos o objetivos declarados activos que eleven la relevancia a alta."
+      }
+    ],
+    "openQuestions": [
+      {
+        "topic": "Gestión del bloqueo por credenciales",
+        "question": "¿Existe algún plazo estimado o compromiso con el cliente para recibir las credenciales de webhook, o se requiere enviar un recordatorio?",
+        "relatedItemIds": [
+          "c06-1",
+          "c06-2"
+        ],
+        "reason": "La falta de información sobre cuándo se resolverá el bloqueo impide determinar si la atención debe elevarse a 'high' por urgencia inminente o si se mantiene en 'medium' como seguimiento estándar."
+      }
+    ]
+  },
+  "case-07": {
+    "itemAssessments": [
+      {
+        "itemId": "c07-1",
+        "attention": "medium",
+        "signals": [],
+        "rationale": "Es una preocupación (concern) sobre el estado de trabajo actual. No tiene plazos, compromisos externos ni importancia explícita declarada. Requiere atención media para ser considerada en la planificación, pero no presenta urgencia situacional inmediata."
+      },
+      {
+        "itemId": "c07-2",
+        "attention": "medium",
+        "signals": [
+          "already_started"
+        ],
+        "rationale": "Es un compromiso personal pendiente. Al ser un compromiso declarado por la persona, tiene relevancia media. No hay plazos externos ni dependencias. La señal 'already_started' se aplica aquí en el sentido de que es una intención activa declarada (aunque el status sea 'pending', es un compromiso explícito que requiere gestión de tiempo), pero dado que no hay urgencia externa, se mantiene en media. *Corrección*: Revisando las señales permitidas, 'already_started' requiere status 'started'. Este es 'pending'. Por tanto, no aplica ninguna señal específica de urgencia. Es un compromiso personal sin fecha límite. Atención media por ser un compromiso activo declarado."
+      },
+      {
+        "itemId": "c07-3",
+        "attention": "medium",
+        "signals": [],
+        "rationale": "Tarea pendiente de revisión de PRs. No se especifica si es un compromiso externo (aunque 'Conscious Tech' sugiere trabajo profesional, el campo 'commitment' no está definido como 'external' en los datos, y no hay fecha límite). Sin información de plazo o compromiso externo explícito, se clasifica como trabajo activo normal (medium)."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-08": {
+    "itemAssessments": [
+      {
+        "itemId": "c08-1",
+        "attention": "high",
+        "signals": [
+          "external_commitment",
+          "approaching_deadline"
+        ],
+        "rationale": "Es un compromiso externo explícito con el equipo de diseño. La fecha resuelta es el 2026-10-09 (hoy), lo que indica una urgencia inmediata o inminente para la reunión."
+      },
+      {
+        "itemId": "c08-2",
+        "attention": "high",
+        "signals": [
+          "approaching_deadline"
+        ],
+        "rationale": "La tarea tiene un plazo explícito de cierre 'antes de salir el viernes por la tarde', que corresponde a la fecha actual (2026-10-09). Al estar pendiente y tener un plazo que vence hoy, requiere atención alta para cumplirlo."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-09": {
+    "itemAssessments": [
+      {
+        "itemId": "c09-1",
+        "attention": "low",
+        "signals": [],
+        "rationale": "El item es una idea en fase de exploración ('exploring') sin compromisos externos, plazos, importancia declarada ni dependencias. Se trata de trabajo flexible y opcional."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-10": {
+    "itemAssessments": [
+      {
+        "itemId": "c10-1",
+        "attention": "medium",
+        "signals": [],
+        "rationale": "Es una preocupación de salud activa que impacta la capacidad de trabajo (foco por las tardes), pero no tiene plazos externos ni compromisos de terceros. Requiere atención para gestionar el estado, pero no es una urgencia situacional inmediata comparable a un plazo vencido."
+      },
+      {
+        "itemId": "c10-2",
+        "attention": "medium",
+        "signals": [],
+        "rationale": "Tarea pendiente relacionada con la salud (posible consecuencia de c10-1). No tiene fecha límite explícita ni compromiso externo declarado, pero es una acción concreta necesaria para abordar la preocupación de salud. Se considera trabajo activo normal sin fricción inminente."
+      },
+      {
+        "itemId": "c10-3",
+        "attention": "low",
+        "signals": [],
+        "rationale": "Tarea de ajuste de hábitos ('aflojarle un poco al café'). Es flexible, no tiene plazos ni compromisos externos, y se enmarca como una acción de bienestar general sin urgencia situacional específica."
+      },
+      {
+        "itemId": "c10-4",
+        "attention": "high",
+        "signals": [
+          "approaching_deadline",
+          "already_started"
+        ],
+        "rationale": "El plazo es 'hoy' (2026-10-09), lo que constituye un plazo próximo (<= 7 días) y activo. Además, la tarea ya está en progreso ('started'), lo que indica compromiso inmediato con la entrega."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-13": {
+    "itemAssessments": [
+      {
+        "itemId": "c13-1",
+        "attention": "medium",
+        "signals": [
+          "external_commitment"
+        ],
+        "rationale": "Es un compromiso externo confirmado. El plazo resuelto es para el mes que viene (noviembre), por lo que no hay urgencia inmediata de plazo (no es <= 7 días). No hay señales de importancia alta explícita ni de que esté en progreso. Se clasifica como atención media por ser un compromiso activo pero con tiempo de margen."
+      },
+      {
+        "itemId": "c13-2",
+        "attention": "high",
+        "signals": [
+          "external_commitment",
+          "approaching_deadline"
+        ],
+        "rationale": "Es un compromiso externo con un plazo explícito 'antes del lunes' (2026-10-12). Dado que la fecha actual es 2026-10-09, el plazo vence en 3 días, lo cual cae dentro de la ventana de 7 días para 'approaching_deadline'. La combinación de compromiso externo y plazo inminente eleva la atención a alta."
+      }
+    ],
+    "groupAssessments": [
+      {
+        "groupId": "group-charla-meetup",
+        "relevance": "high",
+        "rationale": "El grupo contiene un item (c13-2) con un plazo inminente (3 días) y compromiso externo, lo que lo clasifica como alta relevancia situacional."
+      }
+    ],
+    "openQuestions": []
+  },
+  "case-14": {
+    "itemAssessments": [
+      {
+        "itemId": "c14-1",
+        "attention": "low",
+        "signals": [],
+        "rationale": "Es una duda estratégica exploratoria sobre la tecnología a utilizar. No hay plazos, compromisos externos ni objetivos declarados que la conviertan en una urgencia inmediata. Es una reflexión flexible."
+      },
+      {
+        "itemId": "c14-2",
+        "attention": "medium",
+        "signals": [],
+        "rationale": "Describe una fricción operativa recurrente que impacta la productividad (pérdida de tiempo). Aunque no tiene un plazo de vencimiento explícito, es un problema activo que afecta el flujo de trabajo normal y requiere atención para resolver la ineficiencia."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-15": {
+    "itemAssessments": [
+      {
+        "itemId": "c15-1",
+        "attention": "medium",
+        "signals": [
+          "dependency"
+        ],
+        "rationale": "El item depende explícitamente de c15-2 (tests de integración) según la relación 'depends_on'. No hay plazos, compromisos externos ni importancia alta declarada. Es una tarea pendiente con una dependencia directa que debe resolverse antes, pero sin urgencia situacional extrema."
+      },
+      {
+        "itemId": "c15-2",
+        "attention": "medium",
+        "signals": [
+          "dependency"
+        ],
+        "rationale": "Este item es el origen de la dependencia para c15-1. Es una tarea pendiente necesaria para desbloquear la publicación. No hay plazos inminentes ni señales de alta gravedad, pero es parte de un flujo de trabajo activo y coherente."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-16": {
+    "itemAssessments": [
+      {
+        "itemId": "c16-1",
+        "attention": "high",
+        "signals": [
+          "external_commitment",
+          "approaching_deadline",
+          "explicit_importance"
+        ],
+        "rationale": "Es un compromiso externo con fecha límite el 2026-10-15 (dentro de 6 días) e importancia alta declarada."
+      },
+      {
+        "itemId": "c16-2",
+        "attention": "medium",
+        "signals": [
+          "already_started"
+        ],
+        "rationale": "Tarea en progreso sin plazos externos ni importancia explícita declarada. Trabajo activo normal."
+      },
+      {
+        "itemId": "c16-3",
+        "attention": "unclear",
+        "signals": [
+          "insufficient_information"
+        ],
+        "rationale": "Es una preocupación sobre presupuesto sin fecha límite, estatus de decisión o impacto concreto definido. Falta información para determinar la gravedad situacional."
+      },
+      {
+        "itemId": "c16-4",
+        "attention": "low",
+        "signals": [],
+        "rationale": "Idea en estado de exploración ('chusmear'), sin compromisos, plazos ni importancia declarada. Actividad flexible."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": [
+      {
+        "topic": "Presupuesto de diseño",
+        "question": "¿Existe una fecha límite o una decisión pendiente específica relacionada con la contratación de la diseñadora que esté frenando otras tareas?",
+        "relatedItemIds": [
+          "c16-3"
+        ],
+        "reason": "La entrada describe una preocupación vaga. Saber si hay un bloqueo activo o una fecha crítica cambiaría la atención requerida de 'unclear' a 'high' o 'medium'."
+      }
+    ]
+  },
+  "case-17": {
+    "itemAssessments": [
+      {
+        "itemId": "c17-1",
+        "attention": "medium",
+        "signals": [],
+        "rationale": "Tarea pendiente de limpieza técnica sin plazos, compromisos externos ni importancia explícita declarada. Se clasifica como trabajo activo normal sin fricción inminente."
+      },
+      {
+        "itemId": "c17-2",
+        "attention": "medium",
+        "signals": [],
+        "rationale": "Tarea pendiente de limpieza técnica sin plazos, compromisos externos ni importancia explícita declarada. Se clasifica como trabajo activo normal sin fricción inminente."
+      }
+    ],
+    "groupAssessments": [
+      {
+        "groupId": "group-limpieza-deuda",
+        "relevance": "medium",
+        "rationale": "Línea de trabajo cohesionada enfocada en deuda técnica estable, sin crisis inmediata, plazos cercanos o objetivos declarados activos."
+      }
+    ],
+    "openQuestions": []
+  },
+  "case-18": {
+    "itemAssessments": [
+      {
+        "itemId": "c18-1",
+        "attention": "low",
+        "signals": [],
+        "rationale": "El item está explícitamente archivado de forma consciente ('archived conscientemente'), lo que indica que es una decisión tomada y no requiere acción inmediata ni seguimiento activo."
+      },
+      {
+        "itemId": "c18-2",
+        "attention": "high",
+        "signals": [
+          "explicit_importance"
+        ],
+        "rationale": "El item tiene una importancia explícita declarada como 'high' y se refiere a un bug reportado por usuarios, lo que sugiere una necesidad de atención prioritaria para resolver un problema funcional."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-19": {
+    "itemAssessments": [
+      {
+        "itemId": "c19-1",
+        "attention": "high",
+        "signals": [
+          "approaching_deadline",
+          "dependency"
+        ],
+        "rationale": "El plazo es para mañana (2026-10-10), lo cual es inminente (<= 7 días). Además, depende explícitamente de completar la tarea c19-2 (hablar con Pablo) antes de poder ejecutarse."
+      },
+      {
+        "itemId": "c19-2",
+        "attention": "high",
+        "signals": [
+          "dependency"
+        ],
+        "rationale": "Esta tarea es un prerequisito explícito para c19-1, que tiene un plazo inminente para mañana. Completar esta conversación es crítico para desbloquear el envío del presupuesto."
+      },
+      {
+        "itemId": "c19-3",
+        "attention": "high",
+        "signals": [
+          "overdue_deadline",
+          "explicit_importance"
+        ],
+        "rationale": "La tarea tiene un plazo para hoy (2026-10-09) y está marcada con importancia alta explícita. Se trata de un error crítico (500 en checkout) que requiere atención inmediata."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-20": {
+    "itemAssessments": [
+      {
+        "itemId": "c20-1",
+        "attention": "medium",
+        "signals": [
+          "already_started",
+          "dependency"
+        ],
+        "rationale": "El proyecto está en estado 'started' y existe una dependencia explícita hacia c20-3 (depende de las notas de diseño). No hay plazos externos ni importancia alta declarada, por lo que se mantiene en atención media como trabajo activo normal."
+      },
+      {
+        "itemId": "c20-2",
+        "attention": "low",
+        "signals": [],
+        "rationale": "Se trata de una preocupación ('concern') sin estado de tarea, sin plazos, sin compromisos externos ni dependencias. Es una reflexión interna que no requiere acción inmediata ni seguimiento operativo urgente."
+      },
+      {
+        "itemId": "c20-3",
+        "attention": "medium",
+        "signals": [
+          "dependency"
+        ],
+        "rationale": "Esta tarea es el origen de la dependencia para c20-1. Aunque está en estado 'pending', es un paso necesario para desbloquear el proyecto principal. No hay plazos inminentes, por lo que la atención es media."
+      }
+    ],
+    "groupAssessments": [
+      {
+        "groupId": "group-motor-capacidad",
+        "relevance": "medium",
+        "rationale": "El grupo contiene el proyecto principal en curso y su tarea preparatoria directa. Es una línea de trabajo cohesionada y estable, sin crisis inmediata ni compromisos externos que la eleven a alta relevancia."
+      }
+    ],
+    "openQuestions": []
+  },
+  "case-21": {
+    "itemAssessments": [
+      {
+        "itemId": "c21-1",
+        "attention": "high",
+        "signals": [
+          "external_commitment",
+          "explicit_importance",
+          "approaching_deadline"
+        ],
+        "rationale": "El item es un compromiso externo explícito con una fecha límite fija para el 24 de octubre de 2026. Dado que la fecha actual es el 9 de octubre, quedan 15 días, lo cual no entra en la ventana de 7 días para 'approaching_deadline' estrictamente, pero la combinación de compromiso externo, importancia alta declarada y la naturaleza de 'entregable final' sin falta justifica una atención alta por la gravedad situacional y la urgencia relativa del plazo inminente."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-22": {
+    "itemAssessments": [
+      {
+        "itemId": "c22-1",
+        "attention": "low",
+        "signals": [
+          "approaching_deadline"
+        ],
+        "rationale": "Aunque tiene un plazo próximo (fin de semana), la tarea es de tipo 'idea' y el texto indica explícitamente que es opcional ('si tengo un rato'), lo que la clasifica como trabajo flexible o exploratorio."
+      },
+      {
+        "itemId": "c22-2",
+        "attention": "high",
+        "signals": [
+          "approaching_deadline",
+          "explicit_importance"
+        ],
+        "rationale": "La tarea tiene una importancia explícita alta y un plazo inminente (vence el domingo, 2026-10-11, dentro de los próximos 7 días). La combinación de urgencia temporal y prioridad declarada eleva la atención a alta."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-23": {
+    "itemAssessments": [
+      {
+        "itemId": "c23-1",
+        "attention": "low",
+        "signals": [
+          "insufficient_information"
+        ],
+        "rationale": "El item es una idea en estado de exploración ('exploring') sin plazos definidos ni compromisos externos. El texto indica explícitamente que se debe realizar 'cuando estemos más tranquilos', lo que sugiere una prioridad baja y flexible. No hay señales de urgencia, dependencia crítica o importancia alta declarada."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-24": {
+    "itemAssessments": [
+      {
+        "itemId": "c24-1",
+        "attention": "low",
+        "signals": [],
+        "rationale": "Tarea pendiente sin compromiso externo explícito, sin plazo definido, sin importancia declarada y sin estado de inicio. Es una acción administrativa estándar sin señales de urgencia situacional."
+      },
+      {
+        "itemId": "c24-2",
+        "attention": "medium",
+        "signals": [
+          "already_started"
+        ],
+        "rationale": "La tarea está en progreso (status: started). No hay plazos inminentes, compromisos externos ni dependencias explícitas. Se considera trabajo activo normal sin fricción inminente."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  },
+  "case-25": {
+    "itemAssessments": [
+      {
+        "itemId": "c25-1",
+        "attention": "medium",
+        "signals": [],
+        "rationale": "Tarea pendiente de revisión semanal. No hay plazos externos, importancia explícita alta ni compromisos de terceros. Es trabajo activo normal de gestión personal."
+      },
+      {
+        "itemId": "c25-2",
+        "attention": "medium",
+        "signals": [],
+        "rationale": "Tarea pendiente de organización de notas. No presenta urgencia situacional, plazos inminentes ni bloqueos. Se evalúa como trabajo activo normal dentro del flujo de cierre semanal."
+      }
+    ],
+    "groupAssessments": [
+      {
+        "groupId": "group-cierre-semana",
+        "relevance": "medium",
+        "rationale": "Línea de trabajo cohesionada centrada en la revisión y organización de pendientes. No contiene señales de crisis, compromisos externos urgentes ni objetivos declarados activos, por lo que se considera estable y de relevancia media."
+      }
+    ],
+    "openQuestions": []
+  },
+  "case-12": {
+    "itemAssessments": [
+      {
+        "itemId": "c12-1",
+        "attention": "medium",
+        "signals": [
+          "already_started"
+        ],
+        "rationale": "El proyecto está en curso ('started'). El plazo estimado es para noviembre (2026-11-01 a 2026-11-30), lo cual está más allá de los próximos 7 días desde la fecha actual (2026-10-09). No hay señales de urgencia inmediata, compromiso externo explícito ni importancia alta declarada."
+      },
+      {
+        "itemId": "c12-2",
+        "attention": "medium",
+        "signals": [],
+        "rationale": "Tarea pendiente que forma parte del proyecto principal. No tiene fecha límite propia explícita ni señales de urgencia inmediata. Se evalúa como trabajo activo normal dentro del flujo del proyecto."
+      },
+      {
+        "itemId": "c12-3",
+        "attention": "medium",
+        "signals": [],
+        "rationale": "Tarea pendiente que forma parte del proyecto principal. No tiene fecha límite propia explícita ni señales de urgencia inmediata. Se evalúa como trabajo activo normal dentro del flujo del proyecto."
+      },
+      {
+        "itemId": "c12-4",
+        "attention": "medium",
+        "signals": [],
+        "rationale": "Tarea pendiente que forma parte del proyecto principal. No tiene fecha límite propia explícita ni señales de urgencia inmediata. Se evalúa como trabajo activo normal dentro del flujo del proyecto."
+      },
+      {
+        "itemId": "c12-5",
+        "attention": "medium",
+        "signals": [],
+        "rationale": "Tarea pendiente que forma parte del proyecto principal. No tiene fecha límite propia explícita ni señales de urgencia inmediata. Se evalúa como trabajo activo normal dentro del flujo del proyecto."
+      }
+    ],
+    "groupAssessments": [
+      {
+        "groupId": "group-lanzamiento-beta",
+        "relevance": "medium",
+        "rationale": "Línea de trabajo cohesionada y estable. El proyecto principal tiene un plazo para noviembre, lo que no constituye una crisis inmediata (plazo > 7 días). No hay compromisos externos explícitos ni objetivos declarados activos que eleven la relevancia a 'high'."
+      }
+    ],
+    "openQuestions": []
+  },
+  "case-11": {
+    "itemAssessments": [
+      {
+        "itemId": "c11-1",
+        "attention": "unclear",
+        "signals": [
+          "insufficient_information"
+        ],
+        "rationale": "No se proporcionan señales explícitas de compromiso externo, plazo, importancia o estado de progreso. La falta de contexto impide determinar la gravedad situacional sin hacer suposiciones."
+      },
+      {
+        "itemId": "c11-2",
+        "attention": "unclear",
+        "signals": [
+          "insufficient_information"
+        ],
+        "rationale": "Aunque involucra una verificación financiera, no hay datos de plazo, importancia explícita, compromiso externo o estado de espera. No es posible evaluar la urgencia objetiva con la información disponible."
+      },
+      {
+        "itemId": "c11-3",
+        "attention": "unclear",
+        "signals": [
+          "insufficient_information"
+        ],
+        "rationale": "Tarea administrativa sin fechas límite, importancia declarada ni relaciones de dependencia. La ausencia de señales contextuales impide clasificar su atención."
+      }
+    ],
+    "groupAssessments": [],
+    "openQuestions": []
+  }
+}

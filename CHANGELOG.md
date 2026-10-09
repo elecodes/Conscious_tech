@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-10-09
+
+### Added
+- **Domain Modeling for Context Evaluation**: Zod schemas and TypeScript types in `src/domain/context.ts` for `ContextSignal`, `ContextAttentionLevel`, `GroupRelevanceLevel`, `ItemContextAssessment`, `GroupContextAssessment`, `OpenQuestion`, `EvaluateContextInput`, and `EvaluateContextOutput`.
+- **Skill 05 (`evaluate_context`)**:
+  - Implemented `EvaluateContextService` answering *"What context matters to understand the situation of each task and line of work?"* without building the weekly plan, deciding trade-offs, or dictating actions.
+  - Semantic prompt in `src/skills/evaluate-context/prompt.ts` with strict rules: explain situation, never allocate hours or decide focus, treat unstated items as `unclear` instead of low importance, enforce grounded evidence, and restrict open questions to material uncertainties.
+  - JSON parser with Markdown code fence extraction in `src/skills/evaluate-context/parser.ts`.
+  - Deterministic invariant engine in `src/skills/evaluate-context/deterministic.ts`:
+    - Strict 1:1 coverage conservation for all items and groups (0 missing, 0 duplicates, 0 phantoms).
+    - Integrity guard for open questions (strips references to nonexistent item IDs).
+    - "Code before AI" dependency guardrail: purges spurious `dependency` signals unless backed by explicit, valid `depends_on` relationships (strictly rejecting `part_of`, `related_to`, or `same_project`).
+    - Objective `waiting` signal handling: tracks third-party blockers without automatically downgrading attention level.
+    - Zero-token short-circuit for empty inputs.
+- **Provider Support for Skill 05**:
+  - `MockProvider`: Token-free reference assessments across golden dataset `cases/mock-extractions.json` through `cases/mock-deadlines.json`.
+  - `GroqProvider`: Structured JSON inference with `qwen/qwen3.8-27b`.
+  - `GeminiProvider`: Google GenAI structured output with `gemini-2.5-flash`.
+- **Testing & Verification**:
+  - Added 39 unit and behavioral tests across `tests/context-domain.test.ts` and `tests/evaluate-context.test.ts`.
+  - Total test suite expanded to 169 tests passing deterministically in < 700ms with zero token expenditure.
+- **Evaluation Pipeline & Calibration**:
+  - Extended `scripts/eval-cases.ts` with `runSkill05Evaluation` and npm script `npm run eval:context`.
+  - Completed validation and semantic microcalibration across all 25 calibration brain dumps in `cases/eval-context-results.json` using Groq (`qwen/qwen3.8-27b`):
+    - 100% item coverage (63/63 items) and group coverage (7/7 groups) with 0 validation errors.
+    - Verified proper handling of exploratory ideas (Case 03 in `LOW`), third-party waiting without propagation (Case 06), absence of clinical urgency alarms (Case 10), composition vs dependency isolation (Case 12, 17, 25), archived items (Case 18 in `LOW`), and optional activities with deadlines (Case 22 in `LOW`).
+- **Architecture Documentation**:
+  - Accepted ADR 0005: Functional Contract for Skill 05 (`evaluate_context`).
+
 ## [0.4.0] - 2026-10-09
 
 ### Added
