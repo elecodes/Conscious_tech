@@ -223,6 +223,7 @@ Implemented and calibrated skills:
 3. **Skill 03: `group_work`**: Synthesize items into coherent lines of attention (`WorkGroup` and `ungroupedItemIds`) without deciding weekly priorities or capacities, backed by a deterministic invariant engine.
 4. **Skill 04: `detect_deadlines`**: Detect and normalize temporal references and deadlines anchored to an explicit `currentDate`, without inventing dates, inferring priority/urgency, or estimating effort. Vague expressions discarded deterministically.
 5. **Skill 05: `evaluate_context`**: Evaluate situational context, gravity, dependencies, and open questions without building weekly plans or making choices for the user (`ItemContextAssessment`, `GroupContextAssessment`, `OpenQuestion`).
+6. **Skill 06: `build_week`**: Synthesize evaluated context into a realistic, human-centered weekly focus proposal (`ProposedWeek`) respecting capacity, protected space, and user sovereignty ("AI proposes. The person decides.").
 
 ### Key Decisions & Conventions (Skill 05)
 - **Strict "Code before AI" for `dependency`**: The `dependency` signal requires an explicit, valid `depends_on` relationship between input items. Spurious signals derived from `part_of`, `related_to`, or `same_project` are strictly filtered out by the deterministic invariant engine.
@@ -230,8 +231,21 @@ Implemented and calibrated skills:
 - **Exploratory / Optional items**: Items conditioned by "si tengo tiempo" or "si me da tiempo" preserve `low` attention even when nearing calendar horizons.
 - **Calibration validated with Groq & Mock**: 25/25 cases verified with 100% item (63/63) and group (7/7) coverage, 0 phantom IDs, and 0 duplicate entries.
 
+### Key Decisions & Conventions (Skill 06)
+- **Contractual obligations require explicit backing**: High importance and urgent wording ("urgente", "crítico", "prioritario") do NOT invent contractual obligations. Only explicit dates in `strictDeadlinesInWeek` or verified `externalCommitments` qualify as `obligations`.
+- **Honesty over mathematical pretense**: When users provide no hour estimates, capacity status remains `unknown` rather than fabricating hours to simulate a tight calendar plan.
+- **Protected space is mandatory**: At least 25–30% of plannable capacity is protected for margin and rest.
+- **Consolidation engine protection**: Evaluator runs safely merge records without letting offline mock runs destroy live Groq evaluations, maintaining active records and execution history.
+- **Calibration with real Groq (`qwen/qwen3.8-27b`)**:
+  - 25/25 fixtures evaluated with real Groq.
+  - 25 clean passes, 0 repairs, 0 failures, 100% 1:1 item conservation.
+  - Semantic audit approved with product observations registered:
+    - *Prior dates*: External commitments with dates prior to target week are kept visible for explicit human reconciliation (`case-08`).
+    - *Product backlog items*: Handling sub-hour quick tasks prior to the week (`case-22`), delegation trigger vs focus tracking (`case-24`), and UI distinction between weekly due dates and future milestone commitments (`case-13`).
+  - *Note*: Evaluation calibration is an empirical benchmark and does not guarantee absolute absence of errors in production.
+
 Next implementation focus:
-- **Skill 06: `build_week`**: Build realistic weekly focus and allocations respecting capacity, protected space, and user sovereignty ("AI proposes. The person decides.").
+- **Skill 07: `analyze_change`**: Analyze mid-week changes, incoming urgent inputs, and trade-offs against the established weekly plan.
 
 Detailed specifications for individual skills live separately from this file.
 

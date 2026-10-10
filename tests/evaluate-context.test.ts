@@ -6,7 +6,12 @@ import {
   validateContextInvariants,
   cleanAndValidateContextOutput,
 } from "../src/skills/evaluate-context/deterministic";
-import { ContextValidationError } from "../src/skills/evaluate-context/parser";
+import {
+  ContextValidationError,
+  parseAndValidateContextOutput,
+  parseAndValidateContextOutputWithAudit,
+  sanitizeContextItemSignals,
+} from "../src/skills/evaluate-context/parser";
 
 describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
   const baseDate = "2026-10-09";
@@ -1052,6 +1057,251 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
       };
       const cleaned = cleanAndValidateContextOutput(rawOutput, input);
       expect(cleaned.itemAssessments.find((ia) => ia.itemId === "i1")?.signals).not.toContain("dependency");
+    });
+  });
+
+  describe("Real Groq Evaluation Audit Regressions (Findings 1, 2, 3)", () => {
+    // Finding 1: case-12 schema failure with part_of_project
+    it("Finding 1: sanitizes part_of_project signal into audit log without rejecting entire response", () => {
+      const rawWithInvalidSignal = JSON.stringify({
+        itemAssessments: [
+          {
+            itemId: "c12-2",
+            attention: "medium",
+            signals: ["part_of_project", "already_started"],
+            rationale: "Testing de usuarios es parte de la beta y ya fue iniciado",
+          },
+          {
+            itemId: "c12-1",
+            attention: "high",
+            signals: ["part_of_project"],
+            rationale: "Lanzamiento de beta",
+          },
+        ],
+        groupAssessments: [],
+        openQuestions: [],
+      });
+
+      const auditResult = parseAndValidateContextOutputWithAudit(rawWithInvalidSignal);
+      expect(auditResult.droppedSignals).toHaveLength(2);
+      expect(auditResult.droppedSignals[0].signal).toBe("part_of_project");
+      expect(auditResult.droppedSignals[0].itemId).toBe("c12-2");
+
+      const directSanitization = sanitizeContextItemSignals([
+        { itemId: "c12-2", signals: ["part_of_project", "already_started"] },
+      ]);
+      expect(directSanitization.droppedSignals).toHaveLength(1);
+      expect((directSanitization.sanitized as any)[0].signals).toEqual(["already_started"]);
+
+      const parsedOutput = auditResult.output;
+      const c122 = parsedOutput.itemAssessments.find((ia) => ia.itemId === "c12-2");
+      expect(c122).toBeDefined();
+      expect(c122?.signals).not.toContain("part_of_project");
+      expect(c122?.signals).toContain("already_started");
+      expect(c122?.attention).toBe("medium");
+
+      const c121 = parsedOutput.itemAssessments.find((ia) => ia.itemId === "c12-1");
+      expect(c121).toBeDefined();
+      expect(c121?.signals).toEqual([]);
+
+      // parseAndValidateContextOutput doesn't throw and returns the sanitized output
+      expect(() => parseAndValidateContextOutput(rawWithInvalidSignal)).not.toThrow();
+    });
+
+    it("Finding 1: case-12 with part_of relationships never justifies dependency signals", () => {
+      const input: EvaluateContextInput = {
+        currentDate: "2026-10-09",
+        items: [
+          { id: "c12-1", title: "Lanzar beta cerrada", type: "project", rawText: "Lanzar beta" },
+          { id: "c12-2", title: "Testing de usuarios", type: "task", rawText: "Testing" },
+          { id: "c12-3", title: "Pulir onboarding", type: "task", rawText: "Onboarding" },
+        ],
+        relationships: [
+          { sourceItemId: "c12-2", targetItemId: "c12-1", type: "part_of", confidence: "high", reason: "testing es parte del hito" },
+          { sourceItemId: "c12-3", targetItemId: "c12-1", type: "part_of", confidence: "high", reason: "onboarding es parte del hito" },
+        ],
+        groupedWork: {
+          groups: [{ id: "g-beta", title: "Beta", itemIds: ["c12-1", "c12-2", "c12-3"], rationale: "Lanzamiento" }],
+          ungroupedItemIds: [],
+        },
+        deadlines: { deadlines: [] },
+      };
+
+      const rawOutput = {
+        itemAssessments: [
+          { itemId: "c12-1", attention: "high" as const, signals: ["dependency" as const], rationale: "Beta" },
+          { itemId: "c12-2", attention: "medium" as const, signals: ["dependency" as const], rationale: "Testing" },
+          { itemId: "c12-3", attention: "medium" as const, signals: [], rationale: "Onboarding" },
+        ],
+        groupAssessments: [
+          { groupId: "g-beta", relevance: "high" as const, rationale: "Beta" },
+        ],
+        openQuestions: [],
+      };
+
+      const cleaned = cleanAndValidateContextOutput(rawOutput, input);
+      for (const ia of cleaned.itemAssessments) {
+        expect(ia.signals).not.toContain("dependency");
+      }
+      expect(validateContextInvariants(cleaned, input).valid).toBe(true);
+    });
+
+    // Finding 2: case-06 and case-19 dependency isolation
+    it("Finding 2: case-06 allows dependency only for items backed by depends_on, not same_project", () => {
+      const input: EvaluateContextInput = {
+        currentDate: "2026-10-09",
+        items: [
+          { id: "c06-1", title: "Integración Stripe", type: "task", rawText: "Stripe" },
+          { id: "c06-2", title: "Esperar credenciales webhook", type: "task", rawText: "Credenciales" },
+          { id: "c06-3", title: "Diseñar checkout", type: "task", rawText: "Checkout" },
+        ],
+        relationships: [
+          { sourceItemId: "c06-1", targetItemId: "c06-2", type: "depends_on", confidence: "high", reason: "frenado por credenciales" },
+          { sourceItemId: "c06-1", targetItemId: "c06-3", type: "same_project", confidence: "high", reason: "tienda online" },
+        ],
+        groupedWork: {
+          groups: [{ id: "g-store", title: "Tienda", itemIds: ["c06-1", "c06-2", "c06-3"], rationale: "E-commerce" }],
+          ungroupedItemIds: [],
+        },
+        deadlines: { deadlines: [] },
+      };
+
+      const rawOutput = {
+        itemAssessments: [
+          { itemId: "c06-1", attention: "high" as const, signals: ["dependency" as const, "already_started" as const], rationale: "Stripe" },
+          { itemId: "c06-2", attention: "medium" as const, signals: ["dependency" as const, "waiting" as const], rationale: "Credenciales" },
+          // c06-3 falsely claims dependency from same_project
+          { itemId: "c06-3", attention: "medium" as const, signals: ["dependency" as const, "explicit_importance" as const], rationale: "Checkout" },
+        ],
+        groupAssessments: [
+          { groupId: "g-store", relevance: "high" as const, rationale: "Tienda" },
+        ],
+        openQuestions: [],
+      };
+
+      const cleaned = cleanAndValidateContextOutput(rawOutput, input);
+      const c061 = cleaned.itemAssessments.find((ia) => ia.itemId === "c06-1");
+      const c062 = cleaned.itemAssessments.find((ia) => ia.itemId === "c06-2");
+      const c063 = cleaned.itemAssessments.find((ia) => ia.itemId === "c06-3");
+
+      expect(c061?.signals).toContain("dependency");
+      expect(c061?.signals).toContain("already_started");
+
+      expect(c062?.signals).toContain("dependency");
+      expect(c062?.signals).toContain("waiting");
+
+      // c06-3 must NOT have dependency, but must keep explicit_importance
+      expect(c063?.signals).not.toContain("dependency");
+      expect(c063?.signals).toContain("explicit_importance");
+
+      expect(validateContextInvariants(cleaned, input).valid).toBe(true);
+    });
+
+    it("Finding 2: case-19 preserves dependency signal when backed by depends_on", () => {
+      const input: EvaluateContextInput = {
+        currentDate: "2026-10-09",
+        items: [
+          { id: "c19-1", title: "Mandar presupuesto a Lucía", type: "task", rawText: "Presupuesto" },
+          { id: "c19-2", title: "Hablar con Pablo", type: "task", rawText: "Pablo" },
+        ],
+        relationships: [
+          { sourceItemId: "c19-1", targetItemId: "c19-2", type: "depends_on", confidence: "high", reason: "Se enviará después de hablar con Pablo" },
+        ],
+        groupedWork: {
+          groups: [],
+          ungroupedItemIds: ["c19-1", "c19-2"],
+        },
+        deadlines: { deadlines: [] },
+      };
+
+      const rawOutput = {
+        itemAssessments: [
+          { itemId: "c19-1", attention: "high" as const, signals: ["dependency" as const, "external_commitment" as const], rationale: "Presupuesto cliente" },
+          { itemId: "c19-2", attention: "medium" as const, signals: ["dependency" as const], rationale: "Llamar a Pablo" },
+        ],
+        groupAssessments: [],
+        openQuestions: [],
+      };
+
+      const cleaned = cleanAndValidateContextOutput(rawOutput, input);
+      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "c19-1")?.signals).toContain("dependency");
+      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "c19-2")?.signals).toContain("dependency");
+      expect(validateContextInvariants(cleaned, input).valid).toBe(true);
+    });
+
+    // Finding 3: case-22 attention level vs dates
+    it("Finding 3: optional task with approaching date legitimately evaluates to attention low without invariant failure", () => {
+      const input: EvaluateContextInput = {
+        currentDate: "2026-10-09",
+        items: [
+          {
+            id: "c22-1",
+            title: "Cambiarle las cuerdas a la guitarra este finde si tengo un rato",
+            type: "task",
+            rawText: "Cambiarle las cuerdas a la guitarra este finde si tengo un rato.",
+          },
+          {
+            id: "c22-2",
+            title: "Renovar el dominio conscious-tech.org antes del domingo",
+            type: "commitment",
+            commitment: "external",
+            rawText: "no olvidarme de renovar el dominio conscious-tech.org antes de que venza el domingo.",
+          },
+        ],
+        relationships: [],
+        groupedWork: {
+          groups: [],
+          ungroupedItemIds: ["c22-1", "c22-2"],
+        },
+        deadlines: {
+          deadlines: [
+            {
+              itemId: "c22-1",
+              raw: "este finde",
+              kind: "relative_date",
+              resolvedStart: "2026-10-10",
+              resolvedEnd: "2026-10-11",
+              confidence: "medium",
+            },
+            {
+              itemId: "c22-2",
+              raw: "antes de que venza el domingo",
+              kind: "exact_date",
+              resolvedStart: "2026-10-11",
+              resolvedEnd: "2026-10-11",
+              confidence: "high",
+            },
+          ],
+        },
+      };
+
+      const validOutput = {
+        itemAssessments: [
+          // Explicitly optional hobby idea: attention low is semantically correct despite approaching date
+          {
+            itemId: "c22-1",
+            attention: "low" as const,
+            signals: ["approaching_deadline" as const],
+            rationale: "Actividad expresamente opcional ('si tengo un rato') y recreativa; plazo próximo no exige alta atención.",
+          },
+          {
+            itemId: "c22-2",
+            attention: "high" as const,
+            signals: ["external_commitment" as const, "approaching_deadline" as const],
+            rationale: "Compromiso crítico con vencimiento dominical que causa interrupción de servicio si no se renueva.",
+          },
+        ],
+        groupAssessments: [],
+        openQuestions: [],
+      };
+
+      const cleaned = cleanAndValidateContextOutput(validOutput, input);
+      const c221 = cleaned.itemAssessments.find((ia) => ia.itemId === "c22-1");
+      const c222 = cleaned.itemAssessments.find((ia) => ia.itemId === "c22-2");
+
+      expect(c221?.attention).toBe("low");
+      expect(c222?.attention).toBe("high");
+      expect(validateContextInvariants(cleaned, input).valid).toBe(true);
     });
   });
 });

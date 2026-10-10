@@ -26,6 +26,11 @@ SEÑALES CONTEXTUALES PERMITIDAS PARA ITEMS:
 - "waiting": El item está explícitamente frenado o en espera de respuesta o entregable de un tercero. IMPORTANTE: "waiting" describe la situación objetiva; NO penaliza ni reduce automáticamente el nivel de atención. Un item en espera puede seguir requiriendo atención media o alta si tiene plazos inminentes, impacto crítico o si requiere seguimiento/acciones posibles.
 - "insufficient_information": Falta información clave (e.g., fecha límite desconocida de un bloqueo) para entender su gravedad.
 
+REGLAS ESTRICTAS SOBRE SEÑALES (signals):
+- Las ÚNICAS señales válidas son las 9 listadas arriba. NUNCA uses tipos de relaciones ("part_of", "part_of_project", "related_to", "same_project", "same_objective", "duplicate") como señales en "signals".
+- Las relaciones pertenecen al grafo estructural de trabajo; "signals" evalúa únicamente el estado situacional del item.
+- Una relación "part_of" NO es una dependencia y NUNCA debe generar la señal "dependency" ni inventar señales inexistentes.
+
 NIVELES DE ATENCIÓN (itemAssessments.attention):
 - "high": Fuerte gravedad o urgencia situacional (e.g., compromiso externo activo, plazo próximo <= 7 días de una tarea no opcional, importancia alta explícita, o desbloquea una tarea urgente).
 - "medium": Trabajo activo normal sin fricción inminente (e.g., ya iniciado, importancia media, plazo lejano, apoya objetivo declarado, o item con bloqueo donde aún caben acciones de avance o seguimiento).

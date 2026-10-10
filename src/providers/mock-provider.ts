@@ -1,4 +1,4 @@
-import { AIProvider } from "./ai-provider";
+import { AIProvider, ProviderExecutionMeta } from "./ai-provider";
 import { ExtractItemsInput, ExtractedItems } from "../domain/items";
 import { DetectRelationshipsInput, DetectedRelationships } from "../domain/relationships";
 import { GroupWorkInput, GroupedWork } from "../domain/work-groups";
@@ -12,6 +12,21 @@ import {
   ContextSignal,
   ContextAttentionLevel,
 } from "../domain/context";
+import {
+  BuildWeekInput,
+  ProposedWeek,
+  WeeklyFocus,
+  WeeklyObligation,
+  WeeklyFlexibleOption,
+  DeferredItem,
+  createEmptyProposedWeek,
+} from "../domain/week";
+import {
+  resolveTargetWeek,
+  prepareWeekConstraints,
+  calculateWeeklyCapacity,
+  normalizeAndConserveProposedWeek,
+} from "../skills/build-week/deterministic";
 import mockCasesData from "../../cases/mock-extractions.json";
 import mockRelationshipsData from "../../cases/mock-relationships.json";
 import mockGroupingsData from "../../cases/mock-groupings.json";
@@ -31,6 +46,9 @@ export type MockDeadlinesHandler = (
 export type MockContextHandler = (
   input: EvaluateContextInput
 ) => Promise<EvaluateContextOutput> | EvaluateContextOutput;
+export type MockBuildWeekHandler = (
+  input: BuildWeekInput
+) => Promise<ProposedWeek | string> | ProposedWeek | string;
 
 export class MockProvider implements AIProvider {
   readonly id = "mock" as const;
@@ -41,6 +59,12 @@ export class MockProvider implements AIProvider {
   private groupWorkHandler?: MockGroupWorkHandler;
   private deadlinesHandler?: MockDeadlinesHandler;
   private contextHandler?: MockContextHandler;
+  private buildWeekHandler?: MockBuildWeekHandler;
+  private lastExecutionMeta?: ProviderExecutionMeta;
+
+  getLastExecutionMeta(): ProviderExecutionMeta | undefined {
+    return this.lastExecutionMeta;
+  }
 
   constructor(
     handler?: MockHandler,
@@ -74,6 +98,10 @@ export class MockProvider implements AIProvider {
 
   setContextHandler(handler: MockContextHandler): void {
     this.contextHandler = handler;
+  }
+
+  setBuildWeekHandler(handler: MockBuildWeekHandler): void {
+    this.buildWeekHandler = handler;
   }
 
   async extractItems(input: ExtractItemsInput): Promise<ExtractedItems> {
@@ -351,5 +379,227 @@ export class MockProvider implements AIProvider {
       groupAssessments,
       openQuestions,
     };
+  }
+
+  async buildWeek(input: BuildWeekInput): Promise<ProposedWeek> {
+    const startTime = Date.now();
+    if (this.buildWeekHandler) {
+      const res = await this.buildWeekHandler(input);
+      this.lastExecutionMeta = {
+        provider: this.id,
+        model: this.model,
+        durationMs: Date.now() - startTime,
+      };
+      return res as ProposedWeek;
+    }
+
+    if (input.items.length === 0) {
+      this.lastExecutionMeta = {
+        provider: this.id,
+        model: this.model,
+        durationMs: Date.now() - startTime,
+      };
+      return createEmptyProposedWeek(input.currentDate, input.targetWeek);
+    }
+
+    const targetWeek = resolveTargetWeek(input.currentDate, input.targetWeek);
+    const constraints = prepareWeekConstraints(input, targetWeek);
+
+    const assignedItemIds = new Set<string>();
+    const deferredItems: DeferredItem[] = [];
+    const flexibleOptions: WeeklyFlexibleOption[] = [];
+    const obligations: WeeklyObligation[] = [];
+    const foci: WeeklyFocus[] = [];
+
+    // 1. Archived items -> deferredItems
+    for (const a of constraints.archivedItems) {
+      deferredItems.push({
+        itemId: a.itemId,
+        title: a.title,
+        reason: "archived",
+        rationale: a.reason,
+      });
+      assignedItemIds.add(a.itemId);
+    }
+
+    // 2. External commitments and strict deadlines in week -> ALWAYS obligations
+    // Even if blocked by dependencies, external commitments cannot be unilaterally deferred;
+    // they must remain visible as obligations and surface the tension/impediment.
+    const blockedMap = new Map(constraints.blockedItems.map((b) => [b.itemId, b.reasons]));
+    const externalTradeoffs: string[] = [];
+
+    for (const ec of constraints.externalCommitments) {
+      if (!assignedItemIds.has(ec.itemId)) {
+        const blockerReasons = blockedMap.get(ec.itemId);
+        const rationale = blockerReasons && blockerReasons.length > 0
+          ? `${ec.rationale}. ATENCIÓN: Bloqueado por dependencias: ${blockerReasons.join("; ")}.`
+          : ec.rationale;
+
+        if (blockerReasons && blockerReasons.length > 0) {
+          externalTradeoffs.push(
+            `El compromiso externo "${ec.title}" está bloqueado por dependencias no resueltas: ${blockerReasons.join("; ")}.`
+          );
+        }
+
+        obligations.push({
+          itemId: ec.itemId,
+          title: ec.title,
+          dueDate: ec.deadlineDate,
+          commitmentType: "external",
+          rationale,
+          estimatedHours: ec.estimatedHours,
+        });
+        assignedItemIds.add(ec.itemId);
+      }
+    }
+
+    for (const dl of constraints.strictDeadlinesInWeek) {
+      if (!assignedItemIds.has(dl.itemId)) {
+        const blockerReasons = blockedMap.get(dl.itemId);
+        let rationale = `Plazo estricto (${dl.dueDate}) en la semana objetivo`;
+        if (blockerReasons && blockerReasons.length > 0) {
+          rationale += `. ATENCIÓN: Bloqueado por dependencias: ${blockerReasons.join("; ")}.`;
+          externalTradeoffs.push(
+            `La obligación con plazo estricto "${dl.title}" está bloqueada por dependencias no resueltas.`
+          );
+        }
+
+        obligations.push({
+          itemId: dl.itemId,
+          title: dl.title,
+          dueDate: dl.dueDate,
+          commitmentType: "strict_deadline",
+          rationale,
+          estimatedHours: dl.estimatedHours,
+        });
+        assignedItemIds.add(dl.itemId);
+      }
+    }
+
+    // 3. Blocked items strictly by depends_on (excluding external commitments already assigned) -> deferredItems
+    for (const b of constraints.blockedItems) {
+      if (!assignedItemIds.has(b.itemId)) {
+        deferredItems.push({
+          itemId: b.itemId,
+          title: b.title,
+          reason: "waiting_dependency",
+          rationale: b.reasons.join("; "),
+        });
+        assignedItemIds.add(b.itemId);
+      }
+    }
+
+    // 4. Optional ideas -> flexibleOptions
+    for (const o of constraints.optionalItems) {
+      if (!assignedItemIds.has(o.itemId)) {
+        flexibleOptions.push({
+          itemId: o.itemId,
+          title: o.title,
+          condition: "Oportunidad flexible o exploratoria",
+          estimatedHours: o.estimatedHours,
+        });
+        assignedItemIds.add(o.itemId);
+      }
+    }
+
+    // 5. Foci: from input work groups (up to 3)
+    const availableGroups = input.groupedWork.groups.slice(0, 3);
+    for (let i = 0; i < availableGroups.length; i++) {
+      const g = availableGroups[i];
+      const contributingItemIds = g.itemIds.filter((id) => !assignedItemIds.has(id));
+      if (contributingItemIds.length > 0) {
+        let focusHours: number | null = null;
+        let sum = 0;
+        let hasHours = false;
+        for (const cid of contributingItemIds) {
+          const itm = input.items.find((it) => it.id === cid);
+          if (itm?.estimatedEffort?.value) {
+            sum += itm.estimatedEffort.value;
+            hasHours = true;
+          }
+          assignedItemIds.add(cid);
+        }
+        if (hasHours) focusHours = sum;
+
+        foci.push({
+          id: `focus-${i + 1}`,
+          title: g.title,
+          groupId: g.id,
+          desiredOutcome: `Avanzar en la línea estructurante de "${g.title}"`,
+          rationale: g.rationale || `Grupo de trabajo clave: ${g.title}`,
+          contributingItemIds,
+          estimatedHours: focusHours,
+        });
+      }
+    }
+
+    // 6. Remaining items -> deferredItems as not_scheduled
+    for (const itm of input.items) {
+      if (!assignedItemIds.has(itm.id)) {
+        deferredItems.push({
+          itemId: itm.id,
+          title: itm.title,
+          reason: "not_scheduled",
+          rationale: "Elemento no programado en la propuesta; conservado para decisión de la persona.",
+        });
+        assignedItemIds.add(itm.id);
+      }
+    }
+
+    // 7. Deterministic capacity computation
+    const capacitySummary = calculateWeeklyCapacity({
+      capacityConfig: input.capacity,
+      foci,
+      obligations,
+    });
+
+    const highImportanceDeferred = deferredItems.filter((d) => {
+      const it = input.items.find((i) => i.id === d.itemId);
+      return it?.importance === "high" && it.type === "task";
+    });
+    for (const hid of highImportanceDeferred) {
+      externalTradeoffs.push(
+        `La tarea de alta importancia "${hid.title}" no fue incluida en focos ni obligaciones y queda sin programar (not_scheduled).`
+      );
+    }
+
+    const protectedHours = capacitySummary.protectedSpaceHours;
+
+    const rawProposal: ProposedWeek = {
+      weekSummary: {
+        targetWeek,
+        intent: input.userIntent,
+        capacity: capacitySummary,
+      },
+      foci,
+      obligations,
+      flexibleOptions,
+      deferredItems,
+      unplannedSpace: {
+        rationale: protectedHours != null
+          ? `${protectedHours} horas protegidas para contingencias y descanso.`
+          : "Espacio no planificado protegido para imprevistos.",
+        recommendedHours: protectedHours,
+      },
+      confirmationPrompt: {
+        question: "¿Te representa esta propuesta para estructurar la semana?",
+        keyTradeoffs: [
+          ...(obligations.length > 0 && capacitySummary.capacityStatus === "over_capacity"
+            ? ["Las obligaciones externas superan la capacidad planificable de la semana."]
+            : []),
+          ...externalTradeoffs,
+        ],
+        pendingQuestions: input.context.openQuestions.slice(0, 2).map((q) => q.question),
+      },
+    };
+
+    // 8. Normalize & conserve invariants
+    const normalized = normalizeAndConserveProposedWeek(rawProposal, input);
+    this.lastExecutionMeta = {
+      provider: this.id,
+      model: this.model,
+      durationMs: Date.now() - startTime,
+    };
+    return normalized.proposal;
   }
 }

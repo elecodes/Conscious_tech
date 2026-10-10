@@ -120,6 +120,22 @@ Evaluates situational context, attention levels, and relevance for tasks and wor
 - **Test Suite**: 169 passing unit and behavioral tests running in < 700ms with zero token expenditure.
 - **Calibration**: Validated across all 25 calibration brain dumps with Mock and Groq (`qwen/qwen3.8-27b`) with 0 invariant violations.
 
+### Skill 06: `build_week`
+Synthesizes evaluated context and constraints into a realistic, calm, human-centered weekly focus proposal without taking over user decisions:
+- **Output**: Structured `ProposedWeek` (`weekSummary` with plannable & protected space capacity, `foci` 0..3, `obligations`, `flexibleOptions`, `deferredItems`, `unplannedSpace`, `confirmationPrompt`).
+- **Core Principles**: "AI proposes. The person decides." Never plan 100% capacity (minimum 25–30% protected space). Never invent hours or preferences (`unknown` status when unstated). 100% item conservation (0 dropped items, 0 phantom IDs, 0 duplicates). Urgent wording does not invent contractual obligations.
+- **Deterministic Invariant Engine & "Code before AI"**:
+  - Validates and repairs capacity math, category mutual exclusivity, and focus limits (0..3).
+  - Rescues omitted items to `deferredItems` with ground-truth reasons (`not_scheduled`, `archived`, `waiting_dependency`).
+  - Reclassifies false obligations (e.g. urgent tasks without deadlines or external promises) safely.
+  - Zero-token deterministic planning context generator and validation.
+- **Test Suite**: 108 unit, behavioral, and regression tests (including false obligations, strict TDD, and temporal discrepancy tests).
+- **Calibration & Real Groq Evaluation**:
+  - 25/25 authentic brain dump fixtures evaluated with real Groq (`qwen/qwen3.8-27b`).
+  - 25 clean passes, 0 repairs, 0 failures.
+  - Validation semántica aprobada con observaciones de producto registradas (tareas puntuales pre-semana, seguimiento de delegación y diferenciación visual de compromisos futuros).
+  - *Nota*: La cobertura de evaluación calibra el comportamiento pero no garantiza ausencia absoluta de errores en producción.
+
 ---
 
 ## Quick Start
@@ -197,7 +213,7 @@ npm run build
 - [x] **03 group_work** (Completed & calibrated)
 - [x] **04 detect_deadlines** (Completed & calibrated)
 - [x] **05 evaluate_context** (Completed & calibrated)
-- [ ] **06 build_week**
+- [x] **06 build_week** (Completed & calibrated)
 - [ ] **07 analyze_change**
 - [ ] **08 detect_conflict**
 - [ ] **09 propose_adjustment**
