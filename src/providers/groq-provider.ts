@@ -30,24 +30,52 @@ import {
   buildUserPrompt as buildContextUserPrompt,
 } from "../skills/evaluate-context/prompt";
 import { parseAndValidateContextOutput } from "../skills/evaluate-context/parser";
+import { ProviderExecutionMeta } from "./ai-provider";
+import { BuildWeekInput, ProposedWeek, createEmptyProposedWeek } from "../domain/week";
+import {
+  buildDeterministicPlanningContext,
+  WeekValidationError,
+} from "../skills/build-week/deterministic";
+import { buildWeekPrompt } from "../skills/build-week/prompt";
+import { parseProposedWeek, WeekParseResult } from "../skills/build-week/parser";
 
 export interface GroqProviderOptions {
   apiKey?: string;
   model?: string;
+  client?: Groq;
 }
 
 export class GroqProvider implements AIProvider {
   readonly id = "groq" as const;
   readonly model: string;
   private client: Groq;
+  private lastExecutionMeta?: ProviderExecutionMeta;
+  private lastRawResponse?: string;
+  private lastParseResult?: WeekParseResult;
 
   constructor(options: GroqProviderOptions = {}) {
-    const apiKey = options.apiKey || (typeof process !== "undefined" ? process.env?.GROQ_API_KEY : undefined);
-    if (!apiKey) {
-      throw new Error("GROQ_API_KEY is required for GroqProvider");
+    if (options.client) {
+      this.client = options.client;
+    } else {
+      const apiKey = options.apiKey || (typeof process !== "undefined" ? process.env?.GROQ_API_KEY : undefined);
+      if (!apiKey) {
+        throw new Error("GROQ_API_KEY is required for GroqProvider");
+      }
+      this.client = new Groq({ apiKey });
     }
     this.model = options.model || (typeof process !== "undefined" ? process.env?.GROQ_MODEL : undefined) || "qwen/qwen3.8-27b";
-    this.client = new Groq({ apiKey });
+  }
+
+  getLastExecutionMeta(): ProviderExecutionMeta | undefined {
+    return this.lastExecutionMeta;
+  }
+
+  getLastRawResponse(): string | undefined {
+    return this.lastRawResponse;
+  }
+
+  getLastParseResult(): WeekParseResult | undefined {
+    return this.lastParseResult;
   }
 
   async extractItems(input: ExtractItemsInput): Promise<ExtractedItems> {
@@ -131,6 +159,7 @@ export class GroqProvider implements AIProvider {
   }
 
   async evaluateContext(input: EvaluateContextInput): Promise<EvaluateContextOutput> {
+    const startTime = Date.now();
     const response = await this.client.chat.completions.create({
       model: this.model,
       messages: [
@@ -147,6 +176,75 @@ export class GroqProvider implements AIProvider {
       throw new Error("Groq returned an empty response");
     }
 
+    this.lastRawResponse = content;
+    this.lastExecutionMeta = {
+      provider: this.id,
+      model: this.model,
+      durationMs: Date.now() - startTime,
+      tokensUsed: response.usage
+        ? {
+            prompt: response.usage.prompt_tokens,
+            completion: response.usage.completion_tokens,
+            total: response.usage.total_tokens,
+          }
+        : undefined,
+    };
+
     return parseAndValidateContextOutput(content);
+  }
+
+  async buildWeek(input: BuildWeekInput): Promise<ProposedWeek> {
+    const startTime = Date.now();
+    if (input.items.length === 0) {
+      this.lastExecutionMeta = {
+        provider: this.id,
+        model: this.model,
+        durationMs: Date.now() - startTime,
+      };
+      return createEmptyProposedWeek(input.currentDate, input.targetWeek);
+    }
+
+    const planningContext = buildDeterministicPlanningContext(input);
+    const { systemPrompt, userPrompt } = buildWeekPrompt(planningContext);
+
+    const response = await this.client.chat.completions.create({
+      model: this.model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+      max_tokens: 3500,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("Groq returned an empty response");
+    }
+
+    this.lastRawResponse = content;
+    this.lastExecutionMeta = {
+      provider: this.id,
+      model: this.model,
+      durationMs: Date.now() - startTime,
+      tokensUsed: response.usage
+        ? {
+            prompt: response.usage.prompt_tokens,
+            completion: response.usage.completion_tokens,
+            total: response.usage.total_tokens,
+          }
+        : undefined,
+    };
+
+    const parseOutcome = parseProposedWeek(content, input);
+    this.lastParseResult = parseOutcome;
+
+    if (!parseOutcome.success) {
+      const issues = "issues" in parseOutcome ? parseOutcome.issues : [];
+      throw new WeekValidationError(parseOutcome.error, issues);
+    }
+
+    return parseOutcome.data;
   }
 }

@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.0] - 2026-10-10
+
+### Added
+- **Domain Modeling for Weekly Planning (`build_week`)**:
+  - Zod schemas and TypeScript types in `src/domain/week.ts`: `TargetWeek`, `ProposedWeek`, `WeeklyFocus`, `WeeklyObligation`, `FlexibleOption`, `DeferredItem`, `UnplannedSpace`, `ConfirmationPrompt`, `WeeklyCapacitySummary`, and `BuildWeekInput`.
+  - Negative constraints enforcing human sovereignty: "AI proposes. The person decides."
+- **Skill 06 (`build_week`)**:
+  - Implemented `BuildWeekService` synthesizing evaluated context into a realistic, human-centered weekly focus proposal without over-scheduling or dictating calendars.
+  - Semantic prompt in `src/skills/build-week/prompt.ts` with strict rules: never plan 100% capacity, keep protected space non-negotiable, preserve 100% items (no silent discards), distinguish urgency from contractual obligations, and propose 0 to 3 qualitative foci.
+  - JSON parser in `src/skills/build-week/parser.ts` with Markdown code-block stripper and Zod validation.
+  - Deterministic invariant engine in `src/skills/build-week/deterministic.ts`:
+    - Strict 1:1 category mutual exclusivity and item conservation.
+    - Capacity arithmetic: computes plannable and protected space; preserves `unknown` capacity status when user estimates are omitted or partial.
+    - Safe rescue of omitted items to `deferredItems` (`not_scheduled`, `archived`, `waiting_dependency`).
+    - False obligation safeguard: reclassifies high-importance items without strict deadlines or external promises.
+    - Empty-input short circuit (0ms, 0 tokens).
+- **Consolidation Engine & Persistence**:
+  - Enhanced `scripts/eval-cases.ts` with `mergeConsolidatedWeekResults`: protects live external evaluations (Groq) against being overwritten by offline mock runs, with ISO timestamps and full execution history tracking.
+- **Provider Support for Skill 06**:
+  - `MockProvider`: Token-free reference plans across golden cases.
+  - `GroqProvider`: Real LLM inference with `qwen/qwen3.8-27b`.
+  - `GeminiProvider`: Google GenAI integration with `gemini-2.5-flash`.
+- **Testing & Verification**:
+  - Added 108 tests covering domain schemas, deterministic invariant engines, false obligation regressions, prompt parsing, and consolidation persistence.
+  - Regression test for temporal discrepancies: preserves external commitments with dates prior to target week for explicit user reconciliation (`case-08`).
+  - Total test suite now at 314 tests passing deterministically.
+- **Calibration & Real Groq Evaluation**:
+  - Evaluated all 25 calibration brain dumps with Groq (`qwen/qwen3.8-27b`):
+    - **25/25 clean passes** (100%), 0 repairs, 0 failures.
+    - 78.578 total tokens (3.143 avg tokens/case).
+    - Semantic audit completed with product observations documented.
+
+---
+
 ## [0.5.0] - 2026-10-09
 
 ### Added

@@ -3,6 +3,7 @@ import { DetectRelationshipsInput, DetectedRelationships } from "../domain/relat
 import { GroupWorkInput, GroupedWork } from "../domain/work-groups";
 import { DetectDeadlinesInput, DetectedDeadlines } from "../domain/deadlines";
 import { EvaluateContextInput, EvaluateContextOutput } from "../domain/context";
+import { BuildWeekInput, ProposedWeek } from "../domain/week";
 
 export interface ProviderExecutionMeta {
   provider: string;
@@ -23,5 +24,7 @@ export interface AIProvider {
   groupWork(input: GroupWorkInput): Promise<GroupedWork>;
   detectDeadlines(input: DetectDeadlinesInput): Promise<DetectedDeadlines>;
   evaluateContext(input: EvaluateContextInput): Promise<EvaluateContextOutput>;
+  buildWeek?(input: BuildWeekInput): Promise<ProposedWeek>;
+  getLastExecutionMeta?(): ProviderExecutionMeta | undefined;
 }
 

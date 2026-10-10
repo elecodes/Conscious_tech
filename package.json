@@ -15,7 +15,8 @@
     "eval:relationships": "tsx scripts/eval-cases.ts --skill=detect_relationships",
     "eval:groups": "tsx scripts/eval-cases.ts --skill=group_work",
     "eval:deadlines": "tsx scripts/eval-cases.ts --skill=detect_deadlines",
-    "eval:context": "tsx scripts/eval-cases.ts --skill=evaluate_context"
+    "eval:context": "tsx scripts/eval-cases.ts --skill=evaluate_context",
+    "eval:week": "tsx scripts/eval-cases.ts --skill=build_week --provider=mock"
   },
   "dependencies": {
     "@google/genai": "^2.27.0",
