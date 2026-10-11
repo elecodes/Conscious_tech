@@ -27,7 +27,8 @@ docs/
     ├── 0005-evaluate-context-functional-contract.md
     ├── 0006-build-week-proposal-and-capacity-contract.md
     ├── 0007-analyze-change-impact-contract.md
-    └── 0008-detect-conflict-contract.md
+    ├── 0008-detect-conflict-contract.md
+    └── 0009-propose-adjustment-contract.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
 │   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
@@ -37,7 +38,8 @@ src/
 │   ├── context.ts           # ContextSignal, Item/GroupContextAssessment, OpenQuestion
 │   ├── week.ts              # ProposedWeek, WeeklyFocus, Obligation, Capacity
 │   ├── change.ts            # ChangeType, AffectedElement, IncomingChangeDelta
-│   └── conflict.ts          # ConflictType, DetectedConflict, TimeBlock, Evidence
+│   ├── conflict.ts          # ConflictType, DetectedConflict, TimeBlock, Evidence
+│   └── adjustment.ts        # AdjustmentProposal, SuggestedAdjustmentAction, Partitions
 ├── providers/               # AI Provider abstraction layer
 │   ├── ai-provider.ts       # AIProvider interface
 │   ├── groq-provider.ts     # Groq implementation (qwen/qwen3.8-27b)
@@ -79,9 +81,12 @@ src/
 │   │   ├── parser.ts        # Markdown stripping & Zod schema validation
 │   │   ├── deterministic.ts # Invariant engine: capacity arithmetic, causal graph
 │   │   └── index.ts         # AnalyzeChangeService
-│   └── detect-conflict/     # Skill 08: Objective conflict detection
-│       ├── deterministic.ts # Invariant engine: capacity deficit, overlaps, deps
-│       └── index.ts         # DetectConflictService
+│   ├── detect-conflict/     # Skill 08: Objective conflict detection
+│   │   ├── deterministic.ts # Invariant engine: capacity deficit, overlaps, deps
+│   │   └── index.ts         # DetectConflictService
+│   └── propose-adjustment/  # Skill 09: Adjustment alternatives proposal
+│       ├── deterministic.ts # Invariant engine: item partition, raw balance, slot duration
+│       └── index.ts         # ProposeAdjustmentService
 └── web/                     # Lightweight testing UI & data inspector
     ├── App.tsx
     ├── main.tsx

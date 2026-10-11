@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0] - 2026-10-11
+
+### Added
+- **Domain Modeling for Adjustment Proposals (`propose_adjustment`)**:
+  - Zod schemas and TypeScript types in `src/domain/adjustment.ts`:
+    - Typed actions via discriminated union: `PostponeItemAction`, `ReassignTimeBlockAction`, `ReallocateDayWorkAction`, `UnblockDependencyAction`, `AcceptRiskAction`, `RequestInformationAction`.
+    - Proposal structure: `AdjustmentProposal`, `UnresolvedConflictsBreakdown`, `ProposeAdjustmentInput`, `ProposeAdjustmentOutput`.
+    - Exact 100% item conservation helper `getAllPlanItemIds()` and comprehensive invariant validator `validateProposalInvariants()`.
+- **Skill 09 (`propose_adjustment`)**:
+  - Implemented `ProposeAdjustmentService` and 100% deterministic engine in `src/skills/propose-adjustment/deterministic.ts`:
+    - Strict mathematical balance checks without `max(0, ...)` masking.
+    - Exact duration preservation for reassigned time blocks (supporting 60, 90, 120+ minute blocks without truncation).
+    - Intra-item collision detection correctly excluding only the source `currentBlock`.
+    - Strict referential integrity for `dependentItemId` and `prerequisiteItemId` against $S_{\text{total}}$.
+    - Partial conditional proposals when postponable tasks are smaller than total deficit.
+    - Prioritized output status: `adjustments_proposed`, `no_adjustment_needed`, `clarification_required`, `no_viable_alternatives`.
+- **Architectural Documentation**:
+  - ADR 0009 (`docs/adr/0009-propose-adjustment-contract.md`): formalizes proposal invariants, item partition conservation, and deterministic viability rules.
+- **Testing & Verification**:
+  - Added 34 new tests across 2 suites:
+    - `tests/adjustment-domain.test.ts`: 20 unit tests covering schema validations, intra-item collisions, raw balances, and referential integrity.
+    - `tests/propose-adjustment-fixtures.test.ts`: 14 tests covering the canonical `adj-01` through `adj-10` suite plus audit regression cases.
+  - Test suite now at 398 tests passing cleanly with zero token consumption.
+
+---
+
 ## [0.8.0] - 2026-10-11
 
 ### Added

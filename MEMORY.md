@@ -260,6 +260,16 @@ Implemented and calibrated skills:
 - **Aislamiento Causal Estricto**: Se evalúa exclusivamente la arista `depends_on`. `related_to`, `part_of` y `same_project` no constituyen bloqueo causal.
 - **Certificación Positiva de Áreas Indemnes**: `unconflictedAreas` sólo incluye áreas con datos completos y capacidad conocida. Si la capacidad es desconocida (`null`), no se inventan conflictos pero tampoco se certifica que el plan esté libre de ellos.
 
+9. **Skill 09: `propose_adjustment`**: Formulate structured, discrete adjustment alternatives (up to 3) for detected conflicts while strictly preserving user sovereignty and plan immutability.
+
+### Key Decisions & Conventions (Skill 09)
+- **Inmutabilidad y No-Aplicación**: `propose_adjustment` es estrictamente propositiva; jamás muta `activePlan` ni aplica decisiones automáticamente.
+- **Partición Exacta del 100% ($S_{\text{total}}$)**: Cada propuesta particiona exhaustiva y disjuntamente todos los ítems en `affectedPlanItemIds`, `retainedPlanItemIds` y `previouslyDeferredItemIds`.
+- **Aritmética Estricta sin Máscaras**: Se prohíbe `max(0, ...)`; balances negativos se rechazan de inmediato. Estimaciones desconocidas nunca se asumen como cero.
+- **Trazabilidad Preservando Certeza**: `resolvedConflictIds` solo puede declararse si `viability === "viable"`. Propuestas de aceptación de riesgo o condicionales mantienen `resolvedConflictIds: []`, y los residuales en `unresolvedBreakdown` conservan intacta su certeza original (`confirmed`, `potential`, `insufficientInformation`).
+- **Duración Dinámica y Colisiones Intra-Ítem**: Reasignación de bloques conserva la duración exacta en minutos del bloque origen; se detectan colisiones excluyendo únicamente el bloque de origen específico.
+- **Prioridad de Estados**: Conflictos bloqueantes confirmados sin alternativa viable devuelven `no_viable_alternatives` con independencia de riesgos secundarios menores.
+
 Detailed specifications for individual skills live separately from this file.
 
 ---
