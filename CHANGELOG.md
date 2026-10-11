@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.0] - 2026-10-11
+
+### Added
+- **Domain Modeling for Impact & Change Analysis (`analyze_change`)**:
+  - Zod schemas and TypeScript types in `src/domain/change.ts`: `ChangeType`, `IncomingChangeDelta`, `AffectedElement`, `CapacityImpactAnalysis`, `UnaffectedAreaVerification`, `ValidationError`, `AnalyzeChangeInput`, and `AnalyzeChangeOutput`.
+  - Orthogonal taxonomy of change types: `new_item`, `drop_item`, `modified_item`, `deadline_change`, `dependency_change`, `capacity_change`, `mixed_change`, and `none_detected`.
+- **Skill 07 (`analyze_change`)**:
+  - Implemented `AnalyzeChangeService` to evaluate the impact of mid-week changes, unexpected inputs, and trade-offs against an active weekly plan (`ProposedWeek`) with a strict read-only analytical scope.
+  - Deterministic engine in `src/skills/analyze-change/deterministic.ts`:
+    - Strict capacity arithmetic: avoids fabricating numbers (`unknown_capacity` when totals are unknown; `indeterminate` with partial estimates; `deficit_known` when known hours exceed available capacity; `surplus_known` only when complete estimates fit within plannable space).
+    - Unambiguous relationship removal (`sourceItemId`, `targetItemId`, `type`).
+    - Reference validation: captures non-existent elements safely in `validationErrors` with `status: "invalid_references"`.
+    - Positive isolation proofs for `unaffectedAreas`.
+    - Conservative intervention triggers: unblocking dependencies (`satisfied`) informs without requiring user intervention; past deadlines communicate risk without forcing plan re-creation.
+  - Conservative prompt in `src/skills/analyze-change/prompt.ts` with strict negative constraints ("Code before AI", no prescription, no plan mutation).
+  - Robust JSON parser in `src/skills/analyze-change/parser.ts` with Markdown code-block stripping.
+- **Provider Layer Updates**:
+  - Added `analyzeChange` to `AIProvider` interface in `src/providers/ai-provider.ts`.
+  - Added zero-token deterministic mock implementation and custom handler support in `src/providers/mock-provider.ts`.
+- **Architectural Documentation**:
+  - ADR 0007 (`docs/adr/0007-analyze-change-impact-contract.md`): records the contract, boundaries, and past deadline non-prescription principle.
+- **Testing & Verification**:
+  - Added 34 new tests across 3 suites:
+    - `tests/change-domain.test.ts`: Zod schema boundaries and validation rules.
+    - `tests/analyze-change-deterministic.test.ts`: Unit tests for delta operations, arithmetic balance, dependencies, and intervention triggers.
+    - `tests/analyze-change-fixtures.test.ts`: Regression suite covering all 10 agreed change fixtures (`change-01` to `change-10`).
+  - Total test suite now at 348 tests passing deterministically in < 1.2s with zero token expenditure.
+
+---
+
 ## [0.6.0] - 2026-10-10
 
 ### Added

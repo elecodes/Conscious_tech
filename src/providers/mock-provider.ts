@@ -49,6 +49,9 @@ export type MockContextHandler = (
 export type MockBuildWeekHandler = (
   input: BuildWeekInput
 ) => Promise<ProposedWeek | string> | ProposedWeek | string;
+export type MockAnalyzeChangeHandler = (
+  input: import("../domain/change").AnalyzeChangeInput
+) => Promise<import("../domain/change").AnalyzeChangeOutput> | import("../domain/change").AnalyzeChangeOutput;
 
 export class MockProvider implements AIProvider {
   readonly id = "mock" as const;
@@ -60,6 +63,7 @@ export class MockProvider implements AIProvider {
   private deadlinesHandler?: MockDeadlinesHandler;
   private contextHandler?: MockContextHandler;
   private buildWeekHandler?: MockBuildWeekHandler;
+  private analyzeChangeHandler?: MockAnalyzeChangeHandler;
   private lastExecutionMeta?: ProviderExecutionMeta;
 
   getLastExecutionMeta(): ProviderExecutionMeta | undefined {
@@ -100,8 +104,12 @@ export class MockProvider implements AIProvider {
     this.contextHandler = handler;
   }
 
-  setBuildWeekHandler(handler: MockBuildWeekHandler): void {
+  setBuildWeekHandler(handler?: MockBuildWeekHandler): void {
     this.buildWeekHandler = handler;
+  }
+
+  setAnalyzeChangeHandler(handler?: MockAnalyzeChangeHandler): void {
+    this.analyzeChangeHandler = handler;
   }
 
   async extractItems(input: ExtractItemsInput): Promise<ExtractedItems> {
@@ -602,4 +610,31 @@ export class MockProvider implements AIProvider {
     };
     return normalized.proposal;
   }
+
+  async analyzeChange(
+    input: import("../domain/change").AnalyzeChangeInput
+  ): Promise<import("../domain/change").AnalyzeChangeOutput> {
+    const startTime = Date.now();
+    if (this.analyzeChangeHandler) {
+      const res = await this.analyzeChangeHandler(input);
+      this.lastExecutionMeta = {
+        provider: this.id,
+        model: this.model,
+        durationMs: Date.now() - startTime,
+      };
+      return res;
+    }
+
+    const { analyzeChangeDeterministically } = await import(
+      "../skills/analyze-change/deterministic"
+    );
+    const result = analyzeChangeDeterministically(input);
+    this.lastExecutionMeta = {
+      provider: this.id,
+      model: this.model,
+      durationMs: Date.now() - startTime,
+    };
+    return result;
+  }
 }
+

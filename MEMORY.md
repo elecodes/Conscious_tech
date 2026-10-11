@@ -242,10 +242,14 @@ Implemented and calibrated skills:
   - Semantic audit approved with product observations registered:
     - *Prior dates*: External commitments with dates prior to target week are kept visible for explicit human reconciliation (`case-08`).
     - *Product backlog items*: Handling sub-hour quick tasks prior to the week (`case-22`), delegation trigger vs focus tracking (`case-24`), and UI distinction between weekly due dates and future milestone commitments (`case-13`).
-  - *Note*: Evaluation calibration is an empirical benchmark and does not guarantee absolute absence of errors in production.
+7. **Skill 07: `analyze_change`**: Evaluate mid-week changes, incoming unexpected inputs, and trade-offs against an active weekly plan (`ProposedWeek`) with a strict read-only analytical scope.
 
-Next implementation focus:
-- **Skill 07: `analyze_change`**: Analyze mid-week changes, incoming urgent inputs, and trade-offs against the established weekly plan.
+### Key Decisions & Conventions (Skill 07)
+- **Strict Read-Only Guarantee**: `analyze_change` never alters, recalculates, or replaces the active plan. Explains what is affected without resolving conflicts or dictating priorities.
+- **Plazos pasados e intervención no universal**: El sistema identifica plazos y fechas anteriores a la semana objetivo (`temporalScope: "past"`), informando con precisión sobre el desfase y su impacto. Sin embargo, esto **no es una regla universal para obligar a rehacer el plan**: la skill comunica el hecho sin asumir unilateralmente que el usuario deba descartar o reconstruir su semana.
+- **Aritmética estricta de capacidad**: Si `totalAvailableHours` o `plannableHours` es desconocido, reporta `unknown_capacity` en lugar de inventar valores por defecto. Si las estimaciones son parciales o incompletas, el balance es `indeterminate` (salvo que las horas conocidas ya provoquen un `deficit_known`). `surplus_known` se certifica solo con 100% de estimaciones conocidas que quepan en la capacidad plannable.
+- **Aislamiento verificado (`unaffectedAreas`)**: La ausencia de impactos detectados no basta; se requiere prueba positiva de que los elementos y dependencias de un área no fueron alcanzados por el cambio.
+- **Desbloqueos informan sin forzar intervención**: Cuando una dependencia causal se resuelve (`satisfied`), la skill lo comunica como un hecho favorable sin requerir obligatoriamente una decisión del usuario.
 
 Detailed specifications for individual skills live separately from this file.
 

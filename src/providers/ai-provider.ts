@@ -25,6 +25,7 @@ export interface AIProvider {
   detectDeadlines(input: DetectDeadlinesInput): Promise<DetectedDeadlines>;
   evaluateContext(input: EvaluateContextInput): Promise<EvaluateContextOutput>;
   buildWeek?(input: BuildWeekInput): Promise<ProposedWeek>;
+  analyzeChange?(input: import("../domain/change").AnalyzeChangeInput): Promise<import("../domain/change").AnalyzeChangeOutput>;
   getLastExecutionMeta?(): ProviderExecutionMeta | undefined;
 }
 

@@ -24,14 +24,18 @@ docs/
     ├── 0002-detect-relationships-conservative-semantic-links.md
     ├── 0003-group-work-coherent-lines-of-attention.md
     ├── 0004-detect-deadlines-temporal-normalization.md
-    └── 0005-evaluate-context-functional-contract.md
+    ├── 0005-evaluate-context-functional-contract.md
+    ├── 0006-build-week-proposal-and-capacity-contract.md
+    └── 0007-analyze-change-impact-contract.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
 │   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
 │   ├── relationships.ts     # RelationshipType, Relationship, DetectedRelationships
 │   ├── work-groups.ts       # WorkGroup, GroupedWork, GroupWorkInput
 │   ├── deadlines.ts         # DeadlineKind, DetectedDeadline, DetectedDeadlines
-│   └── context.ts           # ContextSignal, Item/GroupContextAssessment, OpenQuestion
+│   ├── context.ts           # ContextSignal, Item/GroupContextAssessment, OpenQuestion
+│   ├── week.ts              # ProposedWeek, WeeklyFocus, Obligation, Capacity
+│   └── change.ts            # ChangeType, AffectedElement, IncomingChangeDelta
 ├── providers/               # AI Provider abstraction layer
 │   ├── ai-provider.ts       # AIProvider interface
 │   ├── groq-provider.ts     # Groq implementation (qwen/qwen3.8-27b)
@@ -58,11 +62,21 @@ src/
 │   │   ├── parser.ts        # Markdown stripping & Zod schema validation
 │   │   ├── deterministic.ts # UTC calendar resolver, vague filter, range validator
 │   │   └── index.ts         # DetectDeadlinesService with short-circuits
-│   └── evaluate-context/    # Skill 05: Situational context & attention signals
-│       ├── prompt.ts        # Contextual gravity prompt (Explain, don't plan)
+│   ├── evaluate-context/    # Skill 05: Situational context & attention signals
+│   │   ├── prompt.ts        # Contextual gravity prompt (Explain, don't plan)
+│   │   ├── parser.ts        # Markdown stripping & Zod schema validation
+│   │   ├── deterministic.ts # Invariant engine: 1:1 coverage, phantom purger
+│   │   └── index.ts         # EvaluateContextService with short-circuits
+│   ├── build-week/          # Skill 06: Human-centered weekly focus proposal
+│   │   ├── prompt.ts        # Semantic proposal prompt (AI proposes, person decides)
+│   │   ├── parser.ts        # Markdown stripping & Zod schema validation
+│   │   ├── deterministic.ts # Invariant engine: 1:1 conservation, capacity math
+│   │   └── index.ts         # BuildWeekService
+│   └── analyze-change/      # Skill 07: Impact and change analysis
+│       ├── prompt.ts        # Read-only analytical prompt (Explain, don't re-plan)
 │       ├── parser.ts        # Markdown stripping & Zod schema validation
-│       ├── deterministic.ts # Invariant engine: 1:1 coverage, phantom purger
-│       └── index.ts         # EvaluateContextService with short-circuits
+│       ├── deterministic.ts # Invariant engine: capacity arithmetic, causal graph
+│       └── index.ts         # AnalyzeChangeService
 └── web/                     # Lightweight testing UI & data inspector
     ├── App.tsx
     ├── main.tsx
@@ -135,6 +149,18 @@ Synthesizes evaluated context and constraints into a realistic, calm, human-cent
   - 25 clean passes, 0 repairs, 0 failures.
   - Validation semántica aprobada con observaciones de producto registradas (tareas puntuales pre-semana, seguimiento de delegación y diferenciación visual de compromisos futuros).
   - *Nota*: La cobertura de evaluación calibra el comportamiento pero no garantiza ausencia absoluta de errores en producción.
+
+### Skill 07: `analyze_change`
+Evaluates and explains the impact of mid-week changes, unexpected inputs, and trade-offs against an active weekly plan without taking over user decisions:
+- **Output**: Structured `AnalyzeChangeOutput` (`status`, `changeType`, `summary`, `affectedElements`, `capacityImpact`, `unaffectedAreas`, `validationErrors`, `requiresUserIntervention`, `interventionReason`).
+- **Change Taxonomy**: `new_item`, `drop_item`, `modified_item`, `deadline_change`, `dependency_change`, `capacity_change`, `mixed_change`, `none_detected`.
+- **Core Principles**: Read-only analysis (the active plan is never modified, regenerated, or replaced). Explain what is affected without resolving conflicts or dictating priorities. Past deadlines communicate risk without forcing plan re-creation. Unblocking dependencies informs without requiring user intervention.
+- **Deterministic Invariant Engine & "Code before AI"**:
+  - Capacity arithmetic: computes projected balances (`unknown_capacity` when totals are unknown, `indeterminate` when estimates are incomplete, `deficit_known` when known hours exceed plannable space, `surplus_known` only when 100% of estimates fit).
+  - Unambiguous relationship removal (`sourceItemId`, `targetItemId`, `type`).
+  - Reference validator: captures non-existent element IDs safely in `validationErrors` with `status: "invalid_references"`.
+  - Positive isolation proofs for `unaffectedAreas`.
+- **Test Suite**: 34 unit and regression tests covering delta operations, capacity arithmetic, causal graphs, reference validation, and all 10 agreed change fixtures.
 
 ---
 
