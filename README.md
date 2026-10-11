@@ -26,7 +26,8 @@ docs/
     ├── 0004-detect-deadlines-temporal-normalization.md
     ├── 0005-evaluate-context-functional-contract.md
     ├── 0006-build-week-proposal-and-capacity-contract.md
-    └── 0007-analyze-change-impact-contract.md
+    ├── 0007-analyze-change-impact-contract.md
+    └── 0008-detect-conflict-contract.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
 │   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
@@ -35,7 +36,8 @@ src/
 │   ├── deadlines.ts         # DeadlineKind, DetectedDeadline, DetectedDeadlines
 │   ├── context.ts           # ContextSignal, Item/GroupContextAssessment, OpenQuestion
 │   ├── week.ts              # ProposedWeek, WeeklyFocus, Obligation, Capacity
-│   └── change.ts            # ChangeType, AffectedElement, IncomingChangeDelta
+│   ├── change.ts            # ChangeType, AffectedElement, IncomingChangeDelta
+│   └── conflict.ts          # ConflictType, DetectedConflict, TimeBlock, Evidence
 ├── providers/               # AI Provider abstraction layer
 │   ├── ai-provider.ts       # AIProvider interface
 │   ├── groq-provider.ts     # Groq implementation (qwen/qwen3.8-27b)
@@ -72,11 +74,14 @@ src/
 │   │   ├── parser.ts        # Markdown stripping & Zod schema validation
 │   │   ├── deterministic.ts # Invariant engine: 1:1 conservation, capacity math
 │   │   └── index.ts         # BuildWeekService
-│   └── analyze-change/      # Skill 07: Impact and change analysis
-│       ├── prompt.ts        # Read-only analytical prompt (Explain, don't re-plan)
-│       ├── parser.ts        # Markdown stripping & Zod schema validation
-│       ├── deterministic.ts # Invariant engine: capacity arithmetic, causal graph
-│       └── index.ts         # AnalyzeChangeService
+│   ├── analyze-change/      # Skill 07: Impact and change analysis
+│   │   ├── prompt.ts        # Read-only analytical prompt (Explain, don't re-plan)
+│   │   ├── parser.ts        # Markdown stripping & Zod schema validation
+│   │   ├── deterministic.ts # Invariant engine: capacity arithmetic, causal graph
+│   │   └── index.ts         # AnalyzeChangeService
+│   └── detect-conflict/     # Skill 08: Objective conflict detection
+│       ├── deterministic.ts # Invariant engine: capacity deficit, overlaps, deps
+│       └── index.ts         # DetectConflictService
 └── web/                     # Lightweight testing UI & data inspector
     ├── App.tsx
     ├── main.tsx
@@ -161,6 +166,17 @@ Evaluates and explains the impact of mid-week changes, unexpected inputs, and tr
   - Reference validator: captures non-existent element IDs safely in `validationErrors` with `status: "invalid_references"`.
   - Positive isolation proofs for `unaffectedAreas`.
 - **Test Suite**: 34 unit and regression tests covering delta operations, capacity arithmetic, causal graphs, reference validation, and all 10 agreed change fixtures.
+
+### Skill 08: `detect_conflict`
+Detects objective and structural incompatibilities within the active plan or against incoming changes without modifying state or dictating solutions:
+- **Output**: Structured `DetectConflictOutput` (`status`, `summary`, `conflicts`, `unconflictedAreas`, `hasBlockingConflicts`).
+- **Conflict Taxonomy**: `capacity_deficit`, `blocked_by_dependency`, `deadline_incompatibility`, `schedule_overlap`.
+- **Core Principles**: "Code before AI" (100% deterministic engine). Objective conflicts must be backed by verifiable metrics (`hours_balance`, `fixed_time_interval`, `dependency_state`, `calendar_dates`). `potential` and `insufficient_information` warnings never trigger `hasBlockingConflicts: true`.
+- **Deterministic Invariant Engine**:
+  - Differentiates daily capacity deficits from schedule overlaps: `schedule_overlap` strictly checks concurrent fixed intervals (`startTime < endTime`), whereas excessive daily work allocations trigger daily `capacity_deficit`.
+  - Causal isolation: only `depends_on` relationships with deferred prerequisites produce blocking conflicts; thematic links (`related_to`, `same_project`) are ignored.
+  - Positive isolation: only certifies `unconflictedAreas` when data and capacity are complete; never falsely certifies unknown capacity plans.
+- **Test Suite**: 16 unit and canonical fixture tests covering confirmed conflicts, daily allocations, schedule overlaps, potential risks, missing data, and unconflicted plans.
 
 ---
 

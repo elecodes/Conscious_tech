@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.0] - 2026-10-11
+
+### Added
+- **Domain Modeling for Conflict Detection (`detect_conflict`)**:
+  - Zod schemas and TypeScript types in `src/domain/conflict.ts`: `ConflictType`, `ConflictCertainty`, `ConflictScope`, `ConflictEvidence`, `DetectedConflict`, `UnconflictedAreaVerification`, `TimeBlock`, `DailyWorkAllocation`, `DetectConflictInput`, and `DetectConflictOutput`.
+  - Canonical 4-type taxonomy: `capacity_deficit`, `blocked_by_dependency`, `deadline_incompatibility`, and `schedule_overlap`.
+  - Safe day-scoped interval validation enforcing `startTime < endTime` in `TimeBlockSchema`.
+- **Skill 08 (`detect_conflict`)**:
+  - Implemented `DetectConflictService` providing a 100% deterministic analysis engine of objective plan incompatibilities without taking over user decisions or altering the active plan.
+  - Deterministic engine in `src/skills/detect-conflict/deterministic.ts`:
+    - Strict capacity deficit checks for weekly totals and explicit daily allocations (`DailyWorkAllocation` vs `DayConstraint`).
+    - Fixed schedule overlap detection for concurrent daily time blocks (`TimeBlock`).
+    - Causal dependency blocking strictly honoring `depends_on` (excluding `part_of`, `related_to`, and `same_project`).
+    - Deterministic derivation: `hasBlockingConflicts: true` only triggers for confirmed conflicts with verifiable metrics.
+    - Positive isolation verification for `unconflictedAreas`, refusing to certify unknown capacity plans falsely.
+- **Provider Layer Updates**:
+  - Added `detectConflict` to `AIProvider` interface in `src/providers/ai-provider.ts`.
+  - Added zero-token deterministic mock implementation and custom handler support in `src/providers/mock-provider.ts`.
+- **Architectural Documentation**:
+  - ADR 0008 (`docs/adr/0008-detect-conflict-contract.md`): formalizes the contract, boundary rules, daily vs weekly distinctions, and uncertain risk principles.
+- **Testing & Verification**:
+  - Added 16 new tests across 2 suites:
+    - `tests/conflict-domain.test.ts`: Zod schema boundaries, strict regex, and time block ordering rules.
+    - `tests/detect-conflict-fixtures.test.ts`: 10 canonical fixtures covering confirmed conflicts, daily allocations, schedule overlaps, potential risks, missing data, and unconflicted balanced plans.
+  - Total test suite now at 364 tests passing deterministically in < 1.4s with zero token expenditure.
+
+---
+
 ## [0.7.0] - 2026-10-11
 
 ### Added

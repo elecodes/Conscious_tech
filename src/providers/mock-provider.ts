@@ -52,6 +52,9 @@ export type MockBuildWeekHandler = (
 export type MockAnalyzeChangeHandler = (
   input: import("../domain/change").AnalyzeChangeInput
 ) => Promise<import("../domain/change").AnalyzeChangeOutput> | import("../domain/change").AnalyzeChangeOutput;
+export type MockDetectConflictHandler = (
+  input: import("../domain/conflict").DetectConflictInput
+) => Promise<import("../domain/conflict").DetectConflictOutput> | import("../domain/conflict").DetectConflictOutput;
 
 export class MockProvider implements AIProvider {
   readonly id = "mock" as const;
@@ -64,6 +67,7 @@ export class MockProvider implements AIProvider {
   private contextHandler?: MockContextHandler;
   private buildWeekHandler?: MockBuildWeekHandler;
   private analyzeChangeHandler?: MockAnalyzeChangeHandler;
+  private detectConflictHandler?: MockDetectConflictHandler;
   private lastExecutionMeta?: ProviderExecutionMeta;
 
   getLastExecutionMeta(): ProviderExecutionMeta | undefined {
@@ -110,6 +114,10 @@ export class MockProvider implements AIProvider {
 
   setAnalyzeChangeHandler(handler?: MockAnalyzeChangeHandler): void {
     this.analyzeChangeHandler = handler;
+  }
+
+  setDetectConflictHandler(handler?: MockDetectConflictHandler): void {
+    this.detectConflictHandler = handler;
   }
 
   async extractItems(input: ExtractItemsInput): Promise<ExtractedItems> {
@@ -629,6 +637,32 @@ export class MockProvider implements AIProvider {
       "../skills/analyze-change/deterministic"
     );
     const result = analyzeChangeDeterministically(input);
+    this.lastExecutionMeta = {
+      provider: this.id,
+      model: this.model,
+      durationMs: Date.now() - startTime,
+    };
+    return result;
+  }
+
+  async detectConflict(
+    input: import("../domain/conflict").DetectConflictInput
+  ): Promise<import("../domain/conflict").DetectConflictOutput> {
+    const startTime = Date.now();
+    if (this.detectConflictHandler) {
+      const res = await this.detectConflictHandler(input);
+      this.lastExecutionMeta = {
+        provider: this.id,
+        model: this.model,
+        durationMs: Date.now() - startTime,
+      };
+      return res;
+    }
+
+    const { detectConflictsDeterministically } = await import(
+      "../skills/detect-conflict/deterministic"
+    );
+    const result = detectConflictsDeterministically(input);
     this.lastExecutionMeta = {
       provider: this.id,
       model: this.model,

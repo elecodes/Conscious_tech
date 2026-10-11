@@ -251,6 +251,15 @@ Implemented and calibrated skills:
 - **Aislamiento verificado (`unaffectedAreas`)**: La ausencia de impactos detectados no basta; se requiere prueba positiva de que los elementos y dependencias de un área no fueron alcanzados por el cambio.
 - **Desbloqueos informan sin forzar intervención**: Cuando una dependencia causal se resuelve (`satisfied`), la skill lo comunica como un hecho favorable sin requerir obligatoriamente una decisión del usuario.
 
+8. **Skill 08: `detect_conflict`**: Evaluate objective and material incompatibilities (capacity deficits, blocking dependencies, deadline mismatches, and schedule overlaps) with a 100% deterministic engine.
+
+### Key Decisions & Conventions (Skill 08)
+- **Taxonomía Canónica de 4 Tipos**: `capacity_deficit`, `blocked_by_dependency`, `deadline_incompatibility` y `schedule_overlap`. Se retira `focus_fragmentation` para evitar solapamientos con la integridad de foco o déficit de capacidad.
+- **Diferenciación Diaria Estricta**: `schedule_overlap` aplica únicamente a colisiones horarias explícitas (`TimeBlock` coincidentes con inicio < fin). Tareas asignadas a un día que superen su disponibilidad se clasifican como `capacity_deficit` diario, no como solapamiento.
+- **Riesgos Inciertos Nunca Bloquean**: Un conflicto con certeza `insufficient_information` o `potential` jamás activa `hasBlockingConflicts: true`.
+- **Aislamiento Causal Estricto**: Se evalúa exclusivamente la arista `depends_on`. `related_to`, `part_of` y `same_project` no constituyen bloqueo causal.
+- **Certificación Positiva de Áreas Indemnes**: `unconflictedAreas` sólo incluye áreas con datos completos y capacidad conocida. Si la capacidad es desconocida (`null`), no se inventan conflictos pero tampoco se certifica que el plan esté libre de ellos.
+
 Detailed specifications for individual skills live separately from this file.
 
 ---
