@@ -270,6 +270,17 @@ Implemented and calibrated skills:
 - **Duración Dinámica y Colisiones Intra-Ítem**: Reasignación de bloques conserva la duración exacta en minutos del bloque origen; se detectan colisiones excluyendo únicamente el bloque de origen específico.
 - **Prioridad de Estados**: Conflictos bloqueantes confirmados sin alternativa viable devuelven `no_viable_alternatives` con independencia de riesgos secundarios menores.
 
+10. **Skill 10: `manage_memory`**: Manage memory lifecycle, candidate validation, epistemic provenance, conservative deduplication/merging, and forget precedence via a 100% deterministic engine.
+
+### Key Decisions & Conventions (Skill 10)
+- **Separación de Procedencia, Confirmación y Persistencia**: De dónde procede un recuerdo (`source`), si está confirmado (`confirmationStatus`), y si se autoriza su persistencia son dimensiones ortogonales. `user_explicit` o declaraciones explícitas no implican autorización ni persistencia automática.
+- **Invariante Epistémico Universal**: Ningún recuerdo con `confirmationStatus: "confirmed"` puede provenir exclusivamente de `conversation_inference` o `system`. Decisiones de plan solo justifican confirmación si existe aceptación verificable del usuario (`decisionEvidence.acceptedByUser === true`).
+- **Prioridad Absoluta del Olvido**: Solicitudes de olvido (`forget`) invalidan de forma prioritaria cualquier propuesta de actualización (`update`), adición (`add`), conservación (`keep`) o fusión (`merge`) sobre ese mismo recuerdo en el mismo lote.
+- **Fusión Conservadora sin Elevación**: En operaciones `merge`, la procedencia del resultado debe rastrearse en `sourceProvenances`. El estado resultante nunca puede ser más certero que el más débil de sus fuentes (requiere 100% de fuentes confirmadas sin inferencias) ni revivir recuerdos con vigencia temporal expirada/obsoleta a `active`.
+- **Normalización Preservando Símbolos**: `normalizeMemoryContent` aplica NFD pero preserva caracteres técnicos y de código (`+`, `#`, `@`, `/`, `-`, `_`, `.`, `:`), evitando colisiones falsas (p. ej., `C++` vs `C`).
+- **Aislamiento de Errores de Entrada**: Candidatos mal formados se aíslan en `warnings` activando `invalid_request` sin contaminar `invalidReferences` (reservado estrictamente para IDs de recuerdos inexistentes) y sin descartar propuestas u órdenes de olvido válidas independientes.
+- **Fechas ISO-8601 UTC Reales y Expiración Inclusiva**: Validación de fechas de calendario reales (rechaza meses/días/horas imposibles). Expiración temporal con cota inclusiva: un recuerdo con `validUntil === evaluationTime` se considera vencido y se archiva determinísticamente.
+
 Detailed specifications for individual skills live separately from this file.
 
 ---

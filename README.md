@@ -28,7 +28,8 @@ docs/
     ├── 0006-build-week-proposal-and-capacity-contract.md
     ├── 0007-analyze-change-impact-contract.md
     ├── 0008-detect-conflict-contract.md
-    └── 0009-propose-adjustment-contract.md
+    ├── 0009-propose-adjustment-contract.md
+    └── 0010-manage-memory-contract.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
 │   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
@@ -39,7 +40,8 @@ src/
 │   ├── week.ts              # ProposedWeek, WeeklyFocus, Obligation, Capacity
 │   ├── change.ts            # ChangeType, AffectedElement, IncomingChangeDelta
 │   ├── conflict.ts          # ConflictType, DetectedConflict, TimeBlock, Evidence
-│   └── adjustment.ts        # AdjustmentProposal, SuggestedAdjustmentAction, Partitions
+│   ├── adjustment.ts        # AdjustmentProposal, SuggestedAdjustmentAction, Partitions
+│   └── memory.ts            # MemoryItem, MemoryOperation, CandidateMemoryInput, Invariants
 ├── providers/               # AI Provider abstraction layer
 │   ├── ai-provider.ts       # AIProvider interface
 │   ├── groq-provider.ts     # Groq implementation (qwen/qwen3.8-27b)
@@ -84,9 +86,12 @@ src/
 │   ├── detect-conflict/     # Skill 08: Objective conflict detection
 │   │   ├── deterministic.ts # Invariant engine: capacity deficit, overlaps, deps
 │   │   └── index.ts         # DetectConflictService
-│   └── propose-adjustment/  # Skill 09: Adjustment alternatives proposal
-│       ├── deterministic.ts # Invariant engine: item partition, raw balance, slot duration
-│       └── index.ts         # ProposeAdjustmentService
+│   ├── propose-adjustment/  # Skill 09: Adjustment alternatives proposal
+│   │   ├── deterministic.ts # Invariant engine: item partition, raw balance, slot duration
+│   │   └── index.ts         # ProposeAdjustmentService
+│   └── manage-memory/       # Skill 10: Personal memory & context management
+│       ├── deterministic.ts # Invariant engine: forget priority, expiration, canonical sorting
+│       └── index.ts         # ManageMemoryService
 └── web/                     # Lightweight testing UI & data inspector
     ├── App.tsx
     ├── main.tsx

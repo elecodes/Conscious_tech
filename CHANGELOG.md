@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.0] - 2026-10-12
+
+### Added
+- **Domain Modeling for Memory Management (`manage_memory`)**:
+  - Zod schemas and TypeScript types in `src/domain/memory.ts`:
+    - Strict Gregorian ISO-8601 UTC timestamp validator (`isValidIsoUtcTimestamp`, `IsoUtcTimestampSchema`) guarding against `Date.UTC()` year mapping and out-of-bounds clock/calendar values.
+    - Universal epistemic invariants: `isValidEpistemicState()`, `containsHesitationMarkers()`, and strict prohibition of `confirmed` status on automated sources (`conversation_inference`, `system`) or hypotheses (`working_hypothesis`).
+    - Discriminated union candidate models: `StoreCandidate`, `UpdateCandidate`, `ForgetCandidate`.
+    - Typed proposed operations with human confirmation: `AddMemoryOp`, `UpdateMemoryOp`, `MergeMemoriesOp`, `ArchiveMemoryOp`, `ForgetMemoryOp`, `KeepMemoryOp`, `RequestClarificationOp`.
+    - Conservative merge provenance tracking (`SourceMemoryProvenanceSchema`) decoupling epistemic certainty from temporal status and preventing unearned confirmation or active states from expired/inferred sources.
+- **Skill 10 (`manage_memory`)**:
+  - Implemented `ManageMemoryService` and 100% deterministic engine in `src/skills/manage-memory/deterministic.ts`:
+    - Absolute priority of explicit forget requests (`forget`), suppressing concurrent conflicting operations and isolating memory IDs in `suppressedContextMemoryIds`.
+    - Inclusive temporal expiration checking ($\text{referenceDate} > \text{validUntil}$) generating `archive` proposals without autonomous store mutations.
+    - Per-candidate error isolation: malformed candidates are safely isolated into `warnings` and activate `invalid_request` without polluting `invalidReferences` or dropping independent valid operations.
+    - Lexical normalization preserving operators and technical symbols (`+`, `#`, `@`, `/`, `-`, `_`, `.`, `:`) avoiding false collisions between terms like `C++` vs `C`.
+    - Divergent concurrent updates/merges suppressed into `request_clarification` to eliminate arbitrary selection.
+    - Canonical deterministic sorting producing deeply equal outputs across candidate input permutations.
+- **Architectural Documentation**:
+  - ADR 0010 (`docs/adr/0010-manage-memory-contract.md`): formalizes non-persistence, user sovereignty, epistemic invariants, forget priority, and conservative merge rules.
+- **Testing & Verification**:
+  - Added 52 new tests across 2 suites:
+    - `tests/memory-domain.test.ts`: 19 unit tests covering timestamp bounds, hesitation markers, epistemic invariants, and candidate schema validations.
+    - `tests/manage-memory-fixtures.test.ts`: 33 tests covering the canonical `mem-01` through `mem-28` fixtures plus audit regression cases (`mem-29` to `mem-33`).
+  - Entire test suite now at 450 tests passing cleanly with zero token consumption and zero regressions.
+
+---
+
 ## [0.9.0] - 2026-10-11
 
 ### Added
