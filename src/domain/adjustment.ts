@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { ProposedWeekSchema, CalendarDateSchema, DayConstraintSchema, ProposedWeek } from "./week";
+import {
+  ProposedWeekSchema,
+  CalendarDateSchema,
+  DayConstraintSchema,
+  TargetWeekSchema,
+  ProposedWeek,
+} from "./week";
 import {
   DetectConflictOutputSchema,
   TimeBlockSchema,
@@ -19,7 +25,12 @@ export const PostponeItemActionSchema = z
   .object({
     type: z.literal("postpone_item"),
     itemId: z.string().min(1),
-    currentCategory: z.enum(["foci", "obligations", "flexible_options"]),
+    currentCategory: z.enum([
+      "foci",
+      "obligations",
+      "flexible_options",
+      "deferred_items",
+    ]),
     targetReason: z.enum([
       "out_of_capacity",
       "waiting_dependency",
@@ -27,6 +38,7 @@ export const PostponeItemActionSchema = z
     ]),
     hoursFreed: z.number().finite().positive().nullable(),
     rationale: z.string().min(1),
+    targetWeek: TargetWeekSchema.optional(),
   })
   .strict();
 export type PostponeItemAction = z.infer<typeof PostponeItemActionSchema>;

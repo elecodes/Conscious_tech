@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.14.0] - 2026-10-14
+
+### Added
+- **Closed Week Detailed Inspection (`ClosedWeekSummary`)**:
+  - Expandable accordion in `WeeklySessionView` («Ver detalle de la semana» / «Ocultar detalle») allowing full audit of closed week contents without mutating state:
+    - Planned foci with desired outcomes and estimated hours.
+    - Fixed obligations and commitments with due dates.
+    - Flexible options and execution conditions.
+    - Granular item-by-item breakdown with disposition badges (*Completada*, *Postergada*, *En progreso*, *Descartada*, *Sin reportar*), actual hours vs. estimated hours, notes, and postponement rationales.
+    - Retrospective reflection summary including capacity analysis, consolidated accomplishments, and open questions for the next cycle.
+- **Sovereignty & Atomic Reopening (`reopenWeek`)**:
+  - Implemented `WeeklySessionService.reopenWeek(planId)` and `WeeklySessionController.reopenWeek(planId)`:
+    - Restores a closed weekly plan back to `active` status while enforcing single-active-plan invariants.
+    - Atomically removes premature `close_reports` in an IndexedDB `readwrite` transaction to maintain clean session state.
+    - Resilient prototype delegation in `WeeklySessionController` guarding against stale service instances during Vite HMR / React Fast Refresh cycles.
+- **Timestamp Resilience**:
+  - Preprocessed `YYYY-MM-DD` date strings in `ClosedAtTimestampSchema` into full Gregorian ISO-8601 UTC timestamps (`${val}T23:59:59.000Z`), resolving `InvalidRecordDataError` deserialization issues for stored IndexedDB records.
+- **Testing & Verification**:
+  - Added unit test suite for `reopenWeek` in `tests/weekly-session-service.test.ts` covering non-existent plans, non-closed plans, active plan conflict guards, and transactional reopening.
+  - Added component and controller tests in `tests/weekly-session-closed-week-view.test.tsx`.
+  - All 49 test suites (732 tests) passing cleanly with zero token consumption.
+
+---
+
+## [0.13.0] - 2026-10-13
+
+### Added
+- **Local Persistence Architecture with IndexedDB (`LocalPersistence`)**:
+  - IndexedDB storage layer across 4 canonical object stores: `plans`, `schedules`, `close_reports`, and `memories`.
+  - Storage envelopes: `StoredWeeklyPlan` with canonical UUIDs and lifecycle status (`draft`, `active`, `closed`), `StoredCloseWeekReport`, and versioned `WeeklySchedule`.
+  - `WeeklySessionService` and `WeeklySessionController` managing session hydration, active plan recovery, concurrency conflict detection, and referential integrity guards.
+  - ADR 0013 (`docs/adr/0013-local-persistence-architecture-contract.md`).
+
+---
+
+## [0.12.0] - 2026-10-12
+
+### Added
+- **Weekly Schedule Continuity & Real-Time Adjustments**:
+  - `WeeklySchedule` domain entity with optimistic concurrency versioning.
+  - Deterministic schedule adjustment engine (`applyAdjustmentToSchedule`).
+  - Active plan and schedule synchronizer preserving micro-allocations and protected time space.
+  - ADR 0012 (`docs/adr/0012-weekly-schedule-continuity-contract.md`).
+
+---
+
+## [0.11.0] - 2026-10-12
+
+### Added
+- **Weekly Close Engine (`close_week`)**:
+  - Deterministic evaluation of completed, postponed, and dropped items.
+  - Reflective summary generator and candidate memory extractor requiring explicit human sovereignty.
+  - ADR 0011 (`docs/adr/0011-close-week-contract.md`).
+
+---
+
 ## [0.10.0] - 2026-10-12
 
 ### Added

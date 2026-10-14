@@ -119,12 +119,19 @@ export function containsHesitationMarkers(text: string): boolean {
   return HESITATION_REGEX.test(text);
 }
 
+const NEGATIVE_OR_PENDING_REGEX = /\b(no\b|sin\b|nunca\b|jam[aá]s\b|pendiente\b|draft(ed)?\b|borrador\b|en\s+tr[aá]mite\b|si\b|en\s+caso\s+de\b|hipot[eé]tic[oa]\b|futur[oa]\b|posible\b|rechazad[oa]\b)/i;
+
+export function containsNegativeOrPendingMarkers(text: string): boolean {
+  return NEGATIVE_OR_PENDING_REGEX.test(text);
+}
+
 /**
  * Validates whether a memory item satisfies universal epistemic invariants:
  * - Sources 'conversation_inference' and 'system' can NEVER yield 'confirmed'.
  * - Category 'working_hypothesis' can NEVER be 'confirmed'.
  * - 'confirmed' from 'user_explicit' requires absence of hesitation markers.
- * - 'confirmed' from 'plan_decision' requires verified acceptance reference.
+ * - 'confirmed' from 'plan_decision' requires a non-empty verified acceptance reference
+ *   without doubt, negation, pending, or draft markers.
  */
 export function isValidEpistemicState(
   category: MemoryCategory,
@@ -151,13 +158,20 @@ export function isValidEpistemicState(
       };
     }
     if (provenance.source === "plan_decision") {
-      const hasAcceptedEvidence = /\b(accepted|aceptado|confirmad[oa]|aprobado)\b/i.test(
-        provenance.referenceText
-      );
-      if (!hasAcceptedEvidence) {
+      const hasAcceptanceEvidence = /\b(accepted|aceptad[oa]|confirmad[oa]|aprobad[oa])\b/i.test(provenance.referenceText);
+      if (!hasAcceptanceEvidence) {
         return {
           valid: false,
-          reason: "Decisions from plans require verifiable acceptance evidence in referenceText to be 'confirmed'",
+          reason: "Decisions from plans require explicit acceptance evidence in referenceText to be 'confirmed'",
+        };
+      }
+      if (
+        containsHesitationMarkers(provenance.referenceText) ||
+        containsNegativeOrPendingMarkers(provenance.referenceText)
+      ) {
+        return {
+          valid: false,
+          reason: "Decisions from plans containing doubt, negation, pending, or draft markers cannot be 'confirmed'",
         };
       }
     }
@@ -206,6 +220,8 @@ export const StoreCandidateSchema = z
     rawText: z.string().min(1),
     suggestedCategory: MemoryCategorySchema.optional(),
     isExplicitUserStatement: z.boolean().optional().default(false),
+    provenanceSource: MemoryProvenanceSourceSchema.optional(),
+    evidenceReference: z.string().min(1).optional(),
     validUntil: CalendarDateSchema.nullable().optional(),
   })
   .strict();
@@ -219,6 +235,8 @@ export const UpdateCandidateSchema = z
     rawText: z.string().min(1),
     suggestedCategory: MemoryCategorySchema.optional(),
     isExplicitUserStatement: z.boolean().optional().default(false),
+    provenanceSource: MemoryProvenanceSourceSchema.optional(),
+    evidenceReference: z.string().min(1).optional(),
     validUntil: CalendarDateSchema.nullable().optional(),
   })
   .strict();
@@ -315,8 +333,13 @@ export const MergeMemoriesOpSchema = BaseMergeMemoriesOpSchema.refine(
         if (sp.confirmationStatus !== "confirmed") return true;
         if (sp.provenance.source === "conversation_inference" || sp.provenance.source === "system") return true;
         if (sp.provenance.source === "plan_decision") {
-          const hasAcceptance = /\b(accepted|aceptado|confirmad[oa]|aprobado)\b/i.test(sp.provenance.referenceText);
-          if (!hasAcceptance) return true;
+          if (
+            !sp.provenance.referenceText ||
+            containsHesitationMarkers(sp.provenance.referenceText) ||
+            containsNegativeOrPendingMarkers(sp.provenance.referenceText)
+          ) {
+            return true;
+          }
         }
         return false;
       });
@@ -421,6 +444,7 @@ export const ManageMemoryInputSchema = z
     existingMemories: z.array(MemoryItemSchema),
     candidates: z.array(z.unknown()).optional().default([]),
     explicitForgetRequests: z.array(z.string().min(1)).optional().default([]),
+    verifiedAcceptedDecisionRefs: z.array(z.string().min(1)).optional().default([]),
     preferences: z
       .object({
         autoDetectExpired: z.boolean().default(true),

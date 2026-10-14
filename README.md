@@ -29,7 +29,11 @@ docs/
     ├── 0007-analyze-change-impact-contract.md
     ├── 0008-detect-conflict-contract.md
     ├── 0009-propose-adjustment-contract.md
-    └── 0010-manage-memory-contract.md
+    ├── 0010-manage-memory-contract.md
+    ├── 0011-close-week-contract.md
+    ├── 0012-weekly-schedule-continuity-contract.md
+    ├── 0013-local-persistence-architecture-contract.md
+    └── 0014-closed-week-inspection-and-reopen-sovereignty.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
 │   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
@@ -266,10 +270,12 @@ npm run build
 - [x] **04 detect_deadlines** (Completed & calibrated)
 - [x] **05 evaluate_context** (Completed & calibrated)
 - [x] **06 build_week** (Completed & calibrated)
-- [ ] **07 analyze_change**
-- [ ] **08 detect_conflict**
-- [ ] **09 propose_adjustment**
-- [ ] **10 manage_memory**
+- [x] **07 analyze_change** (Completed & calibrated)
+- [x] **08 detect_conflict** (Completed & calibrated)
+- [x] **09 propose_adjustment** (Completed & calibrated)
+- [x] **10 manage_memory** (Completed & calibrated)
+- [x] **11 close_week** (Completed & calibrated)
+- [x] **Local Persistence & Weekly Session (P1–P5)** (IndexedDB, UI integration, schedule continuity, closed week inspection & reopening)
 
 ---
 

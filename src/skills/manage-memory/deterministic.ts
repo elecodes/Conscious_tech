@@ -6,6 +6,10 @@ import {
   MemoryItem,
   MemoryContradiction,
   containsHesitationMarkers,
+  containsNegativeOrPendingMarkers,
+  isValidEpistemicState,
+  MemoryProvenanceSource,
+  MemoryProvenance,
   CandidateMemoryInputSchema,
   StoreCandidate,
   UpdateCandidate,
@@ -96,8 +100,11 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
     existingMemories,
     candidates,
     explicitForgetRequests,
+    verifiedAcceptedDecisionRefs,
     preferences,
   } = parsed;
+
+  const verifiedDecisionRefsSet = new Set(verifiedAcceptedDecisionRefs ?? []);
 
   const existingMemoryMap = new Map<string, MemoryItem>();
   for (const mem of existingMemories) {
@@ -251,16 +258,54 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
     // Process single or duplicate identical update
     const primaryCand = candList[0];
     const newCategory = primaryCand.suggestedCategory ?? existingMem.category;
-    const isHesitant = containsHesitationMarkers(primaryCand.rawText);
+    const updSource: MemoryProvenanceSource =
+      primaryCand.provenanceSource ??
+      (primaryCand.isExplicitUserStatement
+        ? "user_explicit"
+        : newCategory === "decision"
+        ? "plan_decision"
+        : existingMem.provenance.source);
+    const updReferenceText = primaryCand.evidenceReference ?? primaryCand.rawText;
+    const isHesitant = containsHesitationMarkers(updReferenceText) || containsHesitationMarkers(primaryCand.rawText);
+    const hasNegativeOrPendingMarkers =
+      containsNegativeOrPendingMarkers(updReferenceText) ||
+      containsNegativeOrPendingMarkers(primaryCand.rawText);
 
-    let newConfirmationStatus = existingMem.confirmationStatus;
-    if (primaryCand.isExplicitUserStatement) {
-      newConfirmationStatus = isHesitant ? "unconfirmed" : "confirmed";
+    let newConfirmationStatus: "confirmed" | "inferred" | "unconfirmed" = existingMem.confirmationStatus;
+
+    if (updSource === "user_explicit") {
+      newConfirmationStatus = isHesitant || newCategory === "working_hypothesis" ? "unconfirmed" : "confirmed";
+    } else if (updSource === "plan_decision") {
+      // Regla de verificación autoritativa:
+      // 1. rawText NUNCA constituye evidencia de su propia aceptación.
+      // 2. evidenceReference NO se considera verificada solo por tener formato o ser no vacía.
+      // 3. Solo es verificada si coincide con una referencia auténtica registrada en verifiedAcceptedDecisionRefs.
+      // 4. Si contiene vacilación, negación o condiciones pendientes, permanece unconfirmed.
+      const isAuthoritativelyVerified =
+        primaryCand.evidenceReference !== undefined &&
+        verifiedDecisionRefsSet.has(primaryCand.evidenceReference);
+
+      if (
+        isAuthoritativelyVerified &&
+        !isHesitant &&
+        !hasNegativeOrPendingMarkers &&
+        newCategory !== "working_hypothesis"
+      ) {
+        newConfirmationStatus = "confirmed";
+      } else {
+        newConfirmationStatus = "unconfirmed";
+      }
+    } else if (updSource === "conversation_inference" || updSource === "system") {
+      newConfirmationStatus = "inferred";
     }
 
     // Epistemic safety guard
-    if (newCategory === "working_hypothesis" && newConfirmationStatus === "confirmed") {
-      newConfirmationStatus = "inferred";
+    const check = isValidEpistemicState(newCategory, newConfirmationStatus, {
+      source: updSource,
+      referenceText: updReferenceText,
+    });
+    if (!check.valid) {
+      newConfirmationStatus = updSource === "conversation_inference" || updSource === "system" ? "inferred" : "unconfirmed";
     }
 
     rawProposedOps.push({
@@ -353,18 +398,57 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
     }
 
     // C. Evaluate Confirmation Status & Epistemic Invariants
-    const isHesitant = containsHesitationMarkers(cand.rawText);
+    const source: MemoryProvenanceSource =
+      cand.provenanceSource ??
+      (cand.isExplicitUserStatement
+        ? "user_explicit"
+        : category === "decision"
+        ? "plan_decision"
+        : "conversation_inference");
+
+    const referenceText = cand.evidenceReference ?? cand.rawText;
+    const isHesitant = containsHesitationMarkers(referenceText) || containsHesitationMarkers(cand.rawText);
+    const hasNegativeOrPendingMarkers =
+      containsNegativeOrPendingMarkers(referenceText) ||
+      containsNegativeOrPendingMarkers(cand.rawText);
+
     let confirmationStatus: "confirmed" | "inferred" | "unconfirmed" = "unconfirmed";
 
-    if (cand.isExplicitUserStatement) {
-      confirmationStatus = isHesitant ? "unconfirmed" : "confirmed";
-    } else {
+    if (source === "user_explicit") {
+      confirmationStatus = isHesitant || category === "working_hypothesis" ? "unconfirmed" : "confirmed";
+    } else if (source === "plan_decision") {
+      // Regla de verificación autoritativa:
+      // 1. rawText NUNCA constituye evidencia de su propia aceptación.
+      // 2. evidenceReference NO se considera verificada solo por tener formato o ser no vacía.
+      // 3. Solo es verificada si coincide con una referencia auténtica registrada en verifiedAcceptedDecisionRefs.
+      // 4. Si contiene vacilación, negación o condiciones pendientes, permanece unconfirmed.
+      const isAuthoritativelyVerified =
+        cand.evidenceReference !== undefined &&
+        verifiedDecisionRefsSet.has(cand.evidenceReference);
+
+      if (
+        isAuthoritativelyVerified &&
+        !isHesitant &&
+        !hasNegativeOrPendingMarkers &&
+        category !== "working_hypothesis"
+      ) {
+        confirmationStatus = "confirmed";
+      } else {
+        confirmationStatus = "unconfirmed";
+      }
+    } else if (source === "conversation_inference" || source === "system") {
       confirmationStatus = "inferred";
     }
 
+    const proposedProvenance: MemoryProvenance = {
+      source,
+      referenceText,
+    };
+
     // Epistemic safety guard
-    if (category === "working_hypothesis" && confirmationStatus === "confirmed") {
-      confirmationStatus = "inferred";
+    const epistemicCheck = isValidEpistemicState(category, confirmationStatus, proposedProvenance);
+    if (!epistemicCheck.valid) {
+      confirmationStatus = source === "conversation_inference" || source === "system" ? "inferred" : "unconfirmed";
     }
 
     const proposedMemory: MemoryItem = {
@@ -375,10 +459,7 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
       temporalStatus: cand.validUntil && cand.validUntil < referenceDate ? "expired" : "active",
       validUntil: cand.validUntil ?? null,
       tags: [],
-      provenance: {
-        source: cand.isExplicitUserStatement ? "user_explicit" : "conversation_inference",
-        referenceText: cand.rawText,
-      },
+      provenance: proposedProvenance,
       createdAt: referenceDate,
     };
 

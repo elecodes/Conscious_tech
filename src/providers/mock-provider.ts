@@ -32,6 +32,7 @@ import mockRelationshipsData from "../../cases/mock-relationships.json";
 import mockGroupingsData from "../../cases/mock-groupings.json";
 import mockDeadlinesData from "../../cases/mock-deadlines.json";
 import realDumpsData from "../../cases/real-dumps.json";
+import { extractItemsDeterministically } from "./mock-deterministic-extractor";
 
 export type MockHandler = (input: ExtractItemsInput) => Promise<ExtractedItems> | ExtractedItems;
 export type MockRelationshipsHandler = (
@@ -138,19 +139,8 @@ export class MockProvider implements AIProvider {
       }
     }
 
-    // Default fallback mock response
-    return {
-      items: [
-        {
-          id: "item-mock-1",
-          rawText: input.text.slice(0, 60),
-          title: "Elemento detectado (Mock determinista)",
-          type: "task",
-          status: "pending",
-          commitment: "none",
-        },
-      ],
-    };
+    // Heuristic deterministic extraction for freeform notes with multiple ideas
+    return extractItemsDeterministically(input.text, input.currentDate);
   }
 
   async detectRelationships(input: DetectRelationshipsInput): Promise<DetectedRelationships> {
@@ -239,6 +229,24 @@ export class MockProvider implements AIProvider {
           return { deadlines: [] };
         }
       }
+    }
+
+    // 2. Fallback: forward deadlines from items if available
+    const derivedDeadlines: DetectedDeadlines["deadlines"] = [];
+    for (const item of input.items) {
+      if (item.deadline) {
+        derivedDeadlines.push({
+          itemId: item.id,
+          raw: item.deadline.raw,
+          kind: item.deadline.resolved ? "exact_date" : "relative_date",
+          resolvedStart: item.deadline.resolved ?? null,
+          resolvedEnd: item.deadline.resolved ?? null,
+          confidence: item.deadline.confidence ?? "medium",
+        });
+      }
+    }
+    if (derivedDeadlines.length > 0) {
+      return { deadlines: derivedDeadlines };
     }
 
     // Default: no deadlines detected

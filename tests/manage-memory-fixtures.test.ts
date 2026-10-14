@@ -790,6 +790,453 @@ describe("Skill 10: manage_memory canonical fixtures (28 cases)", () => {
     };
     expect(MemoryOperationSchema.safeParse(mergeWithAllExpired).success).toBe(false);
   });
+
+  it("mem-34: synthesized postponement candidate yields unconfirmed plan_decision without fabricating user quote", async () => {
+    const input: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [],
+      candidates: [
+        {
+          candidateId: "cand-postpone-synth",
+          actionIntent: "store",
+          rawText: 'Decisión de postergación consciente durante la semana: "Avanzar Zapsac".',
+          suggestedCategory: "decision",
+          isExplicitUserStatement: false,
+          provenanceSource: "plan_decision",
+        },
+      ],
+    };
+
+    const output = await service.manage(input);
+    expect(output.status).toBe("proposals_generated");
+    expect(output.proposedOperations).toHaveLength(1);
+    const op = output.proposedOperations[0];
+    expect(op.type).toBe("add");
+    if (op.type === "add") {
+      // Invariantes obligatorias:
+      // 1. Procedencia auténtica como plan_decision, NO user_explicit
+      expect(op.proposedMemory.provenance.source).toBe("plan_decision");
+      // 2. Sin evidencia verificable de aceptación -> unconfirmed
+      expect(op.proposedMemory.confirmationStatus).toBe("unconfirmed");
+      // 3. Categoría preservada como decisión (no preferencia)
+      expect(op.proposedMemory.category).toBe("decision");
+      // 4. Operación requiere confirmación humana para guardarse
+      expect(op.requiresHumanConfirmation).toBe(true);
+    }
+  });
+
+  it("mem-35: plan decision with verifiable acceptance evidence achieves confirmed status without inventing citation", async () => {
+    const input: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [],
+      verifiedAcceptedDecisionRefs: ["Propuesta de ajuste prop-postpone-flex aceptada por el usuario"],
+      candidates: [
+        {
+          candidateId: "cand-decision-accepted",
+          actionIntent: "store",
+          rawText: "Postergación de Zapsac para dar cabida a la auditoría",
+          suggestedCategory: "decision",
+          isExplicitUserStatement: false,
+          provenanceSource: "plan_decision",
+          evidenceReference: "Propuesta de ajuste prop-postpone-flex aceptada por el usuario",
+        },
+      ],
+    };
+
+    const output = await service.manage(input);
+    expect(output.status).toBe("proposals_generated");
+    const op = output.proposedOperations[0];
+    expect(op.type).toBe("add");
+    if (op.type === "add") {
+      // Invariante 2 & 5: Conserva procedencia plan_decision y alcanza 'confirmed' con evidencia autoritativa verificada
+      expect(op.proposedMemory.provenance.source).toBe("plan_decision");
+      expect(op.proposedMemory.provenance.referenceText).toContain("aceptada");
+      expect(op.proposedMemory.confirmationStatus).toBe("confirmed");
+      expect(op.requiresHumanConfirmation).toBe(true);
+    }
+  });
+
+  it("mem-36: genuine explicit user statement processes under existing assertiveness rules", async () => {
+    // A: Asertivo -> confirmed
+    const inputAssertive: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [],
+      candidates: [
+        {
+          candidateId: "cand-user-assertive",
+          actionIntent: "store",
+          rawText: "Prefiero no agendar reuniones los viernes",
+          suggestedCategory: "preference",
+          isExplicitUserStatement: true,
+          provenanceSource: "user_explicit",
+        },
+      ],
+    };
+    const resAssertive = await service.manage(inputAssertive);
+    const opAssertive = resAssertive.proposedOperations[0];
+    if (opAssertive.type === "add") {
+      expect(opAssertive.proposedMemory.provenance.source).toBe("user_explicit");
+      expect(opAssertive.proposedMemory.confirmationStatus).toBe("confirmed");
+      expect(opAssertive.requiresHumanConfirmation).toBe(true);
+    }
+
+    // B: Con vacilación -> unconfirmed
+    const inputHesitant: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [],
+      candidates: [
+        {
+          candidateId: "cand-user-hesitant",
+          actionIntent: "store",
+          rawText: "Quizás prefiera no agendar reuniones los viernes",
+          suggestedCategory: "preference",
+          isExplicitUserStatement: true,
+          provenanceSource: "user_explicit",
+        },
+      ],
+    };
+    const resHesitant = await service.manage(inputHesitant);
+    const opHesitant = resHesitant.proposedOperations[0];
+    if (opHesitant.type === "add") {
+      expect(opHesitant.proposedMemory.provenance.source).toBe("user_explicit");
+      expect(opHesitant.proposedMemory.confirmationStatus).toBe("unconfirmed");
+      expect(opHesitant.requiresHumanConfirmation).toBe(true);
+    }
+  });
+
+  it("mem-37: single postponement candidate is never transformed into a stable preference", async () => {
+    const input: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [],
+      candidates: [
+        {
+          candidateId: "cand-single-postpone",
+          actionIntent: "store",
+          rawText: "Avanzar Zapsac postergado en el cierre semanal",
+          suggestedCategory: "decision",
+          isExplicitUserStatement: false,
+          provenanceSource: "plan_decision",
+        },
+      ],
+    };
+
+    const output = await service.manage(input);
+    const op = output.proposedOperations[0];
+    if (op.type === "add") {
+      expect(op.proposedMemory.category).toBe("decision");
+      expect(op.proposedMemory.category).not.toBe("preference");
+    }
+  });
+
+  it("mem-38 (req 1): plan_decision with negation ('Propuesta no aceptada por el usuario') remains unconfirmed", async () => {
+    const input: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [],
+      verifiedAcceptedDecisionRefs: ["Propuesta no aceptada por el usuario"], // Even if passed as string, contains negative marker!
+      candidates: [
+        {
+          candidateId: "cand-negation",
+          actionIntent: "store",
+          rawText: "Propuesta no aceptada por el usuario",
+          suggestedCategory: "decision",
+          isExplicitUserStatement: false,
+          provenanceSource: "plan_decision",
+          evidenceReference: "Propuesta no aceptada por el usuario",
+        },
+      ],
+    };
+
+    const output = await service.manage(input);
+    const op = output.proposedOperations[0];
+    expect(op.type).toBe("add");
+    if (op.type === "add") {
+      expect(op.proposedMemory.provenance.source).toBe("plan_decision");
+      expect(op.proposedMemory.confirmationStatus).toBe("unconfirmed");
+    }
+  });
+
+  it("mem-39 (req 2): plan_decision with pending status ('Pendiente de ser aprobado') remains unconfirmed", async () => {
+    const input: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [],
+      verifiedAcceptedDecisionRefs: ["Pendiente de ser aprobado"],
+      candidates: [
+        {
+          candidateId: "cand-pending",
+          actionIntent: "store",
+          rawText: "Ajuste de calendario pendiente de ser aprobado",
+          suggestedCategory: "decision",
+          isExplicitUserStatement: false,
+          provenanceSource: "plan_decision",
+          evidenceReference: "Pendiente de ser aprobado",
+        },
+      ],
+    };
+
+    const output = await service.manage(input);
+    const op = output.proposedOperations[0];
+    expect(op.type).toBe("add");
+    if (op.type === "add") {
+      expect(op.proposedMemory.provenance.source).toBe("plan_decision");
+      expect(op.proposedMemory.confirmationStatus).toBe("unconfirmed");
+    }
+  });
+
+  it("mem-40 (req 3): plan_decision with conditional hypothesis ('Si es aceptada la propuesta') remains unconfirmed", async () => {
+    const input: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [],
+      verifiedAcceptedDecisionRefs: ["Si es aceptada la propuesta"],
+      candidates: [
+        {
+          candidateId: "cand-conditional",
+          actionIntent: "store",
+          rawText: "Si es aceptada la propuesta de postergación",
+          suggestedCategory: "decision",
+          isExplicitUserStatement: false,
+          provenanceSource: "plan_decision",
+          evidenceReference: "Si es aceptada la propuesta",
+        },
+      ],
+    };
+
+    const output = await service.manage(input);
+    const op = output.proposedOperations[0];
+    expect(op.type).toBe("add");
+    if (op.type === "add") {
+      expect(op.proposedMemory.provenance.source).toBe("plan_decision");
+      expect(op.proposedMemory.confirmationStatus).toBe("unconfirmed");
+    }
+  });
+
+  it("mem-41 (req 4): circular evidence in free text ('Examen aprobado') never confirms itself", async () => {
+    const input: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [],
+      // No verified authoritative event supplied
+      candidates: [
+        {
+          candidateId: "cand-circular",
+          actionIntent: "store",
+          rawText: "Examen de certificación aprobado con éxito",
+          suggestedCategory: "decision",
+          isExplicitUserStatement: false,
+          provenanceSource: "plan_decision",
+          // evidenceReference is omitted or self-referential
+        },
+      ],
+    };
+
+    const output = await service.manage(input);
+    const op = output.proposedOperations[0];
+    expect(op.type).toBe("add");
+    if (op.type === "add") {
+      expect(op.proposedMemory.provenance.source).toBe("plan_decision");
+      expect(op.proposedMemory.confirmationStatus).toBe("unconfirmed");
+    }
+  });
+
+  it("mem-42 (req 5): invented reference format not in verified registry remains unconfirmed", async () => {
+    const input: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [],
+      // Empty or different verified references
+      verifiedAcceptedDecisionRefs: ["audit:log-999:accepted"],
+      candidates: [
+        {
+          candidateId: "cand-invented-format",
+          actionIntent: "store",
+          rawText: "Ajuste de foco acordado en reunión",
+          suggestedCategory: "decision",
+          isExplicitUserStatement: false,
+          provenanceSource: "plan_decision",
+          evidenceReference: "decision:2026-w42:accepted", // Valid format, but not verified in registry!
+        },
+      ],
+    };
+
+    const output = await service.manage(input);
+    const op = output.proposedOperations[0];
+    expect(op.type).toBe("add");
+    if (op.type === "add") {
+      expect(op.proposedMemory.provenance.source).toBe("plan_decision");
+      expect(op.proposedMemory.confirmationStatus).toBe("unconfirmed");
+    }
+  });
+
+  it("mem-43 (req 6): genuine verified reference in registry achieves confirmed status with human confirmation required", async () => {
+    const input: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [],
+      verifiedAcceptedDecisionRefs: ["decision:2026-w42:adjustment-accepted"],
+      candidates: [
+        {
+          candidateId: "cand-verified-real",
+          actionIntent: "store",
+          rawText: "Postergación acordada de la tarea Zapsac para w43",
+          suggestedCategory: "decision",
+          isExplicitUserStatement: false,
+          provenanceSource: "plan_decision",
+          evidenceReference: "decision:2026-w42:adjustment-accepted",
+        },
+      ],
+    };
+
+    const output = await service.manage(input);
+    const op = output.proposedOperations[0];
+    expect(op.type).toBe("add");
+    if (op.type === "add") {
+      expect(op.proposedMemory.provenance.source).toBe("plan_decision");
+      expect(op.proposedMemory.confirmationStatus).toBe("confirmed");
+      expect(op.requiresHumanConfirmation).toBe(true);
+    }
+  });
+
+  it("mem-44 (req 7): update operation enforces identical authoritative verification for plan_decision", async () => {
+    const existingDecisionMem: MemoryItem = {
+      id: "mem-dec-exist",
+      content: "Decisión inicial en borrador",
+      category: "decision",
+      confirmationStatus: "unconfirmed",
+      temporalStatus: "active",
+      validUntil: null,
+      createdAt: "2026-10-12",
+      tags: [],
+      provenance: {
+        source: "plan_decision",
+        referenceText: "Plan draft",
+      },
+    };
+
+    // Sub-case A: Unverified reference in update -> remains unconfirmed
+    const inputUnverified: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [existingDecisionMem],
+      verifiedAcceptedDecisionRefs: [],
+      candidates: [
+        {
+          candidateId: "cand-upd-unverified",
+          actionIntent: "update",
+          targetMemoryId: "mem-dec-exist",
+          rawText: "Decisión actualizada pero sin verificación registrada",
+          suggestedCategory: "decision",
+          isExplicitUserStatement: false,
+          provenanceSource: "plan_decision",
+          evidenceReference: "event:unregistered:accepted",
+        },
+      ],
+    };
+
+    const outUnverified = await service.manage(inputUnverified);
+    const opUnverified = outUnverified.proposedOperations[0];
+    expect(opUnverified.type).toBe("update");
+    if (opUnverified.type === "update") {
+      expect(opUnverified.updatedFields.confirmationStatus).toBe("unconfirmed");
+    }
+
+    // Sub-case B: Negated reference in update -> remains unconfirmed
+    const inputNegated: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [existingDecisionMem],
+      verifiedAcceptedDecisionRefs: ["event:reg:no-aceptado"],
+      candidates: [
+        {
+          candidateId: "cand-upd-negated",
+          actionIntent: "update",
+          targetMemoryId: "mem-dec-exist",
+          rawText: "Propuesta no aceptada por el usuario",
+          suggestedCategory: "decision",
+          isExplicitUserStatement: false,
+          provenanceSource: "plan_decision",
+          evidenceReference: "event:reg:no-aceptado",
+        },
+      ],
+    };
+
+    const outNegated = await service.manage(inputNegated);
+    const opNegated = outNegated.proposedOperations[0];
+    expect(opNegated.type).toBe("update");
+    if (opNegated.type === "update") {
+      expect(opNegated.updatedFields.confirmationStatus).toBe("unconfirmed");
+    }
+
+    // Sub-case C: Verified real event in update -> becomes confirmed
+    const inputVerified: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [existingDecisionMem],
+      verifiedAcceptedDecisionRefs: ["event:reg:accepted-01"],
+      candidates: [
+        {
+          candidateId: "cand-upd-verified",
+          actionIntent: "update",
+          targetMemoryId: "mem-dec-exist",
+          rawText: "Decisión confirmada por evento de ajuste aceptado",
+          suggestedCategory: "decision",
+          isExplicitUserStatement: false,
+          provenanceSource: "plan_decision",
+          evidenceReference: "event:reg:accepted-01",
+        },
+      ],
+    };
+
+    const outVerified = await service.manage(inputVerified);
+    const opVerified = outVerified.proposedOperations[0];
+    expect(opVerified.type).toBe("update");
+    if (opVerified.type === "update") {
+      expect(opVerified.updatedFields.confirmationStatus).toBe("confirmed");
+      expect(opVerified.requiresHumanConfirmation).toBe(true);
+    }
+  });
+
+  it("mem-45 (req 8): user_explicit preservation (assertive confirmed vs hesitant unconfirmed)", async () => {
+    // Assertive user explicit -> confirmed
+    const inputAssertive: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [],
+      candidates: [
+        {
+          candidateId: "cand-user-direct",
+          actionIntent: "store",
+          rawText: "Nunca trabajo los domingos por la tarde.",
+          suggestedCategory: "preference",
+          isExplicitUserStatement: true,
+          provenanceSource: "user_explicit",
+        },
+      ],
+    };
+
+    const outAssertive = await service.manage(inputAssertive);
+    const opAssertive = outAssertive.proposedOperations[0];
+    if (opAssertive.type === "add") {
+      expect(opAssertive.proposedMemory.provenance.source).toBe("user_explicit");
+      expect(opAssertive.proposedMemory.confirmationStatus).toBe("confirmed");
+      expect(opAssertive.requiresHumanConfirmation).toBe(true);
+    }
+
+    // Hesitant user explicit -> unconfirmed
+    const inputHesitant: ManageMemoryInput = {
+      referenceDate: "2026-10-19",
+      existingMemories: [],
+      candidates: [
+        {
+          candidateId: "cand-user-hesitant-2",
+          actionIntent: "store",
+          rawText: "Tal vez no deba trabajar los domingos por la tarde.",
+          suggestedCategory: "preference",
+          isExplicitUserStatement: true,
+          provenanceSource: "user_explicit",
+        },
+      ],
+    };
+
+    const outHesitant = await service.manage(inputHesitant);
+    const opHesitant = outHesitant.proposedOperations[0];
+    if (opHesitant.type === "add") {
+      expect(opHesitant.proposedMemory.provenance.source).toBe("user_explicit");
+      expect(opHesitant.proposedMemory.confirmationStatus).toBe("unconfirmed");
+      expect(opHesitant.requiresHumanConfirmation).toBe(true);
+    }
+  });
 });
 
 

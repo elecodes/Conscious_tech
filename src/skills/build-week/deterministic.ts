@@ -197,9 +197,36 @@ export function prepareWeekConstraints(
       });
     } else if (isExternal) {
       const matchingDl = input.deadlines.deadlines.find((d) => d.itemId === item.id);
-      const deadlineDate = matchingDl
+      let deadlineDate = matchingDl
         ? (matchingDl.resolvedStart ?? matchingDl.resolvedEnd ?? undefined)
         : undefined;
+
+      // When planning a specific targetWeek, if the external commitment has a relative day of the week
+      // (e.g. "martes a las 10"), map that day of the week to the targetWeek's actual date
+      const textToSearch = `${item.title} ${matchingDl?.raw || ""} ${item.rawText || ""}`.toLowerCase();
+      const dayMatch = textToSearch.match(/\b(lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)\b/i);
+      if (dayMatch && targetWeek) {
+        const dayMap: Record<string, number> = {
+          lunes: 0,
+          martes: 1,
+          miercoles: 2,
+          miércoles: 2,
+          jueves: 3,
+          viernes: 4,
+          sabado: 5,
+          sábado: 5,
+          domingo: 6,
+        };
+        const dayIdx = dayMap[dayMatch[1]!.toLowerCase()];
+        if (dayIdx !== undefined) {
+          const [sy, sm, sd] = targetWeek.startDate.split("-").map(Number);
+          const targetDay = new Date(Date.UTC(sy!, sm! - 1, sd! + dayIdx));
+          const ry = targetDay.getUTCFullYear();
+          const rm = String(targetDay.getUTCMonth() + 1).padStart(2, "0");
+          const rd = String(targetDay.getUTCDate()).padStart(2, "0");
+          deadlineDate = `${ry}-${rm}-${rd}`;
+        }
+      }
 
       externalCommitments.push({
         itemId: item.id,

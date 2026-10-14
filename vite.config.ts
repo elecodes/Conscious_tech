@@ -1,9 +1,26 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from "vite";
+import { defineConfig, Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+import { handleAIProxyRequest } from "./src/server/ai-proxy-handler";
+
+function aiProxyPlugin(): Plugin {
+  return {
+    name: "ai-proxy-server",
+    configureServer(server) {
+      server.middlewares.use("/api/ai", (req, res) => {
+        handleAIProxyRequest(req, res);
+      });
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use("/api/ai", (req, res) => {
+        handleAIProxyRequest(req, res);
+      });
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), aiProxyPlugin()],
   test: {
     globals: true,
     environment: "node",

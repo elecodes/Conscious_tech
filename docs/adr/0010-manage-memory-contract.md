@@ -26,7 +26,7 @@ La Skill 10 (`manage_memory`) evalúa recuerdos activos y nueva información can
      - Las fuentes `conversation_inference` y `system` **jamás** pueden producir recuerdos con estado `confirmed`.
      - La categoría `working_hypothesis` **jamás** puede tener estado `confirmed`.
      - `user_explicit` con marcadores de duda o especulación lingüística no se eleva a `confirmed`.
-     - `plan_decision` solo justifica `confirmed` si contiene evidencia verificable de aceptación formal del plan en `referenceText`.
+     - `plan_decision` jamás se confirma por coincidencia léxica en texto libre; requiere una referencia estructurada que coincida con una entrada en `verifiedAcceptedDecisionRefs`, sin marcadores de duda, negación, hipótesis o estado pendiente.
 
 3. **Prioridad Absoluta del Olvido (`forget`)**:
    - Una petición explícita de olvido sobre un recuerdo existente prevalece de manera absoluta sobre cualquier operación concurrente (`update`, `merge`, `archive`, `keep`) sobre ese mismo recuerdo.
@@ -65,7 +65,14 @@ La Skill 10 (`manage_memory`) evalúa recuerdos activos y nueva información can
 10. **Implementación 100 % Determinista**:
     - Toda la lógica opera mediante TypeScript puro y esquemas Zod, con cero llamadas a proveedores de IA y cero consumo de tokens.
 
+11. **Límite de Confianza de `verifiedAcceptedDecisionRefs` (Punto de Integración Futuro)**:
+    - **Capacidad preparada, no seguridad ya implementada**: El campo `verifiedAcceptedDecisionRefs` en `ManageMemoryInputSchema` es un punto de integración arquitectónico para la futura capa de aplicación, no un subsistema de autenticación o verificación intrínseca en sí mismo.
+    - **Frontera de confianza actual**: Al ser un motor determinista puro de dominio sin infraestructura de I/O, cualquier llamador directo de la función puede suministrar referencias arbitrarias que coincidan con los candidatos. Por ende, **este parámetro jamás debe exponerse ni aceptarse directamente desde clientes o interfaces no confiables**.
+    - **Responsabilidad del futuro servicio de aplicación**: La capa de aplicación o servicio backend encargada de orquestar la llamada deberá hidratar internamente `verifiedAcceptedDecisionRefs` consultando un registro autoritativo de eventos de aceptación (p. ej., un registro inmutable de auditoría o eventos de decisión), sin delegar la autenticidad en datos enviados por el cliente.
+    - **Ortogonalidad entre certeza y persistencia**: La certeza epistémica (`confirmationStatus: "confirmed"`) y la autorización para persistir (`requiresHumanConfirmation: true`) operan como controles estrictamente separados. Incluso si una decisión se evalúa como confirmada en la propuesta, ninguna mutación se persiste sin la decisión explícita de la persona.
+    - **Alcance de los tests de regresión**: Las pruebas que suministran identificadores en `verifiedAcceptedDecisionRefs` demuestran el comportamiento condicional y la simetría del motor ante referencias declaradas como válidas; no demuestran la autenticidad real del evento en un entorno de producción hasta que exista la infraestructura autoritativa correspondiente.
+
 ## Consecuencias
-- 52 pruebas unitarias y de fixtures canónicos (19 en `memory-domain.test.ts` y 33 en `manage-memory-fixtures.test.ts`) certifican la totalidad de las invariantes y regresiones de auditoría.
+- 64 pruebas unitarias y de fixtures canónicos (19 en `memory-domain.test.ts` y 45 en `manage-memory-fixtures.test.ts`) certifican la totalidad de las invariantes y regresiones de auditoría.
 - Proporciona un marco auditable, seguro y respetuoso con la soberanía y privacidad del usuario para la gestión de su memoria personal.
-- Sienta las bases para que una capa superior de interacción y persistencia ejecute las operaciones aprobadas por el usuario.
+- Sienta las bases para que una capa superior de interacción y persistencia ejecute las operaciones aprobadas por el usuario, delimitando con precisión la frontera de confianza de la verificación de decisiones.
