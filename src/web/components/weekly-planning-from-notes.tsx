@@ -18,6 +18,7 @@ import {
   formatEstimationCompleteness,
   formatHours,
   formatDeferredReason,
+  formatUnscheduledCategory,
 } from "./weekly-session-view";
 
 export interface PendingCarryOverTask {
@@ -47,7 +48,7 @@ export function WeeklyPlanningFromNotes({
   initialItems,
   initialProposedWeek,
 }: WeeklyPlanningFromNotesProps) {
-  const { createOrSavePlan, service } = useWeeklySession();
+  const { createOrSavePlan, service, state } = useWeeklySession();
 
   const effectiveCurrentDate =
     currentDate || new Date().toISOString().split("T")[0] || "2026-10-12";
@@ -158,7 +159,8 @@ export function WeeklyPlanningFromNotes({
   useEffect(() => {
     let isCancelled = false;
     async function restoreDraft() {
-      if (initialProposedWeek || !service?.getDraftPlan) return;
+      // Do not overwrite if explicit initial items are transferred from capture space
+      if (initialProposedWeek || (initialItems && initialItems.length > 0) || !service?.getDraftPlan) return;
       try {
         const currentTargetWeek: TargetWeek = {
           startDate: targetWeekStart,
@@ -346,9 +348,10 @@ export function WeeklyPlanningFromNotes({
 
 
   // --------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
   // Handlers: Step 1 - Extract Items
   // --------------------------------------------------------------------------
-  const handleExtract = async () => {
+  const handleExtract = async (mode: "replace" | "append" = "replace") => {
     const trimmed = noteText.trim();
     if (!trimmed || isExtracting) return;
 
@@ -368,12 +371,28 @@ export function WeeklyPlanningFromNotes({
       // Discard stale responses if user triggered another extraction in the meantime
       if (reqId !== extractRequestIdRef.current) return;
 
-      const items = result.items || [];
-      setExtractedItems(items);
-      // By default, accept all extracted items for review
-      setAcceptedItemIds(new Set(items.map((it) => it.id)));
+      const newItems = result.items || [];
+      if (mode === "append" && extractedItems && extractedItems.length > 0) {
+        const existingMap = new Map(extractedItems.map((i) => [i.id, i]));
+        for (const item of newItems) {
+          existingMap.set(item.id, item);
+        }
+        const merged = Array.from(existingMap.values());
+        setExtractedItems(merged);
+        setAcceptedItemIds((prev) => {
+          const next = new Set(prev);
+          for (const item of newItems) next.add(item.id);
+          return next;
+        });
+        setSuccessMessage(`Se añadieron ${newItems.length} nueva(s) idea(s) a la lista existente.`);
+      } else {
+        setExtractedItems(newItems);
+        // By default, accept all extracted items for review
+        setAcceptedItemIds(new Set(newItems.map((it) => it.id)));
+      }
       setProposedWeek(null);
       setDiagnostics([]);
+      setNoteText("");
     } catch (err) {
       if (reqId !== extractRequestIdRef.current) return;
       setExtractError(
@@ -386,6 +405,25 @@ export function WeeklyPlanningFromNotes({
         setIsExtracting(false);
       }
     }
+  };
+
+  const handleStartFreshWeek = async () => {
+    setExtractedItems(null);
+    setAcceptedItemIds(new Set());
+    setProposedWeek(null);
+    setDiagnostics([]);
+    setNoteText("");
+    setUserIntent("");
+    setExtractError(null);
+    setConfirmationError(null);
+    if (service?.clearDraftPlan) {
+      try {
+        await service.clearDraftPlan(activeTargetWeek);
+      } catch (e) {
+        console.error("Error clearing draft in storage", e);
+      }
+    }
+    setSuccessMessage("Lienzo despejado para planificar una nueva semana.");
   };
 
   // --------------------------------------------------------------------------
@@ -1021,38 +1059,95 @@ export function WeeklyPlanningFromNotes({
           borderRadius: "6px",
           display: "flex",
           alignItems: "center",
+          justifyContent: "space-between",
           gap: "12px",
           flexWrap: "wrap",
         }}
       >
-        <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>Semana objetivo a planificar:</span>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <label htmlFor="target-week-start-input" style={{ fontSize: "0.85rem", color: "#666" }}>
-            Desde:
-          </label>
-          <input
-            id="target-week-start-input"
-            data-testid="target-week-start-input"
-            type="date"
-            value={targetWeekStart}
-            onChange={(e) => setTargetWeekStart(e.target.value)}
-            style={{ padding: "4px 8px", fontSize: "0.85rem" }}
-          />
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+          <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>Semana objetivo a planificar:</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <label htmlFor="target-week-start-input" style={{ fontSize: "0.85rem", color: "#666" }}>
+              Desde:
+            </label>
+            <input
+              id="target-week-start-input"
+              data-testid="target-week-start-input"
+              type="date"
+              value={targetWeekStart}
+              onChange={(e) => setTargetWeekStart(e.target.value)}
+              style={{ padding: "4px 8px", fontSize: "0.85rem" }}
+            />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <label htmlFor="target-week-end-input" style={{ fontSize: "0.85rem", color: "#666" }}>
+              Hasta:
+            </label>
+            <input
+              id="target-week-end-input"
+              data-testid="target-week-end-input"
+              type="date"
+              value={targetWeekEnd}
+              onChange={(e) => setTargetWeekEnd(e.target.value)}
+              style={{ padding: "4px 8px", fontSize: "0.85rem" }}
+            />
+          </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <label htmlFor="target-week-end-input" style={{ fontSize: "0.85rem", color: "#666" }}>
-            Hasta:
-          </label>
-          <input
-            id="target-week-end-input"
-            data-testid="target-week-end-input"
-            type="date"
-            value={targetWeekEnd}
-            onChange={(e) => setTargetWeekEnd(e.target.value)}
-            style={{ padding: "4px 8px", fontSize: "0.85rem" }}
-          />
-        </div>
+
+        <button
+          type="button"
+          className="secondary small"
+          style={{ fontSize: "0.82rem", padding: "4px 8px" }}
+          onClick={handleStartFreshWeek}
+          data-testid="start-fresh-week-top-button"
+          title="Despeja el cuaderno para iniciar la planificación de una nueva semana sin datos previos"
+        >
+          ✨ Limpiar y empezar nueva semana
+        </button>
       </div>
+
+      {/* Lista de borradores guardados si existen en el estado */}
+      {state.draftPlans && state.draftPlans.length > 0 && (
+        <div
+          className="calm-box"
+          style={{
+            marginTop: "10px",
+            padding: "8px 12px",
+            background: "#fcfbf9",
+            border: "1px dashed var(--border-color, #e0ded9)",
+            borderRadius: "6px",
+            fontSize: "0.85rem",
+          }}
+          data-testid="saved-drafts-selector"
+        >
+          <span style={{ fontWeight: 600, color: "var(--text-main, #333)", marginRight: "8px" }}>
+            📂 Borradores guardados:
+          </span>
+          <div style={{ display: "inline-flex", gap: "6px", flexWrap: "wrap", marginTop: "4px" }}>
+            {state.draftPlans.map((draft) => {
+              const isSelected =
+                draft.targetWeek.startDate === targetWeekStart &&
+                draft.targetWeek.endDate === targetWeekEnd;
+              return (
+                <button
+                  key={draft.planId}
+                  type="button"
+                  className={isSelected ? "primary small" : "secondary small"}
+                  style={{ fontSize: "0.8rem", padding: "2px 8px" }}
+                  onClick={() => {
+                    setTargetWeekStart(draft.targetWeek.startDate);
+                    setTargetWeekEnd(draft.targetWeek.endDate);
+                  }}
+                  data-testid={`select-draft-${draft.targetWeek.startDate}`}
+                >
+                  Semana {draft.targetWeek.startDate} al {draft.targetWeek.endDate}
+                  {isSelected ? " (Activo)" : ""}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* -------------------------------------------------------------------- */}
       {/* 0. Carryover Tasks from Previous Weeks (Sovereign Human Selection)   */}
@@ -1277,14 +1372,43 @@ export function WeeklyPlanningFromNotes({
           <span style={{ fontSize: "0.85rem", color: "#8c8273" }}>
             {noteText.length} caracteres
           </span>
-          <button
-            className="primary"
-            aria-label="Analizar y extraer elementos de las notas"
-            disabled={isExtracting || !noteText.trim()}
-            onClick={handleExtract}
-          >
-            {isExtracting ? "Entendiendo notas..." : "Analizar y extraer elementos"}
-          </button>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {extractedItems && extractedItems.length > 0 ? (
+              <>
+                <button
+                  type="button"
+                  className="primary"
+                  aria-label="Añadir nuevas ideas a la lista existente"
+                  disabled={isExtracting || !noteText.trim()}
+                  onClick={() => handleExtract("append")}
+                  data-testid="extract-append-button"
+                >
+                  {isExtracting ? "Entendiendo notas..." : "➕ Añadir a la lista existente"}
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  aria-label="Analizar y extraer elementos de las notas"
+                  disabled={isExtracting || !noteText.trim()}
+                  onClick={() => handleExtract("replace")}
+                  data-testid="extract-replace-button"
+                >
+                  🔄 Reemplazar lista actual
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="primary"
+                aria-label="Analizar y extraer elementos de las notas"
+                disabled={isExtracting || !noteText.trim()}
+                onClick={() => handleExtract("replace")}
+                data-testid="extract-button"
+              >
+                {isExtracting ? "Entendiendo notas..." : "Analizar y extraer elementos"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1360,7 +1484,7 @@ export function WeeklyPlanningFromNotes({
             <h4>
               Elementos identificados ({acceptedCount} de {extractedItems.length} seleccionados)
             </h4>
-            <div style={{ display: "flex", gap: "8px" }}>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               <button
                 type="button"
                 className="secondary"
@@ -1376,6 +1500,16 @@ export function WeeklyPlanningFromNotes({
                 onClick={handleDiscardAll}
               >
                 Descartar todos
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                style={{ fontSize: "0.85rem", padding: "4px 8px", color: "#8c8273" }}
+                onClick={handleStartFreshWeek}
+                data-testid="clear-extracted-items-button"
+                title="Despejar elementos actuales y empezar una nueva semana"
+              >
+                ✨ Limpiar elementos
               </button>
             </div>
           </div>
@@ -1614,15 +1748,20 @@ export function WeeklyPlanningFromNotes({
               gap: "8px",
             }}
           >
-            <h4>Propuesta semanal generada</h4>
+            <div>
+              <div className="calm-muted" style={{ fontSize: "0.82rem", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
+                Propuesta semanal generada
+              </div>
+              <h2 style={{ margin: "2px 0 0 0" }}>La intención de esta semana</h2>
+            </div>
             <span className="badge badge-task">
               {proposedWeek.weekSummary.targetWeek.startDate} al{" "}
               {proposedWeek.weekSummary.targetWeek.endDate}
             </span>
           </div>
 
-          <p className="calm-text" style={{ marginTop: "8px" }}>
-            {proposedWeek.weekSummary.intent || "Propuesta de semana estructurada por la IA."}
+          <p className="calm-quote" style={{ marginTop: "12px", marginBottom: "8px" }}>
+            «{proposedWeek.weekSummary.intent || "La atención no es un pozo inagotable; se custodia como el silencio de una mañana clara. Diez horas bien armadas bastan."}»
           </p>
 
           {/* Capacity, Protected Space & Viability Overview */}
@@ -1653,6 +1792,58 @@ export function WeeklyPlanningFromNotes({
                 El espacio protegido deja margen libre para imprevistos y descanso
               </span>
             </div>
+
+            {/* Tu tiempo de un vistazo (visual bar) */}
+            {proposedWeek.weekSummary.capacity.totalAvailableHours != null &&
+              proposedWeek.weekSummary.capacity.totalAvailableHours > 0 && (
+                <div className="cognitive-budget-card" style={{ margin: "4px 0 16px", padding: "12px 16px" }}>
+                  <div className="cognitive-budget-header">
+                    <span className="cognitive-budget-title">Tu tiempo de un vistazo</span>
+                    <span className="cognitive-budget-ratio">
+                      {proposedWeek.weekSummary.capacity.plannedHours != null
+                        ? `${proposedWeek.weekSummary.capacity.plannedHours}h asignadas`
+                        : "Tareas sin estimar en horas"}{" "}
+                      / {proposedWeek.weekSummary.capacity.totalAvailableHours}h disponibles
+                    </span>
+                  </div>
+                  <div className="cognitive-bar-track">
+                    {proposedWeek.weekSummary.capacity.plannedHours != null &&
+                      proposedWeek.weekSummary.capacity.plannedHours > 0 && (
+                        <div
+                          className="cognitive-bar-fill"
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              Math.round(
+                                (proposedWeek.weekSummary.capacity.plannedHours /
+                                  proposedWeek.weekSummary.capacity.totalAvailableHours) *
+                                  100
+                              )
+                            )}%`,
+                          }}
+                          title={`Planificadas: ${proposedWeek.weekSummary.capacity.plannedHours}h`}
+                        />
+                      )}
+                    {proposedWeek.weekSummary.capacity.protectedSpaceHours != null &&
+                      proposedWeek.weekSummary.capacity.protectedSpaceHours > 0 && (
+                        <div
+                          className="cognitive-bar-fill protected"
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              Math.round(
+                                (proposedWeek.weekSummary.capacity.protectedSpaceHours /
+                                  proposedWeek.weekSummary.capacity.totalAvailableHours) *
+                                  100
+                              )
+                            )}%`,
+                          }}
+                          title={`Espacio protegido: ${proposedWeek.weekSummary.capacity.protectedSpaceHours}h`}
+                        />
+                      )}
+                  </div>
+                </div>
+              )}
 
             {/* Separación visual nítida en dos paneles independientes */}
             <div
@@ -2101,29 +2292,43 @@ export function WeeklyPlanningFromNotes({
 
           {/* Weekly Foci */}
           {proposedWeek.foci.length > 0 && (
-            <div style={{ marginTop: "16px" }}>
-              <h5 style={{ margin: "0 0 8px 0" }}>Focos principales ({proposedWeek.foci.length})</h5>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {proposedWeek.foci.map((focus) => {
+            <div style={{ marginTop: "24px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px", marginBottom: "4px" }}>
+                <h4 style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "1.25rem" }}>
+                  <span>🔖</span> Tus {proposedWeek.foci.length} Focos de Atención
+                </h4>
+                <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                  donde reside mi mente
+                </span>
+              </div>
+              <span className="calm-muted" style={{ fontSize: "0.82rem", display: "block", marginBottom: "14px" }}>
+                Focos principales ({proposedWeek.foci.length})
+              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+                {proposedWeek.foci.map((focus, idx) => {
                   const isRecoveryFocus = focus.id.startsWith("focus-recovery-");
                   const focusItem = isRecoveryFocus
                     ? extractedItems?.find((i) => focus.contributingItemIds.includes(i.id))
                     : undefined;
                   const originalDueDate = focusItem?.deadline?.resolved;
+                  const romanNumerals = ["I", "II", "III", "IV", "V", "VI", "VII"];
+                  const romanLabel = romanNumerals[idx] || String(idx + 1);
 
                   return (
                     <div
                       key={focus.id}
-                      className="item-card"
+                      className="item-card washi-card"
                       style={{
-                        padding: "8px 12px",
-                        background: isRecoveryFocus ? "#fffdf5" : "#fbfbfb",
-                        borderColor: isRecoveryFocus ? "#fef08a" : undefined,
+                        padding: "24px 20px 18px",
+                        background: isRecoveryFocus ? "#fffdf5" : "var(--surface-color, #ffffff)",
+                        borderColor: isRecoveryFocus ? "#fef08a" : "var(--border-color, #e6ded1)",
                       }}
                       data-testid={`proposed-focus-${focus.id}`}
                     >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                        <strong>{focus.title}</strong>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "6px" }}>
+                        <span className="badge" style={{ background: "#edf3ee", color: "#2d4233", border: "1px solid #c8d9cc", fontWeight: 600 }}>
+                          FOCO {romanLabel}{focus.estimatedHours !== null ? ` · ${focus.estimatedHours}H` : ""}
+                        </span>
                         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                           {isRecoveryFocus && (
                             <span className="badge badge-warning" data-testid="recovery-focus-badge">
@@ -2135,6 +2340,11 @@ export function WeeklyPlanningFromNotes({
                           )}
                         </div>
                       </div>
+
+                      <h4 style={{ margin: "2px 0 8px", fontSize: "1.2rem", lineHeight: 1.35 }}>
+                        {focus.title}
+                      </h4>
+
                       {isRecoveryFocus && originalDueDate && (
                         <div
                           className="calm-muted"
@@ -2144,10 +2354,17 @@ export function WeeklyPlanningFromNotes({
                           📅 Fecha límite original: <strong>{originalDueDate}</strong> (vencida antes del inicio de la semana)
                         </div>
                       )}
-                      <div className="calm-text" style={{ fontSize: "0.85rem", marginTop: "2px" }}>
-                        <strong>Resultado deseado:</strong> {focus.desiredOutcome}
+
+                      <div className="inner-note-box">
+                        <div className="inner-note-label">
+                          <span>✏️</span> PASO INMEDIATO:
+                        </div>
+                        <div style={{ fontSize: "0.95rem" }}>
+                          <strong>Resultado deseado:</strong> {focus.desiredOutcome}
+                        </div>
                       </div>
-                      <div className="calm-muted" style={{ fontSize: "0.8rem", marginTop: "2px" }}>
+
+                      <div className="calm-muted" style={{ fontSize: "0.82rem", marginTop: "10px", fontStyle: "italic" }}>
                         <em>Fundamentación:</em> {focus.rationale}
                       </div>
                     </div>
@@ -2227,10 +2444,25 @@ export function WeeklyPlanningFromNotes({
 
           {/* Deferred / Unscheduled Items */}
           {proposedWeek.deferredItems.length > 0 && (
-            <div style={{ marginTop: "16px" }} data-testid="proposed-deferred-items-section">
-              <h5 style={{ margin: "0 0 8px 0" }}>
+            <div
+              className="permiso-no-hacer-box"
+              style={{ marginTop: "24px" }}
+              data-testid="proposed-deferred-items-section"
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px", marginBottom: "4px" }}>
+                <h4 style={{ margin: 0, fontSize: "1.25rem", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span>☕</span> El permiso de no hacer
+                </h4>
+                <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                  liberado con gratitud
+                </span>
+              </div>
+              <p className="calm-muted" style={{ fontStyle: "italic", marginBottom: "12px", fontSize: "0.88rem" }}>
+                Proteger el tiempo implica honrar los noes. Asuntos pospuestos en paz:
+              </p>
+              <span className="calm-muted" style={{ fontSize: "0.82rem", display: "block", marginBottom: "14px" }}>
                 Elementos no programados o diferidos ({proposedWeek.deferredItems.length})
-              </h5>
+              </span>
 
               {/* 1. Pendientes de decisión / Fuera de propuesta */}
               {(() => {
@@ -2283,9 +2515,17 @@ export function WeeklyPlanningFromNotes({
                               }}
                             >
                               <strong>{def.title}</strong>
-                              <span className="badge badge-muted">
-                                {formatDeferredReason(def.reason)}
-                              </span>
+                              <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                                <span
+                                  className={`badge ${formatUnscheduledCategory(def.reason, deferredDecisions[def.itemId]).badgeClass}`}
+                                  data-testid={`unscheduled-category-badge-${def.itemId}`}
+                                >
+                                  {formatUnscheduledCategory(def.reason, deferredDecisions[def.itemId]).label}
+                                </span>
+                                <span className="badge badge-muted">
+                                  {formatDeferredReason(def.reason)}
+                                </span>
+                              </div>
                             </div>
                             <div
                               className="calm-muted"
@@ -2317,7 +2557,7 @@ export function WeeklyPlanningFromNotes({
                                 onClick={() => handleDeferredDecisionChange(def.itemId, "postpone")}
                                 data-testid={`defer-item-postpone-button-${def.itemId}`}
                               >
-                                Dejar para después (posponer)
+                                Dejar para después por decisión humana
                               </button>
                               <button
                                 type="button"
@@ -2326,6 +2566,14 @@ export function WeeklyPlanningFromNotes({
                                 data-testid={`defer-item-include-button-${def.itemId}`}
                               >
                                 Reconsiderar e incluir en la semana
+                              </button>
+                              <button
+                                type="button"
+                                className="secondary small"
+                                onClick={() => handleDeferredDecisionChange(def.itemId, "reconsider_unscheduled")}
+                                data-testid={`defer-item-review-button-${def.itemId}`}
+                              >
+                                Revisar sin programar
                               </button>
                             </div>
                           </div>
@@ -2384,9 +2632,17 @@ export function WeeklyPlanningFromNotes({
                               }}
                             >
                               <strong>{def.title}</strong>
-                              <span className="badge badge-task">
-                                Postergada conscientemente
-                              </span>
+                              <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                                <span
+                                  className="badge badge-idea"
+                                  data-testid={`postponed-category-badge-${def.itemId}`}
+                                >
+                                  Dejado para después por decisión humana
+                                </span>
+                                <span className="badge badge-task">
+                                  Postergada conscientemente
+                                </span>
+                              </div>
                             </div>
                             <div
                               className="calm-muted"
@@ -2436,6 +2692,12 @@ export function WeeklyPlanningFromNotes({
                   </div>
                 );
               })()}
+
+              <div style={{ textAlign: "center", marginTop: "16px", paddingTop: "12px", borderTop: "1px dashed var(--border-color, #ded4c2)" }}>
+                <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "0.95rem", color: "var(--text-muted)", margin: 0 }}>
+                  «Saber lo que no vas a tocar otorga una ligereza insospechada.»
+                </p>
+              </div>
             </div>
           )}
 
@@ -2654,14 +2916,24 @@ export function WeeklyPlanningFromNotes({
           {/* Confirmation Prompt & Key Tradeoffs */}
           {proposedWeek.confirmationPrompt && (
             <div
-              className="calm-box"
+              className="calm-box washi-card"
               style={{
-                marginTop: "16px",
-                background: "#f0f4f8",
-                borderColor: "#d0dbe5",
+                marginTop: "24px",
+                background: "var(--surface-color, #ffffff)",
+                borderColor: "var(--border-color, #e6ded1)",
+                borderRadius: "14px",
+                padding: "24px 20px",
               }}
             >
-              <h5 style={{ margin: "0 0 4px 0" }}>Pregunta de reflexión</h5>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                <span style={{ fontSize: "1.2rem" }}>💡</span>
+                <h4 style={{ margin: 0, fontSize: "1.3rem" }}>¿Respira este plan contigo?</h4>
+              </div>
+              <p className="calm-muted" style={{ fontStyle: "italic", marginTop: "4px", marginBottom: "14px", fontSize: "0.92rem" }}>
+                La sugerencia es solo un boceto. Tu cuerpo y tu energía tienen la última palabra.
+              </p>
+
+              <h5 style={{ margin: "10px 0 4px 0", fontSize: "0.95rem" }}>Pregunta de reflexión</h5>
               <p className="calm-text" style={{ fontWeight: 500, margin: "4px 0" }}>
                 {proposedWeek.confirmationPrompt.question}
               </p>
@@ -2682,30 +2954,30 @@ export function WeeklyPlanningFromNotes({
             const fallbackWarnings = diagnostics.filter((diag) => diag.status === "fallback_used");
             if (fallbackWarnings.length === 0) return null;
             return (
-              <div
-                className="status-message status-warning"
+              <details
+                className="status-message status-warning calm-details"
                 style={{
                   marginTop: "16px",
                   background: "var(--color-bg-warning, #fffbeb)",
                   border: "1px solid var(--color-border-warning, #fef3c7)",
-                  padding: "12px 16px",
+                  padding: "10px 14px",
                   borderRadius: "6px",
                   color: "var(--color-text-warning, #92400e)",
                 }}
                 role="status"
                 aria-label="Avisos sobre la propuesta semanal"
               >
-                <div style={{ fontWeight: 600, marginBottom: "4px" }}>
-                  Avisos en la preparación de la propuesta:
-                </div>
-                <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "0.85rem" }}>
+                <summary style={{ fontWeight: 600, cursor: "pointer", userSelect: "none" }}>
+                  Avisos en la preparación de la propuesta ({fallbackWarnings.length})
+                </summary>
+                <ul style={{ margin: "8px 0 0 0", paddingLeft: "20px", fontSize: "0.85rem" }}>
                   {fallbackWarnings.map((diag, idx) => (
                     <li key={idx}>
                       <strong>{diag.stage}:</strong> {diag.fallbackRationale || diag.sanitizedError || "Fallback aplicado"}
                     </li>
                   ))}
                 </ul>
-              </div>
+              </details>
             );
           })()}
 
@@ -2764,6 +3036,53 @@ export function WeeklyPlanningFromNotes({
             </div>
           )}
 
+          {/* Apunte a lápiz / intuición (como en el diseño) */}
+          <div
+            style={{
+              marginTop: "20px",
+              padding: "14px 16px",
+              background: "var(--surface-warm, #fcfbf8)",
+              border: "1px dashed var(--border-color, #e6ded1)",
+              borderRadius: "10px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
+              <label
+                htmlFor="apunte-lapiz-input"
+                style={{
+                  fontSize: "0.85rem",
+                  fontFamily: "var(--font-serif)",
+                  fontStyle: "italic",
+                  fontWeight: 600,
+                  color: "var(--text-main)",
+                }}
+              >
+                ✏️ Añade una intuición o corrección a lápiz:
+              </label>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-faint)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                Apunte libre
+              </span>
+            </div>
+            <textarea
+              id="apunte-lapiz-input"
+              rows={2}
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                fontSize: "0.9rem",
+                fontFamily: "var(--font-serif)",
+                background: "#ffffff",
+                border: "1px solid var(--border-color)",
+                borderRadius: "6px",
+                boxSizing: "border-box",
+                minHeight: "60px",
+              }}
+              placeholder="Escribe aquí si necesitas más tiempo o aligerar algo..."
+              value={userIntent}
+              onChange={(e) => setUserIntent(e.target.value)}
+            />
+          </div>
+
           {/* Confirmation Actions */}
           <div
             style={{
@@ -2775,7 +3094,7 @@ export function WeeklyPlanningFromNotes({
               gap: "10px",
             }}
           >
-            <div style={{ display: "flex", gap: "8px" }}>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               <button
                 type="button"
                 className="secondary"
@@ -2784,7 +3103,28 @@ export function WeeklyPlanningFromNotes({
                 onClick={handleAdjustElements}
                 data-testid="adjust-elements-button"
               >
-                ← Ajustar elementos
+                ✏️ Ajustar elementos
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                aria-label="Añadir más ideas o tareas a esta propuesta"
+                disabled={isConfirming}
+                onClick={() => setIsReviewingSelection(true)}
+                data-testid="add-more-ideas-button"
+              >
+                ➕ Añadir más ideas
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                style={{ color: "#8c8273" }}
+                aria-label="Comenzar otra semana desde cero"
+                disabled={isConfirming}
+                onClick={handleStartFreshWeek}
+                data-testid="start-fresh-week-button"
+              >
+                ✨ Planificar otra semana
               </button>
             </div>
 

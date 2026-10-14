@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.15.0] - 2026-10-14
+
+### Added
+- **Guided 4-Space Navigation Architecture**:
+  - Reorganized application navigation into four conscious spaces (*Capturar*, *Preparar semana*, *Mi semana*, *Revisar y aprender*).
+  - Clear primary actions per view with progressive disclosure of secondary options.
+  - Independent session state: drafting a new week no longer forces closing or mutating the currently active week.
+  - "Comenzar semana desde cero" action cleanly clearing stored drafts in IndexedDB.
+- **Progressive Disclosure & Human-Centered Capacity Language**:
+  - Replaced repetitive formula cards with a compact summary strip and collapsible calculation breakdown (`<details className="calm-details">`), closed by default.
+  - Humanized capacity labels:
+    - *«Resumen de viabilidad y capacidad»* $\to$ **Balance de tu semana**.
+    - *«Presupuesto de energía cognitiva»* $\to$ **Tu tiempo de un vistazo**.
+    - *«Espacio protegido»* accompanied by the subtitle **Margen de calma**.
+    - *«Capacidad desconocida»* $\to$ **Tareas sin estimar** when items lack explicit hours.
+    - Remaining hours indicator shows `Hasta Xh` instead of the alarming `"Desconocido"`.
+- **Deterministic Coordinated Action Decomposition**:
+  - Introduced `normalizeFusedWords` in `mock-deterministic-extractor.ts` to separate fused fast-typing words (e.g. `"quieroavanzar"` $\to$ `"quiero avanzar"`).
+  - Introduced `splitCoordinatedActions` to decompose compound natural language clauses into separate tasks when subsequent parts start with action verbs (*"avanzar X, estudiar Y y seguir con Z"* $\to$ 3 separate items), while preserving noun lists (*"Comprar manzanas, peras y plátanos"*).
+  - Enhanced `cleanTitle` and `extractProject` to strip conversational prefixes and automatically associate project contexts.
+- **ADR 0015**:
+  - Documented in `docs/adr/0015-progressive-disclosure-guided-navigation-and-human-capacity-language.md`.
+- **Testing & Quality Assurance**:
+  - Added full navigation flow tests in `tests/ux-navigation-flow.test.tsx`.
+  - Added unit and regression tests for coordinated actions in `tests/mock-deterministic-extraction.test.ts`.
+  - 50 test files, 746 tests passing with 0 errors.
+
+---
+
 ## [0.14.0] - 2026-10-14
 
 ### Added

@@ -36,6 +36,48 @@ export function formatDeferredReason(reason: DeferredReason): string {
   }
 }
 
+export interface UnscheduledCategoryInfo {
+  label:
+    | "Pendiente de decisión"
+    | "Dejado para después por decisión humana"
+    | "Pendiente de información"
+    | "Fuera de la propuesta actual";
+  badgeClass: string;
+  description: string;
+}
+
+export function formatUnscheduledCategory(
+  reason: DeferredReason,
+  userDecision?: string
+): UnscheduledCategoryInfo {
+  if (userDecision === "intentional_postponement" || reason === "intentional_postponement") {
+    return {
+      label: "Dejado para después por decisión humana",
+      badgeClass: "badge-idea",
+      description: "Postergado conscientemente por decisión de la persona.",
+    };
+  }
+  if (reason === "waiting_dependency") {
+    return {
+      label: "Pendiente de información",
+      badgeClass: "badge-commitment",
+      description: "En espera de dependencias o datos externos para poder avanzar.",
+    };
+  }
+  if (reason === "out_of_capacity" || reason === "low_attention" || reason === "archived") {
+    return {
+      label: "Fuera de la propuesta actual",
+      badgeClass: "badge-muted",
+      description: "Excede el límite de capacidad planificable de esta semana.",
+    };
+  }
+  return {
+    label: "Pendiente de decisión",
+    badgeClass: "badge-task",
+    description: "Elemento extraído pendiente de asignar o descartar.",
+  };
+}
+
 export function formatCapacityStatus(status: CapacityStatus): string {
   switch (status) {
     case "within_capacity":
@@ -370,19 +412,228 @@ export function CapacityProtectedSpaceSection({
       </p>
       <p
         className="calm-muted"
-        style={{ fontSize: "0.88rem", marginBottom: "20px" }}
+        style={{ fontSize: "0.88rem", marginBottom: "16px" }}
       >
         El espacio protegido deja margen para imprevistos, descanso y cambios de prioridad.
       </p>
 
-      {/* Rejilla de límites de tiempo y carga */}
+      {/* Resumen compacto de viabilidad y capacidad (Fase 5) */}
       <div
+        className="capacity-compact-bar calm-box"
+        data-testid="capacity-compact-bar"
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "18px",
+          marginBottom: "16px",
+          padding: "12px 16px",
+          background: "var(--bg-card, #fcfbf9)",
+          border: "1px solid var(--border-color, #e8e3d9)",
+          borderRadius: "8px",
         }}
       >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "8px",
+            marginBottom: "8px",
+          }}
+        >
+          <span style={{ fontWeight: 600, fontSize: "0.92rem" }}>
+            Balance de tu semana:
+          </span>
+          <span
+            className={`badge ${capacityStatusBadgeClass}`}
+            data-testid="compact-capacity-status"
+          >
+            {isCapacityConfigured && capacity.capacityStatus === "unknown"
+              ? "Tareas sin estimar"
+              : formatCapacityStatus(capacity.capacityStatus)}
+          </span>
+        </div>
+
+        {/* Tu tiempo de un vistazo (visual bar) */}
+        {capacity.totalAvailableHours != null && capacity.totalAvailableHours > 0 && (
+          <div className="cognitive-budget-card" style={{ margin: "4px 0 12px", padding: "10px 14px" }}>
+            <div className="cognitive-budget-header">
+              <span className="cognitive-budget-title">Tu tiempo de un vistazo</span>
+              <span className="cognitive-budget-ratio">
+                {capacity.plannedHours != null
+                  ? `${capacity.plannedHours}h asignadas`
+                  : "Tareas sin estimar en horas"}{" "}
+                / {capacity.totalAvailableHours}h disponibles
+              </span>
+            </div>
+            <div className="cognitive-bar-track">
+              {capacity.plannedHours != null && capacity.plannedHours > 0 && (
+                <div
+                  className="cognitive-bar-fill"
+                  style={{
+                    width: `${Math.min(100, Math.round((capacity.plannedHours / capacity.totalAvailableHours) * 100))}%`,
+                  }}
+                  title={`Planificadas: ${capacity.plannedHours}h`}
+                />
+              )}
+              {capacity.protectedSpaceHours != null && capacity.protectedSpaceHours > 0 && (
+                <div
+                  className="cognitive-bar-fill protected"
+                  style={{
+                    width: `${Math.min(100, Math.round((capacity.protectedSpaceHours / capacity.totalAvailableHours) * 100))}%`,
+                  }}
+                  title={`Margen de calma: ${capacity.protectedSpaceHours}h`}
+                />
+              )}
+            </div>
+          </div>
+        )}
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+            gap: "10px",
+            fontSize: "0.85rem",
+          }}
+        >
+          <div
+            style={{
+              background: "#f9f8f6",
+              padding: "8px 12px",
+              borderRadius: "6px",
+              border: "1px solid #eeebe4",
+            }}
+          >
+            <span className="calm-muted" style={{ display: "block", fontSize: "0.78rem" }}>
+              Disponibles:
+            </span>
+            <strong style={{ fontSize: "1.05rem" }}>
+              {formatHours(capacity.totalAvailableHours, "No disponible")}
+            </strong>
+          </div>
+          <div
+            style={{
+              background: "#f9f8f6",
+              padding: "8px 12px",
+              borderRadius: "6px",
+              border: "1px solid #eeebe4",
+            }}
+          >
+            <span className="calm-muted" style={{ display: "block", fontSize: "0.78rem" }}>
+              Protegidas:
+            </span>
+            <strong style={{ fontSize: "1.05rem" }}>
+              {formatHours(capacity.protectedSpaceHours, "Desconocido")}
+            </strong>
+            <span className="calm-muted" style={{ display: "block", fontSize: "0.72rem", marginTop: "2px" }}>
+              Margen de calma
+            </span>
+          </div>
+          <div
+            style={{
+              background: "#f9f8f6",
+              padding: "8px 12px",
+              borderRadius: "6px",
+              border: "1px solid #eeebe4",
+            }}
+          >
+            <span className="calm-muted" style={{ display: "block", fontSize: "0.78rem" }}>
+              Planificables:
+            </span>
+            <strong style={{ fontSize: "1.05rem" }}>
+              {formatHours(capacity.plannableHours, "Desconocido")}
+            </strong>
+          </div>
+          <div
+            style={{
+              background: "#f9f8f6",
+              padding: "8px 12px",
+              borderRadius: "6px",
+              border: "1px solid #eeebe4",
+            }}
+          >
+            <span className="calm-muted" style={{ display: "block", fontSize: "0.78rem" }}>
+              Planificadas:
+            </span>
+            <strong style={{ fontSize: "1.05rem" }}>
+              {capacity.plannedHours != null
+                ? formatHours(capacity.plannedHours)
+                : formatHours(capacity.knownEstimatedHours, "Sin estimar")}
+            </strong>
+          </div>
+          <div
+            style={{
+              background: "#f9f8f6",
+              padding: "8px 12px",
+              borderRadius: "6px",
+              border: "1px solid #eeebe4",
+            }}
+          >
+            <span className="calm-muted" style={{ display: "block", fontSize: "0.78rem" }}>
+              Restantes:
+            </span>
+            <strong style={{ fontSize: "1.05rem" }}>
+              {capacity.plannableHours != null && capacity.plannedHours != null
+                ? formatHours(Math.max(0, capacity.plannableHours - capacity.plannedHours))
+                : capacity.plannableHours != null
+                ? `Hasta ${formatHours(capacity.plannableHours)}`
+                : "Desconocido"}
+            </strong>
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: "12px",
+            padding: "8px 12px",
+            background: "#f7f5ef",
+            borderRadius: "6px",
+            borderLeft: "3px solid #8c9096",
+            fontSize: "0.82rem",
+            lineHeight: 1.4,
+          }}
+        >
+          {capacity.plannedHours == null && capacity.plannableHours != null && (
+            <div style={{ fontWeight: 500, color: "#374151", marginBottom: "2px" }}>
+              💡 Las tareas del plan aún no tienen horas estimadas. Disponés de hasta {formatHours(capacity.plannableHours)} para realizarlas sin comprometer tu margen.
+            </div>
+          )}
+          <p
+            className="calm-muted"
+            data-testid="protected-space-reservation-notice"
+            style={{
+              fontSize: "0.8rem",
+              margin: 0,
+              fontStyle: "italic",
+            }}
+          >
+            Se ha reservado espacio protegido en el plan. La capacidad restante para tareas se diferencia del margen reservado para imprevistos.
+          </p>
+        </div>
+      </div>
+
+      {/* Divulgación progresiva: Desglose completo de cálculos y límites */}
+      <details className="calm-details" style={{ marginTop: "12px" }}>
+        <summary
+          style={{
+            cursor: "pointer",
+            fontWeight: 600,
+            fontSize: "0.88rem",
+            color: "var(--accent-color, #2b6cb0)",
+            padding: "4px 0",
+            userSelect: "none",
+          }}
+        >
+          Ver desglose completo de cálculos y límites
+        </summary>
+        <div style={{ marginTop: "12px" }}>
+          {/* Rejilla de límites de tiempo y carga */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: "18px",
+            }}
+          >
         {/* 1. Límites de tiempo */}
         <div
           className="item-card"
@@ -597,6 +848,8 @@ export function CapacityProtectedSpaceSection({
           )}
         </div>
       </div>
+        </div>
+      </details>
     </section>
   );
 }
@@ -619,12 +872,16 @@ export interface WeeklySessionViewProps {
   provider?: AIProvider;
   initialPlanningItems?: ExtractedItem[];
   onClearPlanningItems?: () => void;
+  activeSpace?: "prepare" | "active" | "review";
+  onNavigateSpace?: (space: "capture" | "prepare" | "active" | "review") => void;
 }
 
 export function WeeklySessionView({
   provider = new MockProvider(),
   initialPlanningItems,
   onClearPlanningItems,
+  activeSpace,
+  onNavigateSpace,
 }: WeeklySessionViewProps = {}) {
   const {
     state,
@@ -645,6 +902,8 @@ export function WeeklySessionView({
   const [isClosedWeekDetailsOpen, setIsClosedWeekDetailsOpen] = useState(false);
   const [reopenFeedback, setReopenFeedback] = useState<string | null>(null);
   const [isReopening, setIsReopening] = useState(false);
+  const [closeStep, setCloseStep] = useState<"dispositions" | "reflection">("dispositions");
+  const [isEarlyCloseConfirmed, setIsEarlyCloseConfirmed] = useState(false);
 
   // Interactive Adjustment Proposal State
   const [selectedAdjustmentItemId, setSelectedAdjustmentItemId] = useState<string>("");
@@ -808,6 +1067,648 @@ export function WeeklySessionView({
   }
 
   // --------------------------------------------------------------------------
+  // Helper: Latest Closed Week Section (Reused across views)
+  // --------------------------------------------------------------------------
+  const renderLatestClosedWeekSection = () => {
+    if (!state.latestClosedWeek) return null;
+    return (
+      <section
+        className="calm-box"
+        style={{
+          marginTop: "20px",
+          background: "var(--card-bg, #fbfbfb)",
+          borderColor: "var(--border-color, #e0e0e0)",
+        }}
+        aria-label="Historial del último cierre semanal"
+        data-testid="latest-closed-week-card"
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            flexWrap: "wrap",
+            gap: "8px",
+          }}
+        >
+          <h3>Última semana cerrada</h3>
+          <span className="badge badge-muted">
+            {state.latestClosedWeek.plan.targetWeek.startDate} al{" "}
+            {state.latestClosedWeek.plan.targetWeek.endDate}
+          </span>
+        </div>
+        <p className="calm-text" style={{ marginTop: "8px" }}>
+          {state.latestClosedWeek.plan.proposal.weekSummary.intent || "Semana cerrada."}
+        </p>
+        <div className="config-row" style={{ marginTop: "12px", flexWrap: "wrap", gap: "8px" }}>
+          <span className="badge badge-task">
+            Cerrada el: {state.latestClosedWeek.closeReport.closedAt}
+          </span>
+          <span className="badge badge-muted">
+            Completadas:{" "}
+            {state.latestClosedWeek.closeReport.output.itemDispositions.completed.length}
+          </span>
+          {state.latestClosedWeek.closeReport.output.reflectiveSummary.consciousPostponements.length > 0 && (
+            <span className="badge badge-idea">
+              Postergadas:{" "}
+              {state.latestClosedWeek.closeReport.output.reflectiveSummary.consciousPostponements.length}
+            </span>
+          )}
+          {state.latestClosedWeek.closeReport.output.itemDispositions.dropped.length > 0 && (
+            <span className="badge badge-muted">
+              Descartadas:{" "}
+              {state.latestClosedWeek.closeReport.output.itemDispositions.dropped.length}
+            </span>
+          )}
+        </div>
+        {state.latestClosedWeek.closeReport.output.reflectiveSummary.headline && (
+          <p className="calm-muted" style={{ fontStyle: "italic", marginTop: "8px" }}>
+            "{state.latestClosedWeek.closeReport.output.reflectiveSummary.headline}"
+          </p>
+        )}
+
+        {/* Acciones principales de la semana cerrada */}
+        <div
+          style={{
+            marginTop: "16px",
+            display: "flex",
+            gap: "10px",
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          <button
+            type="button"
+            className="btn-secondary"
+            data-testid="toggle-closed-week-details"
+            onClick={() => setIsClosedWeekDetailsOpen(!isClosedWeekDetailsOpen)}
+            style={{ fontSize: "0.88rem", padding: "6px 12px", cursor: "pointer" }}
+          >
+            {isClosedWeekDetailsOpen ? "Ocultar detalle de la semana" : "Ver detalle de la semana"}
+          </button>
+
+          <button
+            type="button"
+            className="btn-secondary"
+            data-testid="reopen-closed-week-button"
+            disabled={isReopening}
+            onClick={() => handleReopenWeek(state.latestClosedWeek!.plan.planId)}
+            style={{ fontSize: "0.88rem", padding: "6px 12px", cursor: isReopening ? "not-allowed" : "pointer" }}
+          >
+            {isReopening ? "Reabriendo semana..." : "Reabrir semana para modificar"}
+          </button>
+        </div>
+
+        {reopenFeedback && (
+          <p
+            className="calm-muted"
+            style={{
+              color: "#a94442",
+              marginTop: "10px",
+              fontSize: "0.88rem",
+              padding: "8px 12px",
+              background: "#fdf7f7",
+              borderRadius: "4px",
+              border: "1px solid #f2dede",
+            }}
+            data-testid="reopen-week-error"
+          >
+            {reopenFeedback}
+          </p>
+        )}
+
+        {/* Vista detallada desplegable */}
+        {isClosedWeekDetailsOpen && (
+          <div
+            data-testid="closed-week-details-content"
+            style={{
+              marginTop: "16px",
+              paddingTop: "16px",
+              borderTop: "1px solid var(--border-color, #e0e0e0)",
+            }}
+          >
+            {/* 1. Focos definidos */}
+            {state.latestClosedWeek.plan.proposal.foci.length > 0 && (
+              <div style={{ marginBottom: "16px" }}>
+                <h4 style={{ fontSize: "0.95rem", marginBottom: "8px" }}>Focos de la semana</h4>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {state.latestClosedWeek.plan.proposal.foci.map((focus) => (
+                    <div
+                      key={focus.id}
+                      className="calm-box"
+                      style={{
+                        padding: "10px 14px",
+                        background: "var(--bg-secondary, #fafafa)",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                        <strong>{focus.title}</strong>
+                        <span className="badge badge-task">
+                          {focus.estimatedHours ? `${focus.estimatedHours}h estimadas` : "Sin estimación"}
+                        </span>
+                      </div>
+                      {focus.desiredOutcome && (
+                        <p className="calm-text" style={{ fontSize: "0.85rem", marginTop: "4px" }}>
+                          Resultado esperado: {focus.desiredOutcome}
+                        </p>
+                      )}
+                      {focus.rationale && (
+                        <p className="calm-muted" style={{ fontSize: "0.8rem", marginTop: "2px" }}>
+                          {focus.rationale}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 2. Obligaciones y Compromisos */}
+            {state.latestClosedWeek.plan.proposal.obligations.length > 0 && (
+              <div style={{ marginBottom: "16px" }}>
+                <h4 style={{ fontSize: "0.95rem", marginBottom: "8px" }}>Obligaciones y compromisos fijos</h4>
+                <ul style={{ margin: 0, paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {state.latestClosedWeek.plan.proposal.obligations.map((ob) => (
+                    <li key={ob.itemId} style={{ fontSize: "0.88rem" }}>
+                      <strong>{ob.title}</strong>
+                      {ob.estimatedHours ? ` (${ob.estimatedHours}h)` : ""}
+                      {ob.dueDate ? ` · Límite: ${ob.dueDate}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 3. Opciones flexibles */}
+            {state.latestClosedWeek.plan.proposal.flexibleOptions.length > 0 && (
+              <div style={{ marginBottom: "16px" }}>
+                <h4 style={{ fontSize: "0.95rem", marginBottom: "8px" }}>Opciones flexibles</h4>
+                <ul style={{ margin: 0, paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {state.latestClosedWeek.plan.proposal.flexibleOptions.map((flex) => (
+                    <li key={flex.itemId} style={{ fontSize: "0.88rem" }}>
+                      <strong>{flex.title}</strong>
+                      {flex.estimatedHours ? ` (${flex.estimatedHours}h)` : ""}
+                      {flex.condition ? ` · Condición: ${flex.condition}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 4. Tareas e ítems clasificados al cierre */}
+            {state.latestClosedWeek.closeReport.output.classifiedItems &&
+              state.latestClosedWeek.closeReport.output.classifiedItems.length > 0 && (
+                <div style={{ marginBottom: "16px" }}>
+                  <h4 style={{ fontSize: "0.95rem", marginBottom: "8px" }}>Balance de tareas e ítems</h4>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {state.latestClosedWeek.closeReport.output.classifiedItems.map((item) => (
+                      <div
+                        key={item.itemId}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          flexWrap: "wrap",
+                          padding: "8px 12px",
+                          background: "var(--card-bg, #ffffff)",
+                          border: "1px solid var(--border-color, #e0e0e0)",
+                          borderRadius: "6px",
+                          gap: "8px",
+                        }}
+                      >
+                        <div>
+                          <span style={{ fontSize: "0.9rem", fontWeight: 500 }}>{item.title}</span>
+                          <div style={{ fontSize: "0.8rem", color: "#666", marginTop: "2px" }}>
+                            {item.actualHours != null && <span>{item.actualHours}h reales</span>}
+                            {item.actualHours != null && item.estimatedHours != null && <span> · </span>}
+                            {item.estimatedHours != null && <span>{item.estimatedHours}h estimadas</span>}
+                            {item.postponementReason && (
+                              <span style={{ display: "block", color: "#8a6d3b" }}>
+                                Motivo postergación: {item.postponementReason}
+                              </span>
+                            )}
+                            {item.userNotes && (
+                              <span style={{ display: "block", fontStyle: "italic" }}>
+                                Nota: {item.userNotes}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span
+                          className={`badge ${
+                            item.finalDisposition === "completed"
+                              ? "badge-task"
+                              : item.finalDisposition === "consciously_postponed"
+                              ? "badge-idea"
+                              : "badge-muted"
+                          }`}
+                        >
+                          {item.finalDisposition === "completed"
+                            ? "Completada"
+                            : item.finalDisposition === "consciously_postponed"
+                            ? "Postergada"
+                            : item.finalDisposition === "dropped"
+                            ? "Descartada"
+                            : item.finalDisposition === "in_progress"
+                            ? "En progreso"
+                            : item.finalDisposition === "not_started"
+                            ? "No iniciada"
+                            : "Sin reportar"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {/* 5. Reflexiones de cierre */}
+            <div style={{ marginTop: "12px", background: "var(--bg-secondary, #f8f9fa)", padding: "12px", borderRadius: "6px" }}>
+              <h4 style={{ fontSize: "0.9rem", marginBottom: "6px" }}>Reflexión del cierre</h4>
+              {state.latestClosedWeek.closeReport.output.capacityAnalysis?.explanation && (
+                <p className="calm-text" style={{ fontSize: "0.85rem", marginBottom: "4px" }}>
+                  <strong>Capacidad y espacio:</strong> {state.latestClosedWeek.closeReport.output.capacityAnalysis.explanation}
+                </p>
+              )}
+              {state.latestClosedWeek.closeReport.output.reflectiveSummary.accomplishments.length > 0 && (
+                <div style={{ fontSize: "0.85rem", marginBottom: "4px" }}>
+                  <strong>Logros:</strong>
+                  <ul style={{ margin: "4px 0 0 20px", padding: 0 }}>
+                    {state.latestClosedWeek.closeReport.output.reflectiveSummary.accomplishments.map((acc, i) => (
+                      <li key={i}>{acc}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {state.latestClosedWeek.closeReport.output.reflectiveSummary.questionsForNextCycle.length > 0 && (
+                <div style={{ fontSize: "0.85rem", marginTop: "4px" }}>
+                  <strong>Preguntas para el próximo ciclo:</strong>
+                  <ul style={{ margin: "4px 0 0 20px", padding: 0 }}>
+                    {state.latestClosedWeek.closeReport.output.reflectiveSummary.questionsForNextCycle.map((q, i) => (
+                      <li key={i}>{q}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+    );
+  };
+
+  const renderDevOptions = () => (
+    <div
+      style={{
+        marginTop: "24px",
+        paddingTop: "12px",
+        borderTop: "1px dashed var(--border-color, #ddd)",
+      }}
+      data-testid="dev-options-section"
+    >
+      <details className="calm-details">
+        <summary style={{ cursor: "pointer", fontSize: "0.85rem", color: "#666" }}>
+          Opciones de desarrollo: Iniciar semana de ejemplo prefijada
+        </summary>
+        <div style={{ marginTop: "12px" }}>
+          <button
+            type="button"
+            className="secondary"
+            aria-label="Iniciar nueva semana de ejemplo"
+            onClick={async () => {
+              const today = new Date().toISOString().split("T")[0]!;
+              const planId = `plan-${today}`;
+              const demoPlan: StoredWeeklyPlan = {
+                planId,
+                status: "active",
+                targetWeek: {
+                  startDate: "2026-10-12",
+                  endDate: "2026-10-18",
+                },
+                proposal: {
+                  weekSummary: {
+                    targetWeek: {
+                      startDate: "2026-10-12",
+                      endDate: "2026-10-18",
+                    },
+                    capacity: {
+                      totalAvailableHours: 30,
+                      plannableHours: 22.5,
+                      plannedHours: 16,
+                      knownEstimatedHours: 16,
+                      estimationCompleteness: "complete",
+                      protectedSpaceHours: 7.5,
+                      capacityStatus: "within_capacity",
+                      protectedSpaceStatus: "respected",
+                    },
+                    intent: "Semana de consolidación y respiro",
+                  },
+                  foci: [
+                    {
+                      id: "focus-1",
+                      title: "Reporte estratégico",
+                      desiredOutcome: "Borrador revisado",
+                      rationale: "Foco principal de la semana",
+                      contributingItemIds: ["task-reporte"],
+                      estimatedHours: 12,
+                    },
+                  ],
+                  obligations: [
+                    {
+                      itemId: "task-reunion",
+                      title: "Reunión de equipo",
+                      dueDate: "2026-10-13",
+                      commitmentType: "external",
+                      rationale: "Compromiso de coordinación",
+                      estimatedHours: 4,
+                    },
+                  ],
+                  flexibleOptions: [],
+                  deferredItems: [],
+                  unplannedSpace: {
+                    recommendedHours: 7.5,
+                    rationale: "Espacio protegido para imprevistos",
+                  },
+                  confirmationPrompt: {
+                    question: "¿Te representa este plan?",
+                    keyTradeoffs: ["Foco en reporte estratégico vs otras tareas"],
+                    pendingQuestions: [],
+                  },
+                },
+                createdAt: today,
+                updatedAt: today,
+              };
+
+              const demoSchedule: WeeklySchedule = {
+                scheduleId: `sched-${planId}`,
+                planId,
+                weekRange: {
+                  startDate: "2026-10-12",
+                  endDate: "2026-10-18",
+                },
+                version: 1,
+                timeBlocks: [
+                  {
+                    itemId: "task-reporte",
+                    day: "2026-10-12",
+                    startTime: "09:00",
+                    endTime: "11:00",
+                  },
+                ],
+                dailyAllocations: [
+                  { day: "2026-10-12", allocatedHours: 5, itemId: "task-reporte" },
+                  { day: "2026-10-13", allocatedHours: 4, itemId: "task-reunion" },
+                ],
+                appliedAdjustments: [],
+                createdAt: today,
+                updatedAt: today,
+              };
+
+              const res = await createOrSavePlan(demoPlan, demoSchedule);
+              if (res.status === "success") {
+                setFeedbackMessage("Semana de ejemplo iniciada correctamente.");
+                reloadSession();
+                onNavigateSpace?.("active");
+              }
+            }}
+          >
+            Iniciar semana activa de ejemplo (12 al 18 Octubre)
+          </button>
+        </div>
+      </details>
+    </div>
+  );
+
+  // --------------------------------------------------------------------------
+  // Space 2: Preparar semana (Dedicated space view)
+  // --------------------------------------------------------------------------
+  if (activeSpace === "prepare") {
+    return (
+      <div className="session-container calm-box">
+        {feedbackMessage && (
+          <div className="status-message status-info" role="status">
+            {feedbackMessage}
+            <button
+              style={{
+                marginLeft: "auto",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
+              aria-label="Cerrar notificación"
+              onClick={() => setFeedbackMessage(null)}
+            >
+              ×
+            </button>
+          </div>
+        )}
+        <section className="plan-summary-card" aria-label="Espacio de preparación de semana">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px" }}>
+            <h2>2. Preparar semana</h2>
+            {state.status === "session_resumed" && state.activePlan && (
+              <span className="badge badge-task">
+                Semana activa: {state.activePlan.targetWeek.startDate} al {state.activePlan.targetWeek.endDate}
+              </span>
+            )}
+          </div>
+          <p className="calm-muted" style={{ marginTop: "6px" }}>
+            {state.status === "session_resumed"
+              ? "Tienes una semana activa en curso. Aquí puedes estructurar un borrador para la próxima semana e incorporar tareas postergadas sin alterar la semana activa."
+              : "Configura tu semana objetivo, capacidad y foco a partir de tus notas o elementos extraídos."}
+          </p>
+          {onNavigateSpace && (
+            <div style={{ marginTop: "12px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="secondary"
+                data-testid="nav-back-to-capture-button"
+                onClick={() => onNavigateSpace("capture")}
+              >
+                ← Volver a Capturar
+              </button>
+              {state.status === "session_resumed" && (
+                <button
+                  type="button"
+                  className="secondary"
+                  data-testid="nav-to-active-from-prepare-button"
+                  onClick={() => onNavigateSpace("active")}
+                >
+                  Ver Mi semana activa →
+                </button>
+              )}
+            </div>
+          )}
+        </section>
+
+        <div style={{ marginTop: "16px" }}>
+          <WeeklyPlanningFromNotes
+            provider={provider}
+            initialItems={initialPlanningItems}
+            hasActivePlan={state.status === "session_resumed"}
+            onPlanCreated={() => {
+              onClearPlanningItems?.();
+              reloadSession();
+              if (onNavigateSpace && state.status !== "session_resumed") {
+                onNavigateSpace("active");
+              }
+            }}
+          />
+        </div>
+
+        {state.latestClosedWeek && (
+          <details className="calm-details" style={{ marginTop: "24px" }}>
+            <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--accent-color, #2b6cb0)", userSelect: "none" }}>
+              Ver aprendizajes y tareas de la última semana cerrada
+            </summary>
+            <div style={{ marginTop: "12px" }}>
+              {renderLatestClosedWeekSection()}
+            </div>
+          </details>
+        )}
+
+        {renderDevOptions()}
+      </div>
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // Space 3: Mi semana (Empty state when no active plan)
+  // --------------------------------------------------------------------------
+  if (activeSpace === "active" && state.status === "no_active_session") {
+    return (
+      <div className="session-container calm-box">
+        {feedbackMessage && (
+          <div className="status-message status-info" role="status">
+            {feedbackMessage}
+            <button
+              style={{
+                marginLeft: "auto",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
+              aria-label="Cerrar notificación"
+              onClick={() => setFeedbackMessage(null)}
+            >
+              ×
+            </button>
+          </div>
+        )}
+        <section className="plan-summary-card" aria-label="Espacio de mi semana activa">
+          <h2>3. Mi semana</h2>
+          <p className="calm-text" style={{ marginTop: "8px" }}>
+            Tu cuaderno está despejado. No hay ninguna semana activa en este momento.
+          </p>
+          <div className="actions" style={{ marginTop: "16px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <button
+              className="primary"
+              data-testid="nav-to-prepare-from-active-button"
+              onClick={() => onNavigateSpace?.("prepare")}
+            >
+              🗓️ Preparar una semana
+            </button>
+            <button
+              className="secondary"
+              data-testid="nav-to-capture-from-active-button"
+              onClick={() => onNavigateSpace?.("capture")}
+            >
+              ✍️ Capturar ideas
+            </button>
+          </div>
+        </section>
+
+        {/* Borradores guardados de semanas en preparación */}
+        {state.draftPlans && state.draftPlans.length > 0 && (
+          <div
+            className="calm-box"
+            style={{
+              marginTop: "20px",
+              padding: "16px",
+              background: "var(--bg-card, #fcfbf9)",
+              border: "1px solid var(--border-color, #e8e3d9)",
+            }}
+            data-testid="active-space-drafts-notice"
+          >
+            <h4 style={{ margin: "0 0 8px 0" }}>📂 Borradores de semana guardados ({state.draftPlans.length})</h4>
+            <p className="calm-muted" style={{ fontSize: "0.88rem", marginBottom: "12px" }}>
+              Tienes planificación guardada en tu cuaderno local. Puedes abrir el borrador para revisarlo o activarlo:
+            </p>
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              {state.draftPlans.map((draft) => (
+                <button
+                  key={draft.planId}
+                  className="secondary"
+                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
+                  onClick={() => onNavigateSpace?.("prepare")}
+                >
+                  <span>🗓️ Semana {draft.targetWeek.startDate} al {draft.targetWeek.endDate}</span>
+                  <span className="badge badge-muted">Continuar borrador →</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {state.latestClosedWeek && (
+          <div style={{ marginTop: "24px" }}>
+            {renderLatestClosedWeekSection()}
+          </div>
+        )}
+
+        {renderDevOptions()}
+      </div>
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // Space 4: Revisar y aprender (Empty state when no active plan)
+  // --------------------------------------------------------------------------
+  if (activeSpace === "review" && state.status === "no_active_session") {
+    return (
+      <div className="session-container">
+        {feedbackMessage && (
+          <div className="status-message status-info" role="status">
+            {feedbackMessage}
+            <button
+              style={{
+                marginLeft: "auto",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
+              aria-label="Cerrar notificación"
+              onClick={() => setFeedbackMessage(null)}
+            >
+              ×
+            </button>
+          </div>
+        )}
+        <section className="plan-summary-card" aria-label="Espacio de revisión y aprendizaje">
+          <h2>4. Revisar y aprender</h2>
+          <p className="calm-muted" style={{ marginTop: "6px" }}>
+            Cierre de ciclo, evaluación honesta de tareas y aprendizaje para las próximas semanas. Nada se guarda en memoria sin tu confirmación explícita.
+          </p>
+        </section>
+
+        {renderLatestClosedWeekSection()}
+
+        {!state.latestClosedWeek && !state.latestCloseReport && (
+          <div className="calm-box" style={{ marginTop: "20px" }}>
+            <p className="calm-muted">No hay semanas cerradas ni activas para revisar en este momento.</p>
+            <button
+              className="primary"
+              style={{ marginTop: "12px" }}
+              onClick={() => onNavigateSpace?.("prepare")}
+            >
+              Ir a preparar semana
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // --------------------------------------------------------------------------
   // No Active Session State (With optional latest closed week recovery)
   // --------------------------------------------------------------------------
   if (state.status === "no_active_session") {
@@ -818,290 +1719,7 @@ export function WeeklySessionView({
           Tu cuaderno está despejado. No hay ninguna semana activa en este momento.
         </p>
 
-        {state.latestClosedWeek && (
-          <section
-            className="calm-box"
-            style={{
-              marginTop: "20px",
-              background: "var(--card-bg, #fbfbfb)",
-              borderColor: "var(--border-color, #e0e0e0)",
-            }}
-            aria-label="Historial del último cierre semanal"
-            data-testid="latest-closed-week-card"
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "baseline",
-                flexWrap: "wrap",
-                gap: "8px",
-              }}
-            >
-              <h3>Última semana cerrada</h3>
-              <span className="badge badge-muted">
-                {state.latestClosedWeek.plan.targetWeek.startDate} al{" "}
-                {state.latestClosedWeek.plan.targetWeek.endDate}
-              </span>
-            </div>
-            <p className="calm-text" style={{ marginTop: "8px" }}>
-              {state.latestClosedWeek.plan.proposal.weekSummary.intent || "Semana cerrada."}
-            </p>
-            <div className="config-row" style={{ marginTop: "12px", flexWrap: "wrap", gap: "8px" }}>
-              <span className="badge badge-task">
-                Cerrada el: {state.latestClosedWeek.closeReport.closedAt}
-              </span>
-              <span className="badge badge-muted">
-                Completadas:{" "}
-                {state.latestClosedWeek.closeReport.output.itemDispositions.completed.length}
-              </span>
-              {state.latestClosedWeek.closeReport.output.reflectiveSummary.consciousPostponements.length > 0 && (
-                <span className="badge badge-idea">
-                  Postergadas:{" "}
-                  {state.latestClosedWeek.closeReport.output.reflectiveSummary.consciousPostponements.length}
-                </span>
-              )}
-              {state.latestClosedWeek.closeReport.output.itemDispositions.dropped.length > 0 && (
-                <span className="badge badge-muted">
-                  Descartadas:{" "}
-                  {state.latestClosedWeek.closeReport.output.itemDispositions.dropped.length}
-                </span>
-              )}
-            </div>
-            {state.latestClosedWeek.closeReport.output.reflectiveSummary.headline && (
-              <p className="calm-muted" style={{ fontStyle: "italic", marginTop: "8px" }}>
-                "{state.latestClosedWeek.closeReport.output.reflectiveSummary.headline}"
-              </p>
-            )}
-
-            {/* Acciones principales de la semana cerrada */}
-            <div
-              style={{
-                marginTop: "16px",
-                display: "flex",
-                gap: "10px",
-                flexWrap: "wrap",
-                alignItems: "center",
-              }}
-            >
-              <button
-                type="button"
-                className="btn-secondary"
-                data-testid="toggle-closed-week-details"
-                onClick={() => setIsClosedWeekDetailsOpen(!isClosedWeekDetailsOpen)}
-                style={{ fontSize: "0.88rem", padding: "6px 12px", cursor: "pointer" }}
-              >
-                {isClosedWeekDetailsOpen ? "Ocultar detalle de la semana" : "Ver detalle de la semana"}
-              </button>
-
-              <button
-                type="button"
-                className="btn-secondary"
-                data-testid="reopen-closed-week-button"
-                disabled={isReopening}
-                onClick={() => handleReopenWeek(state.latestClosedWeek!.plan.planId)}
-                style={{ fontSize: "0.88rem", padding: "6px 12px", cursor: isReopening ? "not-allowed" : "pointer" }}
-              >
-                {isReopening ? "Reabriendo semana..." : "Reabrir semana para modificar"}
-              </button>
-            </div>
-
-            {reopenFeedback && (
-              <p
-                className="calm-muted"
-                style={{
-                  color: "#a94442",
-                  marginTop: "10px",
-                  fontSize: "0.88rem",
-                  padding: "8px 12px",
-                  background: "#fdf7f7",
-                  borderRadius: "4px",
-                  border: "1px solid #f2dede",
-                }}
-                data-testid="reopen-week-error"
-              >
-                {reopenFeedback}
-              </p>
-            )}
-
-            {/* Vista detallada desplegable */}
-            {isClosedWeekDetailsOpen && (
-              <div
-                data-testid="closed-week-details-content"
-                style={{
-                  marginTop: "16px",
-                  paddingTop: "16px",
-                  borderTop: "1px solid var(--border-color, #e0e0e0)",
-                }}
-              >
-                {/* 1. Focos definidos */}
-                {state.latestClosedWeek.plan.proposal.foci.length > 0 && (
-                  <div style={{ marginBottom: "16px" }}>
-                    <h4 style={{ fontSize: "0.95rem", marginBottom: "8px" }}>Focos de la semana</h4>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                      {state.latestClosedWeek.plan.proposal.foci.map((focus) => (
-                        <div
-                          key={focus.id}
-                          className="calm-box"
-                          style={{
-                            padding: "10px 14px",
-                            background: "var(--bg-secondary, #fafafa)",
-                            borderRadius: "6px",
-                          }}
-                        >
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                            <strong>{focus.title}</strong>
-                            <span className="badge badge-task">
-                              {focus.estimatedHours ? `${focus.estimatedHours}h estimadas` : "Sin estimación"}
-                            </span>
-                          </div>
-                          {focus.desiredOutcome && (
-                            <p className="calm-text" style={{ fontSize: "0.85rem", marginTop: "4px" }}>
-                              Resultado esperado: {focus.desiredOutcome}
-                            </p>
-                          )}
-                          {focus.rationale && (
-                            <p className="calm-muted" style={{ fontSize: "0.8rem", marginTop: "2px" }}>
-                              {focus.rationale}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 2. Obligaciones y Compromisos */}
-                {state.latestClosedWeek.plan.proposal.obligations.length > 0 && (
-                  <div style={{ marginBottom: "16px" }}>
-                    <h4 style={{ fontSize: "0.95rem", marginBottom: "8px" }}>Obligaciones y compromisos fijos</h4>
-                    <ul style={{ margin: 0, paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                      {state.latestClosedWeek.plan.proposal.obligations.map((ob) => (
-                        <li key={ob.itemId} style={{ fontSize: "0.88rem" }}>
-                          <strong>{ob.title}</strong>
-                          {ob.estimatedHours ? ` (${ob.estimatedHours}h)` : ""}
-                          {ob.dueDate ? ` · Límite: ${ob.dueDate}` : ""}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* 3. Opciones flexibles */}
-                {state.latestClosedWeek.plan.proposal.flexibleOptions.length > 0 && (
-                  <div style={{ marginBottom: "16px" }}>
-                    <h4 style={{ fontSize: "0.95rem", marginBottom: "8px" }}>Opciones flexibles</h4>
-                    <ul style={{ margin: 0, paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                      {state.latestClosedWeek.plan.proposal.flexibleOptions.map((flex) => (
-                        <li key={flex.itemId} style={{ fontSize: "0.88rem" }}>
-                          <strong>{flex.title}</strong>
-                          {flex.estimatedHours ? ` (${flex.estimatedHours}h)` : ""}
-                          {flex.condition ? ` · Condición: ${flex.condition}` : ""}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* 4. Tareas e ítems clasificados al cierre */}
-                {state.latestClosedWeek.closeReport.output.classifiedItems &&
-                  state.latestClosedWeek.closeReport.output.classifiedItems.length > 0 && (
-                    <div style={{ marginBottom: "16px" }}>
-                      <h4 style={{ fontSize: "0.95rem", marginBottom: "8px" }}>Balance de tareas e ítems</h4>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                        {state.latestClosedWeek.closeReport.output.classifiedItems.map((item) => (
-                          <div
-                            key={item.itemId}
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              flexWrap: "wrap",
-                              padding: "8px 12px",
-                              background: "var(--card-bg, #ffffff)",
-                              border: "1px solid var(--border-color, #e0e0e0)",
-                              borderRadius: "6px",
-                              gap: "8px",
-                            }}
-                          >
-                            <div>
-                              <span style={{ fontSize: "0.9rem", fontWeight: 500 }}>{item.title}</span>
-                              <div style={{ fontSize: "0.8rem", color: "#666", marginTop: "2px" }}>
-                                {item.actualHours != null && <span>{item.actualHours}h reales</span>}
-                                {item.actualHours != null && item.estimatedHours != null && <span> · </span>}
-                                {item.estimatedHours != null && <span>{item.estimatedHours}h estimadas</span>}
-                                {item.postponementReason && (
-                                  <span style={{ display: "block", color: "#8a6d3b" }}>
-                                    Motivo postergación: {item.postponementReason}
-                                  </span>
-                                )}
-                                {item.userNotes && (
-                                  <span style={{ display: "block", fontStyle: "italic" }}>
-                                    Nota: {item.userNotes}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <span
-                              className={`badge ${
-                                item.finalDisposition === "completed"
-                                  ? "badge-task"
-                                  : item.finalDisposition === "consciously_postponed"
-                                  ? "badge-idea"
-                                  : "badge-muted"
-                              }`}
-                            >
-                              {item.finalDisposition === "completed"
-                                ? "Completada"
-                                : item.finalDisposition === "consciously_postponed"
-                                ? "Postergada"
-                                : item.finalDisposition === "dropped"
-                                ? "Descartada"
-                                : item.finalDisposition === "in_progress"
-                                ? "En progreso"
-                                : item.finalDisposition === "not_started"
-                                ? "No iniciada"
-                                : "Sin reportar"}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                {/* 5. Reflexiones de cierre */}
-                <div style={{ marginTop: "12px", background: "var(--bg-secondary, #f8f9fa)", padding: "12px", borderRadius: "6px" }}>
-                  <h4 style={{ fontSize: "0.9rem", marginBottom: "6px" }}>Reflexión del cierre</h4>
-                  {state.latestClosedWeek.closeReport.output.capacityAnalysis?.explanation && (
-                    <p className="calm-text" style={{ fontSize: "0.85rem", marginBottom: "4px" }}>
-                      <strong>Capacidad y espacio:</strong> {state.latestClosedWeek.closeReport.output.capacityAnalysis.explanation}
-                    </p>
-                  )}
-                  {state.latestClosedWeek.closeReport.output.reflectiveSummary.accomplishments.length > 0 && (
-                    <div style={{ fontSize: "0.85rem", marginBottom: "4px" }}>
-                      <strong>Logros:</strong>
-                      <ul style={{ margin: "4px 0 0 20px", padding: 0 }}>
-                        {state.latestClosedWeek.closeReport.output.reflectiveSummary.accomplishments.map((acc, i) => (
-                          <li key={i}>{acc}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {state.latestClosedWeek.closeReport.output.reflectiveSummary.questionsForNextCycle.length > 0 && (
-                    <div style={{ fontSize: "0.85rem", marginTop: "4px" }}>
-                      <strong>Preguntas para el próximo ciclo:</strong>
-                      <ul style={{ margin: "4px 0 0 20px", padding: 0 }}>
-                        {state.latestClosedWeek.closeReport.output.reflectiveSummary.questionsForNextCycle.map((q, i) => (
-                          <li key={i}>{q}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </section>
-        )}
+        {renderLatestClosedWeekSection()}
 
         <WeeklyPlanningFromNotes
           provider={provider}
@@ -1286,7 +1904,15 @@ export function WeeklySessionView({
             gap: "8px",
           }}
         >
-          <h2>{plan?.status === "closed" ? "Semana cerrada" : "Semana en curso"}</h2>
+          <h2>
+            {activeSpace === "active"
+              ? "3. Mi semana"
+              : activeSpace === "review"
+              ? "4. Revisar y aprender"
+              : plan?.status === "closed"
+              ? "Semana cerrada"
+              : "Semana en curso"}
+          </h2>
           <span className="badge badge-task">
             {plan?.targetWeek.startDate} al {plan?.targetWeek.endDate}
           </span>
@@ -1299,18 +1925,43 @@ export function WeeklySessionView({
           <span className="badge badge-muted">
             Versión de agenda: v{schedule?.version ?? 0}
           </span>
-          <button
-            type="button"
-            className={isFuturePlanningOpen ? "primary" : "secondary"}
-            style={{ fontSize: "0.85rem", padding: "4px 10px", marginLeft: "auto" }}
-            data-testid="toggle-future-planning-button"
-            aria-label="Preparar próxima semana y ver tareas postergadas"
-            onClick={() => setIsFuturePlanningOpen((prev) => !prev)}
-          >
-            {isFuturePlanningOpen
-              ? "▲ Ocultar preparación de siguiente semana"
-              : "🗓️ Preparar próxima semana y tareas postergadas"}
-          </button>
+          {onNavigateSpace ? (
+            <div style={{ marginLeft: "auto", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="secondary"
+                data-testid="nav-to-prepare-button"
+                aria-label="Preparar próxima semana"
+                onClick={() => onNavigateSpace("prepare")}
+              >
+                🗓️ Preparar próxima semana
+              </button>
+              {activeSpace !== "review" && (
+                <button
+                  type="button"
+                  className="primary"
+                  data-testid="nav-to-review-button"
+                  aria-label="Ir a revisar y cerrar semana"
+                  onClick={() => onNavigateSpace("review")}
+                >
+                  Revisar y cerrar semana →
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              className={isFuturePlanningOpen ? "primary" : "secondary"}
+              style={{ fontSize: "0.85rem", padding: "4px 10px", marginLeft: "auto" }}
+              data-testid="toggle-future-planning-button"
+              aria-label="Preparar próxima semana y ver tareas postergadas"
+              onClick={() => setIsFuturePlanningOpen((prev) => !prev)}
+            >
+              {isFuturePlanningOpen
+                ? "▲ Ocultar preparación de siguiente semana"
+                : "🗓️ Preparar próxima semana y tareas postergadas"}
+            </button>
+          )}
         </div>
       </section>
 
@@ -1370,7 +2021,7 @@ export function WeeklySessionView({
       )}
 
       {/* Schedule & Blocks */}
-      {schedule && (
+      {schedule && (activeSpace === undefined || activeSpace === "active") && (
         <section className="results-section" style={{ marginTop: "24px" }} aria-label="Agenda y bloques">
           <h3>Agenda y bloques planificados</h3>
           <div className="items-list">
@@ -1727,32 +2378,35 @@ export function WeeklySessionView({
       )}
 
       {/* Schedule Adjustment History Section */}
-      {schedule && (
+      {schedule && (activeSpace === undefined || activeSpace === "active") && (
         <section
           className="results-section calm-box"
           style={{ marginTop: "24px" }}
           aria-label="Historial de ajustes de la agenda semanal"
           data-testid="schedule-adjustments-history"
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "baseline",
-              flexWrap: "wrap",
-              gap: "8px",
-            }}
-          >
-            <h3>Historial de ajustes de la agenda</h3>
-            <span className="badge badge-muted">
-              {schedule.appliedAdjustments.length}{" "}
-              {schedule.appliedAdjustments.length === 1 ? "registro" : "registros"}
-            </span>
-          </div>
-          <p className="calm-muted" style={{ marginTop: "4px", marginBottom: "16px" }}>
-            Una propuesta no es una decisión; una decisión no es una aplicación; una
-            aplicación no implica que el ajuste siga vigente.
-          </p>
+          <details className="calm-details" open={schedule.appliedAdjustments.length > 0}>
+            <summary
+              style={{
+                cursor: "pointer",
+                fontWeight: 600,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                userSelect: "none",
+              }}
+            >
+              <span>Historial de ajustes de la agenda</span>
+              <span className="badge badge-muted">
+                {schedule.appliedAdjustments.length}{" "}
+                {schedule.appliedAdjustments.length === 1 ? "registro" : "registros"}
+              </span>
+            </summary>
+            <div style={{ marginTop: "12px" }}>
+              <p className="calm-muted" style={{ marginTop: "4px", marginBottom: "16px" }}>
+                Una propuesta no es una decisión; una decisión no es una aplicación; una
+                aplicación no implica que el ajuste siga vigente.
+              </p>
 
           {schedule.appliedAdjustments.length === 0 ? (
             <p className="calm-muted" data-testid="no-adjustments-message">
@@ -1868,196 +2522,298 @@ export function WeeklySessionView({
               })}
             </div>
           )}
-        </section>
-      )}
+          </div>
+        </details>
+      </section>
+    )}
 
-      {/* Close Week Section with Interactive Dispositions */}
-      <section className="calm-box" style={{ marginTop: "24px" }} aria-label="Sección de cierre de semana">
-        <h3>Cierre de semana</h3>
-        <p className="calm-muted">
-          Al cerrar la semana, evaluamos qué se completó y qué aprendizajes surgen.
-          Nada se guarda en memoria sin tu confirmación explícita.
-        </p>
+      {/* Review & Learning Sections (Review Space or Legacy Unified View) */}
+      {(activeSpace === undefined || activeSpace === "review") && (
+        <>
+          {/* Close Week Section with Interactive Dispositions and Early Close Guard */}
+          {(() => {
+        const todayStr = new Date().toISOString().split("T")[0]!;
+        const isEarly = Boolean(plan && plan.targetWeek.endDate > todayStr);
 
-        {/* Dispositions per item */}
-        <div style={{ marginTop: "16px" }}>
-          <h4>Disposición de tareas planificadas</h4>
-          <p className="calm-muted" style={{ marginBottom: "12px" }}>
-            Revisa cada ítem honestamente. Los ítems que no revises quedarán como no informados.
-          </p>
-          <div className="items-list">
-            {planItems.length === 0 ? (
-              <p className="calm-muted">No hay tareas identificadas en el plan.</p>
-            ) : (
-              planItems.map((item) => {
-                const current = dispositions[item.itemId] || {
-                  status: "unreviewed",
-                  postponementReason: "",
-                };
-                return (
-                  <div
-                    key={item.itemId}
-                    className="item-card"
-                    data-testid={`item-disposition-${item.itemId}`}
-                    style={{ marginBottom: "12px" }}
+        if (isEarly && !isEarlyCloseConfirmed) {
+          return (
+            <section
+              className="calm-box warning-box"
+              style={{ marginTop: "24px" }}
+              data-testid="early-close-guard-box"
+              aria-label="Aviso de cierre anticipado"
+            >
+              <h3>⚠️ Cierre anticipado de semana</h3>
+              <p className="calm-text">
+                Esta semana está programada hasta el <strong>{plan?.targetWeek.endDate}</strong> y aún no ha concluido. Cerrarla ahora impedirá registrar avances naturales en los días restantes.
+              </p>
+              <p className="calm-muted" style={{ fontSize: "0.88rem" }}>
+                <strong>Alternativa segura:</strong> Puedes mantenerla activa y continuar tu seguimiento en «Mi semana», o preparar borradores para semanas futuras desde «Preparar semana» sin necesidad de cerrar esta prematuramente.
+              </p>
+              <div className="actions" style={{ marginTop: "16px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                {onNavigateSpace && (
+                  <button
+                    type="button"
+                    className="primary"
+                    data-testid="cancel-early-close-button"
+                    onClick={() => onNavigateSpace("active")}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "baseline",
-                        flexWrap: "wrap",
-                        gap: "8px",
-                      }}
-                    >
-                      <div>
-                        <strong>{item.title}</strong>
-                        <span className="badge badge-muted" style={{ marginLeft: "8px" }}>
-                          {item.source}
-                        </span>
-                        {item.estimatedHours && (
-                          <span className="badge badge-task" style={{ marginLeft: "4px" }}>
-                            {item.estimatedHours}h
-                          </span>
-                        )}
-                        {item.rationale && (
+                    Mantener semana activa
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="secondary"
+                  data-testid="confirm-early-close-button"
+                  onClick={() => setIsEarlyCloseConfirmed(true)}
+                >
+                  Entiendo la situación y deseo cerrar anticipadamente
+                </button>
+              </div>
+            </section>
+          );
+        }
+
+        return (
+          <section className="calm-box" style={{ marginTop: "24px" }} aria-label="Sección de cierre de semana">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px" }}>
+              <h3>Cierre de semana</h3>
+              <div style={{ display: "flex", gap: "6px" }}>
+                <button
+                  type="button"
+                  className={closeStep === "dispositions" ? "primary" : "secondary"}
+                  style={{ fontSize: "0.8rem", padding: "3px 8px" }}
+                  data-testid="tab-dispositions-step"
+                  onClick={() => setCloseStep("dispositions")}
+                >
+                  1. Disposiciones
+                </button>
+                <button
+                  type="button"
+                  className={closeStep === "reflection" ? "primary" : "secondary"}
+                  style={{ fontSize: "0.8rem", padding: "3px 8px" }}
+                  data-testid="tab-reflection-step"
+                  onClick={() => setCloseStep("reflection")}
+                >
+                  2. Reflexión
+                </button>
+              </div>
+            </div>
+            <p className="calm-muted" style={{ marginTop: "4px" }}>
+              Al cerrar la semana, evaluamos qué se completó y qué aprendizajes surgen.
+              Nada se guarda en memoria sin tu confirmación explícita.
+            </p>
+
+            {/* Step 1: Dispositions per item */}
+            <div
+              data-testid="close-week-step-dispositions"
+              style={{ display: closeStep === "dispositions" ? "block" : "none", marginTop: "16px" }}
+            >
+              <h4>Disposición de tareas planificadas</h4>
+              <p className="calm-muted" style={{ marginBottom: "12px" }}>
+                Revisa cada ítem honestamente. Los ítems que no revises quedarán como no informados.
+              </p>
+              <div className="items-list">
+                {planItems.length === 0 ? (
+                  <p className="calm-muted">No hay tareas identificadas en el plan.</p>
+                ) : (
+                  planItems.map((item) => {
+                    const current = dispositions[item.itemId] || {
+                      status: "unreviewed",
+                      postponementReason: "",
+                    };
+                    return (
+                      <div
+                        key={item.itemId}
+                        className="item-card"
+                        data-testid={`item-disposition-${item.itemId}`}
+                        style={{ marginBottom: "12px" }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "baseline",
+                            flexWrap: "wrap",
+                            gap: "8px",
+                          }}
+                        >
+                          <div>
+                            <strong>{item.title}</strong>
+                            <span className="badge badge-muted" style={{ marginLeft: "8px" }}>
+                              {item.source}
+                            </span>
+                            {item.estimatedHours && (
+                              <span className="badge badge-task" style={{ marginLeft: "4px" }}>
+                                {item.estimatedHours}h
+                              </span>
+                            )}
+                            {item.rationale && (
+                              <div
+                                className="calm-muted"
+                                data-testid={`item-rationale-${item.itemId}`}
+                                style={{ fontSize: "0.85rem", marginTop: "4px" }}
+                              >
+                                <em>Motivo:</em> {item.rationale}
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <label
+                              htmlFor={`disposition-select-${item.itemId}`}
+                              style={{
+                                fontSize: "0.85rem",
+                                marginRight: "6px",
+                                color: "var(--muted-color, #666)",
+                              }}
+                            >
+                              Disposición:
+                            </label>
+                            <select
+                              id={`disposition-select-${item.itemId}`}
+                              aria-label={`Disposición para ${item.title}`}
+                              value={current.status}
+                              onChange={(e) =>
+                                handleDispositionChange(
+                                  item.itemId,
+                                  e.target.value as ItemDispositionChoice
+                                )
+                              }
+                              style={{
+                                padding: "6px 10px",
+                                borderRadius: "4px",
+                                border: "1px solid var(--border-color, #ccc)",
+                              }}
+                            >
+                              <option value="unreviewed">Sin revisar (no informado)</option>
+                              <option value="completed">Completada</option>
+                              <option value="in_progress">En progreso</option>
+                              <option value="not_started">No iniciada</option>
+                              <option value="consciously_postponed">Postergada conscientemente</option>
+                              <option value="dropped">Descartada</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {current.status === "consciously_postponed" && (
                           <div
-                            className="calm-muted"
-                            data-testid={`item-rationale-${item.itemId}`}
-                            style={{ fontSize: "0.85rem", marginTop: "4px" }}
+                            style={{
+                              marginTop: "10px",
+                              padding: "8px 12px",
+                              background: "var(--bg-muted, #f8f9fa)",
+                              borderRadius: "4px",
+                            }}
                           >
-                            <em>Motivo:</em> {item.rationale}
+                            <label
+                              htmlFor={`postpone-reason-${item.itemId}`}
+                              style={{
+                                display: "block",
+                                fontSize: "0.85rem",
+                                marginBottom: "4px",
+                              }}
+                            >
+                              Motivo de la postergación consciente:
+                            </label>
+                            <input
+                              id={`postpone-reason-${item.itemId}`}
+                              aria-label={`Motivo de postergación para ${item.title}`}
+                              type="text"
+                              placeholder="Ej: Foco estratégico en otra prioridad o cambio de contexto"
+                              value={current.postponementReason}
+                              onChange={(e) =>
+                                handlePostponementReasonChange(item.itemId, e.target.value)
+                              }
+                              style={{ width: "100%", padding: "6px" }}
+                            />
                           </div>
                         )}
                       </div>
-                      <div>
-                        <label
-                          htmlFor={`disposition-select-${item.itemId}`}
-                          style={{
-                            fontSize: "0.85rem",
-                            marginRight: "6px",
-                            color: "var(--muted-color, #666)",
-                          }}
-                        >
-                          Disposición:
-                        </label>
-                        <select
-                          id={`disposition-select-${item.itemId}`}
-                          aria-label={`Disposición para ${item.title}`}
-                          value={current.status}
-                          onChange={(e) =>
-                            handleDispositionChange(
-                              item.itemId,
-                              e.target.value as ItemDispositionChoice
-                            )
-                          }
-                          style={{
-                            padding: "6px 10px",
-                            borderRadius: "4px",
-                            border: "1px solid var(--border-color, #ccc)",
-                          }}
-                        >
-                          <option value="unreviewed">Sin revisar (no informado)</option>
-                          <option value="completed">Completada</option>
-                          <option value="in_progress">En progreso</option>
-                          <option value="not_started">No iniciada</option>
-                          <option value="consciously_postponed">Postergada conscientemente</option>
-                          <option value="dropped">Descartada</option>
-                        </select>
-                      </div>
-                    </div>
+                    );
+                  })
+                )}
+              </div>
+              <div className="actions" style={{ marginTop: "16px" }}>
+                <button
+                  type="button"
+                  className="primary"
+                  data-testid="go-to-reflection-step-button"
+                  onClick={() => setCloseStep("reflection")}
+                >
+                  Siguiente: Reflexión personal →
+                </button>
+              </div>
+            </div>
 
-                    {current.status === "consciously_postponed" && (
-                      <div
-                        style={{
-                          marginTop: "10px",
-                          padding: "8px 12px",
-                          background: "var(--bg-muted, #f8f9fa)",
-                          borderRadius: "4px",
-                        }}
-                      >
-                        <label
-                          htmlFor={`postpone-reason-${item.itemId}`}
-                          style={{
-                            display: "block",
-                            fontSize: "0.85rem",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          Motivo de la postergación consciente:
-                        </label>
-                        <input
-                          id={`postpone-reason-${item.itemId}`}
-                          aria-label={`Motivo de postergación para ${item.title}`}
-                          type="text"
-                          placeholder="Ej: Foco estratégico en otra prioridad o cambio de contexto"
-                          value={current.postponementReason}
-                          onChange={(e) =>
-                            handlePostponementReasonChange(item.itemId, e.target.value)
-                          }
-                          style={{ width: "100%", padding: "6px" }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
+            {/* Step 2: Reflection */}
+            <div
+              data-testid="close-week-step-reflection"
+              style={{ display: closeStep === "reflection" ? "block" : "none", marginTop: "16px" }}
+            >
+              <label htmlFor="week-reflection-notes" className="config-label">
+                Reflexión personal sobre la semana:
+              </label>
+              <textarea
+                id="week-reflection-notes"
+                aria-label="Reflexión personal sobre la semana"
+                rows={3}
+                value={reflectionNotes}
+                onChange={(e) => setReflectionNotes(e.target.value)}
+                placeholder="¿Cómo te sentiste con el ritmo y la carga?"
+                style={{ width: "100%", marginTop: "6px" }}
+              />
 
-        <div style={{ marginTop: "16px" }}>
-          <label htmlFor="week-reflection-notes" className="config-label">
-            Reflexión personal sobre la semana:
-          </label>
-          <textarea
-            id="week-reflection-notes"
-            aria-label="Reflexión personal sobre la semana"
-            rows={2}
-            value={reflectionNotes}
-            onChange={(e) => setReflectionNotes(e.target.value)}
-            placeholder="¿Cómo te sentiste con el ritmo y la carga?"
-            style={{ width: "100%", marginTop: "6px" }}
-          />
-        </div>
+              <div className="actions" style={{ marginTop: "16px", display: "flex", gap: "10px" }}>
+                <button
+                  type="button"
+                  className="secondary"
+                  data-testid="back-to-dispositions-step-button"
+                  onClick={() => setCloseStep("dispositions")}
+                >
+                  ← Volver a Disposiciones
+                </button>
+                <button
+                  type="button"
+                  className="primary"
+                  aria-label="Confirmar cierre de semana"
+                  onClick={async () => {
+                    if (!plan) return;
+                    const closedAtTimestamp = new Date().toISOString();
+                    const outcomes: ItemOutcomeInput[] = Object.entries(dispositions)
+                      .filter(([_, disp]) => disp.status !== "unreviewed")
+                      .map(([itemId, disp]) => ({
+                        itemId,
+                        status: disp.status as ItemOutcomeInput["status"],
+                        ...(disp.status === "consciously_postponed" && disp.postponementReason.trim()
+                          ? { postponementReason: disp.postponementReason.trim() }
+                          : {}),
+                      }));
 
-        <div className="actions" style={{ marginTop: "16px" }}>
-          <button
-            className="primary"
-            aria-label="Confirmar cierre de semana"
-            onClick={async () => {
-              if (!plan) return;
-              const closedAtTimestamp = new Date().toISOString();
-              const outcomes: ItemOutcomeInput[] = Object.entries(dispositions)
-                .filter(([_, disp]) => disp.status !== "unreviewed")
-                .map(([itemId, disp]) => ({
-                  itemId,
-                  status: disp.status as ItemOutcomeInput["status"],
-                  ...(disp.status === "consciously_postponed" && disp.postponementReason.trim()
-                    ? { postponementReason: disp.postponementReason.trim() }
-                    : {}),
-                }));
+                    const res = await closeWeek({
+                      planId: plan.planId,
+                      closedAt: closedAtTimestamp,
+                      itemOutcomes: outcomes,
+                      userReflection: reflectionNotes.trim()
+                        ? { generalNotes: reflectionNotes.trim() }
+                        : undefined,
+                    });
 
-              const res = await closeWeek({
-                planId: plan.planId,
-                closedAt: closedAtTimestamp,
-                itemOutcomes: outcomes,
-                userReflection: reflectionNotes.trim()
-                  ? { generalNotes: reflectionNotes.trim() }
-                  : undefined,
-              });
-
-              if (res.status === "success") {
-                setFeedbackMessage(
-                  "Semana cerrada exitosamente. Revisa el informe y los candidatos de memoria."
-                );
-              }
-            }}
-          >
-            Cerrar semana
-          </button>
-        </div>
-      </section>
+                    if (res.status === "success") {
+                      setFeedbackMessage(
+                        "Semana cerrada exitosamente. Revisa el informe y los candidatos de memoria."
+                      );
+                      if (onNavigateSpace) {
+                        onNavigateSpace("review");
+                      }
+                    }
+                  }}
+                >
+                  Cerrar semana
+                </button>
+              </div>
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Confirmed Close Report Section (shown only after persistence) */}
       {state.latestCloseReport && (
@@ -2184,36 +2940,7 @@ export function WeeklySessionView({
         </section>
       )}
 
-      {/* Plan New Week / Brain Dump (Accessible from active session) */}
-      <div
-        style={{
-          marginTop: "32px",
-          borderTop: "1px solid var(--border-color)",
-          paddingTop: "16px",
-        }}
-      >
-        <details>
-          <summary
-            style={{
-              cursor: "pointer",
-              fontWeight: 600,
-              color: "var(--text-color, #333)",
-              fontSize: "1rem",
-            }}
-          >
-            Capturar nuevas ideas o preparar la próxima semana
-          </summary>
-          <div style={{ marginTop: "12px" }}>
-            <WeeklyPlanningFromNotes
-              provider={provider}
-              hasActivePlan={true}
-              onPlanCreated={() => reloadSession()}
-            />
-          </div>
-        </details>
-      </div>
-
-      {/* Purge Week Option (Accessible without window.confirm) */}
+      {/* Purge Week Option (Accessible in Review space or Legacy Unified View) */}
       <div
         style={{
           marginTop: "40px",
@@ -2268,6 +2995,39 @@ export function WeeklySessionView({
           </button>
         )}
       </div>
+      </>
+    )}
+
+      {/* Plan New Week / Brain Dump (Accessible from active session in legacy unified view) */}
+      {activeSpace === undefined && (
+        <div
+          style={{
+            marginTop: "32px",
+            borderTop: "1px solid var(--border-color)",
+            paddingTop: "16px",
+          }}
+        >
+          <details>
+            <summary
+              style={{
+                cursor: "pointer",
+                fontWeight: 600,
+                color: "var(--text-color, #333)",
+                fontSize: "1rem",
+              }}
+            >
+              Capturar nuevas ideas o preparar la próxima semana
+            </summary>
+            <div style={{ marginTop: "12px" }}>
+              <WeeklyPlanningFromNotes
+                provider={provider}
+                hasActivePlan={true}
+                onPlanCreated={() => reloadSession()}
+              />
+            </div>
+          </details>
+        </div>
+      )}
     </div>
   );
 }

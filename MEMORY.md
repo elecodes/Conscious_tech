@@ -281,6 +281,12 @@ Implemented and calibrated skills:
 - **Aislamiento de Errores de Entrada**: Candidatos mal formados se aíslan en `warnings` activando `invalid_request` sin contaminar `invalidReferences` (reservado estrictamente para IDs de recuerdos inexistentes) y sin descartar propuestas u órdenes de olvido válidas independientes.
 - **Fechas ISO-8601 UTC Reales y Expiración Inclusiva**: Validación de fechas de calendario reales (rechaza meses/días/horas imposibles). Expiración temporal con cota inclusiva: un recuerdo con `validUntil === evaluationTime` se considera vencido y se archiva determinísticamente.
 
+11. **UX Simplification, Guided Navigation & Human Capacity Language (ADR 0015)**:
+- **Cuatro Espacios Conscientes**: Separación limpia entre Capturar (bloc libre), Preparar semana (extracción/capacidad/propuesta), Mi semana (agenda/seguimiento) y Revisar y aprender (cierre/memoria). Preparar una semana futura no cierra la semana activa.
+- **Divulgación Progresiva**: El desglose de fórmulas y certidumbre matemática reside en `<details className="calm-details">` plegado por defecto; la vista principal expone un resumen compacto en tarjetas legibles.
+- **Lenguaje Humano**: Reemplazo de jerga técnica/industrial por conceptos naturales (*Balance de tu semana*, *Tu tiempo de un vistazo*, *Margen de calma* y *Tareas sin estimar* cuando faltan horas en lugar de alarmar con "Desconocido").
+- **Extracción de Acciones Coordinadas**: Descomposición determinista de oraciones compuestas con verbos de acción coordinados (*«avanzar X, estudiar Y y seguir con Z»* $\to$ 3 tareas) preservando listas de sustantivos (*«comprar X, Y y Z»* $\to$ 1 tarea) y normalizando fusiones léxicas (*«quieroavanzar»* $\to$ *«quiero avanzar»*).
+
 Detailed specifications for individual skills live separately from this file.
 
 ---

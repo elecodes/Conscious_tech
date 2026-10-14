@@ -12,6 +12,135 @@ import {
  * Splits freeform text into distinct thought or task segments.
  * Recognizes newlines, bullet points, numbered lists, and sentence terminators.
  */
+/**
+ * Normalizes fused words like "quieroavanzar" -> "quiero avanzar" or "voyahacer" -> "voy a hacer".
+ */
+export function normalizeFusedWords(text: string): string {
+  let res = text;
+  // Handle periphrastic fusions: "voyahacer" -> "voy a hacer"
+  res = res.replace(/\bvoy\s*a([a-záéíóúñ]+(?:ar|er|ir)\b)/gi, "voy a $1");
+  // Handle "tengo que" fused: "tengoquehacer" -> "tengo que hacer"
+  res = res.replace(/\btengo\s*que([a-záéíóúñ]+(?:ar|er|ir)\b)/gi, "tengo que $1");
+  // Handle modals fused directly with infinitive: "quieroavanzar" -> "quiero avanzar"
+  res = res.replace(
+    /\b(quiero|puedo|debo|vamos|hayque)([a-záéíóúñ]+(?:ar|er|ir)\b)/gi,
+    "$1 $2"
+  );
+  return res;
+}
+
+const NON_VERB_EXCEPTIONS = new Set([
+  "lugar", "mujer", "placer", "militar", "titular", "celular", "particular",
+  "familiar", "regular", "similar", "popular", "solar", "polar", "bar", "par",
+  "mar", "ayer", "primer", "tercer", "dólar", "dolar", "hogar", "radar",
+  "collar", "pulgar", "azúcar", "azucar", "líder", "lider", "chofer", "taller",
+  "cáncer", "cancer", "carácter", "caracter", "suéter", "sueter", "elixir",
+  "mártir", "martir", "solid", "solid.", "solid,", "react", "vue"
+]);
+
+export function isActionVerb(word: string): boolean {
+  const w = word.toLowerCase();
+  if (NON_VERB_EXCEPTIONS.has(w)) return false;
+  if (w === "ir" || w === "ver" || w === "dar") return true;
+  if (w.length < 3) return false;
+
+  // Infinitive endings (including clitic pronouns attached)
+  const infinitiveRegex =
+    /^[a-záéíóúñ]+(?:ar|er|ir|arlo|arla|arlos|arlas|arme|arte|arse|arnos|erlo|erla|erlos|erlas|erme|erte|erse|ernos|irlo|irla|irlos|irlas|irme|irte|irse|irnos|ír)\b/i;
+  return infinitiveRegex.test(w);
+}
+
+export function stripLeadingParticles(text: string): string {
+  return text
+    .trim()
+    .replace(/^[,\s;]+/, "")
+    .replace(
+      /^(?:para\s+esta\s+semana\s+|esta\s+semana\s+|tambi[eé]n\s+|adem[aá]s\s+|luego\s+|despu[eé]s\s+|finalmente\s+)+/i,
+      ""
+    )
+    .replace(
+      /^(?:tengo\s+que\s+|quiero\s+|necesito\s+|hay\s+que\s+|debo\s+|deber[ií]a\s+|voy\s+a\s+|vamos\s+a\s+|quisiera\s+|me\s+gustar[ií]a\s+|pensando\s+en\s+|tratar\s+de\s+)+/i,
+      ""
+    )
+    .trim();
+}
+
+export function startsWithActionVerb(clause: string): boolean {
+  const stripped = stripLeadingParticles(clause);
+  const match = stripped.match(/^([a-záéíóúñ]+)/i);
+  if (!match) return false;
+  return isActionVerb(match[1]!);
+}
+
+function splitTopLevelCoordinated(text: string): string[] {
+  const parts: string[] = [];
+  let current = "";
+  let parenDepth = 0;
+  let i = 0;
+
+  while (i < text.length) {
+    const char = text[i];
+    if (char === "(" || char === "[" || char === "{") {
+      parenDepth++;
+      current += char;
+      i++;
+    } else if (char === ")" || char === "]" || char === "}") {
+      if (parenDepth > 0) parenDepth--;
+      current += char;
+      i++;
+    } else if (parenDepth === 0) {
+      const slice = text.slice(i);
+      const delimMatch = slice.match(
+        /^(?:,\s*(?:y|e|además de|ademas de)\s+|;\s*|,(?!\d)\s+|\s+(?:y|e|además de|ademas de)\s+)/i
+      );
+      if (delimMatch) {
+        if (current.trim()) {
+          parts.push(current.trim());
+        }
+        current = "";
+        i += delimMatch[0].length;
+      } else {
+        current += char;
+        i++;
+      }
+    } else {
+      current += char;
+      i++;
+    }
+  }
+
+  if (current.trim()) {
+    parts.push(current.trim());
+  }
+
+  return parts;
+}
+
+export function splitCoordinatedActions(segment: string): string[] {
+  const normalized = normalizeFusedWords(segment);
+  const parts = splitTopLevelCoordinated(normalized);
+  if (parts.length <= 1) {
+    return [normalized];
+  }
+
+  // Token 0 must contain an action verb
+  const token0IsAction = startsWithActionVerb(parts[0]!);
+  // All subsequent tokens MUST start with an action verb to qualify as coordinated actions
+  // (otherwise it's a list of nouns like "Comprar manzanas, peras y plátanos")
+  const subsequentAreActions = parts.slice(1).every((p) => startsWithActionVerb(p));
+
+  if (token0IsAction && subsequentAreActions) {
+    return parts;
+  }
+
+  return [normalized];
+}
+
+/**
+ * Splits freeform text into distinct thought or task segments.
+ * Recognizes newlines, bullet points, numbered lists, sentence terminators,
+ * and coordinated action clauses.
+ */
 export function splitNotesIntoSegments(text: string): string[] {
   const lines = text.split(/\r?\n+/);
   const segments: string[] = [];
@@ -33,7 +162,10 @@ export function splitNotesIntoSegments(text: string): string[] {
         .replace(/^\d+[.)]\s+/, "")
         .trim();
       if (clean) {
-        segments.push(clean);
+        const subSegments = splitCoordinatedActions(clean);
+        for (const sub of subSegments) {
+          segments.push(sub);
+        }
       }
     }
   }
@@ -185,7 +317,45 @@ export function cleanTitle(rawSegment: string): string {
     .trim();
   title = title.replace(/[.;!?,]+$/, "").trim();
 
+  const stripped = stripLeadingParticles(title);
+  if (stripped.length > 0 && startsWithActionVerb(title)) {
+    title = stripped;
+  }
+
+  if (title.length > 0) {
+    title = title.charAt(0).toUpperCase() + title.slice(1);
+  }
+
   return title.length > 0 ? title : rawSegment.trim();
+}
+
+/**
+ * Extracts a project reference if present in the text segment.
+ */
+export function extractProject(text: string): string | null {
+  const tagMatch = text.match(/(?:#|\[)([a-zA-ZáéíóúñÁÉÍÓÚÑ0-9_-]+)\]?/);
+  if (tagMatch && tagMatch[1]) {
+    return tagMatch[1];
+  }
+
+  if (/Tecnolog[ií]a\s+Consciente/i.test(text)) {
+    return "Tecnología Consciente";
+  }
+  if (/ArchitectAI/i.test(text)) {
+    return "ArchitectAI";
+  }
+  if (/Conscious\s*Tech/i.test(text)) {
+    return "Conscious Tech";
+  }
+
+  const projectPattern =
+    /\bproyecto\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-Z0-9_-]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñA-Z0-9_-]+)?)/i;
+  const projectMatch = text.match(projectPattern);
+  if (projectMatch && projectMatch[1]) {
+    return projectMatch[1].trim();
+  }
+
+  return null;
 }
 
 /**
@@ -272,11 +442,13 @@ export function extractItemsDeterministically(
     const deadline = extractDeadline(seg, currentDate);
     const classification = classifyItem(seg);
     const title = cleanTitle(seg);
+    const project = extractProject(seg);
 
     return {
       id: `item-mock-${idx + 1}`,
       rawText: seg,
       title,
+      project,
       type: classification.type,
       status: classification.status,
       commitment: classification.commitment,

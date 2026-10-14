@@ -5,6 +5,10 @@ import {
   splitNotesIntoSegments,
   resolveDayOfWeek,
   extractEffort,
+  splitCoordinatedActions,
+  normalizeFusedWords,
+  cleanTitle,
+  extractProject,
 } from "../src/providers/mock-deterministic-extractor";
 import { ExtractedItemsSchema } from "../src/domain/items";
 import { generateWeeklyProposalFromItems } from "../src/application/planning-pipeline";
@@ -220,5 +224,80 @@ describe("MockProvider — Extracción determinista de notas arbitrarias", () =>
       expect(extractEffort("30 mins")).toEqual({ value: 30, unit: "minutes", source: "user" });
       expect(extractEffort("1 día")).toEqual({ value: 1, unit: "days", source: "user" });
     });
+
+    it("normalizeFusedWords separa palabras pegadas como quieroavanzar o voyahacer", () => {
+      expect(normalizeFusedWords("También quieroavanzar")).toBe("También quiero avanzar");
+      expect(normalizeFusedWords("voyahacer la tarea")).toBe("voy a hacer la tarea");
+    });
+
+    it("splitCoordinatedActions no rompe listas de sustantivos comunes", () => {
+      const nouns = "Comprar manzanas, peras y plátanos";
+      const res = splitCoordinatedActions(nouns);
+      expect(res).toEqual(["Comprar manzanas, peras y plátanos"]);
+    });
+
+    it("splitCoordinatedActions separa acciones coordinadas con verbos de acción", () => {
+      const actions = "Avanzar Tecnología Consciente, estudiar SOLID y seguir con ArchitectAI";
+      const res = splitCoordinatedActions(actions);
+      expect(res).toEqual([
+        "Avanzar Tecnología Consciente",
+        "estudiar SOLID",
+        "seguir con ArchitectAI",
+      ]);
+    });
+
+    it("extractProject reconoce proyectos clave como Tecnología Consciente y ArchitectAI", () => {
+      expect(extractProject("Avanzar Tecnología Consciente")).toBe("Tecnología Consciente");
+      expect(extractProject("seguir con ArchitectAI")).toBe("ArchitectAI");
+      expect(extractProject("estudiar SOLID")).toBeNull();
+    });
+
+    it("cleanTitle limpia prefijos conversacionales como 'También quiero'", () => {
+      expect(cleanTitle("También quiero avanzar Tecnología Consciente")).toBe(
+        "Avanzar Tecnología Consciente"
+      );
+      expect(cleanTitle("estudiar SOLID")).toBe("Estudiar SOLID");
+      expect(cleanTitle("seguir con ArchitectAI.")).toBe("Seguir con ArchitectAI");
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // 8. Descomposición de oraciones compuestas con múltiples acciones (caso real usuario)
+  // --------------------------------------------------------------------------
+  it("descompone 'También quieroavanzar Tecnología Consciente, estudiar SOLID y seguir con ArchitectAI' en 3 tareas independientes", async () => {
+    const rawNote =
+      "También quieroavanzar Tecnología Consciente, estudiar SOLID y seguir con ArchitectAI.";
+
+    const provider = new MockProvider();
+    const result = await extractItems(provider, {
+      text: rawNote,
+      currentDate,
+    });
+
+    expect(ExtractedItemsSchema.safeParse(result).success).toBe(true);
+    expect(result.items).toHaveLength(3);
+
+    const [t1, t2, t3] = result.items;
+
+    // Tarea 1: Avanzar Tecnología Consciente
+    expect(t1?.title).toBe("Avanzar Tecnología Consciente");
+    expect(t1?.type).toBe("task");
+    expect(t1?.status).toBe("pending");
+    expect(t1?.commitment).toBe("personal");
+    expect(t1?.project).toBe("Tecnología Consciente");
+
+    // Tarea 2: Estudiar SOLID
+    expect(t2?.title).toBe("Estudiar SOLID");
+    expect(t2?.type).toBe("task");
+    expect(t2?.status).toBe("pending");
+    expect(t2?.commitment).toBe("personal");
+    expect(t2?.project).toBeNull();
+
+    // Tarea 3: Seguir con ArchitectAI
+    expect(t3?.title).toBe("Seguir con ArchitectAI");
+    expect(t3?.type).toBe("task");
+    expect(t3?.status).toBe("pending");
+    expect(t3?.commitment).toBe("personal");
+    expect(t3?.project).toBe("ArchitectAI");
   });
 });

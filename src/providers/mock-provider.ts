@@ -126,10 +126,10 @@ export class MockProvider implements AIProvider {
       return await this.handler(input);
     }
 
-    // Try finding matching case in real-dumps
+    // Try finding exact matching case in real-dumps
     const normalizedInput = input.text.trim();
     const matchedCase = realDumpsData.find(
-      (c) => c.text.trim() === normalizedInput || normalizedInput.includes(c.text.trim().slice(0, 30))
+      (c) => c.text.trim() === normalizedInput
     );
 
     if (matchedCase) {
