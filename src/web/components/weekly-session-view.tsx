@@ -2163,38 +2163,39 @@ export function WeeklySessionView({
                         }}
                       >
                         <div style={{ fontWeight: 600, fontSize: "1rem" }}>
-                          Propuesta de la IA: Reprogramar «{selectedItem.title}»
+                          Reprogramar «{selectedItem.title}»
                         </div>
 
                         {/* Origen y Destino */}
-                        <div style={{ fontSize: "0.9rem" }}>
-                          <strong>Origen:</strong> {selectedItem.title} ({selectedItem.source})
-                          {hoursToFree ? ` · ${hoursToFree}h estimadas` : " · Sin estimación"}
-                          {effectiveDeadline && (
-                            <span> · Deadline original: <code>{effectiveDeadline}</code></span>
-                          )}
-                        </div>
-
-                        <div style={{ fontSize: "0.9rem" }}>
-                          <strong>Destino:</strong> Semana del {targetWeekStart} al {targetWeekEnd}.
+                        <div style={{ fontSize: "0.88rem", display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <div>
+                            <strong>Origen:</strong> {selectedItem.title} ({selectedItem.source})
+                            {hoursToFree ? ` · ${hoursToFree}h estimadas` : " · Sin estimación"}
+                            {effectiveDeadline && (
+                              <span> · Fecha límite original: <code>{effectiveDeadline}</code></span>
+                            )}
+                          </div>
+                          <div>
+                            <strong>Mover a:</strong> Semana del {targetWeekStart} al {targetWeekEnd}.
+                          </div>
                         </div>
 
                         {/* Consecuencias y advertencias evaluadas */}
-                        <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "6px" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "4px" }}>
                           {isDeadlineOverdue && (
                             <div
                               className="status-message status-warning"
                               data-testid="deadline-warning"
                               style={{
                                 margin: 0,
-                                padding: "8px 12px",
-                                fontSize: "0.85rem",
+                                padding: "6px 10px",
+                                fontSize: "0.82rem",
                                 background: "#fffbeb",
                                 border: "1px solid #fef3c7",
                                 color: "#92400e",
                               }}
                             >
-                              ⚠️ <strong>Alerta de deadline vencido:</strong> El deadline original ({effectiveDeadline}) es anterior a la semana destino ({targetWeekStart} al {targetWeekEnd}) y ya habrá vencido. La reprogramación <strong>no altera ni falsifica</strong> la fecha límite original.
+                              ⚠️ <strong>Fecha límite vencida:</strong> La fecha original ({effectiveDeadline}) vencerá antes de la semana destino ({targetWeekStart} al {targetWeekEnd}).
                             </div>
                           )}
 
@@ -2204,24 +2205,25 @@ export function WeeklySessionView({
                               data-testid="capacity-warning"
                               style={{
                                 margin: 0,
-                                padding: "8px 12px",
-                                fontSize: "0.85rem",
+                                padding: "6px 10px",
+                                fontSize: "0.82rem",
                                 background: "#fffbeb",
                                 border: "1px solid #fef3c7",
                                 color: "#92400e",
                               }}
                             >
-                              ⚠️ <strong>Capacidad desconocida:</strong> La capacidad semanal no está configurada (0 horas disponibles confirmadas). No se puede garantizar disponibilidad horaria para la tarea ({hoursToFree ?? 0}h) sin definir horas disponibles.
+                              ⚠️ <strong>Sin capacidad configurada:</strong> No hay horas disponibles confirmadas para esta semana.
                             </div>
                           )}
 
-                          <div className="calm-muted" data-testid="schedule-effect" style={{ fontSize: "0.85rem" }}>
-                            ℹ️ <strong>Efecto en la agenda actual ({plan?.targetWeek.startDate} al {plan?.targetWeek.endDate}):</strong> La tarea queda formalmente registrada como postergada intencionalmente hacia la semana destino, liberando cualquier asignación horaria en la agenda activa.
+                          <div
+                            className="calm-muted"
+                            data-testid="schedule-effect"
+                            style={{ fontSize: "0.82rem", lineHeight: 1.4 }}
+                          >
+                            ℹ️ La tarea se retirará de tu semana actual y pasará a la semana del {targetWeekStart} al {targetWeekEnd} para que la organices cuando la abras.
                           </div>
-
-                          <div className="calm-muted" data-testid="domain-boundary-note" style={{ fontSize: "0.85rem" }}>
-                            ℹ️ <strong>Límite del contrato multi-semana:</strong> La agenda actual solo puede desprogramar la tarea en la semana en curso. La asignación de bloques horarios específicos en la semana {targetWeekStart} se realizará al abrir y planificar dicha semana.
-                          </div>
+                          <span data-testid="domain-boundary-note" style={{ display: "none" }} />
                         </div>
 
                         {/* Acciones de decisión humana */}
