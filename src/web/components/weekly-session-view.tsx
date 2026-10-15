@@ -392,27 +392,21 @@ export function CapacityProtectedSpaceSection({
           alignItems: "baseline",
           flexWrap: "wrap",
           gap: "8px",
+          marginBottom: "6px",
         }}
       >
-        <h3>Capacidad y espacio protegido</h3>
+        <h3 style={{ margin: 0 }}>Capacidad y margen</h3>
+        <span
+          className="calm-muted"
+          data-testid="guiding-principle"
+          style={{ fontSize: "0.8rem", fontStyle: "italic" }}
+        >
+          «El espacio libre no es automáticamente tiempo disponible para asumir más compromisos.»
+        </span>
       </div>
-
-      {/* Principio rector */}
-      <p
-        className="calm-text"
-        data-testid="guiding-principle"
-        style={{
-          fontStyle: "italic",
-          marginTop: "6px",
-          marginBottom: "4px",
-          fontWeight: 500,
-        }}
-      >
-        «El espacio libre no es automáticamente tiempo disponible para asumir más compromisos.»
-      </p>
       <p
         className="calm-muted"
-        style={{ fontSize: "0.88rem", marginBottom: "16px" }}
+        style={{ fontSize: "0.82rem", margin: "0 0 12px 0", color: "#666" }}
       >
         El espacio protegido deja margen para imprevistos, descanso y cambios de prioridad.
       </p>
@@ -581,34 +575,20 @@ export function CapacityProtectedSpaceSection({
           </div>
         </div>
 
-        <div
+        <p
+          className="calm-muted"
+          data-testid="protected-space-reservation-notice"
           style={{
-            marginTop: "12px",
-            padding: "8px 12px",
-            background: "#f7f5ef",
-            borderRadius: "6px",
-            borderLeft: "3px solid #8c9096",
             fontSize: "0.82rem",
-            lineHeight: 1.4,
+            marginTop: "12px",
+            marginBottom: 0,
+            color: "#595959",
           }}
         >
-          {capacity.plannedHours == null && capacity.plannableHours != null && (
-            <div style={{ fontWeight: 500, color: "#374151", marginBottom: "2px" }}>
-              💡 Las tareas del plan aún no tienen horas estimadas. Disponés de hasta {formatHours(capacity.plannableHours)} para realizarlas sin comprometer tu margen.
-            </div>
-          )}
-          <p
-            className="calm-muted"
-            data-testid="protected-space-reservation-notice"
-            style={{
-              fontSize: "0.8rem",
-              margin: 0,
-              fontStyle: "italic",
-            }}
-          >
-            Se ha reservado espacio protegido en el plan. La capacidad restante para tareas se diferencia del margen reservado para imprevistos.
-          </p>
-        </div>
+          {capacity.plannedHours == null && capacity.plannableHours != null
+            ? `Se ha reservado espacio protegido en el plan (margen de calma). Disponés de hasta ${formatHours(capacity.plannableHours)} para tareas sin estimar.`
+            : "Se ha reservado espacio protegido en el plan como margen de calma para imprevistos y descanso."}
+        </p>
       </div>
 
       {/* Divulgación progresiva: Desglose completo de cálculos y límites */}
@@ -2044,9 +2024,9 @@ export function WeeklySessionView({
 
           {/* Adjustments simulation / Human Decision */}
           <div className="calm-box" style={{ marginTop: "20px" }} data-testid="adjustment-proposal-box">
-            <h4>Propuesta de ajuste · AI propone, tú decides</h4>
-            <p className="calm-muted" style={{ marginBottom: "16px" }}>
-              Selecciona una tarea de la semana para evaluar opciones de reprogramación o reorganización horaria.
+            <h4 style={{ margin: "0 0 4px 0" }}>Ajustar agenda</h4>
+            <p className="calm-muted" style={{ fontSize: "0.84rem", marginBottom: "14px" }}>
+              Elegí una tarea para ver opciones de reprogramación.
             </p>
 
             {planItems.length === 0 ? (

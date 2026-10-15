@@ -1786,10 +1786,10 @@ export function WeeklyPlanningFromNotes({
               }}
             >
               <h5 style={{ margin: 0, fontSize: "1rem" }}>
-                Capacidad, espacio protegido y viabilidad
+                Balance de tu semana
               </h5>
               <span className="calm-muted" style={{ fontSize: "0.82rem" }}>
-                El espacio protegido deja margen libre para imprevistos y descanso
+                Margen reservado para imprevistos y descanso
               </span>
             </div>
 
