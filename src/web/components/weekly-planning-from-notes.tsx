@@ -1749,20 +1749,18 @@ export function WeeklyPlanningFromNotes({
             }}
           >
             <div>
-              <div className="calm-muted" style={{ fontSize: "0.82rem", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
-                Propuesta semanal generada
+              <div className="calm-muted" style={{ fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
+                Propuesta semanal
               </div>
-              <h2 style={{ margin: "2px 0 0 0" }}>La intención de esta semana</h2>
+              <h2 style={{ margin: "2px 0 0 0" }}>
+                {proposedWeek.weekSummary.intent ? `«${proposedWeek.weekSummary.intent}»` : "Plan de la semana"}
+              </h2>
             </div>
             <span className="badge badge-task">
               {proposedWeek.weekSummary.targetWeek.startDate} al{" "}
               {proposedWeek.weekSummary.targetWeek.endDate}
             </span>
           </div>
-
-          <p className="calm-quote" style={{ marginTop: "12px", marginBottom: "8px" }}>
-            «{proposedWeek.weekSummary.intent || "La atención no es un pozo inagotable; se custodia como el silencio de una mañana clara. Diez horas bien armadas bastan."}»
-          </p>
 
           {/* Capacity, Protected Space & Viability Overview */}
           <div
@@ -2048,60 +2046,34 @@ export function WeeklyPlanningFromNotes({
                         justifyContent: "space-between",
                         alignItems: "center",
                         flexWrap: "wrap",
-                        gap: "8px",
+                        gap: "10px",
                       }}
                       data-testid="capacity-validated-summary"
                     >
-                      <div>
-                        <strong style={{ fontSize: "0.9rem", color: "#1f2937" }}>
-                          ✓ Capacidad configurada y validada
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                        <strong style={{ fontSize: "0.88rem", color: "#1f2937" }}>
+                          ✓ Capacidad configurada y validada ({proposedWeek.weekSummary.capacity.totalAvailableHours}h disponibles)
                         </strong>
-                        <span
-                          className="calm-muted"
-                          style={{ fontSize: "0.85rem", display: "block", marginTop: "2px" }}
-                        >
-                          {proposedWeek.weekSummary.capacity.totalAvailableHours}h disponibles ·{" "}
-                          {proposedWeek.weekSummary.capacity.plannableHours}h planificables ·{" "}
-                          {proposedWeek.weekSummary.capacity.protectedSpaceHours}h protegidas
-                        </span>
                         {proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity" ? (
                           <span
-                            style={{
-                              fontSize: "0.82rem",
-                              color: "#059669",
-                              fontWeight: 500,
-                              display: "block",
-                              marginTop: "2px",
-                            }}
+                            className="badge badge-success"
                             data-testid="viability-confirmed-badge"
                           >
-                            ✓ Viabilidad confirmada ({formatHours(proposedWeek.weekSummary.capacity.plannedHours)} planificadas de {formatHours(proposedWeek.weekSummary.capacity.plannableHours)} planificables)
+                            ✓ Viabilidad confirmada
                           </span>
                         ) : proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity" ? (
                           <span
-                            style={{
-                              fontSize: "0.82rem",
-                              color: "#dc2626",
-                              fontWeight: 500,
-                              display: "block",
-                              marginTop: "2px",
-                            }}
+                            className="badge badge-error"
                             data-testid="over-capacity-badge"
                           >
-                            ⚠️ Sobrecarga detectada: {formatHours(proposedWeek.weekSummary.capacity.knownEstimatedHours)} estimadas superan las {formatHours(proposedWeek.weekSummary.capacity.plannableHours)} planificables
+                            ⚠️ Sobrecarga detectada ({formatHours(proposedWeek.weekSummary.capacity.knownEstimatedHours)} estimadas)
                           </span>
                         ) : (
                           <span
-                            style={{
-                              fontSize: "0.82rem",
-                              color: "#d97706",
-                              fontWeight: 500,
-                              display: "block",
-                              marginTop: "2px",
-                            }}
+                            className="badge badge-warning"
                             data-testid="incomplete-estimations-badge"
                           >
-                            ℹ️ Viabilidad no confirmada: estimaciones incompletas ({formatHours(proposedWeek.weekSummary.capacity.knownEstimatedHours, "0h")} conocidas de {formatHours(proposedWeek.weekSummary.capacity.plannableHours)} planificables). No se asume que las tareas sin estimar tomen 0 horas.
+                            ℹ️ Viabilidad no confirmada: estimaciones incompletas
                           </span>
                         )}
                       </div>
@@ -2449,20 +2421,14 @@ export function WeeklyPlanningFromNotes({
               style={{ marginTop: "24px" }}
               data-testid="proposed-deferred-items-section"
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px", marginBottom: "4px" }}>
-                <h4 style={{ margin: 0, fontSize: "1.25rem", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span>☕</span> El permiso de no hacer
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
+                <h4 style={{ margin: 0, fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span>☕</span> Elementos no programados o diferidos ({proposedWeek.deferredItems.length})
                 </h4>
-                <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                  liberado con gratitud
+                <span className="calm-muted" style={{ fontSize: "0.82rem" }}>
+                  Dejar tareas fuera te permite enfocarte en lo prioritario
                 </span>
               </div>
-              <p className="calm-muted" style={{ fontStyle: "italic", marginBottom: "12px", fontSize: "0.88rem" }}>
-                Proteger el tiempo implica honrar los noes. Asuntos pospuestos en paz:
-              </p>
-              <span className="calm-muted" style={{ fontSize: "0.82rem", display: "block", marginBottom: "14px" }}>
-                Elementos no programados o diferidos ({proposedWeek.deferredItems.length})
-              </span>
 
               {/* 1. Pendientes de decisión / Fuera de propuesta */}
               {(() => {
@@ -2481,7 +2447,7 @@ export function WeeklyPlanningFromNotes({
                         marginBottom: "6px",
                       }}
                     >
-                      Pendientes de decisión / Fuera de propuesta ({pendingItems.length}):
+                      Pendientes de decisión ({pendingItems.length}):
                     </span>
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                       {pendingItems.map((def) => {
@@ -2529,10 +2495,10 @@ export function WeeklyPlanningFromNotes({
                             </div>
                             <div
                               className="calm-muted"
-                              style={{ fontSize: "0.85rem" }}
+                              style={{ fontSize: "0.82rem" }}
                               data-testid={`proposed-deferred-rationale-${def.itemId}`}
                             >
-                              <em>Motivo:</em> {def.rationale}
+                              {def.rationale}
                             </div>
                             {isOverdue && (
                               <div
@@ -2557,7 +2523,7 @@ export function WeeklyPlanningFromNotes({
                                 onClick={() => handleDeferredDecisionChange(def.itemId, "postpone")}
                                 data-testid={`defer-item-postpone-button-${def.itemId}`}
                               >
-                                Dejar para después por decisión humana
+                                Posponer
                               </button>
                               <button
                                 type="button"
@@ -2565,7 +2531,7 @@ export function WeeklyPlanningFromNotes({
                                 onClick={() => handleDeferredDecisionChange(def.itemId, "include_flexible")}
                                 data-testid={`defer-item-include-button-${def.itemId}`}
                               >
-                                Reconsiderar e incluir en la semana
+                                Incluir en la semana
                               </button>
                               <button
                                 type="button"
@@ -2573,7 +2539,7 @@ export function WeeklyPlanningFromNotes({
                                 onClick={() => handleDeferredDecisionChange(def.itemId, "reconsider_unscheduled")}
                                 data-testid={`defer-item-review-button-${def.itemId}`}
                               >
-                                Revisar sin programar
+                                Dejar fuera
                               </button>
                             </div>
                           </div>
@@ -2601,7 +2567,7 @@ export function WeeklyPlanningFromNotes({
                         marginBottom: "6px",
                       }}
                     >
-                      Postergados conscientemente para después ({postponedItems.length}):
+                      Postergados conscientemente ({postponedItems.length}):
                     </span>
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                       {postponedItems.map((def) => {
@@ -2637,19 +2603,16 @@ export function WeeklyPlanningFromNotes({
                                   className="badge badge-idea"
                                   data-testid={`postponed-category-badge-${def.itemId}`}
                                 >
-                                  Dejado para después por decisión humana
-                                </span>
-                                <span className="badge badge-task">
-                                  Postergada conscientemente
+                                  {formatDeferredReason(def.reason)}
                                 </span>
                               </div>
                             </div>
                             <div
                               className="calm-muted"
-                              style={{ fontSize: "0.85rem" }}
+                              style={{ fontSize: "0.82rem" }}
                               data-testid={`proposed-deferred-rationale-${def.itemId}`}
                             >
-                              <em>Motivo:</em> {def.rationale}
+                              {def.rationale}
                             </div>
                             {originalDueDate && (
                               <div
@@ -2674,7 +2637,7 @@ export function WeeklyPlanningFromNotes({
                                 onClick={() => handleDeferredDecisionChange(def.itemId, "reconsider_unscheduled")}
                                 data-testid={`defer-item-unschedule-button-${def.itemId}`}
                               >
-                                Volver a dejar pendiente de decisión
+                                Volver a evaluar
                               </button>
                               <button
                                 type="button"
@@ -2682,7 +2645,7 @@ export function WeeklyPlanningFromNotes({
                                 onClick={() => handleDeferredDecisionChange(def.itemId, "include_flexible")}
                                 data-testid={`defer-item-include-button-${def.itemId}`}
                               >
-                                Reconsiderar e incluir en la semana
+                                Incluir en la semana
                               </button>
                             </div>
                           </div>
@@ -2692,12 +2655,6 @@ export function WeeklyPlanningFromNotes({
                   </div>
                 );
               })()}
-
-              <div style={{ textAlign: "center", marginTop: "16px", paddingTop: "12px", borderTop: "1px dashed var(--border-color, #ded4c2)" }}>
-                <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "0.95rem", color: "var(--text-muted)", margin: 0 }}>
-                  «Saber lo que no vas a tocar otorga una ligereza insospechada.»
-                </p>
-              </div>
             </div>
           )}
 
@@ -2916,30 +2873,22 @@ export function WeeklyPlanningFromNotes({
           {/* Confirmation Prompt & Key Tradeoffs */}
           {proposedWeek.confirmationPrompt && (
             <div
-              className="calm-box washi-card"
+              className="calm-box"
               style={{
-                marginTop: "24px",
-                background: "var(--surface-color, #ffffff)",
-                borderColor: "var(--border-color, #e6ded1)",
-                borderRadius: "14px",
-                padding: "24px 20px",
+                marginTop: "20px",
+                padding: "16px 18px",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                <span style={{ fontSize: "1.2rem" }}>💡</span>
-                <h4 style={{ margin: 0, fontSize: "1.3rem" }}>¿Respira este plan contigo?</h4>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                <span style={{ fontSize: "1.1rem" }}>💡</span>
+                <h4 style={{ margin: 0, fontSize: "1.05rem" }}>Revisión del plan</h4>
               </div>
-              <p className="calm-muted" style={{ fontStyle: "italic", marginTop: "4px", marginBottom: "14px", fontSize: "0.92rem" }}>
-                La sugerencia es solo un boceto. Tu cuerpo y tu energía tienen la última palabra.
-              </p>
-
-              <h5 style={{ margin: "10px 0 4px 0", fontSize: "0.95rem" }}>Pregunta de reflexión</h5>
               <p className="calm-text" style={{ fontWeight: 500, margin: "4px 0" }}>
                 {proposedWeek.confirmationPrompt.question}
               </p>
               {proposedWeek.confirmationPrompt.keyTradeoffs.length > 0 && (
                 <div style={{ marginTop: "8px" }}>
-                  <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>Compensaciones clave:</span>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>Puntos a tener en cuenta:</span>
                   <ul style={{ margin: "4px 0 0 16px", fontSize: "0.85rem", color: "#444" }}>
                     {proposedWeek.confirmationPrompt.keyTradeoffs.map((tradeoff, idx) => (
                       <li key={idx}>{tradeoff}</li>
@@ -3046,22 +2995,17 @@ export function WeeklyPlanningFromNotes({
               borderRadius: "10px",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
+            <div style={{ marginBottom: "6px" }}>
               <label
                 htmlFor="apunte-lapiz-input"
                 style={{
                   fontSize: "0.85rem",
-                  fontFamily: "var(--font-serif)",
-                  fontStyle: "italic",
                   fontWeight: 600,
                   color: "var(--text-main)",
                 }}
               >
-                ✏️ Añade una intuición o corrección a lápiz:
+                ✏️ Notas o ajustes libres para esta semana (opcional):
               </label>
-              <span style={{ fontSize: "0.72rem", color: "var(--text-faint)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                Apunte libre
-              </span>
             </div>
             <textarea
               id="apunte-lapiz-input"
