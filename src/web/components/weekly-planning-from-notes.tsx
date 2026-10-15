@@ -1149,6 +1149,51 @@ export function WeeklyPlanningFromNotes({
         </div>
       )}
 
+      {/* Aviso de propuesta previa ya disponible si el usuario está revisando o ajustando */}
+      {proposedWeek && isReviewingSelection && (
+        <div
+          style={{
+            marginTop: "12px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "12px 16px",
+            background: "#f0f7ff",
+            border: "1px solid #bfdbfe",
+            borderRadius: "8px",
+            gap: "10px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <strong style={{ fontSize: "0.92rem", color: "#1e40af", display: "block" }}>
+              ✓ Propuesta semanal ya preparada para esta semana
+            </strong>
+            <span style={{ fontSize: "0.82rem", color: "#2563eb" }}>
+              Estás revisando los elementos y tu intención. La propuesta previa sigue disponible.
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              type="button"
+              className="primary small"
+              data-testid="return-to-proposal-button"
+              onClick={handleReturnToProposal}
+            >
+              → Volver a la propuesta generada
+            </button>
+            <button
+              type="button"
+              className="secondary small"
+              data-testid="discard-proposal-button"
+              onClick={handleCancelProposal}
+            >
+              Descartar propuesta
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* -------------------------------------------------------------------- */}
       {/* 0. Carryover Tasks from Previous Weeks (Sovereign Human Selection)   */}
       {/* -------------------------------------------------------------------- */}
@@ -1341,77 +1386,51 @@ export function WeeklyPlanningFromNotes({
       )}
 
       {/* -------------------------------------------------------------------- */}
-      {/* 1. Input Section */}
+      {/* 1. Input Section when no items exist yet */}
       {/* -------------------------------------------------------------------- */}
-      <div style={{ marginTop: "16px" }}>
-        <label
-          htmlFor="planning-notes-input"
-          style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}
-        >
-          ¿Qué tienes en mente para planificar?
-        </label>
-        <textarea
-          id="planning-notes-input"
-          rows={5}
-          value={noteText}
-          onChange={(e) => setNoteText(e.target.value)}
-          placeholder="Escribe libremente todo lo que tengas en la cabeza: tareas, compromisos con fechas, proyectos o ideas que quieras evaluar..."
-          style={{ width: "100%", padding: "10px", boxSizing: "border-box" }}
-          disabled={isExtracting}
-        />
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginTop: "6px",
-            flexWrap: "wrap",
-            gap: "8px",
-          }}
-        >
-          <span style={{ fontSize: "0.85rem", color: "#8c8273" }}>
-            {noteText.length} caracteres
-          </span>
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            {extractedItems && extractedItems.length > 0 ? (
-              <>
-                <button
-                  type="button"
-                  className="primary"
-                  aria-label="Añadir nuevas ideas a la lista existente"
-                  disabled={isExtracting || !noteText.trim()}
-                  onClick={() => handleExtract("append")}
-                  data-testid="extract-append-button"
-                >
-                  {isExtracting ? "Entendiendo notas..." : "➕ Añadir a la lista existente"}
-                </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  aria-label="Analizar y extraer elementos de las notas"
-                  disabled={isExtracting || !noteText.trim()}
-                  onClick={() => handleExtract("replace")}
-                  data-testid="extract-replace-button"
-                >
-                  🔄 Reemplazar lista actual
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                className="primary"
-                aria-label="Analizar y extraer elementos de las notas"
-                disabled={isExtracting || !noteText.trim()}
-                onClick={() => handleExtract("replace")}
-                data-testid="extract-button"
-              >
-                {isExtracting ? "Entendiendo notas..." : "Analizar y extraer elementos"}
-              </button>
-            )}
+      {(!extractedItems || extractedItems.length === 0) && (
+        <div style={{ marginTop: "16px" }}>
+          <label
+            htmlFor="planning-notes-input"
+            style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}
+          >
+            ¿Qué tienes en mente para planificar?
+          </label>
+          <textarea
+            id="planning-notes-input"
+            rows={5}
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            placeholder="Escribe libremente todo lo que tengas en la cabeza: tareas, compromisos con fechas, proyectos o ideas que quieras evaluar..."
+            style={{ width: "100%", padding: "10px", boxSizing: "border-box" }}
+            disabled={isExtracting}
+          />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: "6px",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
+            <span style={{ fontSize: "0.85rem", color: "#8c8273" }}>
+              {noteText.length} caracteres
+            </span>
+            <button
+              type="button"
+              className="primary"
+              aria-label="Analizar y extraer elementos de las notas"
+              disabled={isExtracting || !noteText.trim()}
+              onClick={() => handleExtract("replace")}
+              data-testid="extract-button"
+            >
+              {isExtracting ? "Entendiendo notas..." : "Analizar y extraer elementos"}
+            </button>
           </div>
         </div>
-      </div>
-
+      )}
 
       {extractError && (
         <div
@@ -1429,49 +1448,11 @@ export function WeeklyPlanningFromNotes({
       {extractedItems && (!proposedWeek || isReviewingSelection) && (
         <div
           style={{
-            marginTop: "24px",
+            marginTop: "20px",
             paddingTop: "16px",
             borderTop: "1px solid var(--border-color, #e0e0e0)",
           }}
         >
-          {proposedWeek && (
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "16px",
-                padding: "10px 14px",
-                background: "#eef6ff",
-                border: "1px solid #bcd7ff",
-                borderRadius: "6px",
-                gap: "8px",
-                flexWrap: "wrap",
-              }}
-            >
-              <span style={{ fontSize: "0.85rem", color: "#1d4ed8" }}>
-                ℹ️ Estás revisando los elementos y tu intención. La propuesta previa sigue disponible.
-              </span>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button
-                  type="button"
-                  className="secondary small"
-                  data-testid="discard-proposal-button"
-                  onClick={handleCancelProposal}
-                >
-                  Descartar propuesta
-                </button>
-                <button
-                  type="button"
-                  className="primary small"
-                  data-testid="return-to-proposal-button"
-                  onClick={handleReturnToProposal}
-                >
-                  → Volver a la propuesta generada
-                </button>
-              </div>
-            </div>
-          )}
           <div
             style={{
               display: "flex",
@@ -1479,32 +1460,33 @@ export function WeeklyPlanningFromNotes({
               alignItems: "center",
               flexWrap: "wrap",
               gap: "8px",
+              marginBottom: "8px",
             }}
           >
-            <h4>
+            <h4 style={{ margin: 0, fontSize: "1.05rem" }}>
               Elementos identificados ({acceptedCount} de {extractedItems.length} seleccionados)
             </h4>
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
               <button
                 type="button"
-                className="secondary"
-                style={{ fontSize: "0.85rem", padding: "4px 8px" }}
+                className="secondary small"
+                style={{ fontSize: "0.82rem", padding: "3px 8px" }}
                 onClick={handleAcceptAll}
               >
                 Aceptar todos
               </button>
               <button
                 type="button"
-                className="secondary"
-                style={{ fontSize: "0.85rem", padding: "4px 8px" }}
+                className="secondary small"
+                style={{ fontSize: "0.82rem", padding: "3px 8px" }}
                 onClick={handleDiscardAll}
               >
                 Descartar todos
               </button>
               <button
                 type="button"
-                className="secondary"
-                style={{ fontSize: "0.85rem", padding: "4px 8px", color: "#8c8273" }}
+                className="secondary small"
+                style={{ fontSize: "0.82rem", padding: "3px 8px", color: "#8c8273" }}
                 onClick={handleStartFreshWeek}
                 data-testid="clear-extracted-items-button"
                 title="Despejar elementos actuales y empezar una nueva semana"
@@ -1514,7 +1496,7 @@ export function WeeklyPlanningFromNotes({
             </div>
           </div>
 
-          <p className="calm-text" style={{ fontSize: "0.9rem", marginTop: "4px" }}>
+          <p className="calm-muted" style={{ fontSize: "0.85rem", margin: "0 0 10px 0" }}>
             Selecciona qué elementos deseas incluir en la propuesta semanal. Los no seleccionados
             se descartarán de esta planificación.
           </p>
@@ -1527,7 +1509,7 @@ export function WeeklyPlanningFromNotes({
           ) : (
             <ul
               className="items-list"
-              style={{ marginTop: "12px", listStyle: "none", padding: 0 }}
+              style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "6px" }}
               aria-label="Lista de elementos identificados"
             >
               {extractedItems.map((item) => {
@@ -1538,15 +1520,14 @@ export function WeeklyPlanningFromNotes({
                     className="item-card"
                     style={{
                       display: "flex",
-                      alignItems: "flex-start",
-                      gap: "12px",
-                      padding: "10px 12px",
-                      marginBottom: "8px",
-                      background: isAccepted ? "var(--bg-highlight, #fdfdfd)" : "#f5f5f5",
-                      opacity: isAccepted ? 1 : 0.65,
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "8px 12px",
+                      background: isAccepted ? "var(--bg-highlight, #fdfdfd)" : "#fafafa",
+                      opacity: isAccepted ? 1 : 0.6,
                       border: isAccepted
-                        ? "1px solid var(--border-color, #ddd)"
-                        : "1px dashed #ccc",
+                        ? "1px solid var(--border-color, #e0ded9)"
+                        : "1px dashed #d1d5db",
                       borderRadius: "6px",
                     }}
                   >
@@ -1556,42 +1537,32 @@ export function WeeklyPlanningFromNotes({
                       checked={isAccepted}
                       onChange={() => handleToggleItem(item.id)}
                       aria-label={`Incluir elemento ${item.title}`}
-                      style={{ marginTop: "4px", cursor: "pointer" }}
+                      style={{ cursor: "pointer", flexShrink: 0 }}
                     />
-                    <div style={{ flex: 1 }}>
-                      <div
+                    <div
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: "8px",
+                        flexWrap: "wrap",
+                        minWidth: 0,
+                      }}
+                    >
+                      <strong
                         style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "baseline",
-                          gap: "8px",
+                          fontSize: "0.92rem",
+                          textDecoration: isAccepted ? "none" : "line-through",
+                          color: isAccepted ? "inherit" : "var(--text-muted, #888)",
                         }}
                       >
-                        <strong
-                          style={{
-                            textDecoration: isAccepted ? "none" : "line-through",
-                            color: isAccepted ? "inherit" : "#888",
-                          }}
-                        >
-                          {item.title}
-                        </strong>
+                        {item.title}
+                      </strong>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                         <span className={`badge badge-${item.type}`}>{item.type}</span>
-                      </div>
-
-                      <div
-                        className="config-row"
-                        style={{ marginTop: "4px", flexWrap: "wrap", gap: "6px" }}
-                      >
                         {item.project && (
                           <span className="badge badge-muted">📁 {item.project}</span>
-                        )}
-                        {item.status && (
-                          <span className="badge badge-muted">estado: {item.status}</span>
-                        )}
-                        {item.commitment && item.commitment !== "none" && (
-                          <span className="badge badge-muted">
-                            compromiso {item.commitment}
-                          </span>
                         )}
                         {item.estimatedEffort && (
                           <span className="badge badge-muted">
@@ -1599,18 +1570,11 @@ export function WeeklyPlanningFromNotes({
                           </span>
                         )}
                         {item.deadline && (
-                          <span className="badge badge-muted">
+                          <span className="badge badge-muted" style={{ color: "#b45309" }}>
                             📅 {item.deadline.raw}{" "}
                             {item.deadline.resolved ? `(${item.deadline.resolved})` : ""}
                           </span>
                         )}
-                      </div>
-
-                      <div
-                        className="calm-muted"
-                        style={{ fontSize: "0.85rem", marginTop: "4px", fontStyle: "italic" }}
-                      >
-                        "{item.rawText}"
                       </div>
                     </div>
                   </li>
@@ -1618,6 +1582,68 @@ export function WeeklyPlanningFromNotes({
               })}
             </ul>
           )}
+
+          {/* Añadir más ideas o tareas a la lista */}
+          <div
+            style={{
+              marginTop: "16px",
+              padding: "12px 14px",
+              background: "#fafaf8",
+              border: "1px solid var(--border-color, #e6ded1)",
+              borderRadius: "8px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
+              <label
+                htmlFor="planning-notes-input"
+                style={{ fontWeight: 600, fontSize: "0.88rem", color: "var(--text-main)" }}
+              >
+                ➕ ¿Quieres añadir más ideas o tareas a esta semana? (opcional)
+              </label>
+              <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                {noteText.length} caracteres
+              </span>
+            </div>
+            <textarea
+              id="planning-notes-input"
+              rows={3}
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="Escribe tareas o ideas adicionales que quieras sumar a la lista de arriba..."
+              style={{ width: "100%", padding: "8px 10px", fontSize: "0.88rem", boxSizing: "border-box" }}
+              disabled={isExtracting}
+            />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "8px",
+                marginTop: "8px",
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                type="button"
+                className="secondary small"
+                aria-label="Añadir nuevas ideas a la lista existente"
+                disabled={isExtracting || !noteText.trim()}
+                onClick={() => handleExtract("append")}
+                data-testid="extract-append-button"
+              >
+                {isExtracting ? "Entendiendo notas..." : "➕ Añadir a la lista existente"}
+              </button>
+              <button
+                type="button"
+                className="secondary small"
+                aria-label="Analizar y extraer elementos de las notas"
+                disabled={isExtracting || !noteText.trim()}
+                onClick={() => handleExtract("replace")}
+                data-testid="extract-replace-button"
+              >
+                🔄 Reemplazar lista actual
+              </button>
+            </div>
+          </div>
 
           {/* User Intent Input */}
           <div style={{ marginTop: "16px" }}>
