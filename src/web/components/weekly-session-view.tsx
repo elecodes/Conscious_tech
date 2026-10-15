@@ -4,7 +4,11 @@ import { MockProvider } from "../../providers/mock-provider";
 import { useWeeklySession } from "../context/weekly-session-context";
 import { StoredWeeklyPlan } from "../../domain/repositories/types";
 import { ExtractedItem } from "../../domain/items";
-import { WeeklySchedule, ScheduleAdjustmentRecord } from "../../domain/schedule";
+import {
+  WeeklySchedule,
+  ScheduleAdjustmentRecord,
+  DailyWorkAllocation,
+} from "../../domain/schedule";
 import { SuggestedAdjustmentAction } from "../../domain/adjustment";
 import { ItemOutcomeInput } from "../../domain/close-week";
 import { StoreCandidate } from "../../domain/memory";
@@ -14,8 +18,29 @@ import {
   ProtectedSpaceStatus,
   EstimationCompleteness,
   DeferredReason,
+  WeeklyFlexibleOption,
 } from "../../domain/week";
+import { calculateWeeklyCapacity } from "../../skills/build-week/deterministic";
 import { WeeklyPlanningFromNotes } from "./weekly-planning-from-notes";
+
+export function getWeekDays(startDate?: string): Array<{ date: string; label: string }> {
+  if (!startDate) return [];
+  const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const result: Array<{ date: string; label: string }> = [];
+  const [y, m, d] = startDate.split("-").map(Number);
+  if (!y || !m || !d) return [];
+  const start = new Date(Date.UTC(y, m - 1, d));
+  for (let i = 0; i < 7; i++) {
+    const cur = new Date(start);
+    cur.setUTCDate(start.getUTCDate() + i);
+    const isoDate = cur.toISOString().split("T")[0]!;
+    result.push({
+      date: isoDate,
+      label: `${days[i]} (${cur.getUTCDate()} ${["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"][cur.getUTCMonth()]})`,
+    });
+  }
+  return result;
+}
 
 export function formatDeferredReason(reason: DeferredReason): string {
   switch (reason) {
@@ -879,10 +904,178 @@ export function WeeklySessionView({
   const [targetWeekStart, setTargetWeekStart] = useState("2026-10-26");
   const [targetWeekEnd, setTargetWeekEnd] = useState("2026-11-01");
   const [deadlineInput, setDeadlineInput] = useState("");
+  const [taskHoursInput, setTaskHoursInput] = useState<string>("");
+  const [taskDayInput, setTaskDayInput] = useState<string>("");
   const [isAdjustmentPreviewOpen, setIsAdjustmentPreviewOpen] = useState(false);
   const [isFuturePlanningOpen, setIsFuturePlanningOpen] = useState(
     Boolean(initialPlanningItems && initialPlanningItems.length > 0)
   );
+
+  const plan = state.activePlan;
+  const schedule = state.activeSchedule;
+  const planItems = extractPlanItems(plan, schedule);
+  const effectiveItemId = selectedAdjustmentItemId || planItems[0]?.itemId || "";
+  const selectedItem = planItems.find((i) => i.itemId === effectiveItemId) || planItems[0];
+
+  useEffect(() => {
+    if (selectedItem) {
+      setTaskHoursInput(selectedItem.estimatedHours != null ? String(selectedItem.estimatedHours) : "");
+      const alloc = schedule?.dailyAllocations.find((a) => a.itemId === selectedItem.itemId);
+      setTaskDayInput(alloc?.day || "");
+    }
+  }, [selectedItem?.itemId, selectedItem?.estimatedHours, schedule]);
+
+  const handleSaveTaskHours = async (itemId: string, itemTitle: string) => {
+    if (!plan) return;
+    const parsed = taskHoursInput.trim() ? parseFloat(taskHoursInput) : null;
+    if (parsed !== null && (isNaN(parsed) || parsed < 0)) return;
+
+    let updatedObligations = plan.proposal.obligations.map((o) =>
+      o.itemId === itemId ? { ...o, estimatedHours: parsed } : o
+    );
+    let updatedFlexible = plan.proposal.flexibleOptions.map((f) =>
+      f.itemId === itemId ? { ...f, estimatedHours: parsed } : f
+    );
+    let updatedFoci = plan.proposal.foci.map((focus) =>
+      focus.contributingItemIds.includes(itemId)
+        ? { ...focus, estimatedHours: parsed }
+        : focus
+    );
+    let updatedDeferred = plan.proposal.deferredItems.map((d) =>
+      d.itemId === itemId ? { ...d } : d
+    );
+
+    // Si la tarea estaba diferida y ahora tiene horas estimadas, incorporarla como opción flexible
+    if (plan.proposal.deferredItems.some((d) => d.itemId === itemId) && parsed !== null) {
+      const deferredItem = plan.proposal.deferredItems.find((d) => d.itemId === itemId)!;
+      updatedDeferred = plan.proposal.deferredItems.filter((d) => d.itemId !== itemId);
+      if (!updatedFlexible.some((f) => f.itemId === itemId)) {
+        updatedFlexible.push({
+          itemId: deferredItem.itemId,
+          title: deferredItem.title,
+          estimatedHours: parsed,
+          condition: "Estimada manualmente por la persona",
+        });
+      }
+    }
+
+    const updatedCapacity = calculateWeeklyCapacity({
+      capacityConfig: {
+        totalAvailableHours: plan.proposal.weekSummary.capacity.totalAvailableHours ?? undefined,
+        minProtectedSpaceRatio:
+          plan.proposal.weekSummary.capacity.totalAvailableHours &&
+          plan.proposal.weekSummary.capacity.protectedSpaceHours
+            ? plan.proposal.weekSummary.capacity.protectedSpaceHours /
+              plan.proposal.weekSummary.capacity.totalAvailableHours
+            : 0.25,
+      },
+      foci: updatedFoci,
+      obligations: updatedObligations,
+    });
+
+    const updatedPlan: StoredWeeklyPlan = {
+      ...plan,
+      proposal: {
+        ...plan.proposal,
+        obligations: updatedObligations,
+        flexibleOptions: updatedFlexible,
+        foci: updatedFoci,
+        deferredItems: updatedDeferred,
+        weekSummary: {
+          ...plan.proposal.weekSummary,
+          capacity: updatedCapacity,
+        },
+      },
+      updatedAt: new Date().toISOString(),
+    };
+
+    let updatedSchedule = schedule;
+    if (schedule && schedule.dailyAllocations.some((a) => a.itemId === itemId)) {
+      updatedSchedule = {
+        ...schedule,
+        dailyAllocations: schedule.dailyAllocations.map((a) =>
+          a.itemId === itemId ? { ...a, allocatedHours: parsed ?? a.allocatedHours } : a
+        ),
+        version: schedule.version + 1,
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    await createOrSavePlan(updatedPlan, updatedSchedule ?? undefined);
+    setFeedbackMessage(
+      `Horas guardadas para «${itemTitle}»: ${parsed != null ? `${parsed}h` : "sin estimar"}.`
+    );
+  };
+
+  const handleAssignTaskDay = async (
+    itemId: string,
+    itemTitle: string,
+    defaultHours?: number | null
+  ) => {
+    if (!schedule || !plan) return;
+    let newDailyAllocations = [...schedule.dailyAllocations];
+    const existingIdx = newDailyAllocations.findIndex((a) => a.itemId === itemId);
+    const parsedHours = taskHoursInput.trim() ? parseFloat(taskHoursInput) : null;
+    const hours =
+      parsedHours && !isNaN(parsedHours) && parsedHours > 0
+        ? parsedHours
+        : defaultHours ?? 1;
+
+    let updatedPlan = plan;
+
+    if (taskDayInput) {
+      const allocation: DailyWorkAllocation = {
+        itemId,
+        day: taskDayInput,
+        allocatedHours: hours,
+      };
+      if (existingIdx >= 0) {
+        newDailyAllocations[existingIdx] = allocation;
+      } else {
+        newDailyAllocations.push(allocation);
+      }
+
+      // Si la tarea estaba en deferredItems, promoverla a flexibleOptions
+      if (plan.proposal.deferredItems.some((d) => d.itemId === itemId)) {
+        const deferredItem = plan.proposal.deferredItems.find((d) => d.itemId === itemId)!;
+        const updatedDeferred = plan.proposal.deferredItems.filter((d) => d.itemId !== itemId);
+        const updatedFlexible: WeeklyFlexibleOption[] = [
+          ...plan.proposal.flexibleOptions,
+          {
+            itemId: deferredItem.itemId,
+            title: deferredItem.title,
+            estimatedHours: defaultHours ?? (parsedHours || null),
+            condition: "Programada manualmente por la persona",
+          },
+        ];
+        updatedPlan = {
+          ...plan,
+          proposal: {
+            ...plan.proposal,
+            deferredItems: updatedDeferred,
+            flexibleOptions: updatedFlexible,
+          },
+          updatedAt: new Date().toISOString(),
+        };
+      }
+    } else {
+      newDailyAllocations = newDailyAllocations.filter((a) => a.itemId !== itemId);
+    }
+
+    const updatedSchedule: WeeklySchedule = {
+      ...schedule,
+      dailyAllocations: newDailyAllocations,
+      version: schedule.version + 1,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await createOrSavePlan(updatedPlan, updatedSchedule);
+    setFeedbackMessage(
+      taskDayInput
+        ? `Tarea «${itemTitle}» programada para el ${taskDayInput}.`
+        : `Tarea «${itemTitle}» desprogramada del día asignado.`
+    );
+  };
 
   const handleReopenWeek = async (planId: string) => {
     setIsReopening(true);
@@ -1813,9 +2006,6 @@ export function WeeklySessionView({
   // --------------------------------------------------------------------------
   // Active Session View (session_resumed)
   // --------------------------------------------------------------------------
-  const plan = state.activePlan;
-  const schedule = state.activeSchedule;
-  const planItems = extractPlanItems(plan, schedule);
 
   return (
     <div className="session-container">
@@ -1994,28 +2184,64 @@ export function WeeklySessionView({
         <section className="results-section" style={{ marginTop: "24px" }} aria-label="Agenda y bloques">
           <h3>Agenda y bloques planificados</h3>
           <div className="items-list">
-            {schedule.timeBlocks.length === 0 ? (
-              <p className="calm-muted">No hay bloques horarios asignados.</p>
+            {schedule.timeBlocks.length === 0 && schedule.dailyAllocations.length === 0 ? (
+              <p className="calm-muted">No hay bloques horarios ni días asignados todavía. Podés asignar un día a tus tareas abajo en «Ajustar y programar tareas».</p>
             ) : (
-              schedule.timeBlocks.map((block, idx) => (
-                <div key={idx} className="item-card">
-                  <div className="item-title">{block.itemId}</div>
-                  <div className="item-tags">
-                    <span className="badge badge-muted">📅 {block.day}</span>
-                    <span className="badge badge-muted">
-                      ⏰ {block.startTime} - {block.endTime}
-                    </span>
+              <>
+                {schedule.dailyAllocations.map((alloc) => {
+                  const item = planItems.find((i) => i.itemId === alloc.itemId);
+                  return (
+                    <div
+                      key={alloc.itemId}
+                      className="item-card"
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: "8px",
+                      }}
+                    >
+                      <div>
+                        <strong>{item?.title ?? alloc.itemId}</strong>
+                      </div>
+                      <div className="item-tags" style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                        <span className="badge badge-task">📅 {alloc.day}</span>
+                        <span className="badge badge-muted">⏱ {alloc.allocatedHours}h</span>
+                        <button
+                          type="button"
+                          className="secondary"
+                          style={{ fontSize: "0.75rem", padding: "2px 8px" }}
+                          onClick={() => {
+                            setSelectedAdjustmentItemId(alloc.itemId);
+                          }}
+                        >
+                          Modificar
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {schedule.timeBlocks.map((block, idx) => (
+                  <div key={idx} className="item-card">
+                    <div className="item-title">{block.itemId}</div>
+                    <div className="item-tags">
+                      <span className="badge badge-muted">📅 {block.day}</span>
+                      <span className="badge badge-muted">
+                        ⏰ {block.startTime} - {block.endTime}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </>
             )}
           </div>
 
           {/* Adjustments simulation / Human Decision */}
-          <div className="calm-box" style={{ marginTop: "20px" }} data-testid="adjustment-proposal-box">
-            <h4 style={{ margin: "0 0 4px 0" }}>Ajustar agenda</h4>
+          <div className="calm-box" style={{ marginTop: "20px" }} data-testid="adjustment-proposal-box" id="adjustment-proposal-box">
+            <h4 style={{ margin: "0 0 4px 0" }}>Ajustar y programar tareas</h4>
             <p className="calm-muted" style={{ fontSize: "0.84rem", marginBottom: "14px" }}>
-              Elegí una tarea para ver opciones de reprogramación.
+              Elegí una tarea para definir sus horas estimadas, asignarla a un día de la semana o moverla a otra fecha.
             </p>
 
             {planItems.length === 0 ? (
@@ -2047,109 +2273,227 @@ export function WeeklySessionView({
 
                 return (
                   <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "12px" }}>
-                      <div>
-                        <label
-                          htmlFor="adjustment-item-select"
-                          style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "4px" }}
-                        >
-                          Tarea a ajustar:
-                        </label>
-                        <select
-                          id="adjustment-item-select"
-                          data-testid="adjustment-item-select"
-                          aria-label="Seleccionar tarea a ajustar"
-                          value={effectiveItemId}
-                          onChange={(e) => {
-                            setSelectedAdjustmentItemId(e.target.value);
-                            setIsAdjustmentPreviewOpen(false);
-                          }}
-                          style={{ width: "100%", padding: "7px 8px" }}
-                        >
-                          {planItems.map((item) => (
+                    {/* 1. Selector de tarea principal */}
+                    <div>
+                      <label
+                        htmlFor="adjustment-item-select"
+                        style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "4px" }}
+                      >
+                        Tarea a ajustar:
+                      </label>
+                      <select
+                        id="adjustment-item-select"
+                        data-testid="adjustment-item-select"
+                        aria-label="Seleccionar tarea a ajustar"
+                        value={effectiveItemId}
+                        onChange={(e) => {
+                          setSelectedAdjustmentItemId(e.target.value);
+                          setIsAdjustmentPreviewOpen(false);
+                        }}
+                        style={{ width: "100%", padding: "7px 8px" }}
+                      >
+                        {planItems.map((item) => {
+                          const alloc = schedule?.dailyAllocations.find((a) => a.itemId === item.itemId);
+                          return (
                             <option key={item.itemId} value={item.itemId}>
                               {item.title} ({item.source})
-                              {item.estimatedHours ? ` · ${item.estimatedHours}h` : ""}
+                              {item.estimatedHours ? ` · ${item.estimatedHours}h` : " · Sin estimar"}
+                              {alloc ? ` · 📅 ${alloc.day}` : ""}
                             </option>
-                          ))}
-                        </select>
-                      </div>
+                          );
+                        })}
+                      </select>
+                    </div>
 
-                      <div>
-                        <label
-                          htmlFor="target-week-start-input"
-                          style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "4px" }}
-                        >
-                          Semana destino (Inicio):
-                        </label>
-                        <input
-                          id="target-week-start-input"
-                          data-testid="target-week-start-input"
-                          type="text"
-                          value={targetWeekStart}
-                          onChange={(e) => {
-                            setTargetWeekStart(e.target.value);
-                            setIsAdjustmentPreviewOpen(false);
-                          }}
-                          style={{ width: "100%", padding: "6px 8px" }}
-                        />
+                    {/* 2. Asignar horas y día en esta semana */}
+                    <div
+                      style={{
+                        padding: "12px 14px",
+                        background: "var(--bg-card, #fcfbf9)",
+                        border: "1px solid var(--border-color, #e8e3d9)",
+                        borderRadius: "6px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "10px",
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "#374151" }}>
+                        ⏱️ Estimación y asignación de día en esta semana
                       </div>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                          gap: "12px",
+                          alignItems: "end",
+                        }}
+                      >
+                        <div>
+                          <label
+                            htmlFor="task-hours-input"
+                            style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
+                          >
+                            Horas estimadas:
+                          </label>
+                          <div style={{ display: "flex", gap: "6px" }}>
+                            <input
+                              id="task-hours-input"
+                              data-testid="task-hours-input"
+                              type="number"
+                              min="0.25"
+                              max="40"
+                              step="0.5"
+                              placeholder={selectedItem?.estimatedHours ? `${selectedItem.estimatedHours}` : "Ej: 2"}
+                              value={taskHoursInput}
+                              onChange={(e) => setTaskHoursInput(e.target.value)}
+                              style={{ width: "100%", padding: "6px 8px" }}
+                            />
+                            <button
+                              type="button"
+                              className="secondary"
+                              data-testid="save-task-hours-button"
+                              onClick={() => handleSaveTaskHours(selectedItem.itemId, selectedItem.title)}
+                              style={{ whiteSpace: "nowrap", padding: "6px 12px" }}
+                            >
+                              Guardar horas
+                            </button>
+                          </div>
+                        </div>
 
-                      <div>
-                        <label
-                          htmlFor="target-week-end-input"
-                          style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "4px" }}
-                        >
-                          Semana destino (Fin):
-                        </label>
-                        <input
-                          id="target-week-end-input"
-                          data-testid="target-week-end-input"
-                          type="text"
-                          value={targetWeekEnd}
-                          onChange={(e) => {
-                            setTargetWeekEnd(e.target.value);
-                            setIsAdjustmentPreviewOpen(false);
-                          }}
-                          style={{ width: "100%", padding: "6px 8px" }}
-                        />
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="deadline-input"
-                          style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "4px" }}
-                        >
-                          Deadline original (para verificar):
-                        </label>
-                        <input
-                          id="deadline-input"
-                          data-testid="deadline-input"
-                          type="text"
-                          placeholder={effectiveDeadline || "YYYY-MM-DD"}
-                          value={deadlineInput}
-                          onChange={(e) => {
-                            setDeadlineInput(e.target.value);
-                            setIsAdjustmentPreviewOpen(false);
-                          }}
-                          style={{ width: "100%", padding: "6px 8px" }}
-                        />
+                        <div>
+                          <label
+                            htmlFor="task-day-select"
+                            style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
+                          >
+                            Día asignado:
+                          </label>
+                          <div style={{ display: "flex", gap: "6px" }}>
+                            <select
+                              id="task-day-select"
+                              data-testid="task-day-select"
+                              value={taskDayInput}
+                              onChange={(e) => setTaskDayInput(e.target.value)}
+                              style={{ width: "100%", padding: "6px 8px" }}
+                            >
+                              <option value="">Sin día asignado (semana abierta)</option>
+                              {getWeekDays(plan?.targetWeek.startDate).map((d) => (
+                                <option key={d.date} value={d.date}>
+                                  {d.label}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              className="secondary"
+                              data-testid="assign-task-day-button"
+                              onClick={() => handleAssignTaskDay(selectedItem.itemId, selectedItem.title, selectedItem.estimatedHours)}
+                              style={{ whiteSpace: "nowrap", padding: "6px 12px" }}
+                            >
+                              Asignar día
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    {!isAdjustmentPreviewOpen && selectedItem && (
-                      <div>
-                        <button
-                          type="button"
-                          className="secondary"
-                          data-testid="generate-proposal-button"
-                          aria-label="Generar propuesta de reprogramación"
-                          onClick={() => setIsAdjustmentPreviewOpen(true)}
-                        >
-                          Generar propuesta de reprogramación
-                        </button>
+                    {/* 3. Mover a otra semana (reprogramar) */}
+                    <div
+                      style={{
+                        padding: "12px 14px",
+                        background: "var(--bg-card, #fcfbf9)",
+                        border: "1px solid var(--border-color, #e8e3d9)",
+                        borderRadius: "6px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "10px",
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "#374151" }}>
+                        🗓️ Mover a otra semana (reprogramar)
                       </div>
-                    )}
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                          gap: "12px",
+                        }}
+                      >
+                        <div>
+                          <label
+                            htmlFor="target-week-start-input"
+                            style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
+                          >
+                            Semana destino (Inicio):
+                          </label>
+                          <input
+                            id="target-week-start-input"
+                            data-testid="target-week-start-input"
+                            type="text"
+                            value={targetWeekStart}
+                            onChange={(e) => {
+                              setTargetWeekStart(e.target.value);
+                              setIsAdjustmentPreviewOpen(false);
+                            }}
+                            style={{ width: "100%", padding: "6px 8px" }}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor="target-week-end-input"
+                            style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
+                          >
+                            Semana destino (Fin):
+                          </label>
+                          <input
+                            id="target-week-end-input"
+                            data-testid="target-week-end-input"
+                            type="text"
+                            value={targetWeekEnd}
+                            onChange={(e) => {
+                              setTargetWeekEnd(e.target.value);
+                              setIsAdjustmentPreviewOpen(false);
+                            }}
+                            style={{ width: "100%", padding: "6px 8px" }}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor="deadline-input"
+                            style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
+                          >
+                            Deadline original (para verificar):
+                          </label>
+                          <input
+                            id="deadline-input"
+                            data-testid="deadline-input"
+                            type="text"
+                            placeholder={effectiveDeadline || "YYYY-MM-DD"}
+                            value={deadlineInput}
+                            onChange={(e) => {
+                              setDeadlineInput(e.target.value);
+                              setIsAdjustmentPreviewOpen(false);
+                            }}
+                            style={{ width: "100%", padding: "6px 8px" }}
+                          />
+                        </div>
+                      </div>
+
+                      {!isAdjustmentPreviewOpen && selectedItem && (
+                        <div>
+                          <button
+                            type="button"
+                            className="secondary"
+                            data-testid="generate-proposal-button"
+                            aria-label="Generar propuesta de reprogramación"
+                            onClick={() => setIsAdjustmentPreviewOpen(true)}
+                          >
+                            Generar propuesta de reprogramación
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
                     {isAdjustmentPreviewOpen && selectedItem && (
                       <div
