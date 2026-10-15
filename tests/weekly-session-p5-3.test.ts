@@ -126,9 +126,9 @@ describe("Fase P5.3 — Visualización honesta de capacidad y espacio protegido"
 
       expect(html).toContain("12h");
       expect(html).toContain("Estimación parcial");
-      expect(html).toContain("Carga total desconocida");
+      expect(html).toContain("Por definir");
       expect(html).toContain(
-        "Se conocen 12h de tareas estimadas, pero la carga total de la semana sigue siendo desconocida."
+        "Hay 12h estimadas, pero aún faltan tareas por definir."
       );
     });
 
@@ -149,10 +149,9 @@ describe("Fase P5.3 — Visualización honesta de capacidad y espacio protegido"
       );
 
       expect(html).toContain("Sin estimar");
-      expect(html).toContain("Carga total desconocida");
-      expect(html).toContain("No disponible");
+      expect(html).toContain("Por definir");
       expect(html).toContain(
-        "No hay estimaciones horarias cargadas. Esto no significa que la semana esté libre de trabajo."
+        "Tienes tareas previstas, pero aún no les has asignado horas."
       );
       // No debe contener "0h" inventado en carga planificada
       expect(html).not.toMatch(/<strong[^>]*data-testid="planned-hours"[^>]*>0h<\/strong>/);

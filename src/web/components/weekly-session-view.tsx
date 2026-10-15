@@ -701,19 +701,19 @@ export function CapacityProtectedSpaceSection({
           </div>
         </div>
 
-        {/* 2. Carga y certidumbre */}
+        {/* 2. Estimación de tareas */}
         <div
           className="item-card"
           style={{ flexDirection: "column", gap: "10px", margin: 0 }}
           data-testid="workload-certainty-card"
         >
           <div className="item-title" style={{ fontSize: "1.05rem" }}>
-            <strong>Carga y certidumbre</strong>
+            <strong>Estimación de tareas</strong>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
-              <span className="calm-muted">Completitud:</span>
+              <span className="calm-muted">Estado:</span>
               <span
                 className={`badge ${estimationBadgeClass}`}
                 data-testid="estimation-completeness"
@@ -726,18 +726,11 @@ export function CapacityProtectedSpaceSection({
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
-              <span className="calm-muted">Carga planificada total:</span>
+              <span className="calm-muted">Horas calculadas:</span>
               <strong data-testid="planned-hours">
                 {isComplete && capacity.plannedHours != null
                   ? formatHours(capacity.plannedHours)
-                  : "Carga total desconocida"}
-              </strong>
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
-              <span className="calm-muted">Horas estimadas conocidas:</span>
-              <strong data-testid="known-estimated-hours">
-                {formatHours(capacity.knownEstimatedHours, "No disponible")}
+                  : "Por definir"}
               </strong>
             </div>
 
@@ -752,7 +745,7 @@ export function CapacityProtectedSpaceSection({
               }}
             >
               <span className="calm-muted" style={{ fontSize: "0.85rem" }}>
-                Balance de capacidad:
+                Balance:
               </span>
               <span
                 className={`badge ${capacityStatusBadgeClass}`}
@@ -766,9 +759,9 @@ export function CapacityProtectedSpaceSection({
                 }`}
               >
                 {!isCapacityConfigured && capacity.capacityStatus === "unknown"
-                  ? "Capacidad desconocida (sin configurar)"
+                  ? "Sin configurar"
                   : isCapacityConfigured && capacity.capacityStatus === "unknown"
-                  ? "Capacidad desconocida (faltan estimaciones)"
+                  ? "Pendiente de estimar"
                   : formatCapacityStatus(capacity.capacityStatus)}
               </span>
             </div>
@@ -787,7 +780,7 @@ export function CapacityProtectedSpaceSection({
                 borderRadius: "4px",
               }}
             >
-              El balance de capacidad no se puede determinar porque no se configuraron horas disponibles.
+              No se puede calcular el balance porque no has configurado horas disponibles.
             </p>
           )}
 
@@ -803,10 +796,7 @@ export function CapacityProtectedSpaceSection({
                 borderRadius: "4px",
               }}
             >
-              Se conocen{" "}
-              {formatHours(capacity.knownEstimatedHours, "algunas horas")} de
-              tareas estimadas, pero la carga total de la semana sigue siendo
-              desconocida.
+              Hay {formatHours(capacity.knownEstimatedHours, "algunas horas")} estimadas, pero aún faltan tareas por definir.
             </p>
           )}
 
@@ -822,8 +812,7 @@ export function CapacityProtectedSpaceSection({
                 borderRadius: "4px",
               }}
             >
-              No hay estimaciones horarias cargadas. Esto no significa que la
-              semana esté libre de trabajo.
+              Tienes tareas previstas, pero aún no les has asignado horas.
             </p>
           )}
         </div>
