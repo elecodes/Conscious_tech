@@ -554,14 +554,24 @@ export function WeeklyPlanningFromNotes({
             const originalDueDate = it.deadline?.resolved || "2026-10-15";
             const updatedFoci = finalProposal.foci.filter((f) => !f.contributingItemIds.includes(itemId));
             const updatedDeferred = finalProposal.deferredItems.filter((d) => d.itemId !== itemId);
-            updatedFoci.push({
-              id: `focus-recovery-${itemId}`,
-              title: `Recuperación: ${it.title}`,
-              desiredOutcome: `Completar como prioridad de recuperación la tarea vencida (fecha límite original: ${originalDueDate})`,
-              rationale: `Incluida conscientemente como prioridad de recuperación por decisión de la persona. Fecha límite original conservada: ${originalDueDate}.`,
-              contributingItemIds: [itemId],
-              estimatedHours: it.estimatedEffort?.value ?? null,
-            });
+            const updatedFlexible = finalProposal.flexibleOptions.filter((o) => o.itemId !== itemId);
+            if (updatedFoci.length < 3) {
+              updatedFoci.push({
+                id: `focus-recovery-${itemId}`,
+                title: `Recuperación: ${it.title}`,
+                desiredOutcome: `Completar como prioridad de recuperación la tarea vencida (fecha límite original: ${originalDueDate})`,
+                rationale: `Incluida conscientemente como prioridad de recuperación por decisión de la persona. Fecha límite original conservada: ${originalDueDate}.`,
+                contributingItemIds: [itemId],
+                estimatedHours: it.estimatedEffort?.value ?? null,
+              });
+            } else {
+              updatedFlexible.push({
+                itemId,
+                title: `Recuperación: ${it.title}`,
+                condition: `Tarea vencida (fecha límite original: ${originalDueDate}) incluida como opción flexible al alcanzarse el máximo de 3 focos.`,
+                estimatedHours: it.estimatedEffort?.value ?? null,
+              });
+            }
             const newCap = calculateWeeklyCapacity({
               capacityConfig: currentCapacityConfig,
               foci: updatedFoci,
@@ -571,6 +581,7 @@ export function WeeklyPlanningFromNotes({
               ...finalProposal,
               foci: updatedFoci,
               deferredItems: updatedDeferred,
+              flexibleOptions: updatedFlexible,
               weekSummary: { ...finalProposal.weekSummary, capacity: newCap },
               unplannedSpace: {
                 ...finalProposal.unplannedSpace,
@@ -718,15 +729,24 @@ export function WeeklyPlanningFromNotes({
     const obligations = [...proposedWeek.obligations];
 
     if (decision === "include_recovery") {
-      const recoveryFocus: WeeklyFocus = {
-        id: `focus-recovery-${itemId}`,
-        title: `Recuperación: ${itemTitle}`,
-        desiredOutcome: `Completar como prioridad de recuperación la tarea vencida (fecha límite original: ${originalDueDate})`,
-        rationale: `Incluida conscientemente como prioridad de recuperación por decisión de la persona. Fecha límite original conservada: ${originalDueDate}.`,
-        contributingItemIds: [itemId],
-        estimatedHours,
-      };
-      updatedFoci.push(recoveryFocus);
+      if (updatedFoci.length < 3) {
+        const recoveryFocus: WeeklyFocus = {
+          id: `focus-recovery-${itemId}`,
+          title: `Recuperación: ${itemTitle}`,
+          desiredOutcome: `Completar como prioridad de recuperación la tarea vencida (fecha límite original: ${originalDueDate})`,
+          rationale: `Incluida conscientemente como prioridad de recuperación por decisión de la persona. Fecha límite original conservada: ${originalDueDate}.`,
+          contributingItemIds: [itemId],
+          estimatedHours,
+        };
+        updatedFoci.push(recoveryFocus);
+      } else {
+        updatedFlexible.push({
+          itemId,
+          title: `Recuperación: ${itemTitle}`,
+          condition: `Tarea vencida (fecha límite original: ${originalDueDate}) recuperada como opción flexible al alcanzarse el máximo de 3 focos.`,
+          estimatedHours,
+        });
+      }
     } else if (decision === "reschedule_future") {
       updatedDeferred.push({
         itemId,
@@ -825,22 +845,34 @@ export function WeeklyPlanningFromNotes({
 
     let updatedFoci = [...proposedWeek.foci];
     let updatedDeferred = [...proposedWeek.deferredItems];
+    let updatedFlexible = [...proposedWeek.flexibleOptions];
 
     if (action === "include_flexible") {
       updatedDeferred = updatedDeferred.filter((d) => d.itemId !== itemId);
       const existingFocus = updatedFoci.find((f) => f.contributingItemIds.includes(itemId));
-      if (!existingFocus) {
-        updatedFoci.push({
-          id: `focus-included-${itemId}`,
-          title: itemTitle,
-          desiredOutcome: `Avanzar en: ${itemTitle}`,
-          rationale: "Reconsiderado e incluido conscientemente en la semana por decisión de la persona.",
-          contributingItemIds: [itemId],
-          estimatedHours,
-        });
+      const existingFlexible = updatedFlexible.find((o) => o.itemId === itemId);
+      if (!existingFocus && !existingFlexible) {
+        if (updatedFoci.length < 3) {
+          updatedFoci.push({
+            id: `focus-included-${itemId}`,
+            title: itemTitle,
+            desiredOutcome: `Avanzar en: ${itemTitle}`,
+            rationale: "Reconsiderado e incluido conscientemente en la semana por decisión de la persona.",
+            contributingItemIds: [itemId],
+            estimatedHours,
+          });
+        } else {
+          updatedFlexible.push({
+            itemId,
+            title: itemTitle,
+            condition: "Reconsiderado e incluido conscientemente en la semana como opción flexible al alcanzarse el máximo de 3 focos.",
+            estimatedHours,
+          });
+        }
       }
     } else if (action === "postpone") {
       updatedFoci = updatedFoci.filter((f) => !f.contributingItemIds.includes(itemId));
+      updatedFlexible = updatedFlexible.filter((o) => o.itemId !== itemId);
       const existingIdx = updatedDeferred.findIndex((d) => d.itemId === itemId);
       const entry: DeferredItem = {
         itemId,
@@ -855,6 +887,7 @@ export function WeeklyPlanningFromNotes({
       }
     } else {
       updatedFoci = updatedFoci.filter((f) => !f.contributingItemIds.includes(itemId));
+      updatedFlexible = updatedFlexible.filter((o) => o.itemId !== itemId);
       const existingIdx = updatedDeferred.findIndex((d) => d.itemId === itemId);
       const entry: DeferredItem = {
         itemId,
@@ -906,6 +939,7 @@ export function WeeklyPlanningFromNotes({
       ...proposedWeek,
       foci: updatedFoci,
       deferredItems: updatedDeferred,
+      flexibleOptions: updatedFlexible,
       weekSummary: {
         ...proposedWeek.weekSummary,
         capacity: newCapacity,
@@ -2315,9 +2349,9 @@ export function WeeklyPlanningFromNotes({
                   return (
                     <div
                       key={focus.id}
-                      className="item-card washi-card"
+                      className="item-card"
                       style={{
-                        padding: "24px 20px 18px",
+                        padding: "18px 20px",
                         background: isRecoveryFocus ? "#fffdf5" : "var(--surface-color, #ffffff)",
                         borderColor: isRecoveryFocus ? "#fef08a" : "var(--border-color, #e6ded1)",
                       }}
@@ -2697,9 +2731,9 @@ export function WeeklyPlanningFromNotes({
                 <h5 style={{ margin: "0 0 8px 0" }}>Decisiones sobre tareas con fecha límite vencida</h5>
                 {overdueList.map((item) => {
                   const originalDueDate = item.deadline?.resolved;
-                  const isRecovery = proposedWeek.foci.some((f) =>
-                    f.contributingItemIds.includes(item.id)
-                  );
+                  const isRecovery =
+                    proposedWeek.foci.some((f) => f.contributingItemIds.includes(item.id)) ||
+                    proposedWeek.flexibleOptions.some((o) => o.itemId === item.id);
                   const deferredEntry = proposedWeek.deferredItems.find(
                     (d) => d.itemId === item.id
                   );

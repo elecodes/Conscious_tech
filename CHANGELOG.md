@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.16.0] - 2026-10-15
+
+### Added
+- **Strict 3-Foci Limit & Full Item Conservation Invariant**:
+  - Resolved `Array must contain at most 3 element(s)` Zod schema validation failure when activating weeks planned from 7 or more extracted items.
+  - Enforced domain constraint of at most 3 primary weekly foci (`foci.length <= 3`) in `deterministic.ts`.
+  - Automatically preserves excess focus candidate items into `deferredItems` (`reason: "out_of_capacity"`) without silent loss, duplication, or ID spoofing.
+  - User manual inclusion of items when 3 foci already exist now routes to `flexibleOptions` with transparent explanation.
+  - Added regression test suite `tests/seven-items-and-foci-limit-regression.test.ts` verifying end-to-end extraction, draft saving, reloading, and activation.
+- **Top HUD Capacity Bar & Visual De-cluttering**:
+  - Re-architected `CapacityProtectedSpaceSection` in `WeeklySessionView` into a sleek horizontal HUD bar showing available, planned, plannable, protected, and remaining hours alongside the capacity status badge.
+  - Slim 6px visual cognitive budget progress bar.
+  - Nested extended formulas, philosophical quotes, and metric calculation cards into an accessible progressive disclosure accordion (`<details className="calm-details">`).
+- **Calm Task Adjustment & Auto-closing Feedback**:
+  - Converted task adjustment section (`adjustment-proposal-box`) into a collapsible panel.
+  - Unified hour estimation and daily assignment into a single "Guardar cambios" action that persists to both plan and schedule in IndexedDB.
+  - The adjustment panel automatically collapses upon save, displaying a calm green confirmation notice with quick access to adjust further tasks.
+  - Added explicit "Cerrar" button to cancel editing without saving.
+- **Visual Design Clean-up**:
+  - Removed artificial washi tape pseudo-element motif (`.washi-card::before`) in `style.css` to eliminate visual noise ("pegote").
+  - Normalized task and focus cards across `WeeklySessionView` and `WeeklyPlanningFromNotes` to clean `.item-card` styling.
+  - Simplified first navigation tab label from `1. Capturar (Volcado & Extracción)` to **`1. Capturar ideas`** in `App.tsx`.
+- **ADR 0016**:
+  - Documented in `docs/adr/0016-focus-capacity-conservation-and-calm-adjustment-experience.md`.
+
+---
+
 ## [0.15.0] - 2026-10-14
 
 ### Added

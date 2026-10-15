@@ -211,7 +211,7 @@ describe("Conectar Extracción y volcado con la planificación semanal", () => {
     const mockContext = createMockSessionContext();
     const html = renderToStaticMarkup(<App service={mockContext.service} initialTab="dump" />);
     expect(html).toContain("Tecnología Consciente");
-    expect(html).toContain("Volcado &amp; Extracción");
+    expect(html).toContain("1. Capturar ideas");
     expect(html).toContain("¿Qué tienes en la cabeza?");
   });
 

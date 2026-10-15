@@ -18,7 +18,6 @@ import {
   ProtectedSpaceStatus,
   EstimationCompleteness,
   DeferredReason,
-  WeeklyFlexibleOption,
 } from "../../domain/week";
 import { calculateWeeklyCapacity } from "../../skills/build-week/deterministic";
 import { WeeklyPlanningFromNotes } from "./weekly-planning-from-notes";
@@ -299,11 +298,12 @@ export function extractPlanItems(
 
   for (const o of plan.proposal.obligations) {
     if (!map.has(o.itemId)) {
+      const alloc = schedule?.dailyAllocations.find((a) => a.itemId === o.itemId);
       map.set(o.itemId, {
         itemId: o.itemId,
         title: o.title,
         source: "Obligación",
-        estimatedHours: o.estimatedHours,
+        estimatedHours: o.estimatedHours ?? alloc?.allocatedHours ?? null,
         rationale: o.rationale,
         dueDate: o.dueDate,
       });
@@ -312,11 +312,12 @@ export function extractPlanItems(
 
   for (const f of plan.proposal.flexibleOptions) {
     if (!map.has(f.itemId)) {
+      const alloc = schedule?.dailyAllocations.find((a) => a.itemId === f.itemId);
       map.set(f.itemId, {
         itemId: f.itemId,
         title: f.title,
         source: "Opción flexible",
-        estimatedHours: f.estimatedHours,
+        estimatedHours: f.estimatedHours ?? alloc?.allocatedHours ?? null,
       });
     }
   }
@@ -324,11 +325,12 @@ export function extractPlanItems(
   for (const focus of plan.proposal.foci) {
     for (const itemId of focus.contributingItemIds) {
       if (!map.has(itemId)) {
+        const alloc = schedule?.dailyAllocations.find((a) => a.itemId === itemId);
         map.set(itemId, {
           itemId,
           title: `${focus.title} (${itemId})`,
           source: "Foco",
-          estimatedHours: focus.estimatedHours,
+          estimatedHours: focus.estimatedHours ?? alloc?.allocatedHours ?? null,
           rationale: focus.rationale,
         });
       }
@@ -337,10 +339,12 @@ export function extractPlanItems(
 
   for (const d of plan.proposal.deferredItems) {
     if (!map.has(d.itemId)) {
+      const alloc = schedule?.dailyAllocations.find((a) => a.itemId === d.itemId);
       map.set(d.itemId, {
         itemId: d.itemId,
         title: d.title,
         source: formatDeferredReason(d.reason),
+        estimatedHours: alloc?.allocatedHours ?? null,
         rationale: d.rationale,
         deferredReason: d.reason,
       });
@@ -405,49 +409,25 @@ export function CapacityProtectedSpaceSection({
 
   return (
     <section
-      className="results-section calm-box"
-      style={{ marginTop: "24px" }}
+      className="results-section"
+      style={{ marginTop: "16px", marginBottom: "8px" }}
       aria-label="Capacidad y espacio protegido"
       data-testid="capacity-protected-space-section"
     >
       <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-          flexWrap: "wrap",
-          gap: "8px",
-          marginBottom: "6px",
-        }}
-      >
-        <h3 style={{ margin: 0 }}>Capacidad y margen</h3>
-        <span
-          className="calm-muted"
-          data-testid="guiding-principle"
-          style={{ fontSize: "0.8rem", fontStyle: "italic" }}
-        >
-          «El espacio libre no es automáticamente tiempo disponible para asumir más compromisos.»
-        </span>
-      </div>
-      <p
-        className="calm-muted"
-        style={{ fontSize: "0.82rem", margin: "0 0 12px 0", color: "#666" }}
-      >
-        El espacio protegido deja margen para imprevistos, descanso y cambios de prioridad.
-      </p>
-
-      {/* Resumen compacto de viabilidad y capacidad (Fase 5) */}
-      <div
         className="capacity-compact-bar calm-box"
         data-testid="capacity-compact-bar"
         style={{
-          marginBottom: "16px",
-          padding: "12px 16px",
+          padding: "10px 14px",
           background: "var(--bg-card, #fcfbf9)",
           border: "1px solid var(--border-color, #e8e3d9)",
           borderRadius: "8px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
         }}
       >
+        {/* Fila superior: Resumen HUD */}
         <div
           style={{
             display: "flex",
@@ -455,35 +435,69 @@ export function CapacityProtectedSpaceSection({
             alignItems: "center",
             flexWrap: "wrap",
             gap: "8px",
-            marginBottom: "8px",
           }}
         >
-          <span style={{ fontWeight: 600, fontSize: "0.92rem" }}>
-            Balance de tu semana:
-          </span>
-          <span
-            className={`badge ${capacityStatusBadgeClass}`}
-            data-testid="compact-capacity-status"
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <span style={{ fontWeight: 600, fontSize: "0.88rem" }}>
+              Balance de tu semana:
+            </span>
+            <span
+              className={`badge ${capacityStatusBadgeClass}`}
+              data-testid="compact-capacity-status"
+              style={{ fontSize: "0.78rem" }}
+            >
+              {isCapacityConfigured && capacity.capacityStatus === "unknown"
+                ? "Tareas sin estimar"
+                : formatCapacityStatus(capacity.capacityStatus)}
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "6px",
+              fontSize: "0.82rem",
+            }}
           >
-            {isCapacityConfigured && capacity.capacityStatus === "unknown"
-              ? "Tareas sin estimar"
-              : formatCapacityStatus(capacity.capacityStatus)}
-          </span>
+            <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
+              <span className="calm-muted">Disponibles:</span> <strong>{formatHours(capacity.totalAvailableHours, "No disponible")}</strong>
+            </span>
+            <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
+              <span className="calm-muted">Planificadas:</span>{" "}
+              <strong>
+                {capacity.plannedHours != null
+                  ? formatHours(capacity.plannedHours)
+                  : formatHours(capacity.knownEstimatedHours, "Sin estimar")}
+              </strong>
+            </span>
+            <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
+              <span className="calm-muted">Planificables:</span> <strong>{formatHours(capacity.plannableHours, "Desconocido")}</strong>
+            </span>
+            <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
+              <span className="calm-muted">Protegidas:</span> <strong>{formatHours(capacity.protectedSpaceHours, "Desconocido")}</strong>
+            </span>
+            <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
+              <span className="calm-muted">Restantes:</span>{" "}
+              <strong>
+                {capacity.plannableHours != null && capacity.plannedHours != null
+                  ? formatHours(Math.max(0, capacity.plannableHours - capacity.plannedHours))
+                  : capacity.plannableHours != null
+                  ? `Hasta ${formatHours(capacity.plannableHours)}`
+                  : "Desconocido"}
+              </strong>
+            </span>
+          </div>
         </div>
 
-        {/* Tu tiempo de un vistazo (visual bar) */}
+        {/* Barra visual limpia de 1 línea */}
         {capacity.totalAvailableHours != null && capacity.totalAvailableHours > 0 && (
-          <div className="cognitive-budget-card" style={{ margin: "4px 0 12px", padding: "10px 14px" }}>
-            <div className="cognitive-budget-header">
-              <span className="cognitive-budget-title">Tu tiempo de un vistazo</span>
-              <span className="cognitive-budget-ratio">
-                {capacity.plannedHours != null
-                  ? `${capacity.plannedHours}h asignadas`
-                  : "Tareas sin estimar en horas"}{" "}
-                / {capacity.totalAvailableHours}h disponibles
-              </span>
-            </div>
-            <div className="cognitive-bar-track">
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "2px" }}>
+            <span className="cognitive-budget-title" style={{ fontSize: "0.75rem", whiteSpace: "nowrap" }}>
+              Tu tiempo de un vistazo
+            </span>
+            <div className="cognitive-bar-track" style={{ flex: 1, height: "6px", margin: 0 }}>
               {capacity.plannedHours != null && capacity.plannedHours > 0 && (
                 <div
                   className="cognitive-bar-fill"
@@ -503,134 +517,52 @@ export function CapacityProtectedSpaceSection({
                 />
               )}
             </div>
+            <span className="cognitive-budget-ratio" style={{ fontSize: "0.75rem", whiteSpace: "nowrap" }}>
+              {capacity.plannedHours != null
+                ? `${capacity.plannedHours}h asignadas`
+                : "Tareas sin estimar en horas"}{" "}
+              / {capacity.totalAvailableHours}h disponibles
+            </span>
           </div>
         )}
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-            gap: "10px",
-            fontSize: "0.85rem",
-          }}
-        >
-          <div
+        {/* Desglose progresivo */}
+        <details className="calm-details" style={{ marginTop: "4px" }}>
+          <summary
             style={{
-              background: "#f9f8f6",
-              padding: "8px 12px",
-              borderRadius: "6px",
-              border: "1px solid #eeebe4",
+              cursor: "pointer",
+              fontSize: "0.8rem",
+              color: "var(--accent-color, #2b6cb0)",
+              userSelect: "none",
             }}
           >
-            <span className="calm-muted" style={{ display: "block", fontSize: "0.78rem" }}>
-              Disponibles:
-            </span>
-            <strong style={{ fontSize: "1.05rem" }}>
-              {formatHours(capacity.totalAvailableHours, "No disponible")}
-            </strong>
-          </div>
-          <div
-            style={{
-              background: "#f9f8f6",
-              padding: "8px 12px",
-              borderRadius: "6px",
-              border: "1px solid #eeebe4",
-            }}
-          >
-            <span className="calm-muted" style={{ display: "block", fontSize: "0.78rem" }}>
-              Protegidas:
-            </span>
-            <strong style={{ fontSize: "1.05rem" }}>
-              {formatHours(capacity.protectedSpaceHours, "Desconocido")}
-            </strong>
-            <span className="calm-muted" style={{ display: "block", fontSize: "0.72rem", marginTop: "2px" }}>
-              Margen de calma
-            </span>
-          </div>
-          <div
-            style={{
-              background: "#f9f8f6",
-              padding: "8px 12px",
-              borderRadius: "6px",
-              border: "1px solid #eeebe4",
-            }}
-          >
-            <span className="calm-muted" style={{ display: "block", fontSize: "0.78rem" }}>
-              Planificables:
-            </span>
-            <strong style={{ fontSize: "1.05rem" }}>
-              {formatHours(capacity.plannableHours, "Desconocido")}
-            </strong>
-          </div>
-          <div
-            style={{
-              background: "#f9f8f6",
-              padding: "8px 12px",
-              borderRadius: "6px",
-              border: "1px solid #eeebe4",
-            }}
-          >
-            <span className="calm-muted" style={{ display: "block", fontSize: "0.78rem" }}>
-              Planificadas:
-            </span>
-            <strong style={{ fontSize: "1.05rem" }}>
-              {capacity.plannedHours != null
-                ? formatHours(capacity.plannedHours)
-                : formatHours(capacity.knownEstimatedHours, "Sin estimar")}
-            </strong>
-          </div>
-          <div
-            style={{
-              background: "#f9f8f6",
-              padding: "8px 12px",
-              borderRadius: "6px",
-              border: "1px solid #eeebe4",
-            }}
-          >
-            <span className="calm-muted" style={{ display: "block", fontSize: "0.78rem" }}>
-              Restantes:
-            </span>
-            <strong style={{ fontSize: "1.05rem" }}>
-              {capacity.plannableHours != null && capacity.plannedHours != null
-                ? formatHours(Math.max(0, capacity.plannableHours - capacity.plannedHours))
-                : capacity.plannableHours != null
-                ? `Hasta ${formatHours(capacity.plannableHours)}`
-                : "Desconocido"}
-            </strong>
-          </div>
-        </div>
-
-        <p
-          className="calm-muted"
-          data-testid="protected-space-reservation-notice"
-          style={{
-            fontSize: "0.82rem",
-            marginTop: "12px",
-            marginBottom: 0,
-            color: "#595959",
-          }}
-        >
-          {capacity.plannedHours == null && capacity.plannableHours != null
-            ? `Se ha reservado espacio protegido en el plan (margen de calma). Disponés de hasta ${formatHours(capacity.plannableHours)} para tareas sin estimar.`
-            : "Se ha reservado espacio protegido en el plan como margen de calma para imprevistos y descanso."}
-        </p>
-      </div>
-
-      {/* Divulgación progresiva: Desglose completo de cálculos y límites */}
-      <details className="calm-details" style={{ marginTop: "12px" }}>
-        <summary
-          style={{
-            cursor: "pointer",
-            fontWeight: 600,
-            fontSize: "0.88rem",
-            color: "var(--accent-color, #2b6cb0)",
-            padding: "4px 0",
-            userSelect: "none",
-          }}
-        >
-          Ver desglose completo de cálculos y límites
-        </summary>
-        <div style={{ marginTop: "12px" }}>
+            Ver desglose completo de cálculos y límites
+          </summary>
+          <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span
+                className="calm-muted"
+                data-testid="guiding-principle"
+                style={{ fontSize: "0.78rem", fontStyle: "italic" }}
+              >
+                «El espacio libre no es automáticamente tiempo disponible para asumir más compromisos.»
+              </span>
+              <p
+                className="calm-muted"
+                style={{ fontSize: "0.78rem", margin: 0 }}
+              >
+                El espacio protegido deja margen para imprevistos, descanso y cambios de prioridad.
+              </p>
+              <p
+                className="calm-muted"
+                data-testid="protected-space-reservation-notice"
+                style={{ fontSize: "0.78rem", margin: 0 }}
+              >
+                {capacity.plannedHours == null && capacity.plannableHours != null
+                  ? `Se ha reservado espacio protegido en el plan (margen de calma). Disponés de hasta ${formatHours(capacity.plannableHours)} para tareas sin estimar.`
+                  : "Se ha reservado espacio protegido en el plan (margen de calma) para asegurar equilibrio y evitar sobrecarga."}
+              </p>
+            </div>
           {/* Rejilla de límites de tiempo y carga */}
           <div
             style={{
@@ -840,11 +772,12 @@ export function CapacityProtectedSpaceSection({
               Tienes tareas previstas, pero aún no les has asignado horas.
             </p>
           )}
+          </div>
         </div>
       </div>
-        </div>
-      </details>
-    </section>
+    </details>
+    </div>
+  </section>
   );
 }
 
@@ -901,6 +834,8 @@ export function WeeklySessionView({
 
   // Interactive Adjustment Proposal State
   const [selectedAdjustmentItemId, setSelectedAdjustmentItemId] = useState<string>("");
+  const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false);
+  const [lastSavedAdjustment, setLastSavedAdjustment] = useState<string | null>(null);
   const [targetWeekStart, setTargetWeekStart] = useState("2026-10-26");
   const [targetWeekEnd, setTargetWeekEnd] = useState("2026-11-01");
   const [deadlineInput, setDeadlineInput] = useState("");
@@ -925,40 +860,68 @@ export function WeeklySessionView({
     }
   }, [selectedItem?.itemId, selectedItem?.estimatedHours, schedule]);
 
-  const handleSaveTaskHours = async (itemId: string, itemTitle: string) => {
+  const handleSaveTaskAdjustment = async (
+    itemId: string,
+    itemTitle: string,
+    options?: {
+      overrideHours?: number | null;
+      overrideDay?: string;
+    }
+  ) => {
     if (!plan) return;
-    const parsed = taskHoursInput.trim() ? parseFloat(taskHoursInput) : null;
-    if (parsed !== null && (isNaN(parsed) || parsed < 0)) return;
 
+    // 1. Resolve hours
+    let hoursToApply: number | null = null;
+    if (options && "overrideHours" in options) {
+      hoursToApply = options.overrideHours ?? null;
+    } else {
+      const parsed = taskHoursInput.trim() ? parseFloat(taskHoursInput) : null;
+      if (parsed !== null && !isNaN(parsed) && parsed >= 0) {
+        hoursToApply = parsed;
+      } else if (selectedItem?.estimatedHours != null) {
+        hoursToApply = selectedItem.estimatedHours;
+      } else {
+        const alloc = schedule?.dailyAllocations.find((a) => a.itemId === itemId);
+        if (alloc && alloc.allocatedHours > 0) {
+          hoursToApply = alloc.allocatedHours;
+        }
+      }
+    }
+
+    // 2. Resolve day
+    const dayToApply = options?.overrideDay !== undefined ? options.overrideDay : taskDayInput.trim();
+
+    // 3. Update proposal collections
     let updatedObligations = plan.proposal.obligations.map((o) =>
-      o.itemId === itemId ? { ...o, estimatedHours: parsed } : o
+      o.itemId === itemId ? { ...o, estimatedHours: hoursToApply } : o
     );
     let updatedFlexible = plan.proposal.flexibleOptions.map((f) =>
-      f.itemId === itemId ? { ...f, estimatedHours: parsed } : f
+      f.itemId === itemId ? { ...f, estimatedHours: hoursToApply } : f
     );
     let updatedFoci = plan.proposal.foci.map((focus) =>
       focus.contributingItemIds.includes(itemId)
-        ? { ...focus, estimatedHours: parsed }
+        ? { ...focus, estimatedHours: hoursToApply }
         : focus
     );
     let updatedDeferred = plan.proposal.deferredItems.map((d) =>
       d.itemId === itemId ? { ...d } : d
     );
 
-    // Si la tarea estaba diferida y ahora tiene horas estimadas, incorporarla como opción flexible
-    if (plan.proposal.deferredItems.some((d) => d.itemId === itemId) && parsed !== null) {
+    // If deferred item is given hours or day, promote it to flexibleOptions
+    if (plan.proposal.deferredItems.some((d) => d.itemId === itemId) && (hoursToApply !== null || dayToApply)) {
       const deferredItem = plan.proposal.deferredItems.find((d) => d.itemId === itemId)!;
       updatedDeferred = plan.proposal.deferredItems.filter((d) => d.itemId !== itemId);
       if (!updatedFlexible.some((f) => f.itemId === itemId)) {
         updatedFlexible.push({
           itemId: deferredItem.itemId,
           title: deferredItem.title,
-          estimatedHours: parsed,
-          condition: "Estimada manualmente por la persona",
+          estimatedHours: hoursToApply,
+          condition: "Ajustada manualmente por la persona",
         });
       }
     }
 
+    // 4. Calculate capacity
     const allPlannedEntries = [
       ...updatedFoci.map((f) => ({ estimatedHours: f.estimatedHours })),
       ...updatedObligations.map((o) => ({ estimatedHours: o.estimatedHours })),
@@ -1002,7 +965,7 @@ export function WeeklySessionView({
         ...plan.proposal,
         obligations: updatedObligations,
         flexibleOptions: updatedFlexible,
-        foci: updatedFoci,
+        foci: updatedFoci.slice(0, 3),
         deferredItems: updatedDeferred,
         weekSummary: {
           ...plan.proposal.weekSummary,
@@ -1012,94 +975,51 @@ export function WeeklySessionView({
       updatedAt: new Date().toISOString(),
     };
 
+    // 5. Update schedule allocations
     let updatedSchedule = schedule;
-    if (schedule && schedule.dailyAllocations.some((a) => a.itemId === itemId)) {
+    if (schedule) {
+      let newAllocations = [...schedule.dailyAllocations];
+      const allocIdx = newAllocations.findIndex((a) => a.itemId === itemId);
+
+      if (dayToApply) {
+        const allocation: DailyWorkAllocation = {
+          itemId,
+          day: dayToApply,
+          allocatedHours: hoursToApply ?? 1,
+        };
+        if (allocIdx >= 0) {
+          newAllocations[allocIdx] = allocation;
+        } else {
+          newAllocations.push(allocation);
+        }
+      } else {
+        newAllocations = newAllocations.filter((a) => a.itemId !== itemId);
+      }
+
       updatedSchedule = {
         ...schedule,
-        dailyAllocations: schedule.dailyAllocations.map((a) =>
-          a.itemId === itemId ? { ...a, allocatedHours: parsed ?? a.allocatedHours } : a
-        ),
+        dailyAllocations: newAllocations,
         version: schedule.version + 1,
         updatedAt: new Date().toISOString(),
       };
     }
 
-    await createOrSavePlan(updatedPlan, updatedSchedule ?? undefined);
+    const res = await createOrSavePlan(updatedPlan, updatedSchedule ?? undefined);
     setIsAdjustmentPreviewOpen(false);
-    setFeedbackMessage(
-      `Horas guardadas para «${itemTitle}»: ${parsed != null ? `${parsed}h` : "sin estimar"} (repartidas en la semana actual, sin día fijo).`
-    );
-  };
 
-  const handleAssignTaskDay = async (
-    itemId: string,
-    itemTitle: string,
-    defaultHours?: number | null
-  ) => {
-    if (!schedule || !plan) return;
-    let newDailyAllocations = [...schedule.dailyAllocations];
-    const existingIdx = newDailyAllocations.findIndex((a) => a.itemId === itemId);
-    const parsedHours = taskHoursInput.trim() ? parseFloat(taskHoursInput) : null;
-    const hours =
-      parsedHours && !isNaN(parsedHours) && parsedHours > 0
-        ? parsedHours
-        : defaultHours ?? 1;
-
-    let updatedPlan = plan;
-
-    if (taskDayInput) {
-      const allocation: DailyWorkAllocation = {
-        itemId,
-        day: taskDayInput,
-        allocatedHours: hours,
-      };
-      if (existingIdx >= 0) {
-        newDailyAllocations[existingIdx] = allocation;
-      } else {
-        newDailyAllocations.push(allocation);
-      }
-
-      // Si la tarea estaba en deferredItems, promoverla a flexibleOptions
-      if (plan.proposal.deferredItems.some((d) => d.itemId === itemId)) {
-        const deferredItem = plan.proposal.deferredItems.find((d) => d.itemId === itemId)!;
-        const updatedDeferred = plan.proposal.deferredItems.filter((d) => d.itemId !== itemId);
-        const updatedFlexible: WeeklyFlexibleOption[] = [
-          ...plan.proposal.flexibleOptions,
-          {
-            itemId: deferredItem.itemId,
-            title: deferredItem.title,
-            estimatedHours: defaultHours ?? (parsedHours || null),
-            condition: "Programada manualmente por la persona",
-          },
-        ];
-        updatedPlan = {
-          ...plan,
-          proposal: {
-            ...plan.proposal,
-            deferredItems: updatedDeferred,
-            flexibleOptions: updatedFlexible,
-          },
-          updatedAt: new Date().toISOString(),
-        };
-      }
+    if (res.status === "success") {
+      let desc = `Ajuste guardado para «${itemTitle}»: `;
+      desc += hoursToApply != null ? `${hoursToApply}h` : "sin estimar";
+      desc += dayToApply ? ` asignada al ${dayToApply}.` : " repartida en la semana.";
+      setFeedbackMessage(desc);
+      setLastSavedAdjustment(desc);
+      setIsAdjustmentOpen(false);
+      await reloadSession();
     } else {
-      newDailyAllocations = newDailyAllocations.filter((a) => a.itemId !== itemId);
+      setFeedbackMessage(
+        `No se pudo guardar el ajuste: ${res.status === "invalid_data" ? res.reason : res.status}`
+      );
     }
-
-    const updatedSchedule: WeeklySchedule = {
-      ...schedule,
-      dailyAllocations: newDailyAllocations,
-      version: schedule.version + 1,
-      updatedAt: new Date().toISOString(),
-    };
-
-    await createOrSavePlan(updatedPlan, updatedSchedule);
-    setIsAdjustmentPreviewOpen(false);
-    setFeedbackMessage(
-      taskDayInput
-        ? `Tarea «${itemTitle}» programada para el ${taskDayInput}.`
-        : `Tarea «${itemTitle}» sin día asignado (repartida en la semana).`
-    );
   };
 
   const handleReopenWeek = async (planId: string) => {
@@ -2207,48 +2127,80 @@ export function WeeklySessionView({
       {/* Schedule & Blocks */}
       {schedule && (activeSpace === undefined || activeSpace === "active") && (
         <section className="results-section" style={{ marginTop: "24px" }} aria-label="Agenda y bloques">
-          <h3>Agenda y bloques planificados</h3>
-          <div className="items-list">
-            {schedule.timeBlocks.length === 0 && schedule.dailyAllocations.length === 0 ? (
-              <p className="calm-muted">No hay bloques horarios ni días asignados todavía. Podés asignar un día a tus tareas abajo en «Ajustar y programar tareas».</p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
+            <h3 style={{ margin: 0 }}>Agenda y tareas de la semana ({planItems.length})</h3>
+            <span className="calm-muted" style={{ fontSize: "0.82rem" }}>
+              Tus prioridades activas en este cuaderno
+            </span>
+          </div>
+
+          <div className="items-list" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {planItems.length === 0 ? (
+              <p className="calm-muted">No hay tareas identificadas en el plan.</p>
             ) : (
-              <>
-                {schedule.dailyAllocations.map((alloc) => {
-                  const item = planItems.find((i) => i.itemId === alloc.itemId);
-                  return (
-                    <div
-                      key={alloc.itemId}
-                      className="item-card"
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                        gap: "8px",
-                      }}
-                    >
-                      <div>
-                        <strong>{item?.title ?? alloc.itemId}</strong>
+              planItems.map((item) => {
+                const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
+                const isSelected = (selectedAdjustmentItemId || planItems[0]?.itemId) === item.itemId;
+
+                return (
+                  <div
+                    key={item.itemId}
+                    className="item-card"
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: "10px",
+                      padding: "10px 14px",
+                      borderLeft: isSelected ? "3px solid var(--accent-color, #2b6cb0)" : undefined,
+                      background: isSelected ? "#f8fafc" : undefined,
+                    }}
+                  >
+                    <div style={{ flex: "1 1 240px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                        <strong>{item.title}</strong>
+                        <span className="badge badge-idea" style={{ fontSize: "0.75rem" }}>{item.source}</span>
                       </div>
-                      <div className="item-tags" style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                        <span className="badge badge-task">📅 {alloc.day}</span>
-                        <span className="badge badge-muted">⏱ {alloc.allocatedHours}h</span>
-                        <button
-                          type="button"
-                          className="secondary"
-                          style={{ fontSize: "0.75rem", padding: "2px 8px" }}
-                          onClick={() => {
-                            setSelectedAdjustmentItemId(alloc.itemId);
-                          }}
-                        >
-                          Modificar
-                        </button>
-                      </div>
+                      {item.dueDate && (
+                        <div className="calm-muted" style={{ fontSize: "0.8rem", marginTop: "2px" }}>
+                          📅 Fecha límite: <strong>{item.dueDate}</strong>
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
+
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                      <span className="badge badge-muted" style={{ fontSize: "0.8rem" }}>
+                        ⏱️ {item.estimatedHours ? `${item.estimatedHours}h` : "Sin estimar"}
+                      </span>
+                      <span className={alloc ? "badge badge-task" : "badge badge-muted"} style={{ fontSize: "0.8rem" }}>
+                        📅 {alloc ? alloc.day : "En la semana"}
+                      </span>
+                      <button
+                        type="button"
+                        className="secondary small"
+                        style={{ fontSize: "0.8rem", padding: "4px 10px" }}
+                        onClick={() => {
+                          setSelectedAdjustmentItemId(item.itemId);
+                          setIsAdjustmentOpen(true);
+                          setLastSavedAdjustment(null);
+                          const box = document.getElementById("adjustment-proposal-box");
+                          if (box) box.scrollIntoView({ behavior: "smooth" });
+                        }}
+                      >
+                        Ajustar
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+            {schedule.timeBlocks.length > 0 && (
+              <div style={{ marginTop: "16px" }}>
+                <h4 style={{ margin: "0 0 8px 0" }}>Bloques de horario específico</h4>
                 {schedule.timeBlocks.map((block, idx) => (
-                  <div key={idx} className="item-card">
+                  <div key={idx} className="item-card" style={{ padding: "8px 12px" }}>
                     <div className="item-title">{block.itemId}</div>
                     <div className="item-tags">
                       <span className="badge badge-muted">📅 {block.day}</span>
@@ -2258,16 +2210,72 @@ export function WeeklySessionView({
                     </div>
                   </div>
                 ))}
-              </>
+              </div>
             )}
           </div>
 
+          {lastSavedAdjustment && !isAdjustmentOpen && (
+            <div
+              className="calm-box"
+              style={{
+                marginTop: "16px",
+                padding: "12px 16px",
+                background: "#f0f7f2",
+                border: "1px solid #cce3d4",
+                borderRadius: "8px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "8px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ color: "#2d6a4f", fontWeight: 600, fontSize: "1.1rem" }}>✓</span>
+                <span style={{ fontSize: "0.88rem", color: "#1e4620" }}>{lastSavedAdjustment}</span>
+              </div>
+              <button
+                type="button"
+                className="secondary small"
+                style={{ fontSize: "0.8rem", padding: "4px 10px" }}
+                onClick={() => setIsAdjustmentOpen(true)}
+              >
+                Ajustar otra tarea
+              </button>
+            </div>
+          )}
+
           {/* Adjustments simulation / Human Decision */}
-          <div className="calm-box" style={{ marginTop: "20px" }} data-testid="adjustment-proposal-box" id="adjustment-proposal-box">
-            <h4 style={{ margin: "0 0 4px 0" }}>Ajustar y programar tareas</h4>
-            <p className="calm-muted" style={{ fontSize: "0.84rem", marginBottom: "14px" }}>
-              Elegí una tarea para definir sus horas estimadas, asignarla a un día de la semana o moverla a otra fecha.
-            </p>
+          <details
+            className="calm-box calm-details"
+            style={{ marginTop: "16px" }}
+            data-testid="adjustment-proposal-box"
+            id="adjustment-proposal-box"
+            open={isAdjustmentOpen}
+            onToggle={(e) => setIsAdjustmentOpen(e.currentTarget.open)}
+          >
+            <summary
+              style={{
+                cursor: "pointer",
+                padding: "4px 0",
+                fontWeight: 600,
+                fontSize: "0.95rem",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                userSelect: "none",
+              }}
+            >
+              <span>⚙️ Ajustar tarea u horas</span>
+              <span style={{ fontSize: "0.82rem", color: "var(--accent-color, #2b6cb0)" }}>
+                {isAdjustmentOpen ? "Ocultar panel" : "Abrir ajustes"}
+              </span>
+            </summary>
+
+            <div style={{ marginTop: "12px" }}>
+              <p className="calm-muted" style={{ fontSize: "0.84rem", marginBottom: "14px" }}>
+                Elegí una tarea para definir sus horas o programarla en un día específico.
+              </p>
 
             {planItems.length === 0 ? (
               <p className="calm-muted">No hay tareas identificadas en el plan para ajustar.</p>
@@ -2333,198 +2341,205 @@ export function WeeklySessionView({
                     {/* 2. Asignar horas y día en esta semana */}
                     <div
                       style={{
-                        padding: "12px 14px",
+                        padding: "14px 16px",
                         background: "var(--bg-card, #fcfbf9)",
                         border: "1px solid var(--border-color, #e8e3d9)",
-                        borderRadius: "6px",
+                        borderRadius: "8px",
                         display: "flex",
                         flexDirection: "column",
-                        gap: "10px",
+                        gap: "12px",
                       }}
                     >
-                      <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "#374151" }}>
-                        ⏱️ Estimar horas o asignar día en esta semana
-                      </div>
-                      <p className="calm-muted" style={{ fontSize: "0.82rem", margin: 0 }}>
-                        💡 Si sólo indicas horas sin asignar un día específico, la tarea queda en tu semana actual como opción flexible repartida en los 7 días. No necesitas asignar día ni reprogramar.
-                      </p>
                       <div
                         style={{
                           display: "grid",
-                          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                          gap: "12px",
+                          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                          gap: "14px",
                           alignItems: "end",
                         }}
                       >
                         <div>
                           <label
                             htmlFor="task-hours-input"
-                            style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
+                            style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "4px" }}
                           >
-                            Horas estimadas:
+                            ⏱️ Horas estimadas:
                           </label>
-                          <div style={{ display: "flex", gap: "6px" }}>
-                            <input
-                              id="task-hours-input"
-                              data-testid="task-hours-input"
-                              type="number"
-                              min="0.25"
-                              max="40"
-                              step="0.5"
-                              placeholder={selectedItem?.estimatedHours ? `${selectedItem.estimatedHours}` : "Ej: 2"}
-                              value={taskHoursInput}
-                              onChange={(e) => setTaskHoursInput(e.target.value)}
-                              style={{ width: "100%", padding: "6px 8px" }}
-                            />
-                            <button
-                              type="button"
-                              className="primary"
-                              data-testid="save-task-hours-button"
-                              onClick={() => handleSaveTaskHours(selectedItem.itemId, selectedItem.title)}
-                              style={{ whiteSpace: "nowrap", padding: "6px 12px" }}
-                            >
-                              Guardar horas
-                            </button>
-                          </div>
+                          <input
+                            id="task-hours-input"
+                            data-testid="task-hours-input"
+                            type="number"
+                            min="0.25"
+                            max="40"
+                            step="0.5"
+                            placeholder={selectedItem?.estimatedHours ? `${selectedItem.estimatedHours}` : "Ej: 2"}
+                            value={taskHoursInput}
+                            onChange={(e) => setTaskHoursInput(e.target.value)}
+                            style={{ width: "100%", padding: "8px 10px", borderRadius: "6px" }}
+                          />
                         </div>
 
                         <div>
                           <label
                             htmlFor="task-day-select"
-                            style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
+                            style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "4px" }}
                           >
-                            Día asignado (opcional):
+                            📅 Día asignado:
                           </label>
-                          <div style={{ display: "flex", gap: "6px" }}>
-                            <select
-                              id="task-day-select"
-                              data-testid="task-day-select"
-                              value={taskDayInput}
-                              onChange={(e) => setTaskDayInput(e.target.value)}
-                              style={{ width: "100%", padding: "6px 8px" }}
-                            >
-                              <option value="">Sin día asignado (repartida en la semana)</option>
-                              {getWeekDays(plan?.targetWeek.startDate).map((d) => (
-                                <option key={d.date} value={d.date}>
-                                  {d.label}
-                                </option>
-                              ))}
-                            </select>
-                            <button
-                              type="button"
-                              className="secondary"
-                              data-testid="assign-task-day-button"
-                              onClick={() => handleAssignTaskDay(selectedItem.itemId, selectedItem.title, selectedItem.estimatedHours)}
-                              style={{ whiteSpace: "nowrap", padding: "6px 12px" }}
-                            >
-                              {taskDayInput ? "Asignar día" : "Dejar abierta"}
-                            </button>
-                          </div>
+                          <select
+                            id="task-day-select"
+                            data-testid="task-day-select"
+                            value={taskDayInput}
+                            onChange={(e) => setTaskDayInput(e.target.value)}
+                            style={{ width: "100%", padding: "8px 10px", borderRadius: "6px" }}
+                          >
+                            <option value="">Sin día fijo (repartida en la semana)</option>
+                            {getWeekDays(plan?.targetWeek.startDate).map((d) => (
+                              <option key={d.date} value={d.date}>
+                                {d.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginTop: "4px" }}>
+                        <p className="calm-muted" style={{ fontSize: "0.8rem", margin: 0 }}>
+                          💡 Si no elegís día, las horas quedan computadas en la semana sin día fijo.
+                        </p>
+                        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                          <button
+                            type="button"
+                            className="secondary"
+                            style={{ padding: "8px 14px", fontSize: "0.85rem" }}
+                            onClick={() => setIsAdjustmentOpen(false)}
+                          >
+                            Cerrar
+                          </button>
+                          <button
+                            type="button"
+                            className="primary"
+                            data-testid="save-task-adjustment-button"
+                            aria-label="Guardar cambios de la tarea"
+                            onClick={() => handleSaveTaskAdjustment(selectedItem.itemId, selectedItem.title)}
+                            style={{ padding: "8px 18px", fontWeight: 600 }}
+                          >
+                            Guardar cambios
+                          </button>
                         </div>
                       </div>
                     </div>
 
                     {/* 3. Mover a otra semana (reprogramar) */}
-                    <div
+                    <details
+                      className="calm-details"
+                      open={isAdjustmentPreviewOpen || undefined}
                       style={{
-                        padding: "12px 14px",
+                        padding: "10px 14px",
                         background: "#faf9f6",
                         border: "1px dashed var(--border-color, #d6d0c4)",
                         borderRadius: "6px",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "10px",
                       }}
                     >
-                      <div style={{ fontWeight: 600, fontSize: "0.88rem", color: "#4b5563" }}>
-                        🗓️ ¿Prefieres mover la tarea a una fecha posterior? (Opcional)
-                      </div>
-                      <p className="calm-muted" style={{ fontSize: "0.82rem", margin: 0 }}>
-                        Usa esta opción solo si decides <strong>no hacer esta tarea esta semana</strong> y quieres postergarla a otra fecha.
-                      </p>
-                      <div
+                      <summary
                         style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                          gap: "12px",
+                          fontWeight: 600,
+                          fontSize: "0.88rem",
+                          color: "#4b5563",
+                          cursor: "pointer",
+                          userSelect: "none",
                         }}
                       >
-                        <div>
-                          <label
-                            htmlFor="target-week-start-input"
-                            style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
-                          >
-                            Semana destino (Inicio):
-                          </label>
-                          <input
-                            id="target-week-start-input"
-                            data-testid="target-week-start-input"
-                            type="text"
-                            value={targetWeekStart}
-                            onChange={(e) => {
-                              setTargetWeekStart(e.target.value);
-                              setIsAdjustmentPreviewOpen(false);
-                            }}
-                            style={{ width: "100%", padding: "6px 8px" }}
-                          />
+                        🗓️ ¿Prefieres mover la tarea a una fecha posterior? (Opcional)
+                      </summary>
+                      <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                        <p className="calm-muted" style={{ fontSize: "0.82rem", margin: 0 }}>
+                          Usa esta opción solo si decides <strong>no hacer esta tarea esta semana</strong> y quieres postergarla a otra fecha.
+                        </p>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                            gap: "12px",
+                          }}
+                        >
+                          <div>
+                            <label
+                              htmlFor="target-week-start-input"
+                              style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
+                            >
+                              Semana destino (Inicio):
+                            </label>
+                            <input
+                              id="target-week-start-input"
+                              data-testid="target-week-start-input"
+                              type="text"
+                              value={targetWeekStart}
+                              onChange={(e) => {
+                                setTargetWeekStart(e.target.value);
+                                setIsAdjustmentPreviewOpen(false);
+                              }}
+                              style={{ width: "100%", padding: "6px 8px" }}
+                            />
+                          </div>
+
+                          <div>
+                            <label
+                              htmlFor="target-week-end-input"
+                              style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
+                            >
+                              Semana destino (Fin):
+                            </label>
+                            <input
+                              id="target-week-end-input"
+                              data-testid="target-week-end-input"
+                              type="text"
+                              value={targetWeekEnd}
+                              onChange={(e) => {
+                                setTargetWeekEnd(e.target.value);
+                                setIsAdjustmentPreviewOpen(false);
+                              }}
+                              style={{ width: "100%", padding: "6px 8px" }}
+                            />
+                          </div>
+
+                          <div>
+                            <label
+                              htmlFor="deadline-input"
+                              style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
+                            >
+                              Deadline original (para verificar):
+                            </label>
+                            <input
+                              id="deadline-input"
+                              data-testid="deadline-input"
+                              type="text"
+                              placeholder={effectiveDeadline || "YYYY-MM-DD"}
+                              value={deadlineInput}
+                              onChange={(e) => {
+                                setDeadlineInput(e.target.value);
+                                setIsAdjustmentPreviewOpen(false);
+                              }}
+                              style={{ width: "100%", padding: "6px 8px" }}
+                            />
+                          </div>
                         </div>
 
-                        <div>
-                          <label
-                            htmlFor="target-week-end-input"
-                            style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
-                          >
-                            Semana destino (Fin):
-                          </label>
-                          <input
-                            id="target-week-end-input"
-                            data-testid="target-week-end-input"
-                            type="text"
-                            value={targetWeekEnd}
-                            onChange={(e) => {
-                              setTargetWeekEnd(e.target.value);
-                              setIsAdjustmentPreviewOpen(false);
-                            }}
-                            style={{ width: "100%", padding: "6px 8px" }}
-                          />
-                        </div>
-
-                        <div>
-                          <label
-                            htmlFor="deadline-input"
-                            style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
-                          >
-                            Deadline original (para verificar):
-                          </label>
-                          <input
-                            id="deadline-input"
-                            data-testid="deadline-input"
-                            type="text"
-                            placeholder={effectiveDeadline || "YYYY-MM-DD"}
-                            value={deadlineInput}
-                            onChange={(e) => {
-                              setDeadlineInput(e.target.value);
-                              setIsAdjustmentPreviewOpen(false);
-                            }}
-                            style={{ width: "100%", padding: "6px 8px" }}
-                          />
-                        </div>
+                        {!isAdjustmentPreviewOpen && selectedItem && (
+                          <div>
+                            <button
+                              type="button"
+                              className="secondary"
+                              data-testid="generate-proposal-button"
+                              aria-label="Generar propuesta de reprogramación"
+                              onClick={() => setIsAdjustmentPreviewOpen(true)}
+                            >
+                              Generar propuesta de reprogramación
+                            </button>
+                          </div>
+                        )}
                       </div>
-
-                      {!isAdjustmentPreviewOpen && selectedItem && (
-                        <div>
-                          <button
-                            type="button"
-                            className="secondary"
-                            data-testid="generate-proposal-button"
-                            aria-label="Generar propuesta de reprogramación"
-                            onClick={() => setIsAdjustmentPreviewOpen(true)}
-                          >
-                            Generar propuesta de reprogramación
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    </details>
 
                     {isAdjustmentPreviewOpen && selectedItem && (
                       <div
@@ -2719,7 +2734,8 @@ export function WeeklySessionView({
                 );
               })()
             )}
-          </div>
+            </div>
+          </details>
         </section>
       )}
 

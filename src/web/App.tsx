@@ -141,7 +141,7 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
             onClick={() => setActiveSpace("capture")}
             data-testid="nav-tab-capture"
           >
-            1. Capturar (Volcado & Extracción)
+            1. Capturar ideas
           </button>
           <button
             type="button"

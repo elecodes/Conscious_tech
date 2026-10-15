@@ -73,7 +73,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     const html = renderToStaticMarkup(<App service={service} initialTab="active" />);
 
     // 4 pestañas de navegación
-    expect(html).toContain("1. Capturar (Volcado &amp; Extracción)");
+    expect(html).toContain("1. Capturar ideas");
     expect(html).toContain("2. Preparar semana");
     expect(html).toContain("3. Mi semana");
     expect(html).toContain("4. Revisar y aprender");

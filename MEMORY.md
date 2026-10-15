@@ -287,6 +287,12 @@ Implemented and calibrated skills:
 - **Lenguaje Humano**: Reemplazo de jerga técnica/industrial por conceptos naturales (*Balance de tu semana*, *Tu tiempo de un vistazo*, *Margen de calma* y *Tareas sin estimar* cuando faltan horas en lugar de alarmar con "Desconocido").
 - **Extracción de Acciones Coordinadas**: Descomposición determinista de oraciones compuestas con verbos de acción coordinados (*«avanzar X, estudiar Y y seguir con Z»* $\to$ 3 tareas) preservando listas de sustantivos (*«comprar X, Y y Z»* $\to$ 1 tarea) y normalizando fusiones léxicas (*«quieroavanzar»* $\to$ *«quiero avanzar»*).
 
+12. **Focus Capacity Conservation, HUD Bar & Calm Task Adjustment (ADR 0016)**:
+- **Límite Estricto de 3 Focos con Conservación Total**: Se garantiza `foci.length <= 3` en `deterministic.ts` resolviendo el error Zod de 3 elementos. Elementos excedentes se derivan a `deferredItems` (`out_of_capacity`) o `flexibleOptions` sin pérdidas ni identificadores inventados.
+- **Barra HUD Superior de Capacidad**: Síntesis horizontal en una sola fila (`Disponibles`, `Planificadas`, `Planificables`, `Protegidas`, `Restantes`) con barra de 6px y desglose matemático accesible bajo demanda en acordeón.
+- **Ajuste Calmado y Cierre Automático**: Al guardar cambios en una tarea, la persitencia al plan y a la agenda se ejecuta atómicamente, el panel se repliega solo y se presenta un aviso verde claro de confirmación con botón para volver a editar.
+- **Limpieza Estética**: Eliminación del motivo artificial de cinta adhesiva (`.washi-card::before`) y cambio de etiqueta en navegación superior a `1. Capturar ideas`.
+
 Detailed specifications for individual skills live separately from this file.
 
 ---

@@ -740,7 +740,8 @@ export interface ProposalRepairAction {
     | "deduplicated_intra_category"
     | "resolved_obligation_focus_conflict"
     | "recalculated_capacity_summary"
-    | "reclassified_false_obligation";
+    | "reclassified_false_obligation"
+    | "excess_foci_deferred";
   itemId?: string;
   description: string;
 }
@@ -982,6 +983,34 @@ export function normalizeAndConserveProposedWeek(
     };
   });
 
+  // 5.5. SAFE REPAIR: Focus count limit (max 3 foci)
+  // If the planner generated more than 3 candidate foci, keep the top 3 and preserve
+  // the contributing items of excess foci in deferredItems as "out_of_capacity" without losing any item.
+  let boundedFoci = cleanedFoci;
+  const excessFociDeferred: DeferredItem[] = [];
+
+  if (cleanedFoci.length > 3) {
+    boundedFoci = cleanedFoci.slice(0, 3);
+    const excessFoci = cleanedFoci.slice(3);
+
+    for (const ef of excessFoci) {
+      for (const cid of ef.contributingItemIds) {
+        const itm = input.items.find((i) => i.id === cid);
+        excessFociDeferred.push({
+          itemId: cid,
+          title: itm?.title ?? ef.title ?? cid,
+          reason: "out_of_capacity",
+          rationale: `Límite máximo de 3 focos principales alcanzado (${ef.title}); conservado para decisión de la persona sin saturar la semana.`,
+        });
+        repairs.push({
+          type: "excess_foci_deferred",
+          itemId: cid,
+          description: `Focus "${ef.id}" (${ef.title}) exceeded the maximum limit of 3 foci; contributing item "${cid}" was conserved in deferredItems as "out_of_capacity".`,
+        });
+      }
+    }
+  }
+
   // 6. OMITTED ITEMS: Honest rescue or explicit rejection
   const dependsOnBlockers = new Set<string>();
   for (const rel of input.relationships) {
@@ -990,7 +1019,11 @@ export function normalizeAndConserveProposedWeek(
     }
   }
 
-  const cleanedDeferred = [...rawProposal.deferredItems, ...falseObligationsToDefer];
+  const cleanedDeferred = [
+    ...rawProposal.deferredItems,
+    ...falseObligationsToDefer,
+    ...excessFociDeferred,
+  ];
   const cleanedFlexible = [...rawProposal.flexibleOptions];
 
   for (const item of input.items) {
@@ -1052,7 +1085,7 @@ export function normalizeAndConserveProposedWeek(
   // 6. SAFE REPAIR: Recalculate deterministic capacity summary
   const honestCapacity = calculateWeeklyCapacity({
     capacityConfig: input.capacity,
-    foci: cleanedFoci,
+    foci: boundedFoci,
     obligations: validObligations,
   });
 
@@ -1077,7 +1110,7 @@ export function normalizeAndConserveProposedWeek(
       ...rawProposal.weekSummary,
       capacity: honestCapacity,
     },
-    foci: cleanedFoci,
+    foci: boundedFoci,
     obligations: validObligations,
     flexibleOptions: cleanedFlexible,
     deferredItems: cleanedDeferred,
