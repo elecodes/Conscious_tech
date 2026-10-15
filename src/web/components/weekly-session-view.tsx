@@ -959,6 +959,27 @@ export function WeeklySessionView({
       }
     }
 
+    const allPlannedEntries = [
+      ...updatedFoci.map((f) => ({ estimatedHours: f.estimatedHours })),
+      ...updatedObligations.map((o) => ({ estimatedHours: o.estimatedHours })),
+      ...updatedFlexible.map((f) => ({ estimatedHours: f.estimatedHours })),
+    ];
+    let sum = 0;
+    let nonNullCount = 0;
+    for (const e of allPlannedEntries) {
+      if (typeof e.estimatedHours === "number" && Number.isFinite(e.estimatedHours)) {
+        sum += e.estimatedHours;
+        nonNullCount++;
+      }
+    }
+    const completeness: EstimationCompleteness =
+      nonNullCount === allPlannedEntries.length && allPlannedEntries.length > 0
+        ? "complete"
+        : nonNullCount > 0
+        ? "partial"
+        : "none";
+    const explicitKnownEstimatedHours = nonNullCount > 0 ? Math.round(sum * 100) / 100 : null;
+
     const updatedCapacity = calculateWeeklyCapacity({
       capacityConfig: {
         totalAvailableHours: plan.proposal.weekSummary.capacity.totalAvailableHours ?? undefined,
@@ -969,6 +990,8 @@ export function WeeklySessionView({
               plan.proposal.weekSummary.capacity.totalAvailableHours
             : 0.25,
       },
+      explicitKnownEstimatedHours,
+      explicitCompleteness: completeness,
       foci: updatedFoci,
       obligations: updatedObligations,
     });
@@ -1002,8 +1025,9 @@ export function WeeklySessionView({
     }
 
     await createOrSavePlan(updatedPlan, updatedSchedule ?? undefined);
+    setIsAdjustmentPreviewOpen(false);
     setFeedbackMessage(
-      `Horas guardadas para «${itemTitle}»: ${parsed != null ? `${parsed}h` : "sin estimar"}.`
+      `Horas guardadas para «${itemTitle}»: ${parsed != null ? `${parsed}h` : "sin estimar"} (repartidas en la semana actual, sin día fijo).`
     );
   };
 
@@ -1070,10 +1094,11 @@ export function WeeklySessionView({
     };
 
     await createOrSavePlan(updatedPlan, updatedSchedule);
+    setIsAdjustmentPreviewOpen(false);
     setFeedbackMessage(
       taskDayInput
         ? `Tarea «${itemTitle}» programada para el ${taskDayInput}.`
-        : `Tarea «${itemTitle}» desprogramada del día asignado.`
+        : `Tarea «${itemTitle}» sin día asignado (repartida en la semana).`
     );
   };
 
@@ -2318,8 +2343,11 @@ export function WeeklySessionView({
                       }}
                     >
                       <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "#374151" }}>
-                        ⏱️ Estimación y asignación de día en esta semana
+                        ⏱️ Estimar horas o asignar día en esta semana
                       </div>
+                      <p className="calm-muted" style={{ fontSize: "0.82rem", margin: 0 }}>
+                        💡 Si sólo indicas horas sin asignar un día específico, la tarea queda en tu semana actual como opción flexible repartida en los 7 días. No necesitas asignar día ni reprogramar.
+                      </p>
                       <div
                         style={{
                           display: "grid",
@@ -2350,7 +2378,7 @@ export function WeeklySessionView({
                             />
                             <button
                               type="button"
-                              className="secondary"
+                              className="primary"
                               data-testid="save-task-hours-button"
                               onClick={() => handleSaveTaskHours(selectedItem.itemId, selectedItem.title)}
                               style={{ whiteSpace: "nowrap", padding: "6px 12px" }}
@@ -2365,7 +2393,7 @@ export function WeeklySessionView({
                             htmlFor="task-day-select"
                             style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
                           >
-                            Día asignado:
+                            Día asignado (opcional):
                           </label>
                           <div style={{ display: "flex", gap: "6px" }}>
                             <select
@@ -2375,7 +2403,7 @@ export function WeeklySessionView({
                               onChange={(e) => setTaskDayInput(e.target.value)}
                               style={{ width: "100%", padding: "6px 8px" }}
                             >
-                              <option value="">Sin día asignado (semana abierta)</option>
+                              <option value="">Sin día asignado (repartida en la semana)</option>
                               {getWeekDays(plan?.targetWeek.startDate).map((d) => (
                                 <option key={d.date} value={d.date}>
                                   {d.label}
@@ -2389,7 +2417,7 @@ export function WeeklySessionView({
                               onClick={() => handleAssignTaskDay(selectedItem.itemId, selectedItem.title, selectedItem.estimatedHours)}
                               style={{ whiteSpace: "nowrap", padding: "6px 12px" }}
                             >
-                              Asignar día
+                              {taskDayInput ? "Asignar día" : "Dejar abierta"}
                             </button>
                           </div>
                         </div>
@@ -2400,17 +2428,20 @@ export function WeeklySessionView({
                     <div
                       style={{
                         padding: "12px 14px",
-                        background: "var(--bg-card, #fcfbf9)",
-                        border: "1px solid var(--border-color, #e8e3d9)",
+                        background: "#faf9f6",
+                        border: "1px dashed var(--border-color, #d6d0c4)",
                         borderRadius: "6px",
                         display: "flex",
                         flexDirection: "column",
                         gap: "10px",
                       }}
                     >
-                      <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "#374151" }}>
-                        🗓️ Mover a otra semana (reprogramar)
+                      <div style={{ fontWeight: 600, fontSize: "0.88rem", color: "#4b5563" }}>
+                        🗓️ ¿Prefieres mover la tarea a una fecha posterior? (Opcional)
                       </div>
+                      <p className="calm-muted" style={{ fontSize: "0.82rem", margin: 0 }}>
+                        Usa esta opción solo si decides <strong>no hacer esta tarea esta semana</strong> y quieres postergarla a otra fecha.
+                      </p>
                       <div
                         style={{
                           display: "grid",
