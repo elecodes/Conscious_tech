@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.17.0] - 2026-10-21
+
+### Added
+- **Compensating Transaction Pattern in Persistence (`WeeklySessionService`)**:
+  - Implemented rollback snapshots in `createOrSavePlanAndSchedule` ensuring pre-existing plans are safely restored if a schedule write fails, avoiding destructive plan deletion.
+  - Added optimistic locking support via `expectedScheduleVersion` with automatic version incrementing for existing schedules.
+- **Data Sovereignty & Local Backup Engine (`src/infrastructure/storage/indexeddb/backup.ts`)**:
+  - Added schema-validated (`UserDataBackupSchema`, version 1) export and import across all 4 IndexedDB stores (`plans`, `schedules`, `closeReports`, and `memories`).
+  - Implemented both `merge` (non-destructive union) and `replace` (clean wipe and restore) import modes.
+  - Added memory archiving (`archiveMemory`) and hard deletion (`deleteMemory`) to support the user's right to be forgotten.
+- **Session Resume Context Enhancement**:
+  - `resumeSession()` now returns confirmed active memories when there is no active session (`no_active_session`), ensuring immediate access to personal context during week preparation.
+  - Multi-draft cleanup now selectively removes drafts for the specific target week without affecting drafts of other weeks.
+- **Dependency Upgrades with Context7 Audit**:
+  - Safely upgraded `groq-sdk` from `^0.15.0` to `^1.6.0`, verified with Context7 documentation to ensure provider boundary isolation in `src/providers/groq-provider.ts`.
+  - Applied safe minor and patch dependency updates via SemVer (`@google/genai`, `react`, `react-dom`, `vite`, `fake-indexeddb`).
+- **ADR 0017**:
+  - Documented in `docs/adr/0017-local-persistence-resilience-data-sovereignty-and-dependency-isolation.md`.
+- **Testing & Quality Assurance**:
+  - Added regression test suites:
+    - `tests/phase1-stabilization-regression.test.ts`
+    - `tests/phase2-sovereignty-and-resilience.test.tsx`
+    - `tests/planning-clarity-and-item-adjustment.test.tsx`
+  - Reached 776 passing tests across 54 test files (0 failures).
+
+---
+
 ## [0.16.0] - 2026-10-15
 
 ### Added

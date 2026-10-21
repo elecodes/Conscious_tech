@@ -293,6 +293,12 @@ Implemented and calibrated skills:
 - **Ajuste Calmado y Cierre Automático**: Al guardar cambios en una tarea, la persitencia al plan y a la agenda se ejecuta atómicamente, el panel se repliega solo y se presenta un aviso verde claro de confirmación con botón para volver a editar.
 - **Limpieza Estética**: Eliminación del motivo artificial de cinta adhesiva (`.washi-card::before`) y cambio de etiqueta en navegación superior a `1. Capturar ideas`.
 
+13. **Local Persistence Resilience, Data Sovereignty & Dependency Maintenance (ADR 0017)**:
+- **Transacciones Compensatorias en Persistencia**: `WeeklySessionService.createOrSavePlanAndSchedule` captura snapshot del plan previo; si falla el guardado de la agenda, restaura el plan existente en lugar de borrarlo destructivamente.
+- **Soberanía y Portabilidad de Datos**: Exportación e importación completa de los 4 stores de IndexedDB vía `src/infrastructure/storage/indexeddb/backup.ts` validado con Zod (`UserDataBackupSchema`), con modos `merge` y `replace`. Archivo y eliminación definitiva de recuerdos individuales (derecho al olvido).
+- **Recuerdos Activos en No-Sesión**: `resumeSession()` entrega recuerdos activos cuando `no_active_session` para contextualizar la preparación de la semana.
+- **Actualización Segura de Dependencias**: Auditoría de breaking changes con Context7; actualización de `groq-sdk` a 1.6.0 encapsulada en `src/providers/groq-provider.ts` y dependencias menores/parches actualizadas con 776 tests en verde.
+
 Detailed specifications for individual skills live separately from this file.
 
 ---
