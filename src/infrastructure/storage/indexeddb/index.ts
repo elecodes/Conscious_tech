@@ -22,6 +22,7 @@ export * from "./plan-repository";
 export * from "./schedule-repository";
 export * from "./close-repository";
 export * from "./memory-repository";
+export * from "./backup";
 
 export interface IndexedDbStorageContext {
   db: IDBDatabase;

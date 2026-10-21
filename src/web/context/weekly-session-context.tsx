@@ -31,6 +31,11 @@ import {
   isValidEpistemicState,
 } from "../../domain/memory";
 import { createIndexedDbStorage } from "../../infrastructure/storage/indexeddb";
+import {
+  UserDataBackup,
+  ImportBackupOptions,
+  ImportBackupResult,
+} from "../../infrastructure/storage/indexeddb/backup";
 import { TargetWeek } from "../../domain/week";
 
 // ============================================================================
@@ -164,8 +169,8 @@ export class WeeklySessionController {
             latestCloseReport: result.latestClosedWeek?.closeReport ?? null,
             latestClosedPlan: result.latestClosedWeek?.plan ?? null,
             latestClosedWeek: result.latestClosedWeek ?? null,
-            memories: [],
-            memoryCandidates: [],
+            memories: result.memories ?? s.memories ?? [],
+            memoryCandidates: s.memoryCandidates.length > 0 ? s.memoryCandidates : [],
             draftPlan: result.draftPlan ?? null,
             draftPlans: result.draftPlans ?? [],
             ambiguousPlanIds: [],
@@ -222,7 +227,8 @@ export class WeeklySessionController {
    */
   public async createOrSavePlan(
     plan: StoredWeeklyPlan,
-    schedule?: WeeklySchedule
+    schedule?: WeeklySchedule,
+    expectedScheduleVersion?: number
   ): Promise<CreatePlanResult> {
     if (this.isSavingPlan) {
       return {
@@ -233,7 +239,11 @@ export class WeeklySessionController {
 
     this.isSavingPlan = true;
     try {
-      const result = await this.service.createOrSavePlanAndSchedule(plan, schedule);
+      const result = await this.service.createOrSavePlanAndSchedule(
+        plan,
+        schedule,
+        expectedScheduleVersion
+      );
       if (result.status === "success") {
         await this.reloadSession();
       }
@@ -551,6 +561,41 @@ export class WeeklySessionController {
       this.setState((s) => ({ ...s, draftPlan: null, draftPlans: [] }));
     }
   }
+
+  /**
+   * Archives a memory item so it no longer biases future proposals.
+   */
+  public async archiveMemory(id: string): Promise<void> {
+    await this.service.archiveMemory(id);
+    await this.reloadSession();
+  }
+
+  /**
+   * Hard-deletes a memory item completely (right to be forgotten).
+   */
+  public async deleteMemory(id: string): Promise<void> {
+    await this.service.deleteMemory(id);
+    await this.reloadSession();
+  }
+
+  /**
+   * Exports full database contents into a structured JSON backup.
+   */
+  public async exportBackup(): Promise<UserDataBackup> {
+    return this.service.exportBackup();
+  }
+
+  /**
+   * Restores user data from a structured JSON backup and reloads session.
+   */
+  public async importBackup(
+    jsonString: string,
+    options?: ImportBackupOptions
+  ): Promise<ImportBackupResult> {
+    const res = await this.service.importBackup(jsonString, options);
+    await this.reloadSession();
+    return res;
+  }
 }
 
 // ============================================================================
@@ -564,7 +609,8 @@ export interface WeeklySessionContextValue {
   reloadSession: () => Promise<void>;
   createOrSavePlan: (
     plan: StoredWeeklyPlan,
-    schedule?: WeeklySchedule
+    schedule?: WeeklySchedule,
+    expectedScheduleVersion?: number
   ) => Promise<CreatePlanResult>;
   applyAdjustment: (params: {
     scheduleId: string;
@@ -590,6 +636,13 @@ export interface WeeklySessionContextValue {
     operation: MemoryOperation,
     confirmation: ExplicitHumanConfirmation
   ) => Promise<ConfirmMemoryResult>;
+  archiveMemory?: (id: string) => Promise<void>;
+  deleteMemory?: (id: string) => Promise<void>;
+  exportBackup?: () => Promise<UserDataBackup>;
+  importBackup?: (
+    jsonString: string,
+    options?: ImportBackupOptions
+  ) => Promise<ImportBackupResult>;
   purgeSession: (planId: string) => Promise<PurgePlanResult>;
   resolveAmbiguity: (keepPlanId: string) => Promise<void>;
   getDraftPlan?: (targetWeek?: TargetWeek) => Promise<StoredWeeklyPlan | null>;
@@ -692,7 +745,8 @@ function WeeklySessionProviderWithService({
       service,
       controller,
       reloadSession: () => controller.reloadSession(),
-      createOrSavePlan: (plan, schedule) => controller.createOrSavePlan(plan, schedule),
+      createOrSavePlan: (plan, schedule, expectedVersion) =>
+        controller.createOrSavePlan(plan, schedule, expectedVersion),
       applyAdjustment: (params) => controller.applyAdjustment(params),
       closeWeek: (params) => controller.closeWeek(params),
       reopenWeek: (planId) => controller.reopenWeek(planId),
@@ -700,6 +754,10 @@ function WeeklySessionProviderWithService({
         controller.confirmMemoryCandidate(candidate, decision),
       confirmMemoryOperation: (operation, confirmation) =>
         controller.confirmMemoryOperation(operation, confirmation),
+      archiveMemory: (id) => controller.archiveMemory(id),
+      deleteMemory: (id) => controller.deleteMemory(id),
+      exportBackup: () => controller.exportBackup(),
+      importBackup: (jsonString, options) => controller.importBackup(jsonString, options),
       purgeSession: (planId) => controller.purgeSession(planId),
       resolveAmbiguity: (keepPlanId) => controller.resolveAmbiguity(keepPlanId),
       getDraftPlan: (targetWeek) => controller.getDraftPlan(targetWeek),

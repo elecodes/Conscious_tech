@@ -575,6 +575,7 @@ export class MockProvider implements AIProvider {
       capacityConfig: input.capacity,
       foci,
       obligations,
+      flexibleOptions,
     });
 
     const highImportanceDeferred = deferredItems.filter((d) => {

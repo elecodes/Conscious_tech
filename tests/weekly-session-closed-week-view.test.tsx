@@ -242,4 +242,100 @@ describe("WeeklySessionView — Inspección y Reapertura de Semana Cerrada", () 
     const closeReportInDb = await storage.closeReports.getByPlanId(closedPlan.planId);
     expect(closeReportInDb).toBeNull();
   });
+
+  it("recupera memorias activas incluso cuando no hay semana activa (status: no_active_session)", async () => {
+    await storage.plans.save(closedPlan);
+    await storage.closeReports.save(storedCloseReport);
+    await storage.memories.save({
+      id: "mem-closed-test-1",
+      content: "Arquitectura hexagonal primero",
+      category: "decision",
+      confirmationStatus: "confirmed",
+      temporalStatus: "active",
+      tags: [],
+      provenance: { source: "user_explicit", referenceText: "Nota de cierre" },
+      validUntil: null,
+      createdAt: "2026-10-18",
+    });
+
+    const resumeResult = await service.resumeSession();
+    expect(resumeResult.status).toBe("no_active_session");
+    if (resumeResult.status === "no_active_session") {
+      expect(resumeResult.memories).toHaveLength(1);
+      expect(resumeResult.memories?.[0]?.content).toBe("Arquitectura hexagonal primero");
+    }
+
+    await controller.reloadSession();
+    const snapshot = controller.getSnapshot();
+    expect(snapshot.status).toBe("no_active_session");
+    expect(snapshot.memories).toHaveLength(1);
+    expect(snapshot.memories[0]?.content).toBe("Arquitectura hexagonal primero");
+  });
+
+  it("renderiza candidatos de memoria pendientes en el espacio de revisión cuando no hay semana activa", () => {
+    const candidateContextValue: WeeklySessionContextValue = {
+      state: {
+        status: "no_active_session",
+        activePlan: null,
+        activeSchedule: null,
+        latestClosedPlan: closedPlan,
+        latestCloseReport: storedCloseReport,
+        latestClosedWeek: {
+          plan: closedPlan,
+          closeReport: storedCloseReport,
+          schedule: null,
+        },
+        concurrencyConflict: null,
+        memories: [],
+        memoryCandidates: [
+          {
+            candidateId: "cand-review-1",
+            actionIntent: "store",
+            rawText: "Postergación deliberada de tareas no urgentes",
+            suggestedCategory: "decision",
+            isExplicitUserStatement: false,
+            provenanceSource: "plan_decision",
+          },
+        ],
+        ambiguousPlanIds: [],
+        inconsistencyReason: null,
+        errorMessage: null,
+        draftPlan: null,
+        draftPlans: [],
+      },
+      service,
+      controller,
+      reloadSession: () => Promise.resolve(),
+      createOrSavePlan: () => Promise.resolve({ status: "success", plan: closedPlan, schedule: null }),
+      applyAdjustment: () => Promise.resolve({ status: "rejected", schedule: null as any, reason: "none" }),
+      closeWeek: () => Promise.resolve({ status: "success", closeReport: storedCloseReport, memoryCandidates: [] }),
+      reopenWeek: (id) => controller.reopenWeek(id),
+      confirmMemoryCandidate: () => Promise.resolve({ status: "rejected", reason: "none" }),
+      confirmMemoryOperation: () => Promise.resolve({ status: "rejected", reason: "none" }),
+      purgeSession: () => Promise.resolve({ status: "success", purgedPlanId: "none" }),
+      resolveAmbiguity: () => Promise.resolve(),
+      saveDraftPlan: () => Promise.resolve({ status: "success", plan: closedPlan }),
+      clearDraftPlan: () => Promise.resolve(),
+      archiveMemory: () => Promise.resolve(),
+      deleteMemory: () => Promise.resolve(),
+      exportBackup: () => Promise.resolve({} as any),
+      importBackup: () => Promise.resolve({ status: "success", importedCounts: { plans: 0, schedules: 0, closeReports: 0, memories: 0 }, exportedAt: "2026-10-18T00:00:00.000Z" }),
+    };
+
+    const html = renderToStaticMarkup(
+      <WeeklySessionReactContext.Provider value={candidateContextValue}>
+        <WeeklySessionView activeSpace="review" />
+      </WeeklySessionReactContext.Provider>
+    );
+
+    expect(html).toContain("Candidatos de memoria pendientes de decisión");
+    expect(html).toContain("Postergación deliberada de tareas no urgentes");
+    expect(html).toContain("Decisión consciente");
+    expect(html).toContain("Decisión de la semana");
+    expect(html).not.toContain("plan_decision");
+    expect(html).not.toContain("user_explicit");
+    expect(html).toContain("Guardar en memoria");
+    expect(html).toContain("Descartar");
+  });
 });
+

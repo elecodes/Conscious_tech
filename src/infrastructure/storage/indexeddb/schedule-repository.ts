@@ -22,7 +22,11 @@ export class IndexedDbWeeklyScheduleRepository implements WeeklyScheduleReposito
    * IndexedDB transactions automatically commit when the event loop microtask queue clears without
    * pending IDBRequests. Only purely synchronous domain validation (Zod) is permitted between IDB requests.
    */
-  async save(schedule: WeeklySchedule, expectedScheduleVersion?: number): Promise<void> {
+  async save(
+    schedule: WeeklySchedule,
+    expectedScheduleVersion?: number,
+    options?: { force?: boolean }
+  ): Promise<void> {
     const db = this.getDb();
     const tx = db.transaction(STORES.SCHEDULES, "readwrite");
     const store = tx.objectStore(STORES.SCHEDULES);
@@ -40,22 +44,26 @@ export class IndexedDbWeeklyScheduleRepository implements WeeklyScheduleReposito
       existingVersion = existingParsed.data.version;
     }
 
-    // 2. Concurrency check if expectedScheduleVersion is provided
-    if (expectedScheduleVersion !== undefined) {
-      if (existingVersion !== expectedScheduleVersion) {
+    if (!options?.force) {
+      // 2. Concurrency check if expectedScheduleVersion is provided
+      if (expectedScheduleVersion !== undefined) {
+        if (existingVersion !== expectedScheduleVersion) {
+          tx.abort();
+          throw new StaleVersionConflictError(existingVersion, expectedScheduleVersion);
+        }
+      } else if (existingRaw && schedule.version <= existingVersion) {
+        // Guard against accidental blind overwriting without version check
         tx.abort();
-        throw new StaleVersionConflictError(existingVersion, expectedScheduleVersion);
+        throw new StaleVersionConflictError(existingVersion, schedule.version);
       }
-    } else if (existingRaw && schedule.version <= existingVersion) {
-      // Guard against accidental blind overwriting without version check
-      tx.abort();
-      throw new StaleVersionConflictError(existingVersion, schedule.version);
     }
 
     // 3. Prepare updated schedule with version incremented exactly by one if updating
-    const nextVersion = expectedScheduleVersion !== undefined
-      ? expectedScheduleVersion + 1
-      : schedule.version;
+    const nextVersion = options?.force
+      ? schedule.version
+      : (expectedScheduleVersion !== undefined
+        ? expectedScheduleVersion + 1
+        : schedule.version);
 
     const toWrite: WeeklySchedule = {
       ...schedule,
@@ -122,6 +130,29 @@ export class IndexedDbWeeklyScheduleRepository implements WeeklyScheduleReposito
     }
 
     return parseResult.data;
+  }
+
+  async getAll(): Promise<WeeklySchedule[]> {
+    const db = this.getDb();
+    const tx = db.transaction(STORES.SCHEDULES, "readonly");
+    const store = tx.objectStore(STORES.SCHEDULES);
+    const rawList = await wrapRequest(store.getAll());
+    const schedules: WeeklySchedule[] = [];
+    for (const raw of rawList ?? []) {
+      const parseResult = WeeklyScheduleSchema.safeParse(raw);
+      if (parseResult.success) {
+        const invariantCheck = validateWeeklyScheduleInvariants(parseResult.data);
+        if (invariantCheck.valid) {
+          schedules.push(parseResult.data);
+        } else {
+          console.warn(`[IndexedDbWeeklyScheduleRepository] Skipping schedule with invariant violations:`, invariantCheck.errors);
+        }
+      } else {
+        const id = (raw as Record<string, unknown>)?.scheduleId;
+        console.warn(`[IndexedDbWeeklyScheduleRepository] Skipping corrupted schedule ID "${id}":`, parseResult.error.issues);
+      }
+    }
+    return schedules;
   }
 
   async delete(scheduleId: string): Promise<void> {

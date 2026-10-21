@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { AIProvider } from "../../providers/ai-provider";
 import { MockProvider } from "../../providers/mock-provider";
 import { ExtractedItem, ExtractedItems } from "../../domain/items";
-import { ProposedWeek, resolveDefaultTargetWeek, TargetWeek, WeeklyFocus, DeferredItem } from "../../domain/week";
+import { ProposedWeek, resolveDefaultTargetWeek, TargetWeek, WeeklyFocus, WeeklyFlexibleOption, DeferredItem } from "../../domain/week";
 import { StoredWeeklyPlan, WeeklyPlanDraftContext } from "../../domain/repositories/types";
 import { WeeklySchedule } from "../../domain/schedule";
 import { extractItems } from "../../skills/extract-items";
@@ -54,13 +54,47 @@ export function WeeklyPlanningFromNotes({
     currentDate || new Date().toISOString().split("T")[0] || "2026-10-12";
 
   // Target week being planned (customizable by human)
-  const defaultTargetWeek = resolveDefaultTargetWeek(effectiveCurrentDate);
+  const defaultTargetWeek = state?.activePlan
+    ? resolveDefaultTargetWeek(state.activePlan.targetWeek.endDate)
+    : resolveDefaultTargetWeek(effectiveCurrentDate);
   const [targetWeekStart, setTargetWeekStart] = useState(defaultTargetWeek.startDate);
   const [targetWeekEnd, setTargetWeekEnd] = useState(defaultTargetWeek.endDate);
 
   const activeTargetWeek: TargetWeek = {
     startDate: targetWeekStart,
     endDate: targetWeekEnd,
+  };
+
+  // Handlers para ajustar horas y fechas directamente en los elementos identificados
+  const handleUpdateItemEffort = (itemId: string, hours: number | null) => {
+    setExtractedItems((prev) => {
+      if (!prev) return prev;
+      return prev.map((item) => {
+        if (item.id !== itemId) return item;
+        return {
+          ...item,
+          estimatedEffort:
+            hours != null && hours > 0
+              ? { value: hours, unit: "hours" as const, source: "user" as const }
+              : undefined,
+        };
+      });
+    });
+  };
+
+  const handleUpdateItemDeadline = (itemId: string, dateStr: string | null) => {
+    setExtractedItems((prev) => {
+      if (!prev) return prev;
+      return prev.map((item) => {
+        if (item.id !== itemId) return item;
+        return {
+          ...item,
+          deadline: dateStr
+            ? { raw: dateStr, resolved: dateStr, confidence: "high" as const }
+            : undefined,
+        };
+      });
+    });
   };
 
   // State: Carryover tasks from previous closed weeks or active schedules
@@ -135,6 +169,8 @@ export function WeeklyPlanningFromNotes({
   const [protectedSpacePercentInput, setProtectedSpacePercentInput] = useState(initialRatioPercent);
   const [capacityFeedbackMessage, setCapacityFeedbackMessage] = useState<string | null>(null);
   const [isEditingCapacity, setIsEditingCapacity] = useState(false);
+  const [editingProposalItemId, setEditingProposalItemId] = useState<string | null>(null);
+  const [proposalItemHoursInput, setProposalItemHoursInput] = useState<string>("");
 
   useEffect(() => {
     if (initialProposedWeek?.weekSummary?.capacity?.totalAvailableHours != null) {
@@ -576,6 +612,7 @@ export function WeeklyPlanningFromNotes({
               capacityConfig: currentCapacityConfig,
               foci: updatedFoci,
               obligations: finalProposal.obligations,
+              flexibleOptions: updatedFlexible,
             });
             finalProposal = {
               ...finalProposal,
@@ -620,32 +657,46 @@ export function WeeklyPlanningFromNotes({
     setConfirmationError(null);
     const nowIso = new Date().toISOString();
     const targetWeek = proposedWeek.weekSummary.targetWeek;
-    const planId = `plan-${targetWeek.startDate}-${Date.now()}`;
+
+    const isSameAsActive = Boolean(
+      state?.activePlan &&
+      state.activePlan.targetWeek.startDate === targetWeek.startDate &&
+      state.activePlan.targetWeek.endDate === targetWeek.endDate
+    );
+
+    const planId = isSameAsActive
+      ? state.activePlan!.planId
+      : `plan-${targetWeek.startDate}-${Date.now()}`;
+
+    const existingSched = isSameAsActive ? state.activeSchedule : null;
+    const scheduleId = existingSched?.scheduleId ?? `sched-${planId}`;
+    const nextVersion = existingSched ? existingSched.version + 1 : 1;
+    const expectedScheduleVersion = existingSched ? existingSched.version : undefined;
 
     const storedPlan: StoredWeeklyPlan = {
       planId,
       status: "active",
       targetWeek,
       proposal: proposedWeek,
-      createdAt: nowIso,
+      createdAt: isSameAsActive ? state.activePlan!.createdAt : nowIso,
       updatedAt: nowIso,
     };
 
     const storedSchedule: WeeklySchedule = {
-      scheduleId: `sched-${planId}`,
+      scheduleId,
       planId,
       weekRange: targetWeek,
-      timeBlocks: [],
-      dailyAllocations: [],
-      dayConstraints: [],
-      appliedAdjustments: [],
-      version: 1,
-      createdAt: nowIso,
+      timeBlocks: existingSched?.timeBlocks ?? [],
+      dailyAllocations: existingSched?.dailyAllocations ?? [],
+      dayConstraints: existingSched?.dayConstraints ?? [],
+      appliedAdjustments: existingSched?.appliedAdjustments ?? [],
+      version: nextVersion,
+      createdAt: existingSched?.createdAt ?? nowIso,
       updatedAt: nowIso,
     };
 
     try {
-      const result = await createOrSavePlan(storedPlan, storedSchedule);
+      const result = await createOrSavePlan(storedPlan, storedSchedule, expectedScheduleVersion);
 
       if (result.status === "success") {
         setSuccessMessage("¡Semana confirmada y guardada con éxito en tu cuaderno!");
@@ -691,7 +742,10 @@ export function WeeklyPlanningFromNotes({
     setConfirmationError(null);
     setIsReviewingSelection(false);
     if (service?.clearDraftPlan) {
-      await service.clearDraftPlan();
+      await service.clearDraftPlan({
+        startDate: targetWeekStart,
+        endDate: targetWeekEnd,
+      });
     }
   };
 
@@ -794,6 +848,7 @@ export function WeeklyPlanningFromNotes({
       capacityConfig: currentCapacityConfig,
       foci: updatedFoci,
       obligations,
+      flexibleOptions: updatedFlexible,
     });
 
     const updatedProposal: ProposedWeek = {
@@ -933,6 +988,7 @@ export function WeeklyPlanningFromNotes({
       capacityConfig: currentCapacityConfig,
       foci: updatedFoci,
       obligations: proposedWeek.obligations,
+      flexibleOptions: updatedFlexible,
     });
 
     const updatedProposal: ProposedWeek = {
@@ -976,6 +1032,7 @@ export function WeeklyPlanningFromNotes({
       capacityConfig,
       foci: proposedWeek.foci,
       obligations: proposedWeek.obligations,
+      flexibleOptions: proposedWeek.flexibleOptions,
     });
 
     const updatedProposal: ProposedWeek = {
@@ -1012,6 +1069,184 @@ export function WeeklyPlanningFromNotes({
     } else {
       setCapacityFeedbackMessage(null);
     }
+  };
+
+  const handlePromoteFlexibleToFocus = async (itemId: string) => {
+    if (!proposedWeek) return;
+    if (proposedWeek.foci.length >= 3) {
+      alert("Para proteger tu foco y claridad mental, el límite es de 3 focos principales por semana.");
+      return;
+    }
+    const opt = proposedWeek.flexibleOptions.find((o) => o.itemId === itemId);
+    if (!opt) return;
+
+    const newFocus: WeeklyFocus = {
+      id: `focus-${opt.itemId}`,
+      title: opt.title,
+      desiredOutcome: `Avanzar en: ${opt.title}`,
+      rationale: "Elegido conscientemente como foco semanal por decisión de la persona.",
+      contributingItemIds: [opt.itemId],
+      estimatedHours: opt.estimatedHours ?? null,
+    };
+
+    const updatedFoci = [...proposedWeek.foci, newFocus];
+    const updatedFlexible = proposedWeek.flexibleOptions.filter((o) => o.itemId !== itemId);
+
+    const currentCapacityConfig =
+      proposedWeek.weekSummary.capacity.totalAvailableHours != null
+        ? {
+            totalAvailableHours: proposedWeek.weekSummary.capacity.totalAvailableHours,
+            minProtectedSpaceRatio:
+              proposedWeek.weekSummary.capacity.totalAvailableHours > 0 &&
+              proposedWeek.weekSummary.capacity.protectedSpaceHours != null
+                ? proposedWeek.weekSummary.capacity.protectedSpaceHours /
+                  proposedWeek.weekSummary.capacity.totalAvailableHours
+                : 0.25,
+          }
+        : undefined;
+
+    const newCapacity = calculateWeeklyCapacity({
+      capacityConfig: currentCapacityConfig,
+      foci: updatedFoci,
+      obligations: proposedWeek.obligations,
+      flexibleOptions: updatedFlexible,
+    });
+
+    const updatedProposal: ProposedWeek = {
+      ...proposedWeek,
+      foci: updatedFoci,
+      flexibleOptions: updatedFlexible,
+      weekSummary: {
+        ...proposedWeek.weekSummary,
+        capacity: newCapacity,
+      },
+      unplannedSpace: {
+        ...proposedWeek.unplannedSpace,
+        recommendedHours: newCapacity.protectedSpaceHours,
+      },
+    };
+
+    setProposedWeek(updatedProposal);
+    await persistDraft(updatedProposal);
+  };
+
+  const handleDemoteFocusToFlexible = async (focusId: string) => {
+    if (!proposedWeek) return;
+    const focus = proposedWeek.foci.find((f) => f.id === focusId);
+    if (!focus) return;
+
+    const itemId = focus.contributingItemIds[0] ?? focus.id;
+    const newFlexible: WeeklyFlexibleOption = {
+      itemId,
+      title: focus.title,
+      condition: "Movido a opción flexible por decisión de la persona.",
+      estimatedHours: focus.estimatedHours ?? null,
+    };
+
+    const updatedFoci = proposedWeek.foci.filter((f) => f.id !== focusId);
+    const updatedFlexible = [...proposedWeek.flexibleOptions, newFlexible];
+
+    const currentCapacityConfig =
+      proposedWeek.weekSummary.capacity.totalAvailableHours != null
+        ? {
+            totalAvailableHours: proposedWeek.weekSummary.capacity.totalAvailableHours,
+            minProtectedSpaceRatio:
+              proposedWeek.weekSummary.capacity.totalAvailableHours > 0 &&
+              proposedWeek.weekSummary.capacity.protectedSpaceHours != null
+                ? proposedWeek.weekSummary.capacity.protectedSpaceHours /
+                  proposedWeek.weekSummary.capacity.totalAvailableHours
+                : 0.25,
+          }
+        : undefined;
+
+    const newCapacity = calculateWeeklyCapacity({
+      capacityConfig: currentCapacityConfig,
+      foci: updatedFoci,
+      obligations: proposedWeek.obligations,
+      flexibleOptions: updatedFlexible,
+    });
+
+    const updatedProposal: ProposedWeek = {
+      ...proposedWeek,
+      foci: updatedFoci,
+      flexibleOptions: updatedFlexible,
+      weekSummary: {
+        ...proposedWeek.weekSummary,
+        capacity: newCapacity,
+      },
+      unplannedSpace: {
+        ...proposedWeek.unplannedSpace,
+        recommendedHours: newCapacity.protectedSpaceHours,
+      },
+    };
+
+    setProposedWeek(updatedProposal);
+    await persistDraft(updatedProposal);
+  };
+
+  const handleSaveProposalItemHours = async (itemId: string, newHours: number | null) => {
+    if (!proposedWeek) return;
+
+    const updatedFoci = proposedWeek.foci.map((f) => {
+      if (f.id === itemId || f.contributingItemIds.includes(itemId)) {
+        return { ...f, estimatedHours: newHours };
+      }
+      return f;
+    });
+
+    const updatedObligations = proposedWeek.obligations.map((o) => {
+      if (o.itemId === itemId) {
+        return { ...o, estimatedHours: newHours };
+      }
+      return o;
+    });
+
+    const updatedFlexible = proposedWeek.flexibleOptions.map((opt) => {
+      if (opt.itemId === itemId) {
+        return { ...opt, estimatedHours: newHours };
+      }
+      return opt;
+    });
+
+    const currentCapacityConfig =
+      proposedWeek.weekSummary.capacity.totalAvailableHours != null
+        ? {
+            totalAvailableHours: proposedWeek.weekSummary.capacity.totalAvailableHours,
+            minProtectedSpaceRatio:
+              proposedWeek.weekSummary.capacity.totalAvailableHours > 0 &&
+              proposedWeek.weekSummary.capacity.protectedSpaceHours != null
+                ? proposedWeek.weekSummary.capacity.protectedSpaceHours /
+                  proposedWeek.weekSummary.capacity.totalAvailableHours
+                : 0.25,
+          }
+        : undefined;
+
+    const newCapacity = calculateWeeklyCapacity({
+      capacityConfig: currentCapacityConfig,
+      foci: updatedFoci,
+      obligations: updatedObligations,
+      flexibleOptions: updatedFlexible,
+    });
+
+    const updatedProposal: ProposedWeek = {
+      ...proposedWeek,
+      foci: updatedFoci,
+      obligations: updatedObligations,
+      flexibleOptions: updatedFlexible,
+      weekSummary: {
+        ...proposedWeek.weekSummary,
+        capacity: newCapacity,
+      },
+      unplannedSpace: {
+        ...proposedWeek.unplannedSpace,
+        recommendedHours: newCapacity.protectedSpaceHours,
+      },
+    };
+
+    setProposedWeek(updatedProposal);
+    setEditingProposalItemId(null);
+    setProposalItemHoursInput("");
+    await persistDraft(updatedProposal);
   };
 
   const acceptedCount = extractedItems
@@ -1577,39 +1812,119 @@ export function WeeklyPlanningFromNotes({
                       style={{
                         flex: 1,
                         display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: "8px",
-                        flexWrap: "wrap",
+                        flexDirection: "column",
+                        gap: "6px",
                         minWidth: 0,
                       }}
                     >
-                      <strong
+                      <div
                         style={{
-                          fontSize: "0.92rem",
-                          textDecoration: isAccepted ? "none" : "line-through",
-                          color: isAccepted ? "inherit" : "var(--text-muted, #888)",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: "8px",
+                          flexWrap: "wrap",
                         }}
                       >
-                        {item.title}
-                      </strong>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                        <span className={`badge badge-${item.type}`}>{item.type}</span>
-                        {item.project && (
-                          <span className="badge badge-muted">📁 {item.project}</span>
-                        )}
-                        {item.estimatedEffort && (
-                          <span className="badge badge-muted">
-                            ⏱ {item.estimatedEffort.value} {item.estimatedEffort.unit}
-                          </span>
-                        )}
-                        {item.deadline && (
-                          <span className="badge badge-muted" style={{ color: "#b45309" }}>
-                            📅 {item.deadline.raw}{" "}
-                            {item.deadline.resolved ? `(${item.deadline.resolved})` : ""}
-                          </span>
-                        )}
+                        <strong
+                          style={{
+                            fontSize: "0.92rem",
+                            textDecoration: isAccepted ? "none" : "line-through",
+                            color: isAccepted ? "inherit" : "var(--text-muted, #888)",
+                          }}
+                        >
+                          {item.title}
+                        </strong>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                          <span className={`badge badge-${item.type}`}>{item.type}</span>
+                          {item.project && (
+                            <span className="badge badge-muted">📁 {item.project}</span>
+                          )}
+                          {item.estimatedEffort && (
+                            <span className="badge badge-muted">
+                              ⏱ {item.estimatedEffort.value} {item.estimatedEffort.unit}
+                            </span>
+                          )}
+                          {item.deadline && (
+                            <span className="badge badge-muted" style={{ color: "#b45309" }}>
+                              📅 {item.deadline.raw}{" "}
+                              {item.deadline.resolved ? `(${item.deadline.resolved})` : ""}
+                            </span>
+                          )}
+                        </div>
                       </div>
+
+                      {isAccepted && (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "14px",
+                            flexWrap: "wrap",
+                            fontSize: "0.82rem",
+                            color: "var(--text-muted, #666)",
+                            marginTop: "2px",
+                          }}
+                        >
+                          <label
+                            htmlFor={`item-effort-${item.id}`}
+                            style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
+                          >
+                            <span>⏱️ Horas:</span>
+                            <input
+                              id={`item-effort-${item.id}`}
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.5"
+                              placeholder="Sin estimar"
+                              value={item.estimatedEffort?.value ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value === "" ? null : Number(e.target.value);
+                                handleUpdateItemEffort(item.id, val);
+                              }}
+                              style={{
+                                width: "80px",
+                                padding: "2px 6px",
+                                fontSize: "0.82rem",
+                                borderRadius: "4px",
+                                border: "1px solid var(--border-color, #ccc)",
+                                background: "var(--bg-card, #fff)",
+                              }}
+                              aria-label={`Horas estimadas para ${item.title}`}
+                            />
+                            <span>h</span>
+                          </label>
+
+                          <label
+                            htmlFor={`item-deadline-${item.id}`}
+                            style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
+                          >
+                            <span>📅 Límite / Fecha:</span>
+                            <input
+                              id={`item-deadline-${item.id}`}
+                              type="date"
+                              value={
+                                item.deadline?.resolved ||
+                                (item.deadline?.raw && /^\d{4}-\d{2}-\d{2}$/.test(item.deadline.raw)
+                                  ? item.deadline.raw
+                                  : "")
+                              }
+                              onChange={(e) => {
+                                handleUpdateItemDeadline(item.id, e.target.value || null);
+                              }}
+                              style={{
+                                padding: "2px 6px",
+                                fontSize: "0.82rem",
+                                borderRadius: "4px",
+                                border: "1px solid var(--border-color, #ccc)",
+                                background: "var(--bg-card, #fff)",
+                              }}
+                              aria-label={`Fecha límite para ${item.title}`}
+                            />
+                          </label>
+                        </div>
+                      )}
                     </div>
                   </li>
                 );
@@ -1816,10 +2131,15 @@ export function WeeklyPlanningFromNotes({
                 {proposedWeek.weekSummary.intent ? `«${proposedWeek.weekSummary.intent}»` : "Plan de la semana"}
               </h2>
             </div>
-            <span className="badge badge-task">
-              {proposedWeek.weekSummary.targetWeek.startDate} al{" "}
-              {proposedWeek.weekSummary.targetWeek.endDate}
-            </span>
+            <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+              <span className="badge badge-task">
+                {proposedWeek.weekSummary.targetWeek.startDate} al{" "}
+                {proposedWeek.weekSummary.targetWeek.endDate}
+              </span>
+              <span className="badge badge-idea" data-testid="draft-notebook-status-badge">
+                📒 Borrador en cuaderno local
+              </span>
+            </div>
           </div>
 
           {/* Capacity, Protected Space & Viability Overview */}
@@ -1840,78 +2160,143 @@ export function WeeklyPlanningFromNotes({
                 alignItems: "baseline",
                 flexWrap: "wrap",
                 gap: "8px",
-                marginBottom: "12px",
+                marginBottom: "8px",
               }}
             >
-              <h5 style={{ margin: 0, fontSize: "1rem" }}>
-                Balance de tu semana
-              </h5>
-              <span className="calm-muted" style={{ fontSize: "0.82rem" }}>
-                Margen reservado para imprevistos y descanso
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                <h5 style={{ margin: 0, fontSize: "1rem" }}>
+                  Balance de tu semana
+                </h5>
+                <span
+                  className={`badge ${
+                    proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity"
+                      ? "badge-success"
+                      : proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity"
+                      ? "badge-error"
+                      : "badge-warning"
+                  }`}
+                  data-testid="planning-capacity-status-summary-badge"
+                >
+                  {proposedWeek.weekSummary.capacity.totalAvailableHours == null
+                    ? "Capacidad no configurada"
+                    : proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity"
+                    ? "Por encima de la capacidad"
+                    : proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity"
+                    ? "Dentro de la capacidad"
+                    : "Estimación parcial"}
+                </span>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "6px",
+                  fontSize: "0.82rem",
+                }}
+              >
+                <span style={{ background: "#f3f0ea", padding: "2px 6px", borderRadius: "4px" }}>
+                  <span className="calm-muted">Disponibles:</span>{" "}
+                  <strong>{formatHours(proposedWeek.weekSummary.capacity.totalAvailableHours, "No disponible")}</strong>
+                </span>
+                <span style={{ background: "#f3f0ea", padding: "2px 6px", borderRadius: "4px" }}>
+                  <span className="calm-muted">Planificadas:</span>{" "}
+                  <strong>
+                    {proposedWeek.weekSummary.capacity.plannedHours != null
+                      ? formatHours(proposedWeek.weekSummary.capacity.plannedHours)
+                      : formatHours(proposedWeek.weekSummary.capacity.knownEstimatedHours, "Sin estimar")}
+                  </strong>
+                </span>
+                <span style={{ background: "#f3f0ea", padding: "2px 6px", borderRadius: "4px" }}>
+                  <span className="calm-muted">Planificables:</span>{" "}
+                  <strong>{formatHours(proposedWeek.weekSummary.capacity.plannableHours, "Desconocido")}</strong>
+                </span>
+                <span style={{ background: "#f3f0ea", padding: "2px 6px", borderRadius: "4px" }}>
+                  <span className="calm-muted">Protegidas:</span>{" "}
+                  <strong>{formatHours(proposedWeek.weekSummary.capacity.protectedSpaceHours, "Desconocido")}</strong>
+                </span>
+              </div>
             </div>
 
             {/* Tu tiempo de un vistazo (visual bar) */}
             {proposedWeek.weekSummary.capacity.totalAvailableHours != null &&
-              proposedWeek.weekSummary.capacity.totalAvailableHours > 0 && (
-                <div className="cognitive-budget-card" style={{ margin: "4px 0 16px", padding: "12px 16px" }}>
-                  <div className="cognitive-budget-header">
-                    <span className="cognitive-budget-title">Tu tiempo de un vistazo</span>
-                    <span className="cognitive-budget-ratio">
-                      {proposedWeek.weekSummary.capacity.plannedHours != null
-                        ? `${proposedWeek.weekSummary.capacity.plannedHours}h asignadas`
-                        : "Tareas sin estimar en horas"}{" "}
-                      / {proposedWeek.weekSummary.capacity.totalAvailableHours}h disponibles
-                    </span>
-                  </div>
-                  <div className="cognitive-bar-track">
-                    {proposedWeek.weekSummary.capacity.plannedHours != null &&
-                      proposedWeek.weekSummary.capacity.plannedHours > 0 && (
+              proposedWeek.weekSummary.capacity.totalAvailableHours > 0 && (() => {
+                const effectivePlanned =
+                  proposedWeek.weekSummary.capacity.plannedHours ??
+                  proposedWeek.weekSummary.capacity.knownEstimatedHours;
+                return (
+                  <div className="cognitive-budget-card" style={{ margin: "4px 0 10px", padding: "10px 14px" }}>
+                    <div className="cognitive-budget-header">
+                      <span className="cognitive-budget-title">Tu tiempo de un vistazo</span>
+                      <span className="cognitive-budget-ratio">
+                        {proposedWeek.weekSummary.capacity.plannedHours != null
+                          ? `${proposedWeek.weekSummary.capacity.plannedHours}h asignadas`
+                          : effectivePlanned != null && effectivePlanned > 0
+                          ? `~${effectivePlanned}h asignadas (parcial)`
+                          : "Tareas sin estimar en horas"}{" "}
+                        / {proposedWeek.weekSummary.capacity.totalAvailableHours}h disponibles
+                      </span>
+                    </div>
+                    <div className="cognitive-bar-track">
+                      {effectivePlanned != null && effectivePlanned > 0 && (
                         <div
                           className="cognitive-bar-fill"
                           style={{
                             width: `${Math.min(
                               100,
                               Math.round(
-                                (proposedWeek.weekSummary.capacity.plannedHours /
+                                (effectivePlanned /
                                   proposedWeek.weekSummary.capacity.totalAvailableHours) *
                                   100
                               )
                             )}%`,
                           }}
-                          title={`Planificadas: ${proposedWeek.weekSummary.capacity.plannedHours}h`}
+                          title={`Planificadas: ${effectivePlanned}h`}
                         />
                       )}
-                    {proposedWeek.weekSummary.capacity.protectedSpaceHours != null &&
-                      proposedWeek.weekSummary.capacity.protectedSpaceHours > 0 && (
-                        <div
-                          className="cognitive-bar-fill protected"
-                          style={{
-                            width: `${Math.min(
-                              100,
-                              Math.round(
-                                (proposedWeek.weekSummary.capacity.protectedSpaceHours /
-                                  proposedWeek.weekSummary.capacity.totalAvailableHours) *
-                                  100
-                              )
-                            )}%`,
-                          }}
-                          title={`Espacio protegido: ${proposedWeek.weekSummary.capacity.protectedSpaceHours}h`}
-                        />
-                      )}
+                      {proposedWeek.weekSummary.capacity.protectedSpaceHours != null &&
+                        proposedWeek.weekSummary.capacity.protectedSpaceHours > 0 && (
+                          <div
+                            className="cognitive-bar-fill protected"
+                            style={{
+                              width: `${Math.min(
+                                100,
+                                Math.round(
+                                  (proposedWeek.weekSummary.capacity.protectedSpaceHours /
+                                    proposedWeek.weekSummary.capacity.totalAvailableHours) *
+                                    100
+                                )
+                              )}%`,
+                            }}
+                            title={`Espacio protegido: ${proposedWeek.weekSummary.capacity.protectedSpaceHours}h`}
+                          />
+                        )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
-            {/* Separación visual nítida en dos paneles independientes */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                gap: "16px",
-                marginBottom: "16px",
-              }}
-            >
+            {/* Desglose progresivo tipo desplegable (como en la semana activa) */}
+            <details className="calm-details" style={{ marginTop: "4px" }} data-testid="planning-capacity-details">
+              <summary
+                style={{
+                  cursor: "pointer",
+                  fontSize: "0.82rem",
+                  color: "var(--accent-color, #2b6cb0)",
+                  userSelect: "none",
+                }}
+              >
+                Ver desglose completo de cálculos y viabilidad
+              </summary>
+              <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                {/* Separación visual nítida en dos paneles independientes */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                    gap: "16px",
+                  }}
+                >
               {/* Panel 1: Límites de tiempo y disponibilidad */}
               <div
                 className="item-card"
@@ -1951,7 +2336,8 @@ export function WeeklyPlanningFromNotes({
                     </strong>
                   </div>
                   {proposedWeek.weekSummary.capacity.plannableHours != null &&
-                    proposedWeek.weekSummary.capacity.plannedHours != null && (
+                    (proposedWeek.weekSummary.capacity.plannedHours != null ||
+                      proposedWeek.weekSummary.capacity.knownEstimatedHours != null) && (
                       <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
                         <span className="calm-muted" style={{ fontSize: "0.85rem" }}>
                           Capacidad planificable restante:
@@ -1961,7 +2347,8 @@ export function WeeklyPlanningFromNotes({
                             Math.max(
                               0,
                               proposedWeek.weekSummary.capacity.plannableHours -
-                                proposedWeek.weekSummary.capacity.plannedHours
+                                (proposedWeek.weekSummary.capacity.plannedHours ??
+                                  proposedWeek.weekSummary.capacity.knownEstimatedHours!)
                             )
                           )}
                         </strong>
@@ -2018,68 +2405,89 @@ export function WeeklyPlanningFromNotes({
                 <div style={{ fontWeight: 600, fontSize: "0.95rem", color: "#374151" }}>
                   Carga planificada y viabilidad
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
-                    <span className="calm-muted" style={{ fontSize: "0.85rem" }}>
-                      Horas planificadas:
-                    </span>
-                    <strong data-testid="planning-planned-hours">
-                      {formatHours(
-                        proposedWeek.weekSummary.capacity.plannedHours,
-                        proposedWeek.weekSummary.capacity.knownEstimatedHours !== null
-                          ? `~${proposedWeek.weekSummary.capacity.knownEstimatedHours}h parcial`
-                          : "Sin estimar"
-                      )}
-                    </strong>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
-                    <span className="calm-muted" style={{ fontSize: "0.85rem" }}>
-                      Completitud de estimaciones:
-                    </span>
-                    <span className="badge badge-muted" data-testid="planning-estimation-badge">
-                      {formatEstimationCompleteness(
-                        proposedWeek.weekSummary.capacity.estimationCompleteness
-                      )}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginTop: "4px",
-                      paddingTop: "6px",
-                      borderTop: "1px solid #f0f0f0",
-                    }}
-                  >
-                    <span className="calm-muted" style={{ fontSize: "0.82rem" }}>
-                      Estado de viabilidad:
-                    </span>
-                    <span
-                      className={`badge ${
-                        proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity"
-                          ? "badge-success"
-                          : proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity"
-                          ? "badge-error"
-                          : proposedWeek.weekSummary.capacity.totalAvailableHours != null &&
-                            proposedWeek.weekSummary.capacity.estimationCompleteness !== "complete"
-                          ? "badge-warning"
-                          : "badge-task"
-                      }`}
-                      data-testid="planning-capacity-status-badge"
-                    >
-                      {proposedWeek.weekSummary.capacity.totalAvailableHours == null
-                        ? "Capacidad desconocida · Viabilidad no verificada"
-                        : proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity"
-                        ? "Por encima de la capacidad"
-                        : proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity"
-                        ? "Dentro de la capacidad"
-                        : proposedWeek.weekSummary.capacity.estimationCompleteness !== "complete"
-                        ? "Estimaciones incompletas · Viabilidad no confirmada"
-                        : formatCapacityStatus(proposedWeek.weekSummary.capacity.capacityStatus)}
-                    </span>
-                  </div>
-                </div>
+                {(() => {
+                  const hasZeroCommitted =
+                    proposedWeek.foci.length === 0 && proposedWeek.obligations.length === 0;
+                  const flexibleHours = proposedWeek.flexibleOptions.reduce(
+                    (acc, o) => acc + (o.estimatedHours ?? 0),
+                    0
+                  );
+
+                  return (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
+                        <span className="calm-muted" style={{ fontSize: "0.85rem" }}>
+                          Horas planificadas:
+                        </span>
+                        <strong data-testid="planning-planned-hours">
+                          {hasZeroCommitted && flexibleHours > 0
+                            ? `0h fijas (~${flexibleHours}h flexibles)`
+                            : formatHours(
+                                proposedWeek.weekSummary.capacity.plannedHours,
+                                proposedWeek.weekSummary.capacity.knownEstimatedHours !== null
+                                  ? `~${proposedWeek.weekSummary.capacity.knownEstimatedHours}h parcial`
+                                  : "Sin estimar"
+                              )}
+                        </strong>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
+                        <span className="calm-muted" style={{ fontSize: "0.85rem" }}>
+                          Completitud de estimaciones:
+                        </span>
+                        <span className="badge badge-muted" data-testid="planning-estimation-badge">
+                          {hasZeroCommitted && flexibleHours > 0
+                            ? `Opciones flexibles (${proposedWeek.flexibleOptions.length})`
+                            : formatEstimationCompleteness(
+                                proposedWeek.weekSummary.capacity.estimationCompleteness
+                              )}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginTop: "4px",
+                          paddingTop: "6px",
+                          borderTop: "1px solid #f0f0f0",
+                        }}
+                      >
+                        <span className="calm-muted" style={{ fontSize: "0.82rem" }}>
+                          Estado de viabilidad:
+                        </span>
+                        <span
+                          className={`badge ${
+                            proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity" ||
+                            (hasZeroCommitted &&
+                              proposedWeek.weekSummary.capacity.totalAvailableHours != null &&
+                              flexibleHours <=
+                                (proposedWeek.weekSummary.capacity.plannableHours ?? 0))
+                              ? "badge-success"
+                              : proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity"
+                              ? "badge-error"
+                              : proposedWeek.weekSummary.capacity.totalAvailableHours != null &&
+                                proposedWeek.weekSummary.capacity.estimationCompleteness !== "complete"
+                              ? "badge-warning"
+                              : "badge-task"
+                          }`}
+                          data-testid="planning-capacity-status-badge"
+                        >
+                          {proposedWeek.weekSummary.capacity.totalAvailableHours == null
+                            ? "Capacidad desconocida · Viabilidad no verificada"
+                            : proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity"
+                            ? "Por encima de la capacidad"
+                            : hasZeroCommitted && flexibleHours > 0
+                            ? `Capacidad disponible (${flexibleHours}h flexibles)`
+                            : proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity"
+                            ? "Dentro de la capacidad"
+                            : proposedWeek.weekSummary.capacity.estimationCompleteness !== "complete"
+                            ? "Estimaciones incompletas · Viabilidad no confirmada"
+                            : formatCapacityStatus(proposedWeek.weekSummary.capacity.capacityStatus)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -2114,7 +2522,12 @@ export function WeeklyPlanningFromNotes({
                         <strong style={{ fontSize: "0.88rem", color: "#1f2937" }}>
                           ✓ Capacidad configurada y validada ({proposedWeek.weekSummary.capacity.totalAvailableHours}h disponibles)
                         </strong>
-                        {proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity" ? (
+                        {proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity" ||
+                        (proposedWeek.foci.length === 0 &&
+                          proposedWeek.obligations.length === 0 &&
+                          proposedWeek.weekSummary.capacity.totalAvailableHours != null &&
+                          proposedWeek.flexibleOptions.reduce((acc, o) => acc + (o.estimatedHours ?? 0), 0) <=
+                            (proposedWeek.weekSummary.capacity.plannableHours ?? 0)) ? (
                           <span
                             className="badge badge-success"
                             data-testid="viability-confirmed-badge"
@@ -2320,6 +2733,8 @@ export function WeeklyPlanningFromNotes({
                     .reduce((acc, f) => acc + (f.estimatedHours ?? 0), 0)}h) con capacidad disponible desconocida. No se inventa capacidad disponible; la viabilidad no está confirmada hasta registrar tus horas reales disponibles.
                 </div>
               )}
+              </div>
+            </details>
           </div>
 
           {/* Weekly Foci */}
@@ -2399,6 +2814,80 @@ export function WeeklyPlanningFromNotes({
                       <div className="calm-muted" style={{ fontSize: "0.82rem", marginTop: "10px", fontStyle: "italic" }}>
                         <em>Fundamentación:</em> {focus.rationale}
                       </div>
+
+                      {/* Actions on Focus */}
+                      <div style={{ display: "flex", gap: "8px", marginTop: "12px", flexWrap: "wrap", alignItems: "center" }}>
+                        <button
+                          type="button"
+                          className="secondary small"
+                          onClick={() => handleDemoteFocusToFlexible(focus.id)}
+                          data-testid={`demote-focus-to-flexible-${focus.id}`}
+                        >
+                          ↩ Mover a opción flexible
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary small"
+                          onClick={() => {
+                            setEditingProposalItemId(focus.id);
+                            setProposalItemHoursInput(focus.estimatedHours !== null ? String(focus.estimatedHours) : "");
+                          }}
+                          data-testid={`adjust-focus-hours-${focus.id}`}
+                        >
+                          ⏱️ Ajustar horas
+                        </button>
+                      </div>
+
+                      {/* Inline Hours Editor */}
+                      {editingProposalItemId === focus.id && (
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "8px",
+                            alignItems: "center",
+                            marginTop: "10px",
+                            background: "#f0f4f8",
+                            padding: "8px 12px",
+                            borderRadius: "4px",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <label style={{ fontSize: "0.82rem", fontWeight: 500, color: "#374151" }}>
+                            Horas estimadas:
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            value={proposalItemHoursInput}
+                            onChange={(e) => setProposalItemHoursInput(e.target.value)}
+                            placeholder="Ej: 4"
+                            style={{ width: "80px", padding: "4px 8px", fontSize: "0.85rem" }}
+                            data-testid={`input-hours-${focus.id}`}
+                          />
+                          <button
+                            type="button"
+                            className="primary small"
+                            onClick={() => {
+                              const val = proposalItemHoursInput.trim() !== "" ? Number(proposalItemHoursInput) : null;
+                              handleSaveProposalItemHours(focus.id, val);
+                            }}
+                            data-testid={`save-hours-${focus.id}`}
+                          >
+                            Guardar
+                          </button>
+                          <button
+                            type="button"
+                            className="secondary small"
+                            onClick={() => {
+                              setEditingProposalItemId(null);
+                              setProposalItemHoursInput("");
+                            }}
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -2434,6 +2923,72 @@ export function WeeklyPlanningFromNotes({
                         Estimado: {ob.estimatedHours}h
                       </div>
                     )}
+
+                    {/* Actions on Obligation */}
+                    <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                      <button
+                        type="button"
+                        className="secondary small"
+                        onClick={() => {
+                          setEditingProposalItemId(ob.itemId);
+                          setProposalItemHoursInput(ob.estimatedHours !== null ? String(ob.estimatedHours) : "");
+                        }}
+                        data-testid={`adjust-obligation-hours-${ob.itemId}`}
+                      >
+                        ⏱️ Ajustar horas
+                      </button>
+                    </div>
+
+                    {/* Inline Hours Editor */}
+                    {editingProposalItemId === ob.itemId && (
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          alignItems: "center",
+                          marginTop: "8px",
+                          background: "#f0f4f8",
+                          padding: "8px 12px",
+                          borderRadius: "4px",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <label style={{ fontSize: "0.82rem", fontWeight: 500, color: "#374151" }}>
+                          Horas estimadas:
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.5"
+                          value={proposalItemHoursInput}
+                          onChange={(e) => setProposalItemHoursInput(e.target.value)}
+                          placeholder="Ej: 2"
+                          style={{ width: "80px", padding: "4px 8px", fontSize: "0.85rem" }}
+                          data-testid={`input-hours-${ob.itemId}`}
+                        />
+                        <button
+                          type="button"
+                          className="primary small"
+                          onClick={() => {
+                            const val = proposalItemHoursInput.trim() !== "" ? Number(proposalItemHoursInput) : null;
+                            handleSaveProposalItemHours(ob.itemId, val);
+                          }}
+                          data-testid={`save-hours-${ob.itemId}`}
+                        >
+                          Guardar
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary small"
+                          onClick={() => {
+                            setEditingProposalItemId(null);
+                            setProposalItemHoursInput("");
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -2454,18 +3009,94 @@ export function WeeklyPlanningFromNotes({
                     style={{ padding: "8px 12px", background: "#fbfbfb" }}
                     data-testid={`proposed-flexible-item-${opt.itemId}`}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "6px" }}>
                       <strong>{opt.title}</strong>
-                      <span className="badge badge-idea">Flexible</span>
-                    </div>
-                    {opt.estimatedHours !== null && (
-                      <div className="calm-muted" style={{ fontSize: "0.8rem" }}>
-                        Estimado: {opt.estimatedHours}h
+                      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                        <span className="badge badge-idea">Flexible</span>
+                        {opt.estimatedHours !== null && (
+                          <span className="badge badge-muted">{opt.estimatedHours}h</span>
+                        )}
                       </div>
-                    )}
+                    </div>
                     {opt.condition && (
                       <div className="calm-muted" style={{ fontSize: "0.8rem", marginTop: "2px" }}>
                         <em>Condición:</em> {opt.condition}
+                      </div>
+                    )}
+
+                    {/* Actions on Flexible Option */}
+                    <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                      <button
+                        type="button"
+                        className="primary small"
+                        onClick={() => handlePromoteFlexibleToFocus(opt.itemId)}
+                        data-testid={`promote-flexible-to-focus-${opt.itemId}`}
+                        disabled={proposedWeek.foci.length >= 3}
+                        title={proposedWeek.foci.length >= 3 ? "Límite máximo de 3 focos alcanzado" : "Elegir como foco principal de la semana"}
+                      >
+                        ⭐ Elegir como foco
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary small"
+                        onClick={() => {
+                          setEditingProposalItemId(opt.itemId);
+                          setProposalItemHoursInput(opt.estimatedHours !== null ? String(opt.estimatedHours) : "");
+                        }}
+                        data-testid={`adjust-flexible-hours-${opt.itemId}`}
+                      >
+                        ⏱️ Ajustar horas
+                      </button>
+                    </div>
+
+                    {/* Inline Hours Editor */}
+                    {editingProposalItemId === opt.itemId && (
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          alignItems: "center",
+                          marginTop: "8px",
+                          background: "#f0f4f8",
+                          padding: "8px 12px",
+                          borderRadius: "4px",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <label style={{ fontSize: "0.82rem", fontWeight: 500, color: "#374151" }}>
+                          Horas estimadas:
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.5"
+                          value={proposalItemHoursInput}
+                          onChange={(e) => setProposalItemHoursInput(e.target.value)}
+                          placeholder="Ej: 2"
+                          style={{ width: "80px", padding: "4px 8px", fontSize: "0.85rem" }}
+                          data-testid={`input-hours-${opt.itemId}`}
+                        />
+                        <button
+                          type="button"
+                          className="primary small"
+                          onClick={() => {
+                            const val = proposalItemHoursInput.trim() !== "" ? Number(proposalItemHoursInput) : null;
+                            handleSaveProposalItemHours(opt.itemId, val);
+                          }}
+                          data-testid={`save-hours-${opt.itemId}`}
+                        >
+                          Guardar
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary small"
+                          onClick={() => {
+                            setEditingProposalItemId(null);
+                            setProposalItemHoursInput("");
+                          }}
+                        >
+                          Cancelar
+                        </button>
                       </div>
                     )}
                   </div>
@@ -3009,7 +3640,7 @@ export function WeeklyPlanningFromNotes({
                 Ya tienes una semana activa en curso (<code>{activePlanConflict.existingActivePlanId}</code>). Para proteger tu claridad mental y no saturar tu atención con múltiples agendas simultáneas, <strong>solo puede haber una semana activa a la vez</strong>.
               </p>
               <p style={{ margin: "0 0 12px 0", fontSize: "0.85rem", color: "#2563eb" }}>
-                Tu planificación para la semana del <strong>{activePlanConflict.targetWeek.startDate}</strong> al <strong>{activePlanConflict.targetWeek.endDate}</strong> está guardada de forma segura como borrador en tu cuaderno local. Cuando completes el cierre reflexivo de tu semana actual, podrás activar este borrador directamente.
+                Tu planificación para la semana del <strong>{activePlanConflict.targetWeek.startDate}</strong> al <strong>{activePlanConflict.targetWeek.endDate}</strong> está guardada de forma segura como borrador en tu cuaderno local (almacenamiento en este dispositivo). Podés volver a verla y ajustarla en cualquier momento desde esta pestaña (<strong>2. Preparar semana</strong>). En cuanto completes el cierre reflexivo de tu semana actual, podrás activarla directamente.
               </p>
               <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                 <button

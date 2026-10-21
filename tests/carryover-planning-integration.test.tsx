@@ -190,6 +190,7 @@ describe("Fase P5.6 — Conectar tareas postergadas con la planificación de la 
       getDraftPlans: vi.fn().mockResolvedValue([]),
       getDraftPlan: vi.fn().mockResolvedValue(null),
       getByWeekRange: vi.fn().mockResolvedValue(null),
+      getAll: vi.fn().mockResolvedValue([closedPlan]),
       updateStatus: vi.fn().mockResolvedValue(true),
       delete: vi.fn(),
     };
@@ -198,6 +199,7 @@ describe("Fase P5.6 — Conectar tareas postergadas con la planificación de la 
       save: vi.fn(),
       getById: vi.fn().mockImplementation(async (id) => (id === closedSchedule.scheduleId ? closedSchedule : null)),
       getByPlanId: vi.fn().mockImplementation(async (id) => (id === closedPlan.planId ? closedSchedule : null)),
+      getAll: vi.fn().mockResolvedValue([closedSchedule]),
       delete: vi.fn(),
     };
 
@@ -490,6 +492,7 @@ describe("Fase P5.6 — Conectar tareas postergadas con la planificación de la 
         getDraftPlans: vi.fn().mockResolvedValue([]),
         getDraftPlan: vi.fn().mockResolvedValue(null),
         getByWeekRange: vi.fn().mockResolvedValue(null),
+        getAll: vi.fn().mockResolvedValue([activePlan]),
         updateStatus: vi.fn().mockResolvedValue(true),
         delete: vi.fn(),
       };
@@ -498,6 +501,7 @@ describe("Fase P5.6 — Conectar tareas postergadas con la planificación de la 
         save: vi.fn(),
         getById: vi.fn().mockImplementation(async (id) => (id === activeSchedule.scheduleId ? activeSchedule : null)),
         getByPlanId: vi.fn().mockImplementation(async (id) => (id === activePlan.planId ? activeSchedule : null)),
+        getAll: vi.fn().mockResolvedValue([activeSchedule]),
         delete: vi.fn(),
       };
 

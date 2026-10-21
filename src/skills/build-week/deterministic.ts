@@ -336,6 +336,7 @@ export interface CalculateWeeklyCapacityParams {
   capacityConfig?: WeeklyCapacityConfig;
   foci?: Array<{ estimatedHours?: number | null }>;
   obligations?: Array<{ estimatedHours?: number | null }>;
+  flexibleOptions?: Array<{ estimatedHours?: number | null }>;
   explicitKnownEstimatedHours?: number | null;
   explicitCompleteness?: EstimationCompleteness;
 }
@@ -372,7 +373,7 @@ export function calculateWeeklyCapacity(
     plannableHours = Math.round(total * (1 - ratio) * 100) / 100;
   }
 
-  // 2. Resolve estimated workload from foci and obligations
+  // 2. Resolve estimated workload from foci, obligations, and flexible options
   let knownEstimatedHours: number | null = null;
   let estimationCompleteness: EstimationCompleteness = "none";
 
@@ -1087,6 +1088,7 @@ export function normalizeAndConserveProposedWeek(
     capacityConfig: input.capacity,
     foci: boundedFoci,
     obligations: validObligations,
+    flexibleOptions: cleanedFlexible,
   });
 
   const prevCapacity = rawProposal.weekSummary.capacity;
@@ -1353,6 +1355,7 @@ export function evaluateProposedWeekSemanticQuality(
     capacityConfig: input.capacity,
     foci: proposal.foci,
     obligations: proposal.obligations,
+    flexibleOptions: proposal.flexibleOptions,
   });
 
   if (propCap.estimationCompleteness !== expectedCapacity.estimationCompleteness) {

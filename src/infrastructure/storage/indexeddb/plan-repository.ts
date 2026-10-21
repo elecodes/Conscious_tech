@@ -199,6 +199,24 @@ export class IndexedDbWeeklyPlanRepository implements WeeklyPlanRepository {
     return true;
   }
 
+  async getAll(): Promise<StoredWeeklyPlan[]> {
+    const db = this.getDb();
+    const tx = db.transaction(STORES.PLANS, "readonly");
+    const store = tx.objectStore(STORES.PLANS);
+    const rawList = await wrapRequest(store.getAll());
+    const plans: StoredWeeklyPlan[] = [];
+    for (const raw of rawList ?? []) {
+      const parseResult = StoredWeeklyPlanSchema.safeParse(raw);
+      if (parseResult.success) {
+        plans.push(parseResult.data);
+      } else {
+        const id = (raw as Record<string, unknown>)?.planId;
+        console.warn(`[IndexedDbWeeklyPlanRepository] Skipping corrupted plan record ID "${id}":`, parseResult.error.issues);
+      }
+    }
+    return plans;
+  }
+
   async delete(planId: string): Promise<void> {
     const db = this.getDb();
     const tx = db.transaction(STORES.PLANS, "readwrite");

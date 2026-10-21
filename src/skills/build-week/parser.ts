@@ -213,11 +213,15 @@ export function parseProposedWeek(
       const obligationsArray = Array.isArray(obj.obligations)
         ? (obj.obligations as Array<{ estimatedHours?: number | null }>)
         : undefined;
+      const flexibleArray = Array.isArray(obj.flexibleOptions)
+        ? (obj.flexibleOptions as Array<{ estimatedHours?: number | null }>)
+        : undefined;
 
       ws.capacity = calculateWeeklyCapacity({
         capacityConfig: input.capacity,
         foci: fociArray,
         obligations: obligationsArray,
+        flexibleOptions: flexibleArray,
       });
     }
   }

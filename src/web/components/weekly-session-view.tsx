@@ -11,7 +11,7 @@ import {
 } from "../../domain/schedule";
 import { SuggestedAdjustmentAction } from "../../domain/adjustment";
 import { ItemOutcomeInput } from "../../domain/close-week";
-import { StoreCandidate } from "../../domain/memory";
+import { StoreCandidate, MemoryItem } from "../../domain/memory";
 import {
   WeeklyCapacitySummary,
   CapacityStatus,
@@ -279,6 +279,170 @@ export function renderAdjustmentDetails(action: SuggestedAdjustmentAction) {
   }
 }
 
+export function formatMemoryCategory(category?: string): string {
+  switch (category) {
+    case "project_context":
+      return "Contexto de proyecto";
+    case "preference":
+      return "Preferencia de trabajo";
+    case "decision":
+      return "Decisión consciente";
+    case "temporal_constraint":
+      return "Restricción temporal";
+    case "working_hypothesis":
+      return "Hipótesis de trabajo";
+    case "fact":
+    default:
+      return "Aprendizaje";
+  }
+}
+
+export function formatProvenanceSource(source?: string): string {
+  switch (source) {
+    case "user_explicit":
+      return "Tu reflexión personal";
+    case "conversation_inference":
+      return "Deducido del cierre";
+    case "plan_decision":
+      return "Decisión de la semana";
+    case "system":
+    default:
+      return "Registro del sistema";
+  }
+}
+
+export function formatConfirmationStatus(status?: string): string {
+  switch (status) {
+    case "confirmed":
+      return "Confirmado";
+    case "inferred":
+      return "Sugerido";
+    case "unconfirmed":
+      return "Pendiente";
+    default:
+      return status ?? "";
+  }
+}
+
+export function ConfirmedActiveMemoriesSection({
+  memories,
+  archiveMemory,
+  deleteMemory,
+}: {
+  memories: MemoryItem[];
+  archiveMemory?: (id: string) => Promise<void>;
+  deleteMemory?: (id: string) => Promise<void>;
+}) {
+  return (
+    <section
+      className="results-section"
+      style={{
+        marginTop: "32px",
+        borderTop: "1px solid var(--border-color, #e8e3d9)",
+        paddingTop: "20px",
+      }}
+      aria-label="Memorias activas confirmadas"
+      data-testid="confirmed-memories-section"
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "10px",
+          flexWrap: "wrap",
+          gap: "8px",
+        }}
+      >
+        <h3 style={{ margin: 0 }}>Memorias activas confirmadas ({memories.length})</h3>
+        <span className="calm-muted" style={{ fontSize: "0.85rem" }}>
+          Influyen con prudencia en futuras sugerencias · AI propone, tú decides
+        </span>
+      </div>
+
+      {memories.length === 0 ? (
+        <div
+          className="calm-box"
+          style={{
+            background: "var(--bg-card, #fcfbf9)",
+            border: "1px dashed var(--border-color, #e8e3d9)",
+            padding: "16px",
+            borderRadius: "6px",
+          }}
+          data-testid="no-memories-placeholder"
+        >
+          <p className="calm-muted" style={{ margin: 0, fontSize: "0.9rem" }}>
+            🌱 <em>No tienes memorias activas guardadas todavía.</em> Cuando completes el cierre reflexivo en «4. Revisar y aprender», el sistema te propondrá aprendizajes identificados y podrás decidir explícitamente cuáles conservar en tu cuaderno.
+          </p>
+        </div>
+      ) : (
+        <div className="items-list">
+          {memories.map((mem) => (
+            <div
+              key={mem.id}
+              className="item-card"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "10px",
+              }}
+            >
+              <div className="item-content" style={{ flex: 1, minWidth: "200px" }}>
+                <div className="item-title">{mem.content}</div>
+                <div className="item-tags" style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "4px" }}>
+                  <span className="badge badge-muted">
+                    {formatMemoryCategory(mem.category)} · {formatConfirmationStatus(mem.confirmationStatus)}
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "8px", marginLeft: "auto" }}>
+                <button
+                  type="button"
+                  className="secondary"
+                  style={{ fontSize: "0.8rem", padding: "4px 8px" }}
+                  aria-label={`Desactivar recuerdo ${mem.content}`}
+                  title="Desactiva este recuerdo para que no influya en futuras planificaciones sin borrar su registro histórico"
+                  onClick={async () => {
+                    if (archiveMemory) await archiveMemory(mem.id);
+                  }}
+                >
+                  💤 Desactivar
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  style={{
+                    fontSize: "0.8rem",
+                    padding: "4px 8px",
+                    color: "var(--danger-color, #c53030)",
+                  }}
+                  aria-label={`Olvidar recuerdo ${mem.content}`}
+                  title="Elimina definitivamente este recuerdo del cuaderno local (derecho al olvido)"
+                  onClick={async () => {
+                    if (
+                      window.confirm(
+                        "¿Seguro que deseas eliminar definitivamente este recuerdo de tu cuaderno?"
+                      )
+                    ) {
+                      if (deleteMemory) {
+                        await deleteMemory(mem.id);
+                      }
+                    }
+                  }}
+                >
+                  🗑️ Olvidar
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export interface PlanItemDescriptor {
   itemId: string;
   title: string;
@@ -481,8 +645,8 @@ export function CapacityProtectedSpaceSection({
             <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
               <span className="calm-muted">Restantes:</span>{" "}
               <strong>
-                {capacity.plannableHours != null && capacity.plannedHours != null
-                  ? formatHours(Math.max(0, capacity.plannableHours - capacity.plannedHours))
+                {capacity.plannableHours != null && (capacity.plannedHours != null || capacity.knownEstimatedHours != null)
+                  ? formatHours(Math.max(0, capacity.plannableHours - (capacity.plannedHours ?? capacity.knownEstimatedHours!)))
                   : capacity.plannableHours != null
                   ? `Hasta ${formatHours(capacity.plannableHours)}`
                   : "Desconocido"}
@@ -492,39 +656,44 @@ export function CapacityProtectedSpaceSection({
         </div>
 
         {/* Barra visual limpia de 1 línea */}
-        {capacity.totalAvailableHours != null && capacity.totalAvailableHours > 0 && (
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "2px" }}>
-            <span className="cognitive-budget-title" style={{ fontSize: "0.75rem", whiteSpace: "nowrap" }}>
-              Tu tiempo de un vistazo
-            </span>
-            <div className="cognitive-bar-track" style={{ flex: 1, height: "6px", margin: 0 }}>
-              {capacity.plannedHours != null && capacity.plannedHours > 0 && (
-                <div
-                  className="cognitive-bar-fill"
-                  style={{
-                    width: `${Math.min(100, Math.round((capacity.plannedHours / capacity.totalAvailableHours) * 100))}%`,
-                  }}
-                  title={`Planificadas: ${capacity.plannedHours}h`}
-                />
-              )}
-              {capacity.protectedSpaceHours != null && capacity.protectedSpaceHours > 0 && (
-                <div
-                  className="cognitive-bar-fill protected"
-                  style={{
-                    width: `${Math.min(100, Math.round((capacity.protectedSpaceHours / capacity.totalAvailableHours) * 100))}%`,
-                  }}
-                  title={`Margen de calma: ${capacity.protectedSpaceHours}h`}
-                />
-              )}
+        {capacity.totalAvailableHours != null && capacity.totalAvailableHours > 0 && (() => {
+          const effectivePlanned = capacity.plannedHours ?? capacity.knownEstimatedHours;
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "2px" }}>
+              <span className="cognitive-budget-title" style={{ fontSize: "0.75rem", whiteSpace: "nowrap" }}>
+                Tu tiempo de un vistazo
+              </span>
+              <div className="cognitive-bar-track" style={{ flex: 1, height: "6px", margin: 0 }}>
+                {effectivePlanned != null && effectivePlanned > 0 && (
+                  <div
+                    className="cognitive-bar-fill"
+                    style={{
+                      width: `${Math.min(100, Math.round((effectivePlanned / capacity.totalAvailableHours) * 100))}%`,
+                    }}
+                    title={`Planificadas: ${effectivePlanned}h`}
+                  />
+                )}
+                {capacity.protectedSpaceHours != null && capacity.protectedSpaceHours > 0 && (
+                  <div
+                    className="cognitive-bar-fill protected"
+                    style={{
+                      width: `${Math.min(100, Math.round((capacity.protectedSpaceHours / capacity.totalAvailableHours) * 100))}%`,
+                    }}
+                    title={`Margen de calma: ${capacity.protectedSpaceHours}h`}
+                  />
+                )}
+              </div>
+              <span className="cognitive-budget-ratio" style={{ fontSize: "0.75rem", whiteSpace: "nowrap" }}>
+                {capacity.plannedHours != null
+                  ? `${capacity.plannedHours}h asignadas`
+                  : effectivePlanned != null && effectivePlanned > 0
+                  ? `~${effectivePlanned}h asignadas (parcial)`
+                  : "Tareas sin estimar en horas"}{" "}
+                / {capacity.totalAvailableHours}h disponibles
+              </span>
             </div>
-            <span className="cognitive-budget-ratio" style={{ fontSize: "0.75rem", whiteSpace: "nowrap" }}>
-              {capacity.plannedHours != null
-                ? `${capacity.plannedHours}h asignadas`
-                : "Tareas sin estimar en horas"}{" "}
-              / {capacity.totalAvailableHours}h disponibles
-            </span>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Desglose progresivo */}
         <details className="calm-details" style={{ marginTop: "4px" }}>
@@ -558,9 +727,20 @@ export function CapacityProtectedSpaceSection({
                 data-testid="protected-space-reservation-notice"
                 style={{ fontSize: "0.78rem", margin: 0 }}
               >
-                {capacity.plannedHours == null && capacity.plannableHours != null
-                  ? `Se ha reservado espacio protegido en el plan (margen de calma). Disponés de hasta ${formatHours(capacity.plannableHours)} para tareas sin estimar.`
-                  : "Se ha reservado espacio protegido en el plan (margen de calma) para asegurar equilibrio y evitar sobrecarga."}
+                {(() => {
+                  const currentEstimated = capacity.plannedHours ?? capacity.knownEstimatedHours;
+                  if (currentEstimated != null && capacity.plannableHours != null) {
+                    if (currentEstimated > capacity.plannableHours) {
+                      return "Se ha reservado espacio protegido en el plan (margen de calma). La carga estimada actual supera el tiempo planificable disponible.";
+                    }
+                    const remaining = Math.max(0, capacity.plannableHours - currentEstimated);
+                    return `Se ha reservado espacio protegido en el plan (margen de calma). Disponés de hasta ${formatHours(remaining)} para tareas adicionales o pendientes de estimar.`;
+                  }
+                  if (currentEstimated == null && capacity.plannableHours != null) {
+                    return `Se ha reservado espacio protegido en el plan (margen de calma). Disponés de hasta ${formatHours(capacity.plannableHours)} para tareas sin estimar.`;
+                  }
+                  return "Se ha reservado espacio protegido en el plan (margen de calma) para asegurar equilibrio y evitar sobrecarga.";
+                })()}
               </p>
             </div>
           {/* Rejilla de límites de tiempo y carga */}
@@ -685,8 +865,10 @@ export function CapacityProtectedSpaceSection({
             <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
               <span className="calm-muted">Horas calculadas:</span>
               <strong data-testid="planned-hours">
-                {isComplete && capacity.plannedHours != null
+                {capacity.plannedHours != null
                   ? formatHours(capacity.plannedHours)
+                  : capacity.knownEstimatedHours != null
+                  ? `${formatHours(capacity.knownEstimatedHours)} (parcial · Por definir total)`
                   : "Por definir"}
               </strong>
             </div>
@@ -818,6 +1000,8 @@ export function WeeklySessionView({
     closeWeek,
     reopenWeek,
     confirmMemoryCandidate,
+    archiveMemory,
+    deleteMemory,
     purgeSession,
     resolveAmbiguity,
   } = useWeeklySession();
@@ -842,9 +1026,6 @@ export function WeeklySessionView({
   const [taskHoursInput, setTaskHoursInput] = useState<string>("");
   const [taskDayInput, setTaskDayInput] = useState<string>("");
   const [isAdjustmentPreviewOpen, setIsAdjustmentPreviewOpen] = useState(false);
-  const [isFuturePlanningOpen, setIsFuturePlanningOpen] = useState(
-    Boolean(initialPlanningItems && initialPlanningItems.length > 0)
-  );
 
   const plan = state.activePlan;
   const schedule = state.activeSchedule;
@@ -957,6 +1138,7 @@ export function WeeklySessionView({
       explicitCompleteness: completeness,
       foci: updatedFoci,
       obligations: updatedObligations,
+      flexibleOptions: updatedFlexible,
     });
 
     const updatedPlan: StoredWeeklyPlan = {
@@ -1047,12 +1229,6 @@ export function WeeklySessionView({
       setIsReopening(false);
     }
   };
-
-  useEffect(() => {
-    if (initialPlanningItems && initialPlanningItems.length > 0) {
-      setIsFuturePlanningOpen(true);
-    }
-  }, [initialPlanningItems]);
 
   const handleDispositionChange = (itemId: string, status: ItemDispositionChoice) => {
     setDispositions((prev) => ({
@@ -1464,6 +1640,66 @@ export function WeeklySessionView({
     );
   };
 
+  // --------------------------------------------------------------------------
+  // Helper: Memory Candidates Section (Sovereignty Invariant)
+  // --------------------------------------------------------------------------
+  const renderMemoryCandidatesSection = () => {
+    if (!state.memoryCandidates || state.memoryCandidates.length === 0) return null;
+    return (
+      <section
+        className="results-section calm-box"
+        style={{ marginTop: "24px" }}
+        aria-label="Candidatos de memoria"
+        data-testid="memory-candidates-section"
+      >
+        <h3>Candidatos de memoria pendientes de decisión</h3>
+        <p className="calm-text" style={{ marginBottom: "12px" }}>
+          El sistema identificó posibles aprendizajes.{" "}
+          <strong>No están guardados todavía.</strong> Tú decides cuáles conservar:
+        </p>
+        <div className="items-list">
+          {state.memoryCandidates.map((candidate: StoreCandidate) => (
+            <div key={candidate.candidateId} className="item-card">
+              <div className="item-content">
+                <div className="item-title">"{candidate.rawText}"</div>
+                <div className="item-tags" style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "6px" }}>
+                  <span className="badge badge-idea">
+                    {formatMemoryCategory(candidate.suggestedCategory)}
+                  </span>
+                  <span className="badge badge-muted">
+                    {formatProvenanceSource(candidate.provenanceSource)}
+                  </span>
+                </div>
+                <div className="actions" style={{ marginTop: "12px", display: "flex", gap: "8px" }}>
+                  <button
+                    className="secondary"
+                    aria-label={`Descartar candidato de memoria ${candidate.candidateId}`}
+                    onClick={async () => {
+                      await confirmMemoryCandidate(candidate, "rejected");
+                      setFeedbackMessage("Candidato descartado.");
+                    }}
+                  >
+                    Descartar
+                  </button>
+                  <button
+                    className="primary"
+                    aria-label={`Guardar en memoria candidato ${candidate.candidateId}`}
+                    onClick={async () => {
+                      await confirmMemoryCandidate(candidate, "accepted");
+                      setFeedbackMessage("Recuerdo guardado con éxito.");
+                    }}
+                  >
+                    Guardar en memoria
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  };
+
   const renderDevOptions = () => (
     <div
       style={{
@@ -1762,6 +1998,12 @@ export function WeeklySessionView({
           </div>
         )}
 
+        <ConfirmedActiveMemoriesSection
+          memories={state.memories}
+          archiveMemory={archiveMemory}
+          deleteMemory={deleteMemory}
+        />
+
         {renderDevOptions()}
       </div>
     );
@@ -1799,6 +2041,8 @@ export function WeeklySessionView({
 
         {renderLatestClosedWeekSection()}
 
+        {renderMemoryCandidatesSection()}
+
         {!state.latestClosedWeek && !state.latestCloseReport && (
           <div className="calm-box" style={{ marginTop: "20px" }}>
             <p className="calm-muted">No hay semanas cerradas ni activas para revisar en este momento.</p>
@@ -1811,6 +2055,12 @@ export function WeeklySessionView({
             </button>
           </div>
         )}
+
+        <ConfirmedActiveMemoriesSection
+          memories={state.memories}
+          archiveMemory={archiveMemory}
+          deleteMemory={deleteMemory}
+        />
       </div>
     );
   }
@@ -2036,7 +2286,7 @@ export function WeeklySessionView({
                 className="secondary"
                 data-testid="nav-to-prepare-button"
                 aria-label="Preparar próxima semana"
-                onClick={() => onNavigateSpace("prepare")}
+                onClick={() => onNavigateSpace?.("prepare")}
               >
                 🗓️ Preparar próxima semana
               </button>
@@ -2046,78 +2296,15 @@ export function WeeklySessionView({
                   className="primary"
                   data-testid="nav-to-review-button"
                   aria-label="Ir a revisar y cerrar semana"
-                  onClick={() => onNavigateSpace("review")}
+                  onClick={() => onNavigateSpace?.("review")}
                 >
                   Revisar y cerrar semana →
                 </button>
               )}
             </div>
-          ) : (
-            <button
-              type="button"
-              className={isFuturePlanningOpen ? "primary" : "secondary"}
-              style={{ fontSize: "0.85rem", padding: "4px 10px", marginLeft: "auto" }}
-              data-testid="toggle-future-planning-button"
-              aria-label="Preparar próxima semana y ver tareas postergadas"
-              onClick={() => setIsFuturePlanningOpen((prev) => !prev)}
-            >
-              {isFuturePlanningOpen
-                ? "▲ Ocultar preparación de siguiente semana"
-                : "🗓️ Preparar próxima semana y tareas postergadas"}
-            </button>
-          )}
+          ) : null}
         </div>
       </section>
-
-      {/* Preparación visible de la próxima semana y tareas postergadas */}
-      {isFuturePlanningOpen && (
-        <section
-          style={{
-            marginTop: "16px",
-            padding: "16px",
-            background: "#fafafa",
-            border: "1px solid var(--border-color, #e0e0e0)",
-            borderRadius: "8px",
-          }}
-          data-testid="visible-future-planning-section"
-          aria-label="Preparación de siguiente semana"
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "baseline",
-              flexWrap: "wrap",
-              gap: "8px",
-            }}
-          >
-            <h3 style={{ margin: 0 }}>Planificación futura y tareas postergadas</h3>
-            <button
-              type="button"
-              className="secondary"
-              style={{ fontSize: "0.8rem", padding: "2px 8px" }}
-              onClick={() => setIsFuturePlanningOpen(false)}
-            >
-              Cerrar vista
-            </button>
-          </div>
-          <p className="calm-muted" style={{ fontSize: "0.88rem", marginTop: "4px" }}>
-            Puedes estructurar un borrador para la próxima semana e incorporar tareas postergadas.
-            <strong> Para activar un nuevo plan de forma definitiva, deberás cerrar la semana actual primero.</strong>
-          </p>
-          <div style={{ marginTop: "12px" }}>
-            <WeeklyPlanningFromNotes
-              provider={provider}
-              initialItems={initialPlanningItems}
-              hasActivePlan={true}
-              onPlanCreated={() => {
-                onClearPlanningItems?.();
-                reloadSession();
-              }}
-            />
-          </div>
-        </section>
-      )}
 
       {/* Capacidad y espacio protegido */}
       {plan?.proposal.weekSummary.capacity && (
@@ -3232,75 +3419,7 @@ export function WeeklySessionView({
       )}
 
       {/* Memory Candidates Review Section (Sovereignty Invariant) */}
-      {state.memoryCandidates.length > 0 && (
-        <section className="results-section" style={{ marginTop: "24px" }} aria-label="Candidatos de memoria">
-          <h3>Candidatos de memoria pendientes de decisión</h3>
-          <p className="calm-text" style={{ marginBottom: "12px" }}>
-            El sistema identificó posibles aprendizajes.{" "}
-            <strong>No están guardados todavía.</strong> Tú decides cuáles conservar:
-          </p>
-          <div className="items-list">
-            {state.memoryCandidates.map((candidate: StoreCandidate) => (
-              <div key={candidate.candidateId} className="item-card">
-                <div className="item-content">
-                  <div className="item-title">"{candidate.rawText}"</div>
-                  <div className="item-tags">
-                    <span className="badge badge-idea">
-                      Categoría sugerida: {candidate.suggestedCategory || "fact"}
-                    </span>
-                    <span className="badge badge-muted">
-                      Origen: {candidate.provenanceSource || "sistema"}
-                    </span>
-                  </div>
-                  <div className="actions" style={{ marginTop: "12px" }}>
-                    <button
-                      className="secondary"
-                      aria-label={`Descartar candidato de memoria ${candidate.candidateId}`}
-                      onClick={async () => {
-                        await confirmMemoryCandidate(candidate, "rejected");
-                        setFeedbackMessage("Candidato descartado.");
-                      }}
-                    >
-                      Descartar
-                    </button>
-                    <button
-                      className="primary"
-                      aria-label={`Guardar en memoria candidato ${candidate.candidateId}`}
-                      onClick={async () => {
-                        await confirmMemoryCandidate(candidate, "accepted");
-                        setFeedbackMessage("Recuerdo guardado con éxito.");
-                      }}
-                    >
-                      Guardar en memoria
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Confirmed Active Memories */}
-      {state.memories.length > 0 && (
-        <section className="results-section" style={{ marginTop: "24px" }} aria-label="Memorias activas confirmadas">
-          <h3>Memorias activas confirmadas</h3>
-          <div className="items-list">
-            {state.memories.map((mem) => (
-              <div key={mem.id} className="item-card">
-                <div className="item-content">
-                  <div className="item-title">{mem.content}</div>
-                  <div className="item-tags">
-                    <span className="badge badge-muted">
-                      {mem.category} · {mem.confirmationStatus}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {renderMemoryCandidatesSection()}
 
       {/* Purge Week Option (Accessible in Review space or Legacy Unified View) */}
       <div
@@ -3359,6 +3478,15 @@ export function WeeklySessionView({
       </div>
       </>
     )}
+
+      {/* Confirmed Active Memories (Visible in Active Week, Review, and Unified Spaces) */}
+      {(activeSpace === "active" || activeSpace === "review" || activeSpace === undefined) && (
+        <ConfirmedActiveMemoriesSection
+          memories={state.memories}
+          archiveMemory={archiveMemory}
+          deleteMemory={deleteMemory}
+        />
+      )}
 
       {/* Plan New Week / Brain Dump (Accessible from active session in legacy unified view) */}
       {activeSpace === undefined && (

@@ -161,6 +161,7 @@ export interface WeeklyPlanRepository {
   getDraftPlans(): Promise<StoredWeeklyPlan[]>;
   getDraftPlan(targetWeek?: TargetWeek): Promise<StoredWeeklyPlan | null>;
   getByWeekRange(week: TargetWeek): Promise<StoredWeeklyPlan | null>;
+  getAll(): Promise<StoredWeeklyPlan[]>;
   updateStatus(planId: string, status: WeeklyPlanStatus): Promise<boolean>;
   delete(planId: string): Promise<void>;
 }
@@ -173,10 +174,12 @@ export interface WeeklyScheduleRepository {
    * 2. Compares with expectedVersion.
    * 3. Aborts and throws StaleVersionConflictError if mismatched.
    * 4. Writes schedule with version incremented by 1 only if matched.
+   * If options.force is true, allows restoring/overwriting an existing record without version collision.
    */
-  save(schedule: WeeklySchedule, expectedVersion?: number): Promise<void>;
+  save(schedule: WeeklySchedule, expectedVersion?: number, options?: { force?: boolean }): Promise<void>;
   getById(scheduleId: string): Promise<WeeklySchedule | null>;
   getByPlanId(planId: string): Promise<WeeklySchedule | null>;
+  getAll(): Promise<WeeklySchedule[]>;
   delete(scheduleId: string): Promise<void>;
 }
 
@@ -233,6 +236,7 @@ export type SessionResumeResult =
   | {
       status: "no_active_session";
       state: null;
+      memories?: MemoryItem[];
       latestClosedWeek?: ClosedWeekSummary | null;
       draftPlan?: StoredWeeklyPlan | null;
       draftPlans?: StoredWeeklyPlan[];

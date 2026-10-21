@@ -26,6 +26,13 @@ import {
 import { executeCloseWeekDeterministic } from "../skills/close-week/deterministic";
 import { StoreCandidate, MemoryOperation, MemoryItemSchema } from "../domain/memory";
 import { STORES, wrapRequest, waitForTransaction } from "../infrastructure/storage/indexeddb/database";
+import {
+  exportUserData,
+  importUserData,
+  UserDataBackup,
+  ImportBackupOptions,
+  ImportBackupResult,
+} from "../infrastructure/storage/indexeddb/backup";
 
 // ============================================================================
 // Service Input & Output Types
@@ -165,10 +172,16 @@ export class WeeklySessionService {
       }
     }
 
+    // Retrieve confirmed active memories
+    const activeMemories = await this.deps.memories.getAll({
+      temporalStatuses: ["active"],
+    });
+
     if (activePlans.length === 0) {
       return {
         status: "no_active_session",
         state: null,
+        memories: activeMemories,
         latestClosedWeek,
         draftPlan,
         draftPlans,
@@ -211,11 +224,6 @@ export class WeeklySessionService {
       }
       latestCloseReport = foundClose;
     }
-
-    // Retrieve confirmed active memories
-    const activeMemories = await this.deps.memories.getAll({
-      temporalStatuses: ["active"],
-    });
 
     return {
       status: "session_resumed",
@@ -551,12 +559,13 @@ export class WeeklySessionService {
 
 
   /**
-   * Saves a weekly plan and its optional schedule, validating referential integrity
-   * and preventing duplicate active plans.
+   * Saves a weekly plan and its optional schedule, validating referential integrity,
+   * preventing duplicate active plans, and preserving previous state on schedule failure.
    */
   async createOrSavePlanAndSchedule(
     plan: StoredWeeklyPlan,
-    schedule?: WeeklySchedule
+    schedule?: WeeklySchedule,
+    expectedScheduleVersion?: number
   ): Promise<CreatePlanResult> {
     const parseResult = StoredWeeklyPlanSchema.safeParse(plan);
     if (!parseResult.success) {
@@ -597,14 +606,43 @@ export class WeeklySessionService {
       }
     }
 
+    // 1. Snapshot previous plan state before any mutation (Compensating Transaction Pattern)
+    const previousPlan = await this.deps.plans.getById(plan.planId);
+
     await this.deps.plans.save(plan);
     if (schedule) {
       try {
-        await this.deps.schedules.save(schedule);
+        let scheduleToWrite = schedule;
+        let resolvedExpectedVersion = expectedScheduleVersion;
+
+        // If expectedScheduleVersion is not explicitly provided, check if schedule already exists
+        if (resolvedExpectedVersion === undefined) {
+          const existingSchedule = await this.deps.schedules.getById(schedule.scheduleId);
+          if (existingSchedule) {
+            // If caller provides a schedule matching current existing version, advance version by 1
+            if (schedule.version === existingSchedule.version) {
+              resolvedExpectedVersion = existingSchedule.version;
+              scheduleToWrite = {
+                ...schedule,
+                version: existingSchedule.version + 1,
+              };
+            }
+          }
+        }
+
+        await this.deps.schedules.save(scheduleToWrite, resolvedExpectedVersion);
+        schedule = scheduleToWrite;
       } catch (scheduleError) {
-        // Rollback saved plan to avoid leaving an orphan active plan without schedule
+        // COMPENSATING TRANSACTION:
+        // Do NOT blindly delete the plan. If the plan existed before this operation,
+        // restore its pre-operation state. Only if it was newly created in this operation
+        // should it be deleted to clean up an orphan.
         try {
-          await this.deps.plans.delete(plan.planId);
+          if (previousPlan) {
+            await this.deps.plans.save(previousPlan);
+          } else {
+            await this.deps.plans.delete(plan.planId);
+          }
         } catch {
           // Preserve root cause
         }
@@ -616,12 +654,9 @@ export class WeeklySessionService {
     // preserving drafts of all other weeks!
     if (plan.status === "active") {
       try {
-        const draftForWeek = await this.getDraftPlan(plan.targetWeek);
-        if (draftForWeek) {
-          await this.clearDraftPlan(draftForWeek.planId);
-        }
+        await this.clearDraftPlan(plan.targetWeek);
       } catch {
-        // If draft lookup fails or is ambiguous, do not crash active plan activation
+        // If draft cleanup fails, do not crash active plan activation
       }
     }
 
@@ -678,9 +713,21 @@ export class WeeklySessionService {
       return;
     }
     if (planIdOrTargetWeek && typeof planIdOrTargetWeek === "object") {
-      const draft = await this.getDraftPlan(planIdOrTargetWeek);
-      if (draft) {
-        await this.deps.plans.delete(draft.planId);
+      if (this.deps.plans.getDraftPlans) {
+        const drafts = await this.deps.plans.getDraftPlans();
+        const matching = drafts.filter(
+          (d) =>
+            d.targetWeek.startDate === planIdOrTargetWeek.startDate &&
+            d.targetWeek.endDate === planIdOrTargetWeek.endDate
+        );
+        for (const draft of matching) {
+          await this.deps.plans.delete(draft.planId);
+        }
+      } else {
+        const draft = await this.getDraftPlan(planIdOrTargetWeek);
+        if (draft) {
+          await this.deps.plans.delete(draft.planId);
+        }
       }
       return;
     }
@@ -1168,5 +1215,51 @@ export class WeeklySessionService {
         reason: (err as Error).message || "Multi-store transaction failed",
       };
     }
+  }
+
+  /**
+   * Archives a memory item, marking it outdated so it no longer biases future plans
+   * while keeping historical audit integrity.
+   */
+  async archiveMemory(id: string): Promise<void> {
+    await this.deps.memories.archive(id);
+  }
+
+  /**
+   * Hard-deletes a memory item completely (right to be forgotten / privacy).
+   */
+  async deleteMemory(id: string): Promise<void> {
+    await this.deps.memories.delete(id);
+  }
+
+  /**
+   * Exports the entire user data across all 4 IndexedDB stores.
+   */
+  async exportBackup(): Promise<UserDataBackup> {
+    return exportUserData({
+      plans: this.deps.plans,
+      schedules: this.deps.schedules,
+      closeReports: this.deps.closeReports,
+      memories: this.deps.memories,
+    });
+  }
+
+  /**
+   * Validates and imports user data from a JSON backup.
+   */
+  async importBackup(
+    jsonString: string,
+    options?: ImportBackupOptions
+  ): Promise<ImportBackupResult> {
+    return importUserData(
+      jsonString,
+      {
+        plans: this.deps.plans,
+        schedules: this.deps.schedules,
+        closeReports: this.deps.closeReports,
+        memories: this.deps.memories,
+      },
+      options
+    );
   }
 }
