@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.20.0] - 2026-10-23
+
+### Added
+- **Google Calendar iCal Integration & Committed Capacity Analysis**:
+  - Implemented zero-cost, zero-dependency calendar integration supporting Google Calendar private iCal feeds and `.ics` file imports (`src/domain/calendar.ts`, `src/infrastructure/calendar/ical-parser.ts`).
+  - RFC 5545 compliant parser handling line unfolding, UTC/local/all-day date-times, text unescaping, cancellation status filtering, and weekly recurrence rule (`RRULE:FREQ=WEEKLY`) expansion.
+  - Automatic committed hours calculation (`calculateCalendarWeekSummary`) generating daily constraints (`DayConstraint[]`) and schedule time blocks (`TimeBlock[]`) for collision and overlap detection.
+  - Local anti-CORS development proxy with strict SSRF protection (`src/server/calendar-proxy-handler.ts`, `vite.config.ts`), validating URLs and rejecting private IP / loopback requests.
+  - Calm UI integration (`src/web/components/calendar-sync-card.tsx`) in the weekly planning workspace (`src/web/components/weekly-planning-from-notes.tsx`) with local URL persistence, event list preview, and automatic available capacity adjustment.
+- **ADR 0020**:
+  - Documented Google Calendar iCal integration architecture and capacity deduction rationale in `docs/adr/0020-google-calendar-ical-integration.md`.
+- **Testing & Verification**:
+  - Added unit test suites:
+    - `tests/calendar-domain.test.ts` (5 tests).
+    - `tests/calendar-ui-integration.test.tsx` (6 tests).
+
 ## [0.19.0] - 2026-10-23
 
 ### Added

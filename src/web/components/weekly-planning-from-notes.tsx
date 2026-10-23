@@ -21,6 +21,8 @@ import {
   formatUnscheduledCategory,
 } from "./weekly-session-view";
 import { VoiceDictationButton } from "./voice-dictation-button";
+import { CalendarSyncCard } from "./calendar-sync-card";
+import { CalendarWeekSummary } from "../../domain/calendar";
 
 export interface PendingCarryOverTask {
   itemId: string;
@@ -169,7 +171,18 @@ export function WeeklyPlanningFromNotes({
   const [availableHoursInput, setAvailableHoursInput] = useState(initialAvailable);
   const [protectedSpacePercentInput, setProtectedSpacePercentInput] = useState(initialRatioPercent);
   const [capacityFeedbackMessage, setCapacityFeedbackMessage] = useState<string | null>(null);
+  const [calendarSummary, setCalendarSummary] = useState<CalendarWeekSummary | null>(null);
   const [isEditingCapacity, setIsEditingCapacity] = useState(false);
+
+  const handleCalendarApplied = (summary: CalendarWeekSummary) => {
+    setCalendarSummary(summary);
+    const defaultWeeklyBase = 40;
+    const remainingPlannable = Math.max(0, defaultWeeklyBase - summary.totalCommittedHours);
+    setAvailableHoursInput(String(remainingPlannable));
+    setCapacityFeedbackMessage(
+      `📅 Google Calendar sincronizado: ${summary.totalCommittedHours}h ocupadas en ${summary.events.length} reunión(es). Capacidad restante ajustada a ${remainingPlannable}h.`
+    );
+  };
   const [editingProposalItemId, setEditingProposalItemId] = useState<string | null>(null);
   const [proposalItemHoursInput, setProposalItemHoursInput] = useState<string>("");
 
@@ -1660,6 +1673,10 @@ export function WeeklyPlanningFromNotes({
       {/* -------------------------------------------------------------------- */}
       {(!extractedItems || extractedItems.length === 0) && (
         <div style={{ marginTop: "16px" }}>
+          <CalendarSyncCard
+            targetWeek={activeTargetWeek}
+            onCalendarApplied={handleCalendarApplied}
+          />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", flexWrap: "wrap", gap: "8px" }}>
             <label
               htmlFor="planning-notes-input"
@@ -2535,6 +2552,11 @@ export function WeeklyPlanningFromNotes({
                         <strong style={{ fontSize: "0.88rem", color: "#1f2937" }}>
                           ✓ Capacidad configurada y validada ({proposedWeek.weekSummary.capacity.totalAvailableHours}h disponibles)
                         </strong>
+                        {calendarSummary && (
+                          <span style={{ fontSize: "0.82rem", color: "#0369a1" }}>
+                            (📅 {calendarSummary.totalCommittedHours}h en reuniones de Google Calendar)
+                          </span>
+                        )}
                         {proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity" ||
                         (proposedWeek.foci.length === 0 &&
                           proposedWeek.obligations.length === 0 &&

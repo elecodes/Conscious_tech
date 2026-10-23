@@ -285,7 +285,8 @@ npm run build
 - [x] **Local Persistence & Weekly Session (P1–P5)** (IndexedDB, UI integration, schedule continuity, closed week inspection & reopening)
 - [x] **Radar de Imprevistos (Sections 21–25)** (Mid-week unforeseen intake, capacity recalculation, sovereign actions)
 - [x] **Native Voice Dictation Mode** (Client-side Web Speech API, zero-cost, zero-dependency streaming dictation in Spanish and English)
-- [ ] **External Context Bridges (MCP)** (Read-only integration for Notion, Google Drive, Google Calendar)
+- [x] **Google Calendar Integration (iCal & Capacity Bridge)** (Private feed sync, RFC 5545 parsing, committed hours & collision detection)
+- [ ] **External Context Bridges (MCP)** (Read-only integration for Notion & Google Drive)
 
 ---
 
