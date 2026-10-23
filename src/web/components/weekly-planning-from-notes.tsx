@@ -22,7 +22,11 @@ import {
 } from "./weekly-session-view";
 import { VoiceDictationButton } from "./voice-dictation-button";
 import { CalendarSyncCard } from "./calendar-sync-card";
-import { CalendarWeekSummary } from "../../domain/calendar";
+import {
+  CalendarWeekSummary,
+  buildGoogleCalendarTemplateUrl,
+  generateIcsCalendarExport,
+} from "../../domain/calendar";
 
 export interface PendingCarryOverTask {
   itemId: string;
@@ -1668,15 +1672,17 @@ export function WeeklyPlanningFromNotes({
         </div>
       )}
 
+      {/* Calendar Integration (Always available in planning) */}
+      <CalendarSyncCard
+        targetWeek={activeTargetWeek}
+        onCalendarApplied={handleCalendarApplied}
+      />
+
       {/* -------------------------------------------------------------------- */}
       {/* 1. Input Section when no items exist yet */}
       {/* -------------------------------------------------------------------- */}
       {(!extractedItems || extractedItems.length === 0) && (
         <div style={{ marginTop: "16px" }}>
-          <CalendarSyncCard
-            targetWeek={activeTargetWeek}
-            onCalendarApplied={handleCalendarApplied}
-          />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", flexWrap: "wrap", gap: "8px" }}>
             <label
               htmlFor="planning-notes-input"
@@ -2812,6 +2818,25 @@ export function WeeklyPlanningFromNotes({
                           FOCO {romanLabel}{focus.estimatedHours !== null ? ` · ${focus.estimatedHours}H` : ""}
                         </span>
                         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                          <button
+                            type="button"
+                            className="secondary small"
+                            data-testid={`focus-add-to-gcal-${focus.id}`}
+                            style={{ fontSize: "0.78rem", padding: "2px 8px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                            title="Abrir y guardar en Google Calendar con 1 clic"
+                            onClick={() => {
+                              const gcalUrl = buildGoogleCalendarTemplateUrl({
+                                title: focus.title,
+                                day: activeTargetWeek.startDate,
+                                durationHours: focus.estimatedHours || 2,
+                                description: `Foco semanal\nResultado deseado: ${focus.desiredOutcome}\nFundamentación: ${focus.rationale}`,
+                              });
+                              window.open(gcalUrl, "_blank", "noopener,noreferrer");
+                            }}
+                          >
+                            <span>📅</span>
+                            <span>Google Cal</span>
+                          </button>
                           {isRecoveryFocus && (
                             <span className="badge badge-warning" data-testid="recovery-focus-badge">
                               Prioridad de recuperación
@@ -2972,6 +2997,25 @@ export function WeeklyPlanningFromNotes({
                       >
                         ⏱️ Ajustar horas
                       </button>
+                      <button
+                        type="button"
+                        className="secondary small"
+                        data-testid={`obligation-add-to-gcal-${ob.itemId}`}
+                        style={{ fontSize: "0.8rem", padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                        title="Abrir y guardar en Google Calendar con 1 clic"
+                        onClick={() => {
+                          const gcalUrl = buildGoogleCalendarTemplateUrl({
+                            title: ob.title,
+                            day: ob.dueDate || activeTargetWeek.startDate,
+                            durationHours: ob.estimatedHours || 1,
+                            description: `Compromiso semanal (${ob.commitmentType})\nFundamentación: ${ob.rationale}`,
+                          });
+                          window.open(gcalUrl, "_blank", "noopener,noreferrer");
+                        }}
+                      >
+                        <span>📅</span>
+                        <span>Google Cal</span>
+                      </button>
                     </div>
 
                     {/* Inline Hours Editor */}
@@ -3081,6 +3125,25 @@ export function WeeklyPlanningFromNotes({
                         data-testid={`adjust-flexible-hours-${opt.itemId}`}
                       >
                         ⏱️ Ajustar horas
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary small"
+                        data-testid={`flexible-add-to-gcal-${opt.itemId}`}
+                        style={{ fontSize: "0.8rem", padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                        title="Abrir y guardar en Google Calendar con 1 clic"
+                        onClick={() => {
+                          const gcalUrl = buildGoogleCalendarTemplateUrl({
+                            title: opt.title,
+                            day: activeTargetWeek.startDate,
+                            durationHours: opt.estimatedHours || 1,
+                            description: `Opción flexible${opt.condition ? `\nCondición: ${opt.condition}` : ""}`,
+                          });
+                          window.open(gcalUrl, "_blank", "noopener,noreferrer");
+                        }}
+                      >
+                        <span>📅</span>
+                        <span>Google Cal</span>
                       </button>
                     </div>
 
@@ -3798,16 +3861,60 @@ export function WeeklyPlanningFromNotes({
               </button>
             </div>
 
-            <button
-              type="button"
-              className="primary"
-              aria-label="Confirmar y activar semana"
-              disabled={isConfirming}
-              onClick={handleConfirmPlan}
-              data-testid="confirm-plan-button"
-            >
-              {isConfirming ? "Guardando semana..." : "✓ Confirmar y activar semana"}
-            </button>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="secondary"
+                data-testid="proposal-export-to-gcal"
+                style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                onClick={() => {
+                  const exportItems = [
+                    ...proposedWeek.foci.map((f) => ({
+                      title: f.title,
+                      day: activeTargetWeek.startDate,
+                      durationHours: f.estimatedHours || 2,
+                      description: `Foco: ${f.desiredOutcome}`,
+                    })),
+                    ...proposedWeek.obligations.map((o) => ({
+                      title: o.title,
+                      day: o.dueDate || activeTargetWeek.startDate,
+                      durationHours: o.estimatedHours || 1,
+                      description: `Compromiso (${o.commitmentType})`,
+                    })),
+                    ...proposedWeek.flexibleOptions.map((fl) => ({
+                      title: fl.title,
+                      day: activeTargetWeek.startDate,
+                      durationHours: fl.estimatedHours || 1,
+                      description: fl.condition ? `Condición: ${fl.condition}` : "Opción flexible",
+                    })),
+                  ];
+                  const ics = generateIcsCalendarExport(exportItems, "Conscious Tech — Propuesta");
+                  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `conscious-tech-propuesta-${activeTargetWeek.startDate}.ics`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                <span>📅</span>
+                <span>Exportar propuesta (.ics / Google Cal)</span>
+              </button>
+
+              <button
+                type="button"
+                className="primary"
+                aria-label="Confirmar y activar semana"
+                disabled={isConfirming}
+                onClick={handleConfirmPlan}
+                data-testid="confirm-plan-button"
+              >
+                {isConfirming ? "Guardando semana..." : "✓ Confirmar y activar semana"}
+              </button>
+            </div>
           </div>
         </div>
       )}
