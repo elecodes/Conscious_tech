@@ -20,6 +20,7 @@ import {
   formatDeferredReason,
   formatUnscheduledCategory,
 } from "./weekly-session-view";
+import { VoiceDictationButton } from "./voice-dictation-button";
 
 export interface PendingCarryOverTask {
   itemId: string;
@@ -1659,12 +1660,18 @@ export function WeeklyPlanningFromNotes({
       {/* -------------------------------------------------------------------- */}
       {(!extractedItems || extractedItems.length === 0) && (
         <div style={{ marginTop: "16px" }}>
-          <label
-            htmlFor="planning-notes-input"
-            style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}
-          >
-            ¿Qué tienes en mente para planificar?
-          </label>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", flexWrap: "wrap", gap: "8px" }}>
+            <label
+              htmlFor="planning-notes-input"
+              style={{ fontWeight: 600 }}
+            >
+              ¿Qué tienes en mente para planificar?
+            </label>
+            <VoiceDictationButton
+              getText={() => noteText}
+              onTranscript={(t) => setNoteText(t)}
+            />
+          </div>
           <textarea
             id="planning-notes-input"
             rows={5}
@@ -1942,16 +1949,22 @@ export function WeeklyPlanningFromNotes({
               borderRadius: "8px",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", flexWrap: "wrap", gap: "8px" }}>
               <label
                 htmlFor="planning-notes-input"
                 style={{ fontWeight: 600, fontSize: "0.88rem", color: "var(--text-main)" }}
               >
                 ➕ ¿Quieres añadir más ideas o tareas a esta semana? (opcional)
               </label>
-              <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
-                {noteText.length} caracteres
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                  {noteText.length} caracteres
+                </span>
+                <VoiceDictationButton
+                  getText={() => noteText}
+                  onTranscript={(t) => setNoteText(t)}
+                />
+              </div>
             </div>
             <textarea
               id="planning-notes-input"

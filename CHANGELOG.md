@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.19.0] - 2026-10-23
+
+### Added
+- **Native Voice Dictation Mode (`src/web/hooks/use-speech-recognition.ts`, `src/web/components/voice-dictation-button.tsx`)**:
+  - Implemented client-side voice dictation powered by the browser's native Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`), adhering strictly to the zero-cost (free-tier first) and zero-dependency architecture.
+  - Streaming continuous voice recognition with real-time interim results and automatic stream drop recovery.
+  - Multi-language support with instant toggle between Spanish (`es-ES`) and English (`en-US`).
+  - Seamless text accumulation that preserves pre-existing user notes without destructive overwrite.
+  - Integrated into:
+    - Initial Brain Dump planning notes input (`src/web/components/weekly-planning-from-notes.tsx`).
+    - Mid-planning additional notes textarea (`src/web/components/weekly-planning-from-notes.tsx`).
+    - Active week Unforeseen Events Radar input (`src/web/components/weekly-session-view.tsx`).
+  - Graceful fallback with calm indicator (`🎙️ (Voz no soportada)`) on browsers without native Web Speech API support.
+- **ADR 0019**:
+  - Documented native voice dictation architecture and MCP context integration roadmap in `docs/adr/0019-native-voice-dictation-and-mcp-integration-architecture.md`.
+- **Testing & Verification**:
+  - Added unit test suite `tests/voice-dictation.test.tsx` verifying API detection, fallback rendering, active button states, transcript preservation, language switching, and disabled attributes (8 tests).
+
 ## [0.18.0] - 2026-10-23
 
 ### Added

@@ -26,6 +26,7 @@ import {
   RadarEvaluationResult,
 } from "../../application/radar-pipeline";
 import { AdjustmentProposal } from "../../domain/adjustment";
+import { VoiceDictationButton } from "./voice-dictation-button";
 
 export function getWeekDays(startDate?: string): Array<{ date: string; label: string }> {
   if (!startDate) return [];
@@ -3166,6 +3167,13 @@ export function WeeklySessionView({
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <VoiceDictationButton
+                getText={() => radarInput}
+                onTranscript={(t) => setRadarInput(t)}
+                disabled={radarEvaluating}
+              />
+            </div>
             <textarea
               className="calm-input"
               data-testid="radar-input"
