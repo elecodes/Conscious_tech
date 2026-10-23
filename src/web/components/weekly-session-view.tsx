@@ -21,6 +21,11 @@ import {
 } from "../../domain/week";
 import { calculateWeeklyCapacity } from "../../skills/build-week/deterministic";
 import { WeeklyPlanningFromNotes } from "./weekly-planning-from-notes";
+import {
+  evaluateRadarInput,
+  RadarEvaluationResult,
+} from "../../application/radar-pipeline";
+import { AdjustmentProposal } from "../../domain/adjustment";
 
 export function getWeekDays(startDate?: string): Array<{ date: string; label: string }> {
   if (!startDate) return [];
@@ -1040,6 +1045,207 @@ export function WeeklySessionView({
       setTaskDayInput(alloc?.day || "");
     }
   }, [selectedItem?.itemId, selectedItem?.estimatedHours, schedule]);
+
+  // Radar de Imprevistos State (Sección 21-25)
+  const [radarInput, setRadarInput] = useState("");
+  const [radarEvaluating, setRadarEvaluating] = useState(false);
+  const [radarResult, setRadarResult] = useState<RadarEvaluationResult | null>(null);
+  const [radarError, setRadarError] = useState<string | null>(null);
+
+  const handleEvaluateRadar = async () => {
+    if (!radarInput.trim() || !plan) return;
+    setRadarEvaluating(true);
+    setRadarError(null);
+    try {
+      const today = new Date().toISOString().split("T")[0]!;
+      const res = await evaluateRadarInput(provider, {
+        changeDescription: radarInput,
+        currentDate: today,
+        activePlan: plan.proposal,
+        timeBlocks: schedule?.timeBlocks,
+        dailyAllocations: schedule?.dailyAllocations,
+      });
+      setRadarResult(res);
+    } catch (err) {
+      setRadarError(
+        (err as Error).message || "Ocurrió un error al evaluar el imprevisto con el Radar."
+      );
+    } finally {
+      setRadarEvaluating(false);
+    }
+  };
+
+  const handleApplyRadarAdjustment = async (proposal: AdjustmentProposal) => {
+    if (!schedule || !proposal.actions || proposal.actions.length === 0) return;
+    const primaryAction = proposal.actions[0];
+    if (!primaryAction) return;
+
+    try {
+      const res = await applyAdjustment({
+        scheduleId: schedule.scheduleId,
+        proposalId: proposal.id,
+        adjustmentId: `adj-${Date.now()}`,
+        action: primaryAction,
+        expectedScheduleVersion: schedule.version,
+        humanDecision: "accepted",
+        decidedAt: new Date().toISOString(),
+      });
+
+      if (res.status === "success") {
+        setFeedbackMessage("Ajuste del Radar aplicado con éxito a tu agenda.");
+        setRadarResult(null);
+        setRadarInput("");
+      } else if (res.status === "concurrency_conflict") {
+        setFeedbackMessage("Conflicto de versión al aplicar el ajuste. Recargá la agenda.");
+      } else {
+        setFeedbackMessage(`No se pudo aplicar el ajuste: ${res.status}`);
+      }
+    } catch (err) {
+      setFeedbackMessage((err as Error).message || "Error al aplicar ajuste del Radar.");
+    }
+  };
+
+  const handleIncorporateRadarItems = async (mode: "auto" | "flexible" = "auto") => {
+    if (!plan || !radarResult || radarResult.extractedItems.length === 0) return;
+
+    try {
+      const currentProposal = plan.proposal;
+      const newObligations = [...currentProposal.obligations];
+      const newFlexible = [...currentProposal.flexibleOptions];
+      let addedHours = 0;
+      let hasUnestimated = false;
+
+      // Collect all existing item IDs across all collections to guarantee complete uniqueness
+      const existingItemIds = new Set<string>([
+        ...currentProposal.foci.flatMap((f) => f.contributingItemIds),
+        ...currentProposal.obligations.map((o) => o.itemId),
+        ...currentProposal.flexibleOptions.map((f) => f.itemId),
+        ...currentProposal.deferredItems.map((d) => d.itemId),
+      ]);
+
+      const allocatedScheduleItems: { id: string; day: string; hours: number }[] = [];
+      let counter = 1;
+
+      for (const item of radarResult.extractedItems) {
+        const itemHours = item.estimatedEffort?.value ?? null;
+        if (itemHours != null && itemHours > 0) {
+          addedHours += itemHours;
+        } else {
+          hasUnestimated = true;
+        }
+
+        // Generate a guaranteed unique ID for each incorporated item
+        let resolvedItemId = item.id;
+        while (existingItemIds.has(resolvedItemId)) {
+          resolvedItemId = `item-radar-${Date.now()}-${counter++}`;
+        }
+        existingItemIds.add(resolvedItemId);
+
+        const isExternal = item.commitment === "external";
+        const hasDeadline = Boolean(item.deadline?.resolved);
+
+        if (mode === "auto" && (isExternal || hasDeadline)) {
+          newObligations.push({
+            itemId: resolvedItemId,
+            title: item.title,
+            ...(item.deadline?.resolved ? { dueDate: item.deadline.resolved } : {}),
+            commitmentType: isExternal ? "external" : "strict_deadline",
+            rationale: "Incorporado vía Radar de imprevistos",
+            estimatedHours: itemHours,
+          });
+        } else {
+          newFlexible.push({
+            itemId: resolvedItemId,
+            title: item.title,
+            condition: item.type === "idea" ? "Exploración de idea" : "Si hay espacio",
+            estimatedHours: itemHours,
+          });
+        }
+
+        if (
+          item.deadline?.resolved &&
+          itemHours != null &&
+          itemHours > 0 &&
+          schedule &&
+          item.deadline.resolved >= schedule.weekRange.startDate &&
+          item.deadline.resolved <= schedule.weekRange.endDate
+        ) {
+          allocatedScheduleItems.push({
+            id: resolvedItemId,
+            day: item.deadline.resolved,
+            hours: itemHours,
+          });
+        }
+      }
+
+      const prevPlanned = currentProposal.weekSummary.capacity.plannedHours ?? 0;
+      const prevEstimated = currentProposal.weekSummary.capacity.knownEstimatedHours ?? 0;
+      const prevCompleteness = currentProposal.weekSummary.capacity.estimationCompleteness;
+
+      const updatedPlan: StoredWeeklyPlan = {
+        ...plan,
+        updatedAt: new Date().toISOString(),
+        proposal: {
+          ...currentProposal,
+          obligations: newObligations,
+          flexibleOptions: newFlexible,
+          weekSummary: {
+            ...currentProposal.weekSummary,
+            capacity: {
+              ...currentProposal.weekSummary.capacity,
+              plannedHours: prevPlanned + addedHours,
+              knownEstimatedHours: prevEstimated + addedHours,
+              estimationCompleteness:
+                hasUnestimated && prevCompleteness === "complete" ? "partial" : prevCompleteness,
+            },
+          },
+        },
+      };
+
+      let updatedSchedule = schedule;
+      if (schedule) {
+        const newDailyAllocations = [...schedule.dailyAllocations];
+        for (const alloc of allocatedScheduleItems) {
+          newDailyAllocations.push({
+            itemId: alloc.id,
+            day: alloc.day,
+            allocatedHours: alloc.hours,
+          });
+        }
+        const now = new Date().toISOString();
+        const resolvedUpdatedAt = now < schedule.createdAt ? schedule.createdAt : now;
+
+        updatedSchedule = {
+          ...schedule,
+          dailyAllocations: newDailyAllocations,
+          version: schedule.version + 1,
+          updatedAt: resolvedUpdatedAt,
+        };
+      }
+
+      const res = await createOrSavePlan(
+        updatedPlan,
+        updatedSchedule ?? undefined,
+        schedule?.version
+      );
+
+      if (res.status === "success") {
+        setFeedbackMessage(
+          `Se incorporaron ${radarResult.extractedItems.length} elemento(s) del Radar a tu semana.`
+        );
+        setRadarResult(null);
+        setRadarInput("");
+      } else {
+        const errorMsg = `No se pudieron incorporar los elementos: ${res.status}`;
+        setFeedbackMessage(errorMsg);
+        setRadarError(errorMsg);
+      }
+    } catch (err) {
+      const errorMsg = (err as Error).message || "Error al incorporar elementos a la semana.";
+      setFeedbackMessage(errorMsg);
+      setRadarError(errorMsg);
+    }
+  };
 
   const handleSaveTaskAdjustment = async (
     itemId: string,
@@ -2923,6 +3129,324 @@ export function WeeklySessionView({
             )}
             </div>
           </details>
+        </section>
+      )}
+
+      {/* 📡 Radar de Imprevistos (Sección 21-25 PROJECT_CONTEXT) */}
+      {plan && schedule && (activeSpace === undefined || activeSpace === "active") && (
+        <section
+          className="results-section calm-box"
+          style={{ marginTop: "24px" }}
+          aria-label="Radar de imprevistos"
+          data-testid="radar-section"
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
+            <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+              <span>📡 Radar: ¿Ha aparecido algo nuevo?</span>
+            </h3>
+            <span className="calm-muted" style={{ fontSize: "0.82rem" }}>
+              AI propone, vos decidís · No interrumpe silenciosamente
+            </span>
+          </div>
+
+          <p
+            className="calm-text"
+            style={{ fontSize: "0.88rem", marginTop: "8px", marginBottom: "12px" }}
+          >
+            Expresá lo que surgió o cambió en tu semana. El Radar evalúa el impacto en tu capacidad y
+            compromisos sin alterar tu semana automáticamente.
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <textarea
+              className="calm-input"
+              data-testid="radar-input"
+              rows={3}
+              placeholder="Ej: Acabo de confirmar una reunión de 2 horas para el jueves con el cliente X, o Se me ocurrió una idea para..."
+              value={radarInput}
+              onChange={(e) => setRadarInput(e.target.value)}
+              disabled={radarEvaluating}
+              style={{
+                width: "100%",
+                resize: "vertical",
+                padding: "10px",
+                borderRadius: "6px",
+                fontSize: "0.9rem",
+              }}
+            />
+
+            <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="primary"
+                data-testid="radar-evaluate-button"
+                onClick={handleEvaluateRadar}
+                disabled={radarEvaluating || !radarInput.trim()}
+                style={{ padding: "8px 18px", fontWeight: 600 }}
+              >
+                {radarEvaluating ? "Evaluando con Radar..." : "Evaluar con Radar"}
+              </button>
+
+              {radarResult && (
+                <button
+                  type="button"
+                  className="secondary"
+                  data-testid="radar-clear-button"
+                  onClick={() => {
+                    setRadarResult(null);
+                    setRadarInput("");
+                    setRadarError(null);
+                  }}
+                  style={{ padding: "8px 14px", fontSize: "0.85rem" }}
+                >
+                  Limpiar consulta
+                </button>
+              )}
+            </div>
+          </div>
+
+          {radarError && (
+            <div
+              className="status-message status-error"
+              style={{ marginTop: "12px" }}
+              role="alert"
+            >
+              {radarError}
+            </div>
+          )}
+
+          {/* Veredicto del Radar */}
+          {radarResult && (
+            <div
+              className="calm-box"
+              data-testid="radar-verdict"
+              style={{
+                marginTop: "16px",
+                padding: "16px",
+                borderRadius: "8px",
+                border:
+                  radarResult.outcome === "changes_balance"
+                    ? "1px solid #f87171"
+                    : radarResult.outcome === "flexible_option"
+                    ? "1px solid #fbbf24"
+                    : "1px solid #86efac",
+                background:
+                  radarResult.outcome === "changes_balance"
+                    ? "#fff5f5"
+                    : radarResult.outcome === "flexible_option"
+                    ? "#fffdf5"
+                    : "#f0fdf4",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "8px",
+                  marginBottom: "8px",
+                }}
+              >
+                <h4 style={{ margin: 0, fontSize: "1rem", color: "#1f2937" }}>
+                  {radarResult.verdictTitle}
+                </h4>
+                <span
+                  className={
+                    radarResult.outcome === "changes_balance"
+                      ? "badge badge-concern"
+                      : radarResult.outcome === "flexible_option"
+                      ? "badge badge-idea"
+                      : "badge badge-task"
+                  }
+                  data-testid="radar-verdict-badge"
+                >
+                  {radarResult.outcome === "no_change" && "🟢 No cambia la semana"}
+                  {radarResult.outcome === "flexible_option" && "🟡 Opción flexible"}
+                  {radarResult.outcome === "fits_available_space" && "🟢 Cabe en el espacio"}
+                  {radarResult.outcome === "changes_balance" && "🔴 Cambia el equilibrio"}
+                </span>
+              </div>
+
+              <p
+                className="calm-text"
+                style={{ fontSize: "0.88rem", margin: "4px 0 12px 0", color: "#374151" }}
+              >
+                {radarResult.verdictExplanation}
+              </p>
+
+              {/* Elementos identificados */}
+              {radarResult.extractedItems.length > 0 && (
+                <div
+                  style={{
+                    marginTop: "10px",
+                    padding: "10px",
+                    background: "rgba(255,255,255,0.7)",
+                    borderRadius: "6px",
+                  }}
+                  data-testid="radar-extracted-items"
+                >
+                  <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#4b5563" }}>
+                    Elementos identificados por el Radar:
+                  </span>
+                  <ul style={{ margin: "6px 0 0 18px", padding: 0, fontSize: "0.85rem" }}>
+                    {radarResult.extractedItems.map((item) => (
+                      <li key={item.id}>
+                        <strong>{item.title}</strong>
+                        {item.estimatedEffort && (
+                          <span className="calm-muted">
+                            {" "}
+                            ({item.estimatedEffort.value} {item.estimatedEffort.unit})
+                          </span>
+                        )}
+                        {item.deadline?.resolved && (
+                          <span className="calm-muted"> · Vence: {item.deadline.resolved}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Si cambia el equilibrio: alternativas de ajuste propuestas */}
+              {radarResult.outcome === "changes_balance" &&
+                radarResult.adjustmentProposals &&
+                radarResult.adjustmentProposals.length > 0 && (
+                  <div style={{ marginTop: "14px" }} data-testid="radar-proposals-list">
+                    <h5 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "#991b1b" }}>
+                      Alternativas propuestas por la IA (vos elegís):
+                    </h5>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                      {radarResult.adjustmentProposals.map((prop, idx) => (
+                        <div
+                          key={prop.id || idx}
+                          style={{
+                            padding: "12px",
+                            background: "#ffffff",
+                            border: "1px solid #fca5a5",
+                            borderRadius: "6px",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                            gap: "8px",
+                          }}
+                          data-testid={`radar-proposal-${prop.id}`}
+                        >
+                          <div style={{ flex: 1, minWidth: "220px" }}>
+                            <div style={{ fontWeight: 600, fontSize: "0.88rem" }}>
+                              {prop.title}
+                            </div>
+                            <div
+                              className="calm-muted"
+                              style={{ fontSize: "0.82rem", marginTop: "2px" }}
+                            >
+                              {prop.explanation}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="secondary small"
+                            data-testid={`apply-radar-proposal-${prop.id}`}
+                            onClick={() => handleApplyRadarAdjustment(prop)}
+                            style={{ padding: "6px 12px", fontSize: "0.82rem", fontWeight: 600 }}
+                          >
+                            Aplicar este ajuste
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* Acciones para veredictos */}
+              {radarResult.outcome === "fits_available_space" && (
+                <div style={{ marginTop: "14px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className="primary small"
+                    data-testid="radar-add-to-week-button"
+                    onClick={() => handleIncorporateRadarItems("auto")}
+                    style={{ padding: "8px 14px", fontWeight: 600 }}
+                  >
+                    Añadir a mi semana
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary small"
+                    data-testid="radar-add-as-flexible-button"
+                    onClick={() => handleIncorporateRadarItems("flexible")}
+                    style={{ padding: "8px 14px" }}
+                  >
+                    Añadir como opciones flexibles
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary small"
+                    data-testid="radar-cancel-button"
+                    onClick={() => {
+                      setRadarResult(null);
+                      setRadarInput("");
+                    }}
+                    style={{ padding: "8px 14px" }}
+                  >
+                    Descartar
+                  </button>
+                </div>
+              )}
+
+              {radarResult.outcome === "flexible_option" && (
+                <div style={{ marginTop: "14px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className="primary small"
+                    data-testid="radar-add-flexible-button"
+                    onClick={() => handleIncorporateRadarItems("flexible")}
+                    style={{ padding: "8px 14px", fontWeight: 600 }}
+                  >
+                    Añadir como opción flexible
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary small"
+                    data-testid="radar-cancel-button"
+                    onClick={() => {
+                      setRadarResult(null);
+                      setRadarInput("");
+                    }}
+                    style={{ padding: "8px 14px" }}
+                  >
+                    Descartar
+                  </button>
+                </div>
+              )}
+
+              {radarResult.outcome === "no_change" && (
+                <div style={{ marginTop: "12px", display: "flex", gap: "8px" }}>
+                  <button
+                    type="button"
+                    className="secondary small"
+                    data-testid="radar-dismiss-button"
+                    onClick={() => {
+                      setFeedbackMessage("Novedad archivada sin alterar la semana.");
+                      setRadarResult(null);
+                      setRadarInput("");
+                    }}
+                  >
+                    Entendido / Descartar aviso
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </section>
       )}
 

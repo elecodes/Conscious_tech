@@ -300,4 +300,50 @@ describe("MockProvider — Extracción determinista de notas arbitrarias", () =>
     expect(t3?.commitment).toBe("personal");
     expect(t3?.project).toBe("ArchitectAI");
   });
+
+  it("debe extraer 3 elementos independientes cuando se ingresan tareas en inglés separadas por coma", async () => {
+    const rawNote =
+      "Aws certification, do mouredev masterclasses, look for job expand";
+
+    const provider = new MockProvider();
+    const result = await extractItems(provider, {
+      text: rawNote,
+      currentDate,
+    });
+
+    expect(ExtractedItemsSchema.safeParse(result).success).toBe(true);
+    expect(result.items).toHaveLength(3);
+
+    const [t1, t2, t3] = result.items;
+
+    expect(t1?.title).toBe("Aws certification");
+    expect(t1?.type).toBe("task");
+
+    expect(t2?.title).toBe("Do mouredev masterclasses");
+    expect(t2?.type).toBe("task");
+
+    expect(t3?.title).toBe("Look for job expand");
+    expect(t3?.type).toBe("task");
+  });
+
+  it("debe extraer 4 elementos independientes cuando se ingresan conceptos y tareas telegráficas en inglés separados por coma", async () => {
+    const rawNote =
+      "Aws certification, apps update, job search open possibilities, think Manne substack";
+
+    const provider = new MockProvider();
+    const result = await extractItems(provider, {
+      text: rawNote,
+      currentDate,
+    });
+
+    expect(ExtractedItemsSchema.safeParse(result).success).toBe(true);
+    expect(result.items).toHaveLength(4);
+
+    const [t1, t2, t3, t4] = result.items;
+
+    expect(t1?.title).toBe("Aws certification");
+    expect(t2?.title).toBe("Apps update");
+    expect(t3?.title).toBe("Job search open possibilities");
+    expect(t4?.title).toBe("Think Manne substack");
+  });
 });

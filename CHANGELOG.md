@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.18.0] - 2026-10-23
+
+### Added
+- **Unforeseen Events Radar Application Pipeline (`src/application/radar-pipeline.ts`)**:
+  - Implemented end-to-end evaluation pipeline for mid-week unforeseen events (Sections 21-25 of `PROJECT_CONTEXT.md`).
+  - Classifies incoming events into 4 distinct verdicts:
+    - 🟢 `no_change`: Pure ideas or concerns without commitment do not alter the active plan.
+    - 🟡 `flexible_option`: Uncommitted or optional tasks ("si me da tiempo") that can be executed if calm margin allows.
+    - 🟢 `fits_available_space`: Commitments or tasks that fit within the remaining calm margin without moving weekly foci.
+    - 🔴 `changes_balance`: Events that create temporal collisions or exceed plannable capacity, generating actionable trade-off alternatives via Skill 09 (`proposeAdjustment`).
+- **Active Week Radar UI & Human Decision Actions (`src/web/components/weekly-session-view.tsx`)**:
+  - Integrated radar intake card (`data-testid="radar-section"`) directly in "Mi semana" (active week space).
+  - Added interactive decision buttons:
+    - **"Añadir a mi semana"** (`radar-add-to-week-button`): Incorporates items atomically into the active plan (as obligations if external/hard deadline, or flexible options) and assigns daily allocations if deadline falls in the active week.
+    - **"Añadir como opciones flexibles"** (`radar-add-as-flexible-button`): Incorporates all items into `flexibleOptions` without touching calm margin or primary foci.
+    - **"Descartar"** (`radar-cancel-button` / `radar-dismiss-button`): Dismisses the radar notice cleanly with zero state mutation.
+    - **"Aplicar este ajuste"** (`apply-radar-proposal-${prop.id}`): Applies AI-suggested adjustment proposals when balance changes.
+  - Resolved synthetic ID collision bug by ensuring guaranteed unique IDs (`item-radar-...`) preventing newly incorporated items from being dropped by UI deduplication against pre-existing items.
+  - Surfaced immediate inline persistence error feedback in the radar box.
+- **Deterministic Extractor Hardening (`src/providers/mock-deterministic-extractor.ts`)**:
+  - Added vocabulary for common English action verbs (`COMMON_ENGLISH_ACTION_VERBS`).
+  - Expanded `splitCoordinatedActions` to decompose telegraphic lists in Spanish and English (e.g. `"Aws certification, apps update, job search open possibilities, think Manne substack"` → 4 distinct items).
+  - Protected compound emotion/concern clauses (e.g. `"Me preocupa no llegar a tiempo con la entrega, siento mucho estrés"`) from erroneous fragmentation.
+  - Automatically re-attaches trailing effort clauses (`", me llevará 2 horas"`) to the preceding task item rather than extracting them as isolated tasks.
+  - Corrected Unicode boundary regexes (`(?:\s+|$)` instead of `\b`) for accented Spanish duration expressions.
+- **ADR 0018**:
+  - Documented in `docs/adr/0018-radar-unforeseen-intake-and-plan-incorporation.md`.
+- **Testing & Verification**:
+  - Added test suites:
+    - `tests/radar-pipeline.test.ts` (6 tests).
+    - `tests/radar-ui-integration.test.tsx` (5 tests).
+    - Added English telegraphic and comma-separated task tests to `tests/mock-deterministic-extraction.test.ts`.
+  - Reached 789 passing tests across 56 test files (100% green).
+
 ## [0.17.0] - 2026-10-21
 
 ### Added

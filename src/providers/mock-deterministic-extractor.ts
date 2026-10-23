@@ -38,10 +38,19 @@ const NON_VERB_EXCEPTIONS = new Set([
   "mártir", "martir", "solid", "solid.", "solid,", "react", "vue"
 ]);
 
+const COMMON_ENGLISH_ACTION_VERBS = new Set([
+  "do", "look", "make", "get", "prepare", "study", "learn", "review",
+  "build", "apply", "send", "call", "write", "finish", "complete", "read",
+  "update", "check", "test", "fix", "deploy", "design", "create", "practice",
+  "search", "find", "watch", "start", "continue", "organize", "plan", "clean",
+  "think", "open", "close", "set", "setup", "configure", "audit", "draft"
+]);
+
 export function isActionVerb(word: string): boolean {
-  const w = word.toLowerCase();
+  const w = word.toLowerCase().trim();
   if (NON_VERB_EXCEPTIONS.has(w)) return false;
-  if (w === "ir" || w === "ver" || w === "dar") return true;
+  if (COMMON_ENGLISH_ACTION_VERBS.has(w)) return true;
+  if (w === "ir" || w === "ver" || w === "dar" || w === "do") return true;
   if (w.length < 3) return false;
 
   // Infinitive endings (including clitic pronouns attached)
@@ -55,11 +64,11 @@ export function stripLeadingParticles(text: string): string {
     .trim()
     .replace(/^[,\s;]+/, "")
     .replace(
-      /^(?:para\s+esta\s+semana\s+|esta\s+semana\s+|tambi[eé]n\s+|adem[aá]s\s+|luego\s+|despu[eé]s\s+|finalmente\s+)+/i,
+      /^(?:para\s+esta\s+semana\s+|esta\s+semana\s+|tambi[eé]n\s+|adem[aá]s\s+|luego\s+|despu[eé]s\s+|finalmente\s+|also\s+|then\s+|later\s+|finally\s+)+/i,
       ""
     )
     .replace(
-      /^(?:tengo\s+que\s+|quiero\s+|necesito\s+|hay\s+que\s+|debo\s+|deber[ií]a\s+|voy\s+a\s+|vamos\s+a\s+|quisiera\s+|me\s+gustar[ií]a\s+|pensando\s+en\s+|tratar\s+de\s+)+/i,
+      /^(?:tengo\s+que\s+|quiero\s+|necesito\s+|hay\s+que\s+|debo\s+|deber[ií]a\s+|voy\s+a\s+|vamos\s+a\s+|quisiera\s+|me\s+gustar[ií]a\s+|pensando\s+en\s+|tratar\s+de\s+|i\s+want\s+to\s+|i\s+need\s+to\s+|i\s+have\s+to\s+|need\s+to\s+|want\s+to\s+)+/i,
       ""
     )
     .trim();
@@ -91,7 +100,7 @@ function splitTopLevelCoordinated(text: string): string[] {
     } else if (parenDepth === 0) {
       const slice = text.slice(i);
       const delimMatch = slice.match(
-        /^(?:,\s*(?:y|e|además de|ademas de)\s+|;\s*|,(?!\d)\s+|\s+(?:y|e|además de|ademas de)\s+)/i
+        /^(?:,\s*(?:y|e|además de|ademas de|and)\s+|;\s*|,(?!\d)\s+|\s+(?:y|e|además de|ademas de|and)\s+)/i
       );
       if (delimMatch) {
         if (current.trim()) {
@@ -116,24 +125,68 @@ function splitTopLevelCoordinated(text: string): string[] {
   return parts;
 }
 
+function isEffortClause(text: string): boolean {
+  const trimmed = text.trim();
+  const effortIntroRegex =
+    /^(?:(?:que\s+)?me\s+(?:llevar[aá]|tomar[aá]|lleva|toma|costar[aá]|exigir[aá])|unas?|alrededor\s+de|aprox(?:imadamente)?(?:\.)?|c[aá]lculo|it\s+will\s+take|approx(?:\.)?|about)(?:\s+|$)/i;
+  if (effortIntroRegex.test(trimmed)) {
+    return true;
+  }
+  const bareEffortRegex =
+    /^\(?\s*\d+(?:[.,]\d+)?\s*(?:horas?|hs?|h|minutos?|mins?|m|d[ií]as?|d|hours?|hrs?|minutes?|days?)\s*\)?$/i;
+  return bareEffortRegex.test(trimmed);
+}
+
 export function splitCoordinatedActions(segment: string): string[] {
   const normalized = normalizeFusedWords(segment);
-  const parts = splitTopLevelCoordinated(normalized);
+
+  // Guard against splitting emotional or concern expressions into fragmented items
+  // (e.g. "Me preocupa no llegar a tiempo con la entrega, siento mucho estrés").
+  if (
+    /\b(preocupa|agobia|miedo|estr[eé]s|angustia|duermo\s+mal|cansad[ao])\b/i.test(
+      normalized
+    )
+  ) {
+    return [normalized];
+  }
+
+  const rawParts = splitTopLevelCoordinated(normalized);
+  if (rawParts.length <= 1) {
+    return [normalized];
+  }
+
+  // Merge trailing effort/duration clauses back into the preceding part
+  // e.g. ["Tengo que preparar la presentación para el cliente el jueves", "me llevará 2 horas"]
+  const parts: string[] = [];
+  for (const part of rawParts) {
+    if (parts.length > 0 && isEffortClause(part)) {
+      parts[parts.length - 1] = `${parts[parts.length - 1]}, ${part}`;
+    } else {
+      parts.push(part);
+    }
+  }
+
   if (parts.length <= 1) {
     return [normalized];
   }
 
-  // Token 0 must contain an action verb
   const token0IsAction = startsWithActionVerb(parts[0]!);
-  // All subsequent tokens MUST start with an action verb to qualify as coordinated actions
-  // (otherwise it's a list of nouns like "Comprar manzanas, peras y plátanos")
-  const subsequentAreActions = parts.slice(1).every((p) => startsWithActionVerb(p));
 
-  if (token0IsAction && subsequentAreActions) {
-    return parts;
+  // Guard against splitting single-verb object enumerations (e.g. "Comprar manzanas, peras y plátanos"
+  // or "Hablar con Juan, María y Pedro"):
+  // Token 0 starts with a verb, and ALL subsequent parts are simple 1-2 word noun tokens without action verbs.
+  const isSingleVerbObjectEnumeration =
+    token0IsAction &&
+    parts.slice(1).every((p) => {
+      const words = p.trim().split(/\s+/);
+      return words.length <= 2 && !startsWithActionVerb(p);
+    });
+
+  if (isSingleVerbObjectEnumeration) {
+    return [normalized];
   }
 
-  return [normalized];
+  return parts;
 }
 
 /**
@@ -311,7 +364,13 @@ export function cleanTitle(rawSegment: string): string {
   title = title.replace(/^[-*•]\s+/, "").replace(/^\d+[.)]\s+/, "").trim();
   title = title
     .replace(
-      /\s*\(\s*\d+(?:[.,]\d+)?\s*(?:horas?|hs?|h|minutos?|mins?|m|d[ií]as?|d)\s*\)/i,
+      /\s*\(\s*\d+(?:[.,]\d+)?\s*(?:horas?|hs?|h|minutos?|mins?|m|d[ií]as?|d|hours?|hrs?|minutes?|days?)\s*\)/i,
+      ""
+    )
+    .trim();
+  title = title
+    .replace(
+      /,\s*(?:(?:que\s+)?me\s+(?:llevar[aá]|tomar[aá]|lleva|toma|costar[aá]|exigir[aá])|unas?|alrededor\s+de|aprox(?:imadamente)?(?:\.)?|c[aá]lculo|it\s+will\s+take|approx(?:\.)?|about)?\s*\d+(?:[.,]\d+)?\s*(?:horas?|hs?|h|minutos?|mins?|m|d[ií]as?|d|hours?|hrs?|minutes?|days?)\s*$/i,
       ""
     )
     .trim();
@@ -398,7 +457,7 @@ export function classifyItem(segment: string): {
   }
 
   if (
-    /\b(se\s+me\s+ocurri[oó]|quiz[aá]s?|capaz|estar[ií]a\s+bueno|explorar|investigar|chusmear|pensando\s+si|no\s+s[eé]\s+si|duda)\b/i.test(
+    /\b(se\s+me\s+(?:ha\s+)?ocurri(?:[oó]|d[ao])|quiz[aá]s?|capaz|estar[ií]a\s+bueno|explorar|investigar|chusmear|pensando\s+si|no\s+s[eé]\s+si|duda|podcast|think|explore|research)\b/i.test(
       lower
     )
   ) {

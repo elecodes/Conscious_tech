@@ -33,7 +33,11 @@ docs/
     ├── 0011-close-week-contract.md
     ├── 0012-weekly-schedule-continuity-contract.md
     ├── 0013-local-persistence-architecture-contract.md
-    └── 0014-closed-week-inspection-and-reopen-sovereignty.md
+    ├── 0014-closed-week-inspection-and-reopen-sovereignty.md
+    ├── 0015-progressive-disclosure-guided-navigation-and-human-capacity-language.md
+    ├── 0016-focus-capacity-conservation-and-calm-adjustment-experience.md
+    ├── 0017-local-persistence-resilience-data-sovereignty-and-dependency-isolation.md
+    └── 0018-radar-unforeseen-intake-and-plan-incorporation.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
 │   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
@@ -96,6 +100,9 @@ src/
 │   └── manage-memory/       # Skill 10: Personal memory & context management
 │       ├── deterministic.ts # Invariant engine: forget priority, expiration, canonical sorting
 │       └── index.ts         # ManageMemoryService
+├── application/             # Application orchestration layer
+│   ├── weekly-session-service.ts # Core application service & persistence orchestration
+│   └── radar-pipeline.ts        # Unforeseen events radar pipeline (Sections 21-25)
 └── web/                     # Lightweight testing UI & data inspector
     ├── App.tsx
     ├── main.tsx

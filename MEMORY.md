@@ -299,6 +299,12 @@ Implemented and calibrated skills:
 - **Recuerdos Activos en No-Sesión**: `resumeSession()` entrega recuerdos activos cuando `no_active_session` para contextualizar la preparación de la semana.
 - **Actualización Segura de Dependencias**: Auditoría de breaking changes con Context7; actualización de `groq-sdk` a 1.6.0 encapsulada en `src/providers/groq-provider.ts` y dependencias menores/parches actualizadas con 776 tests en verde.
 
+14. **Radar de Imprevistos e Incorporación Soberana al Plan Activo (ADR 0018)**:
+- **Pipeline de Evaluación de Imprevistos (`src/application/radar-pipeline.ts`)**: Implementación de las Secciones 21 a 25 de `PROJECT_CONTEXT.md` con 4 veredictos canónicos (`no_change`, `flexible_option`, `fits_available_space`, `changes_balance`).
+- **Inmutabilidad y Decisión Humana**: Evaluación 100% de sólo lectura. En la UI ("Mi semana"), se ofrecen botones explícitos: `Añadir a mi semana` (a obligaciones o tareas con fecha/horas), `Añadir como opciones flexibles` (sin comprometer margen de calma ni focos) y `Descartar aviso`.
+- **Aislamiento de Identificadores (Prevención de Colisiones)**: Generación garantizada de IDs únicos (`item-radar-...`) al incorporar elementos al plan para impedir que `extractPlanItems` los descarte silenciosamente por deduplicación contra IDs iniciales (`item-mock-1`).
+- **Extractor Determinista Mejorado**: Vocabulario ampliado con verbos en inglés, descomposición limpia de listas separadas por coma, protección de expresiones compuestas de agobio/preocupación y fusión automática de cláusulas de esfuerzo (como `", me llevará 2 horas"`). 789 tests en verde.
+
 Detailed specifications for individual skills live separately from this file.
 
 ---
