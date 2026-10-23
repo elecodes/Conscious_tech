@@ -101,3 +101,107 @@ export function calculateCalendarWeekSummary(
     timeBlocks,
   };
 }
+
+export interface GoogleCalendarTemplateOptions {
+  title: string;
+  day: string; // YYYY-MM-DD
+  startTime?: string; // HH:MM (default: "09:00")
+  durationHours?: number; // default: 1
+  description?: string;
+  location?: string;
+}
+
+/**
+ * Builds a 1-click Google Calendar web creation URL pre-populated with task details.
+ */
+export function buildGoogleCalendarTemplateUrl(options: GoogleCalendarTemplateOptions): string {
+  const { title, day, startTime = "09:00", durationHours = 1, description = "", location = "" } = options;
+  const cleanDay = day.replace(/-/g, "");
+  const [sh, sm] = startTime.split(":").map(Number);
+  const startHour = Number.isFinite(sh) ? sh! : 9;
+  const startMinute = Number.isFinite(sm) ? sm! : 0;
+
+  const totalMinutes = Math.max(15, Math.round((durationHours || 1) * 60));
+  const endHour = Math.min(23, startHour + Math.floor((startMinute + totalMinutes) / 60));
+  const endMinute = (startMinute + totalMinutes) % 60;
+
+  const startStr = `${cleanDay}T${String(startHour).padStart(2, "0")}${String(startMinute).padStart(2, "0")}00`;
+  const endStr = `${cleanDay}T${String(endHour).padStart(2, "0")}${String(endMinute).padStart(2, "0")}00`;
+
+  const detailsText = description
+    ? `${description}\n\nPlanificado conscientemente con Conscious Tech`
+    : "Planificado conscientemente con Conscious Tech";
+
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: title,
+    dates: `${startStr}/${endStr}`,
+    details: detailsText,
+  });
+
+  if (location) {
+    params.set("location", location);
+  }
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+export interface PlanItemExportInput {
+  title: string;
+  day: string; // YYYY-MM-DD
+  durationHours?: number | null;
+  startTime?: string; // HH:MM
+  description?: string;
+}
+
+/**
+ * Generates RFC 5545 iCalendar format content containing all planned week items
+ * for 1-click import into Google Calendar or Apple Calendar.
+ */
+export function generateIcsCalendarExport(
+  items: PlanItemExportInput[],
+  calendarName: string = "Conscious Tech — Plan Semanal"
+): string {
+  const nowUtc = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const lines: string[] = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Conscious Tech//Weekly Planner//EN",
+    "CALSCALE:GREGORIAN",
+    `X-WR-CALNAME:${calendarName}`,
+    "METHOD:PUBLISH",
+  ];
+
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i]!;
+    const cleanDay = it.day.replace(/-/g, "");
+    const startTime = it.startTime || "09:00";
+    const duration = it.durationHours || 1;
+    const [sh, sm] = startTime.split(":").map(Number);
+    const startHour = Number.isFinite(sh) ? sh! : 9;
+    const startMinute = Number.isFinite(sm) ? sm! : 0;
+
+    const totalMinutes = Math.max(15, Math.round(duration * 60));
+    const endHour = Math.min(23, startHour + Math.floor((startMinute + totalMinutes) / 60));
+    const endMinute = (startMinute + totalMinutes) % 60;
+
+    const startStr = `${cleanDay}T${String(startHour).padStart(2, "0")}${String(startMinute).padStart(2, "0")}00`;
+    const endStr = `${cleanDay}T${String(endHour).padStart(2, "0")}${String(endMinute).padStart(2, "0")}00`;
+    const uid = `conscious-tech-${cleanDay}-${i + 1}@conscioustech.local`;
+
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:${uid}`,
+      `DTSTAMP:${nowUtc}`,
+      `DTSTART:${startStr}`,
+      `DTEND:${endStr}`,
+      `SUMMARY:${it.title.replace(/[,;\\]/g, " ")}`,
+      `DESCRIPTION:${(it.description || "Planificado con Conscious Tech").replace(/\n/g, "\\n")}`,
+      "STATUS:CONFIRMED",
+      "END:VEVENT"
+    );
+  }
+
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n");
+}

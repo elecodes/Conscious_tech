@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic committed hours calculation (`calculateCalendarWeekSummary`) generating daily constraints (`DayConstraint[]`) and schedule time blocks (`TimeBlock[]`) for collision and overlap detection.
   - Local anti-CORS development proxy with strict SSRF protection (`src/server/calendar-proxy-handler.ts`, `vite.config.ts`), validating URLs and rejecting private IP / loopback requests.
   - Calm UI integration (`src/web/components/calendar-sync-card.tsx`) in the weekly planning workspace (`src/web/components/weekly-planning-from-notes.tsx`) with local URL persistence, event list preview, and automatic available capacity adjustment.
+  - **1-Click Google Calendar Push & Week Export (`src/web/components/weekly-session-view.tsx`, `src/domain/calendar.ts`)**:
+    - Added individual `📅 Google Cal` action button on each scheduled task in "Agenda y tareas de la semana", opening Google Calendar with date, time, duration, and notes pre-filled via `buildGoogleCalendarTemplateUrl`.
+    - Added `📅 Exportar semana (.ics / Google Cal)` batch export button generating an RFC 5545 `.ics` file via `generateIcsCalendarExport` ready for 1-click drag/import into Google Calendar.
 - **ADR 0020**:
   - Documented Google Calendar iCal integration architecture and capacity deduction rationale in `docs/adr/0020-google-calendar-ical-integration.md`.
 - **Testing & Verification**:

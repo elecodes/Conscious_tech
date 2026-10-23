@@ -6,6 +6,8 @@ import {
 import {
   calculateCalendarWeekSummary,
   filterEventsForTargetWeek,
+  buildGoogleCalendarTemplateUrl,
+  generateIcsCalendarExport,
 } from "../src/domain/calendar";
 import { TargetWeek } from "../src/domain/week";
 
@@ -145,6 +147,52 @@ describe("Google Calendar & iCal Integration", () => {
       expect(summary.timeBlocks[0]?.day).toBe("2026-10-19");
       expect(summary.timeBlocks[0]?.startTime).toBe("10:00");
       expect(summary.timeBlocks[0]?.endTime).toBe("11:30");
+    });
+  });
+
+  describe("Google Calendar Export & 1-Click URLs", () => {
+    it("builds valid 1-click Google Calendar TEMPLATE URL", () => {
+      const url = buildGoogleCalendarTemplateUrl({
+        title: "Preparar presentación de arquitectura",
+        day: "2026-10-21",
+        startTime: "14:00",
+        durationHours: 2,
+        description: "Revisar slides y diagramas con el equipo",
+      });
+
+      expect(url).toContain("https://calendar.google.com/calendar/render");
+      expect(url).toContain("action=TEMPLATE");
+      expect(url).toContain("text=Preparar+presentaci%C3%B3n+de+arquitectura");
+      expect(url).toContain("dates=20261021T140000%2F20261021T160000");
+      expect(url).toContain("details=");
+    });
+
+    it("generates valid RFC 5545 iCalendar content for week export", () => {
+      const ics = generateIcsCalendarExport([
+        {
+          title: "Desarrollo de feature X",
+          day: "2026-10-19",
+          startTime: "09:00",
+          durationHours: 3,
+          description: "Bloque de foco principal",
+        },
+        {
+          title: "Revisión de pull requests",
+          day: "2026-10-20",
+          startTime: "11:00",
+          durationHours: 1,
+        },
+      ]);
+
+      expect(ics).toContain("BEGIN:VCALENDAR");
+      expect(ics).toContain("PRODID:-//Conscious Tech//Weekly Planner//EN");
+      expect(ics).toContain("SUMMARY:Desarrollo de feature X");
+      expect(ics).toContain("DTSTART:20261019T090000");
+      expect(ics).toContain("DTEND:20261019T120000");
+      expect(ics).toContain("SUMMARY:Revisión de pull requests");
+      expect(ics).toContain("DTSTART:20261020T110000");
+      expect(ics).toContain("DTEND:20261020T120000");
+      expect(ics).toContain("END:VCALENDAR");
     });
   });
 });

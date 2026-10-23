@@ -27,6 +27,10 @@ import {
 } from "../../application/radar-pipeline";
 import { AdjustmentProposal } from "../../domain/adjustment";
 import { VoiceDictationButton } from "./voice-dictation-button";
+import {
+  buildGoogleCalendarTemplateUrl,
+  generateIcsCalendarExport,
+} from "../../domain/calendar";
 
 export function getWeekDays(startDate?: string): Array<{ date: string; label: string }> {
   if (!startDate) return [];
@@ -2521,11 +2525,46 @@ export function WeeklySessionView({
       {/* Schedule & Blocks */}
       {schedule && (activeSpace === undefined || activeSpace === "active") && (
         <section className="results-section" style={{ marginTop: "24px" }} aria-label="Agenda y bloques">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
-            <h3 style={{ margin: 0 }}>Agenda y tareas de la semana ({planItems.length})</h3>
-            <span className="calm-muted" style={{ fontSize: "0.82rem" }}>
-              Tus prioridades activas en este cuaderno
-            </span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
+            <div>
+              <h3 style={{ margin: 0 }}>Agenda y tareas de la semana ({planItems.length})</h3>
+              <span className="calm-muted" style={{ fontSize: "0.82rem" }}>
+                Tus prioridades activas en este cuaderno
+              </span>
+            </div>
+            {planItems.length > 0 && (
+              <button
+                type="button"
+                className="secondary small"
+                data-testid="export-week-to-gcal"
+                style={{ fontSize: "0.8rem", padding: "4px 10px", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                onClick={() => {
+                  const exportItems = planItems.map((item) => {
+                    const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
+                    const day = alloc ? alloc.day : (item.dueDate || state.activePlan?.targetWeek.startDate || "2026-10-19");
+                    return {
+                      title: item.title,
+                      day,
+                      durationHours: item.estimatedHours || 1,
+                      description: `Categoría: ${item.source}${item.rationale ? `\nMotivo: ${item.rationale}` : ""}`,
+                    };
+                  });
+                  const icsContent = generateIcsCalendarExport(exportItems, "Conscious Tech — Semana Activa");
+                  const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `conscious-tech-semana-${state.activePlan?.targetWeek.startDate || "activa"}.ics`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                <span>📅</span>
+                <span>Exportar semana (.ics / Google Cal)</span>
+              </button>
+            )}
           </div>
 
           <div className="items-list" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -2583,6 +2622,26 @@ export function WeeklySessionView({
                         }}
                       >
                         Ajustar
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary small"
+                        data-testid={`add-to-gcal-${item.itemId}`}
+                        style={{ fontSize: "0.8rem", padding: "4px 8px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                        title="Abrir y guardar en Google Calendar con 1 clic"
+                        onClick={() => {
+                          const day = alloc ? alloc.day : (item.dueDate || state.activePlan?.targetWeek.startDate || "2026-10-19");
+                          const gcalUrl = buildGoogleCalendarTemplateUrl({
+                            title: item.title,
+                            day,
+                            durationHours: item.estimatedHours || 1,
+                            description: `Categoría: ${item.source}${item.rationale ? `\n${item.rationale}` : ""}`,
+                          });
+                          window.open(gcalUrl, "_blank", "noopener,noreferrer");
+                        }}
+                      >
+                        <span>📅</span>
+                        <span>Google Cal</span>
                       </button>
                     </div>
                   </div>
