@@ -54,6 +54,7 @@ export function VoiceDictationButton({
         disabled={disabled}
         aria-pressed={isListening}
         aria-label={isListening ? "Detener dictado por voz" : "Iniciar dictado por voz"}
+        title="Dictado por voz mediante Web Speech API de tu navegador"
         style={{
           display: "inline-flex",
           alignItems: "center",

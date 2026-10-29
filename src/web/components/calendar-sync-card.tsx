@@ -52,7 +52,11 @@ export function CalendarSyncCard({
         // Ignore
       }
 
-      const res = await fetch(`/api/calendar/fetch-ical?url=${encodeURIComponent(icalUrl.trim())}`);
+      const res = await fetch("/api/calendar/fetch-ical", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: icalUrl.trim() }),
+      });
       const data = await res.json();
 
       if (!res.ok || !data.success) {
@@ -189,7 +193,7 @@ export function CalendarSyncCard({
             </button>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
             <span style={{ fontSize: "0.78rem", color: "#64748b" }}>o cargar archivo .ics:</span>
             <input
               type="file"
@@ -199,6 +203,22 @@ export function CalendarSyncCard({
               disabled={isLoading}
               style={{ fontSize: "0.78rem" }}
             />
+          </div>
+
+          <div
+            style={{
+              fontSize: "0.74rem",
+              color: "var(--text-muted, #64748b)",
+              marginBottom: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            <span>🔒</span>
+            <span>
+              <strong>Privacidad:</strong> La URL privada se procesa localmente en tu máquina (POST seguro) para sincronizar reuniones sin almacenarse en servidores de terceros ni en registros de URL.
+            </span>
           </div>
 
           {errorMessage && (

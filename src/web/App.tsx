@@ -322,7 +322,7 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
             onChange={(e) => setProviderType(e.target.value as "mock" | "groq" | "gemini")}
           >
             <option value="mock">Mock (Prueba local determinista)</option>
-            <option value="groq">Groq (Servidor local / Llama 3.3 70B)</option>
+            <option value="groq">Groq (Servidor local / Qwen 2.5 32B)</option>
             <option value="gemini">Gemini (Servidor local / Gemini 2.5 Flash)</option>
           </select>
 

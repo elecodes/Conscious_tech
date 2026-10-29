@@ -9,8 +9,15 @@ import { GroqProvider } from "../providers/groq-provider";
 import { GeminiProvider } from "../providers/gemini-provider";
 import { MockProvider } from "../providers/mock-provider";
 import { AIProvider } from "../providers/ai-provider";
+import { SimpleRateLimiter } from "./rate-limiter";
+import { isOriginAllowed } from "./calendar-proxy-handler";
 
 export const MAX_PAYLOAD_BYTES = 50 * 1024; // 50 KB limit for brain dump notes & inputs
+
+export const aiProxyRateLimiter = new SimpleRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 40,
+});
 
 export type AIProxyAction =
   | "extract_items"
@@ -113,11 +120,42 @@ export async function handleAIProxyRequest(
   res: ServerResponse,
   env: Record<string, string | undefined> = process.env
 ): Promise<void> {
-  res.setHeader("Content-Type", "application/json");
+  const originHeader = req.headers?.origin;
+  const hostHeader = req.headers?.host;
+
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Vary", "Origin");
+
+  if (isOriginAllowed(originHeader, hostHeader) && originHeader) {
+    res.setHeader("Access-Control-Allow-Origin", originHeader);
+  }
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    res.statusCode = 204;
+    res.end();
+    return;
+  }
 
   if (req.method !== "POST") {
     res.statusCode = 405;
     res.end(JSON.stringify({ error: "Método no permitido. Use POST.", code: "METHOD_NOT_ALLOWED" }));
+    return;
+  }
+
+  // Rate limiting check
+  const clientIp = req.socket?.remoteAddress || "127.0.0.1";
+  const rateLimit = aiProxyRateLimiter.check(clientIp);
+  if (!rateLimit.allowed) {
+    res.statusCode = 429;
+    res.setHeader("Retry-After", String(Math.ceil(rateLimit.resetMs / 1000)));
+    res.end(
+      JSON.stringify({
+        error: "Demasiadas peticiones al proxy de IA. Por favor espera un momento.",
+        code: "RATE_LIMIT_EXCEEDED",
+      })
+    );
     return;
   }
 

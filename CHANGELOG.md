@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.20.1] - 2026-10-29
+
+### Security & Hardening
+- **Server Proxies Security Hardening (`src/server/calendar-proxy-handler.ts`, `src/server/ai-proxy-handler.ts`)**:
+  - Implemented deep asynchronous DNS resolution validating all resolved IPv4 and IPv6 addresses against private and reserved IP ranges (blocking loopback, RFC 1918, CGNAT `100.64.0.0/10`, link-local, multicast, documentation ranges, `0.0.0.0`, and `[::1]`).
+  - Mitigated redirect bypass and bounce attacks via manual redirect handling (`redirect: "manual"`) re-validating every redirect target.
+  - Added streaming body reader with strict 5 MB cutoff (`MAX_ICS_BYTES`) to prevent memory exhaustion.
+  - Replaced `GET` query parameter with `POST` JSON body for calendar fetching, preventing private feed URL token leaks in web server logs.
+  - Added in-memory sliding-window rate limiting (`SimpleRateLimiter`) for both AI and Calendar proxies.
+  - Restricted CORS headers to local dev / matching host origins, removing wildcard `*`.
+- **Infrastructure & Tooling**:
+  - Added GitHub Actions CI workflow (`.github/workflows/ci.yml`) covering `npm ci`, `typecheck`, `test`, and `build`.
+  - Added `LICENSE` (Private / UNLICENSED) and `package.json` engines requirement (`>=20`).
+  - Included `scripts` and `vite.config.ts` in `tsconfig.json`.
+  - Corrected Groq model label in UI to `Qwen 2.5 32B` (`qwen/qwen3.8-27b`).
+  - Refreshed test documentation to reflect 829 passing tests across 60 test files.
+- **Testing**:
+  - Added dedicated security hardening test suite (`tests/server-proxies-hardening.test.ts`, 19 tests).
+
 ## [0.20.0] - 2026-10-23
 
 ### Added

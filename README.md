@@ -37,7 +37,9 @@ docs/
     ├── 0015-progressive-disclosure-guided-navigation-and-human-capacity-language.md
     ├── 0016-focus-capacity-conservation-and-calm-adjustment-experience.md
     ├── 0017-local-persistence-resilience-data-sovereignty-and-dependency-isolation.md
-    └── 0018-radar-unforeseen-intake-and-plan-incorporation.md
+    ├── 0018-radar-unforeseen-intake-and-plan-incorporation.md
+    ├── 0019-native-voice-dictation-and-mcp-integration-architecture.md
+    └── 0020-google-calendar-ical-integration.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
 │   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
@@ -49,7 +51,15 @@ src/
 │   ├── change.ts            # ChangeType, AffectedElement, IncomingChangeDelta
 │   ├── conflict.ts          # ConflictType, DetectedConflict, TimeBlock, Evidence
 │   ├── adjustment.ts        # AdjustmentProposal, SuggestedAdjustmentAction, Partitions
-│   └── memory.ts            # MemoryItem, MemoryOperation, CandidateMemoryInput, Invariants
+│   ├── memory.ts            # MemoryItem, MemoryOperation, CandidateMemoryInput, Invariants
+│   └── calendar.ts          # CalendarEvent, CalendarWeekSummary, 1-click & ICS export
+├── infrastructure/          # Storage, calendar parsing & backup
+│   ├── calendar/            # RFC 5545 iCalendar parser (recurring, timezones, status)
+│   └── storage/indexeddb/   # IndexedDB repositories (plans, schedules, memory, close, backup)
+├── server/                  # Local development proxy middleware
+│   ├── ai-proxy-handler.ts       # Rate-limited server AI proxy (API key redaction)
+│   ├── calendar-proxy-handler.ts # SSRF-hardened iCal proxy (DNS resolution, streaming byte cap)
+│   └── rate-limiter.ts           # In-memory sliding window rate limiter
 ├── providers/               # AI Provider abstraction layer
 │   ├── ai-provider.ts       # AIProvider interface
 │   ├── groq-provider.ts     # Groq implementation (qwen/qwen3.8-27b)
@@ -103,7 +113,9 @@ src/
 ├── application/             # Application orchestration layer
 │   ├── weekly-session-service.ts # Core application service & persistence orchestration
 │   └── radar-pipeline.ts        # Unforeseen events radar pipeline (Sections 21-25)
-└── web/                     # Lightweight testing UI & data inspector
+└── web/                     # React UI, conscious spaces & hooks
+    ├── components/          # Calm UI components (session, planning, radar, calendar, voice)
+    ├── hooks/               # useSpeechRecognition (Web Speech API)
     ├── App.tsx
     ├── main.tsx
     └── style.css
@@ -235,12 +247,19 @@ npm run dev
 Open `http://localhost:5173` to test brain dumps interactively, select real-world cases, switch providers, and inspect raw JSON outputs.
 
 ### 4. Run Test Suite
-Unit and behavioral tests run deterministically with zero token consumption:
+Unit, behavioral, and security tests run deterministically with zero token consumption (829+ tests across 60 suites):
 ```bash
 npm test
 ```
 
-### 5. Run Batch Evaluation
+### 5. Development & Local Proxies
+The web UI communicates with local Vite development middleware endpoints (`/api/ai` and `/api/calendar/fetch-ical`) configured in `vite.config.ts`:
+- `/api/ai`: Forwards LLM requests while keeping `GROQ_API_KEY` and `GEMINI_API_KEY` secure on the server side, with in-memory sliding window rate limiting and credential redaction.
+- `/api/calendar/fetch-ical`: Fetches external iCal calendars to calculate real committed hours without browser CORS restrictions. Protected with deep DNS-level SSRF validation (blocking loopback, RFC 1918, CGNAT, link-local, and reserved IP ranges), manual redirect hopping validation, and a strict 5 MB streaming body limit. Calendar URLs are transmitted via `POST` body to prevent credential leakage in server access logs.
+
+> **Note:** These proxies run exclusively as local Vite middleware (`vite` and `vite preview`) for local-first execution.
+
+### 6. Run Batch Evaluation
 Evaluate the 25 calibration brain dumps through the CLI runner:
 ```bash
 # Deterministic mock (0 tokens)
@@ -253,7 +272,7 @@ npm run eval -- --provider=groq
 npm run eval -- --provider=groq --case=case-01
 ```
 
-### 6. Typecheck & Build
+### 7. Typecheck & Build
 ```bash
 npm run typecheck
 npm run build
@@ -271,17 +290,17 @@ npm run build
 
 ## Skills Roadmap
 
-- [x] **01 extract_items** (Completed & calibrated)
-- [x] **02 detect_relationships** (Completed & calibrated)
-- [x] **03 group_work** (Completed & calibrated)
-- [x] **04 detect_deadlines** (Completed & calibrated)
-- [x] **05 evaluate_context** (Completed & calibrated)
-- [x] **06 build_week** (Completed & calibrated)
-- [x] **07 analyze_change** (Completed & calibrated)
-- [x] **08 detect_conflict** (Completed & calibrated)
-- [x] **09 propose_adjustment** (Completed & calibrated)
-- [x] **10 manage_memory** (Completed & calibrated)
-- [x] **11 close_week** (Completed & calibrated)
+- [x] **01 extract_items** (Completed & calibrated with real LLM)
+- [x] **02 detect_relationships** (Completed & calibrated with real LLM)
+- [x] **03 group_work** (Completed & calibrated with real LLM)
+- [x] **04 detect_deadlines** (Completed & calibrated with real LLM)
+- [x] **05 evaluate_context** (Completed & calibrated with real LLM)
+- [x] **06 build_week** (Completed & calibrated with real LLM)
+- [x] **07 analyze_change** (Completed & verified deterministically with golden fixtures)
+- [x] **08 detect_conflict** (Completed & verified deterministically with golden fixtures)
+- [x] **09 propose_adjustment** (Completed & verified deterministically with golden fixtures)
+- [x] **10 manage_memory** (Completed & verified deterministically with golden fixtures)
+- [x] **11 close_week** (Completed & verified deterministically with golden fixtures)
 - [x] **Local Persistence & Weekly Session (P1–P5)** (IndexedDB, UI integration, schedule continuity, closed week inspection & reopening)
 - [x] **Radar de Imprevistos (Sections 21–25)** (Mid-week unforeseen intake, capacity recalculation, sovereign actions)
 - [x] **Native Voice Dictation Mode** (Client-side Web Speech API, zero-cost, zero-dependency streaming dictation in Spanish and English)

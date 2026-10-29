@@ -15,7 +15,8 @@ El usuario solicitó:
 ## Decisiones
 
 ### 1. Entrada de Voz Nativa con Web Speech API (`SpeechRecognition`)
-- **Coste cero y privacidad**: Se adopta la API nativa de los navegadores (`window.SpeechRecognition` / `webkitSpeechRecognition`). No requiere claves API, ni servicios de pago, ni dependencias externas de Node/npm.
+- **Coste cero y privacidad**: Se adopta la API nativa de los navegadores (`window.SpeechRecognition` / `webkitSpeechRecognition`). No requiere claves API de pago ni dependencias externas en el bundle.
+  > **Nota de Privacidad y Flujo de Datos**: A diferencia del procesamiento puramente local en dispositivo (como Safari en Apple Silicon), navegadores como Google Chrome pueden procesar el audio mediante servicios remotos de transcripción del proveedor del navegador. Esto debe indicarse al usuario en la interfaz para respetar el principio de transparencia y soberanía de datos personales.
 - **Hook Reutilizable (`src/web/hooks/use-speech-recognition.ts`)**:
   - Encapsula el ciclo de vida del reconocimiento continuo (`continuous: true`, `interimResults: true`).
   - Reconexión fluida ante interrupciones involuntarias de audio.
@@ -35,7 +36,7 @@ El usuario solicitó:
 - **Principio**: La IA propone e inspecciona; la persona decide qué contexto importar.
 - **Fase de Lectura Soberana (Read-only Context Bridges)**:
   - Los MCPs se integran como proveedores de contexto externo en la capa de aplicación/infraestructura (`src/infrastructure/mcp/`).
-  - **Google Calendar**: MCP de sólo lectura para consultar eventos existentes de la semana y pre-rellenar la capacidad ocupada o eventos fijos.
+  - **Google Calendar**: Inicialmente conceptualizado como servidor MCP; posteriormente implementado de forma más liviana y sin credenciales en la nube mediante feeds iCal y archivos `.ics` en [ADR 0020](0020-google-calendar-ical-integration.md).
   - **Notion & Google Drive**: MCP de lectura selectiva para importar páginas de tareas o notas de proyectos como candidatos al brain dump inicial, requiriendo confirmación humana antes de pasar al pipeline semanal.
   - **Seguridad**: Nunca enviar datos de planes privados a MCPs externos sin confirmación explícita.
 
