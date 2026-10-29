@@ -10,6 +10,7 @@ export interface RemoteAIProviderOptions {
   id: "groq" | "gemini" | "mock";
   baseUrl?: string;
   fetchFn?: typeof fetch;
+  proxyToken?: string;
 }
 
 export class RemoteAIProvider implements AIProvider {
@@ -17,11 +18,16 @@ export class RemoteAIProvider implements AIProvider {
   readonly model: string;
   private readonly baseUrl: string;
   private readonly fetchClient: typeof fetch;
+  private readonly proxyToken?: string;
 
   constructor(options: RemoteAIProviderOptions) {
     this.id = options.id;
     this.model = `remote-${options.id}-v1`;
     this.baseUrl = options.baseUrl || "/api/ai";
+    this.proxyToken =
+      options.proxyToken ??
+      (globalThis as { __AI_PROXY_TOKEN__?: string }).__AI_PROXY_TOKEN__ ??
+      (typeof import.meta !== "undefined" ? (import.meta as { env?: Record<string, string> }).env?.VITE_AI_PROXY_TOKEN : undefined);
     this.fetchClient = options.fetchFn || (typeof fetch !== "undefined" ? fetch.bind(globalThis) : (undefined as unknown as typeof fetch));
   }
 
@@ -30,11 +36,16 @@ export class RemoteAIProvider implements AIProvider {
       throw new Error("No fetch client available for RemoteAIProvider.");
     }
 
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (this.proxyToken) {
+      headers["x-ai-proxy-token"] = this.proxyToken;
+    }
+
     const response = await this.fetchClient(this.baseUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({
         provider: this.id,
         action,

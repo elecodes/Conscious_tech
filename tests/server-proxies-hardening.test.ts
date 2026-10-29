@@ -6,6 +6,7 @@ import {
   validateSafeCalendarUrl,
   handleCalendarProxyRequest,
   calendarProxyRateLimiter,
+  isOriginAllowed,
 } from "../src/server/calendar-proxy-handler";
 import { handleAIProxyRequest, aiProxyRateLimiter } from "../src/server/ai-proxy-handler";
 import { SimpleRateLimiter } from "../src/server/rate-limiter";
@@ -172,6 +173,14 @@ describe("Server Proxies Security Hardening", () => {
       expect(isSafeCalendarUrl("http://device.local/calendar.ics")).toBe(false);
       expect(isSafeCalendarUrl("http://internal.service.internal/cal.ics")).toBe(false);
       expect(isSafeCalendarUrl("http://test.lan/calendar.ics")).toBe(false);
+
+      // Phase 2 Residuals: IPv4-compatible, Teredo, 64:ff9b:1::/48
+      expect(isSafeCalendarUrl("http://[::127.0.0.1]/")).toBe(false);
+      expect(isSafeCalendarUrl("http://[2001::1]/")).toBe(false);
+      expect(isPrivateOrReservedIp("::127.0.0.1")).toBe(true);
+      expect(isPrivateOrReservedIp("::8.8.8.8")).toBe(true);
+      expect(isPrivateOrReservedIp("2001::1")).toBe(true);
+      expect(isPrivateOrReservedIp("64:ff9b:1::1")).toBe(true);
     });
   });
 
@@ -456,6 +465,165 @@ describe("Server Proxies Security Hardening", () => {
       // Separate key has its own capacity
       const rOther = limiter.check("ip-2");
       expect(rOther.allowed).toBe(true);
+    });
+
+    it("prunes expired keys so the map does not grow without bound", () => {
+      const limiter = new SimpleRateLimiter({ windowMs: 100, maxRequests: 5 });
+      limiter.check("client-1");
+      limiter.check("client-2");
+      expect((limiter as any).size?.() ?? (limiter as any).records.size).toBe(2);
+
+      // Advance time past windowMs
+      const future = Date.now() + 200;
+      (limiter as any).prune?.(future);
+      expect((limiter as any).size?.() ?? (limiter as any).records.size).toBe(0);
+    });
+  });
+
+  describe("isOriginAllowed Security Rules", () => {
+    it("rejects undefined or empty origin", () => {
+      expect(isOriginAllowed(undefined)).toBe(false);
+      expect(isOriginAllowed("")).toBe(false);
+    });
+
+    it("does not allow origin merely because host matches Host header", () => {
+      expect(isOriginAllowed("http://evil.com", { hostHeader: "evil.com" } as any)).toBe(false);
+      expect(isOriginAllowed("https://attacker.org", "attacker.org" as any)).toBe(false);
+    });
+
+    it("allows localhost and 127.0.0.1 origins", () => {
+      expect(isOriginAllowed("http://localhost:5173")).toBe(true);
+      expect(isOriginAllowed("http://127.0.0.1:4173")).toBe(true);
+      expect(isOriginAllowed("http://[::1]:5173")).toBe(true);
+    });
+
+    it("allows origins from explicit ALLOWED_ORIGINS env allowlist", () => {
+      const env = { ALLOWED_ORIGINS: "https://app.conscioustech.com,https://staging.conscioustech.com" };
+      expect(isOriginAllowed("https://app.conscioustech.com", env)).toBe(true);
+      expect(isOriginAllowed("https://staging.conscioustech.com", env)).toBe(true);
+      expect(isOriginAllowed("https://unauthorized.com", env)).toBe(false);
+    });
+  });
+
+  describe("AI Proxy Token Authentication (AI_PROXY_TOKEN)", () => {
+    it("rejects requests when AI_PROXY_TOKEN is configured and token is missing or invalid", async () => {
+      const env = { AI_PROXY_TOKEN: "super-secret-token" };
+      const req = createMockReq({
+        method: "POST",
+        body: { provider: "mock", action: "extract_items", payload: { text: "hello" } },
+      });
+      const { res, getStatusCode, getJson } = createMockRes();
+
+      await handleAIProxyRequest(req, res, env);
+
+      expect(getStatusCode()).toBe(401);
+      expect(getJson().code).toBe("UNAUTHORIZED");
+    });
+
+    it("accepts requests when AI_PROXY_TOKEN matches via x-ai-proxy-token header", async () => {
+      const env = { AI_PROXY_TOKEN: "super-secret-token" };
+      const req = createMockReq({
+        method: "POST",
+        headers: { "x-ai-proxy-token": "super-secret-token" },
+        body: {
+          provider: "mock",
+          action: "extract_items",
+          payload: { text: "valid text", currentDate: "2026-10-29" },
+        },
+      });
+      const { res, getStatusCode, getJson } = createMockRes();
+
+      await handleAIProxyRequest(req, res, env);
+
+      expect(getStatusCode()).toBe(200);
+      expect(getJson().success).toBe(true);
+    });
+
+    it("accepts requests when AI_PROXY_TOKEN matches via Authorization header", async () => {
+      const env = { AI_PROXY_TOKEN: "super-secret-token" };
+      const req = createMockReq({
+        method: "POST",
+        headers: { authorization: "Bearer super-secret-token" },
+        body: {
+          provider: "mock",
+          action: "extract_items",
+          payload: { text: "valid text", currentDate: "2026-10-29" },
+        },
+      });
+      const { res, getStatusCode, getJson } = createMockRes();
+
+      await handleAIProxyRequest(req, res, env);
+
+      expect(getStatusCode()).toBe(200);
+      expect(getJson().success).toBe(true);
+    });
+  });
+
+  describe("DNS Rebinding Protection via Connection Pinning", () => {
+    it("pins the connection to the validated IP and prevents DNS rebinding to private IPs", async () => {
+      let dnsCallCount = 0;
+      const injectedDns = vi.fn().mockImplementation(() => {
+        dnsCallCount++;
+        if (dnsCallCount === 1) {
+          // Initial validation resolves to public IP
+          return Promise.resolve([{ address: "93.184.216.34", family: 4 }]);
+        }
+        // Second call (DNS rebinding attack) resolves to private IP
+        return Promise.resolve([{ address: "127.0.0.1", family: 4 }]);
+      });
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => {
+        // If an undici dispatcher/agent is attached with pinned lookup, inspect it
+        const dispatcher = (init as any)?.dispatcher;
+        if (dispatcher && typeof dispatcher === "object") {
+          // Check agent lookup behavior
+          const lookup = dispatcher[Object.getOwnPropertySymbols(dispatcher).find(s => s.description === "connect") || "connect"]?.lookup
+            || (dispatcher as any).connect?.lookup
+            || (dispatcher as any).options?.connect?.lookup;
+          if (lookup) {
+            let pinnedResult: any = null;
+            lookup("rebind.example.com", {}, (_err: any, addrs: any) => {
+              pinnedResult = addrs;
+            });
+            if (pinnedResult) {
+              const ip = Array.isArray(pinnedResult) ? pinnedResult[0]?.address : pinnedResult;
+              if (ip === "127.0.0.1") {
+                throw new Error("DNS Rebinding vulnerability: connected to 127.0.0.1");
+              }
+            }
+          }
+        }
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          headers: new Headers({ "Content-Type": "text/calendar" }),
+          body: new ReadableStream({
+            start(controller) {
+              controller.enqueue(new TextEncoder().encode("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR"));
+              controller.close();
+            },
+          }),
+        } as unknown as Response;
+      });
+
+      const req = createMockReq({
+        method: "POST",
+        body: { url: "https://rebind.example.com/feed.ics" },
+      });
+      const { res, getStatusCode, getJson } = createMockRes();
+
+      await handleCalendarProxyRequest(req, res, { dnsLookup: injectedDns });
+
+      expect(getStatusCode()).toBe(200);
+      expect(getJson().success).toBe(true);
+
+      // Verify fetch was called with a dispatcher / agent that pinned to the public IP
+      const fetchOpts = fetchSpy.mock.calls[0]?.[1];
+      expect(fetchOpts).toBeDefined();
+      expect((fetchOpts as any).dispatcher).toBeDefined();
+
+      fetchSpy.mockRestore();
     });
   });
 });

@@ -264,7 +264,7 @@ The web UI communicates with local Vite development middleware endpoints (`/api/
 - `/api/ai`: Forwards LLM requests while keeping `GROQ_API_KEY` and `GEMINI_API_KEY` secure on the server side, with in-memory sliding window rate limiting and credential redaction.
 - `/api/calendar/fetch-ical`: Fetches external iCal calendars to calculate real committed hours without browser CORS restrictions. Protected with deep DNS-level SSRF validation (blocking loopback, RFC 1918, CGNAT, link-local, and reserved IP ranges), manual redirect hopping validation, and a strict 5 MB streaming body limit. Calendar URLs are transmitted via `POST` body to prevent credential leakage in server access logs.
 
-> **Note:** These proxies run exclusively as local Vite middleware (`vite` and `vite preview`) for local-first execution.
+> **Warning:** These proxies run exclusively as local Vite middleware (`vite` and `vite preview`) for local-first development. They are dev-only and must never be exposed to the local network or public internet using `vite --host`. Origin validation restricts requests to localhost or an explicit `ALLOWED_ORIGINS` allowlist, and an optional shared secret can be required via `AI_PROXY_TOKEN`.
 
 ### 6. Run Batch Evaluation
 Evaluate the 25 calibration brain dumps through the CLI runner:

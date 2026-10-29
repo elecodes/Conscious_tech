@@ -112,6 +112,15 @@ export function createServerProvider(
   throw new Error(`Proveedor no soportado: "${providerType}"`);
 }
 
+let hasWarnedMissingAiProxyToken = false;
+
+export function checkAiProxyTokenWarning(env: Record<string, string | undefined> = process.env): void {
+  if (!env.AI_PROXY_TOKEN && !hasWarnedMissingAiProxyToken) {
+    hasWarnedMissingAiProxyToken = true;
+    console.warn("[AI Proxy] Advertencia: AI_PROXY_TOKEN no está configurado. El proxy opera en modo desarrollo sin autenticación.");
+  }
+}
+
 /**
  * Handles incoming HTTP requests for the secure server-side AI proxy.
  */
@@ -121,21 +130,42 @@ export async function handleAIProxyRequest(
   env: Record<string, string | undefined> = process.env
 ): Promise<void> {
   const originHeader = req.headers?.origin;
-  const hostHeader = req.headers?.host;
 
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Vary", "Origin");
 
-  if (isOriginAllowed(originHeader, hostHeader) && originHeader) {
-    res.setHeader("Access-Control-Allow-Origin", originHeader);
+  if (isOriginAllowed(originHeader, env)) {
+    res.setHeader("Access-Control-Allow-Origin", originHeader!);
   }
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-ai-proxy-token");
 
   if (req.method === "OPTIONS") {
     res.statusCode = 204;
     res.end();
     return;
+  }
+
+  // Verify shared secret token if AI_PROXY_TOKEN is configured
+  const configuredToken = env.AI_PROXY_TOKEN;
+  if (configuredToken) {
+    const headerToken = req.headers?.["x-ai-proxy-token"] as string | undefined;
+    const authHeader = req.headers?.["authorization"] as string | undefined;
+    let bearerToken: string | undefined;
+    if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
+      bearerToken = authHeader.slice(7).trim();
+    }
+    const token = headerToken || bearerToken;
+    if (!token || token !== configuredToken) {
+      res.statusCode = 401;
+      res.end(
+        JSON.stringify({
+          error: "No autorizado. Token de proxy IA no válido o ausente.",
+          code: "UNAUTHORIZED",
+        })
+      );
+      return;
+    }
   }
 
   if (req.method !== "POST") {
