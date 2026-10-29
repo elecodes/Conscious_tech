@@ -120,7 +120,8 @@ src/
     ├── main.tsx
     └── style.css
 cases/
-├── real-dumps.json          # 25 authentic Spanish brain dumps for calibration
+├── README.md                # Privacy & synthetic benchmark documentation
+├── real-dumps.json          # 25 synthetic/fictional Spanish brain dumps for calibration
 ├── mock-extractions.json    # Golden reference extractions for zero-token tests
 ├── mock-relationships.json  # Golden reference relationships for zero-token tests
 ├── mock-groupings.json      # Golden reference work groups for zero-token tests
