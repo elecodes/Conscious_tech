@@ -292,4 +292,4 @@ npm run build
 
 ## License
 
-Private / MIT
+Private (UNLICENSED)

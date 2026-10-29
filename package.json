@@ -2,6 +2,10 @@
   "name": "conscious-tech",
   "version": "0.20.0",
   "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
