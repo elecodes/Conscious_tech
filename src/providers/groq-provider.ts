@@ -1,5 +1,10 @@
 import Groq from "groq-sdk";
-import { AIProvider } from "./ai-provider";
+import {
+  AIProvider,
+  CompletionOptions,
+  CompletionResult,
+  ProviderExecutionMeta,
+} from "./ai-provider";
 import { ExtractItemsInput, ExtractedItems } from "../domain/items";
 import { DetectRelationshipsInput, DetectedRelationships } from "../domain/relationships";
 import {
@@ -30,7 +35,6 @@ import {
   buildUserPrompt as buildContextUserPrompt,
 } from "../skills/evaluate-context/prompt";
 import { parseAndValidateContextOutput } from "../skills/evaluate-context/parser";
-import { ProviderExecutionMeta } from "./ai-provider";
 import { BuildWeekInput, ProposedWeek, createEmptyProposedWeek } from "../domain/week";
 import {
   buildDeterministicPlanningContext,
@@ -50,7 +54,6 @@ export class GroqProvider implements AIProvider {
   readonly model: string;
   private client: Groq;
   private lastExecutionMeta?: ProviderExecutionMeta;
-  private lastRawResponse?: string;
   private lastParseResult?: WeekParseResult;
 
   constructor(options: GroqProviderOptions = {}) {
@@ -70,105 +73,25 @@ export class GroqProvider implements AIProvider {
     return this.lastExecutionMeta;
   }
 
-  getLastRawResponse(): string | undefined {
-    return this.lastRawResponse;
-  }
-
   getLastParseResult(): WeekParseResult | undefined {
     return this.lastParseResult;
   }
 
-  async extractItems(input: ExtractItemsInput): Promise<ExtractedItems> {
-    const response = await this.client.chat.completions.create({
-      model: this.model,
-      messages: [
-        { role: "system", content: EXTRACT_SYSTEM_PROMPT },
-        { role: "user", content: buildExtractUserPrompt(input) },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.1,
-      max_tokens: 1000,
-    });
-
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("Groq returned an empty response");
-    }
-
-    return parseAndValidateExtractedItems(content);
-  }
-
-  async detectRelationships(input: DetectRelationshipsInput): Promise<DetectedRelationships> {
-    const response = await this.client.chat.completions.create({
-      model: this.model,
-      messages: [
-        { role: "system", content: REL_SYSTEM_PROMPT },
-        { role: "user", content: buildRelUserPrompt(input) },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.1,
-      max_tokens: 1000,
-    });
-
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("Groq returned an empty response");
-    }
-
-    return parseAndValidateRelationships(content);
-  }
-
-  async groupWork(input: GroupWorkInput): Promise<GroupedWork> {
-    const response = await this.client.chat.completions.create({
-      model: this.model,
-      messages: [
-        { role: "system", content: GROUP_SYSTEM_PROMPT },
-        { role: "user", content: buildGroupUserPrompt(input) },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.1,
-      max_tokens: 1200,
-    });
-
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("Groq returned an empty response");
-    }
-
-    return parseAndValidateGroupedWork(content);
-  }
-
-  async detectDeadlines(input: DetectDeadlinesInput): Promise<DetectedDeadlines> {
-    const response = await this.client.chat.completions.create({
-      model: this.model,
-      messages: [
-        { role: "system", content: DEADLINES_SYSTEM_PROMPT },
-        { role: "user", content: buildDeadlinesUserPrompt(input) },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.1,
-      max_tokens: 1200,
-    });
-
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("Groq returned an empty response");
-    }
-
-    return parseAndValidateDeadlines(content);
-  }
-
-  async evaluateContext(input: EvaluateContextInput): Promise<EvaluateContextOutput> {
+  async completeJson(
+    systemPrompt: string,
+    userPrompt: string,
+    options: CompletionOptions = {}
+  ): Promise<CompletionResult> {
     const startTime = Date.now();
     const response = await this.client.chat.completions.create({
       model: this.model,
       messages: [
-        { role: "system", content: CONTEXT_SYSTEM_PROMPT },
-        { role: "user", content: buildContextUserPrompt(input) },
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
       ],
       response_format: { type: "json_object" },
-      temperature: 0.1,
-      max_tokens: 1500,
+      temperature: options.temperature ?? 0.1,
+      max_tokens: options.maxTokens ?? 3500,
     });
 
     const content = response.choices[0]?.message?.content;
@@ -176,11 +99,11 @@ export class GroqProvider implements AIProvider {
       throw new Error("Groq returned an empty response");
     }
 
-    this.lastRawResponse = content;
-    this.lastExecutionMeta = {
+    const durationMs = Date.now() - startTime;
+    const meta: ProviderExecutionMeta = {
       provider: this.id,
       model: this.model,
-      durationMs: Date.now() - startTime,
+      durationMs,
       tokensUsed: response.usage
         ? {
             prompt: response.usage.prompt_tokens,
@@ -189,8 +112,49 @@ export class GroqProvider implements AIProvider {
           }
         : undefined,
     };
+    this.lastExecutionMeta = meta;
 
-    return parseAndValidateContextOutput(content);
+    return { rawText: content, meta };
+  }
+
+  async extractItems(input: ExtractItemsInput): Promise<ExtractedItems> {
+    const { rawText } = await this.completeJson(
+      EXTRACT_SYSTEM_PROMPT,
+      buildExtractUserPrompt(input)
+    );
+    return parseAndValidateExtractedItems(rawText);
+  }
+
+  async detectRelationships(input: DetectRelationshipsInput): Promise<DetectedRelationships> {
+    const { rawText } = await this.completeJson(
+      REL_SYSTEM_PROMPT,
+      buildRelUserPrompt(input)
+    );
+    return parseAndValidateRelationships(rawText);
+  }
+
+  async groupWork(input: GroupWorkInput): Promise<GroupedWork> {
+    const { rawText } = await this.completeJson(
+      GROUP_SYSTEM_PROMPT,
+      buildGroupUserPrompt(input)
+    );
+    return parseAndValidateGroupedWork(rawText);
+  }
+
+  async detectDeadlines(input: DetectDeadlinesInput): Promise<DetectedDeadlines> {
+    const { rawText } = await this.completeJson(
+      DEADLINES_SYSTEM_PROMPT,
+      buildDeadlinesUserPrompt(input)
+    );
+    return parseAndValidateDeadlines(rawText);
+  }
+
+  async evaluateContext(input: EvaluateContextInput): Promise<EvaluateContextOutput> {
+    const { rawText } = await this.completeJson(
+      CONTEXT_SYSTEM_PROMPT,
+      buildContextUserPrompt(input)
+    );
+    return parseAndValidateContextOutput(rawText);
   }
 
   async buildWeek(input: BuildWeekInput): Promise<ProposedWeek> {
@@ -207,39 +171,13 @@ export class GroqProvider implements AIProvider {
     const planningContext = buildDeterministicPlanningContext(input);
     const { systemPrompt, userPrompt } = buildWeekPrompt(planningContext);
 
-    const response = await this.client.chat.completions.create({
-      model: this.model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      response_format: { type: "json_object" },
+    const { rawText } = await this.completeJson(systemPrompt, userPrompt, {
       temperature: 0.1,
-      max_tokens: 3500,
+      maxTokens: 3500,
     });
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("Groq returned an empty response");
-    }
-
-    this.lastRawResponse = content;
-    this.lastExecutionMeta = {
-      provider: this.id,
-      model: this.model,
-      durationMs: Date.now() - startTime,
-      tokensUsed: response.usage
-        ? {
-            prompt: response.usage.prompt_tokens,
-            completion: response.usage.completion_tokens,
-            total: response.usage.total_tokens,
-          }
-        : undefined,
-    };
-
-    const parseOutcome = parseProposedWeek(content, input);
+    const parseOutcome = parseProposedWeek(rawText, input);
     this.lastParseResult = parseOutcome;
-
     if (!parseOutcome.success) {
       const issues = "issues" in parseOutcome ? parseOutcome.issues : [];
       throw new WeekValidationError(parseOutcome.error, issues);

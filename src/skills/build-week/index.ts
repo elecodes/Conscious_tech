@@ -14,7 +14,7 @@ import {
   WeekValidationError,
 } from "./deterministic";
 import { buildWeekPrompt } from "./prompt";
-import { parseProposedWeek, WeekParseResult } from "./parser";
+import { parseProposedWeek } from "./parser";
 
 export interface BuildWeekOptions {
   maxRetries?: number;
@@ -66,10 +66,6 @@ export class BuildWeekService {
       try {
         const rawResult: unknown = await this.provider.buildWeek(input);
 
-        const providerParse = typeof (this.provider as any).getLastParseResult === "function"
-          ? ((this.provider as any).getLastParseResult() as WeekParseResult | undefined)
-          : undefined;
-
         if (typeof rawResult === "string") {
           const parseOutcome = parseProposedWeek(rawResult, input);
           if (!parseOutcome.success) {
@@ -81,14 +77,8 @@ export class BuildWeekService {
             repaired: parseOutcome.repaired,
             repairs: parseOutcome.repairs,
           };
-        } else if (providerParse && providerParse.success) {
-          parsedResult = {
-            proposal: providerParse.data,
-            repaired: providerParse.repaired,
-            repairs: providerParse.repairs,
-          };
         } else {
-          // Object returned by provider (e.g. MockProvider)
+          // Object returned by provider (e.g. MockProvider or Gemini/GroqProvider parsed ProposedWeek)
           const normResult = normalizeAndConserveProposedWeek(rawResult as ProposedWeek, input);
           parsedResult = {
             proposal: normResult.proposal,

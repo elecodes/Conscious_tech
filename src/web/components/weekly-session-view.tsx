@@ -18,6 +18,7 @@ import {
   ProtectedSpaceStatus,
   EstimationCompleteness,
   DeferredReason,
+  resolveDefaultTargetWeek,
 } from "../../domain/week";
 import { calculateWeeklyCapacity } from "../../skills/build-week/deterministic";
 import { WeeklyPlanningFromNotes } from "./weekly-planning-from-notes";
@@ -1030,8 +1031,9 @@ export function WeeklySessionView({
   const [selectedAdjustmentItemId, setSelectedAdjustmentItemId] = useState<string>("");
   const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false);
   const [lastSavedAdjustment, setLastSavedAdjustment] = useState<string | null>(null);
-  const [targetWeekStart, setTargetWeekStart] = useState("2026-10-26");
-  const [targetWeekEnd, setTargetWeekEnd] = useState("2026-11-01");
+  const defaultTargetWeek = state.activePlan?.targetWeek ?? resolveDefaultTargetWeek(new Date().toISOString().slice(0, 10));
+  const [targetWeekStart, setTargetWeekStart] = useState(defaultTargetWeek.startDate);
+  const [targetWeekEnd, setTargetWeekEnd] = useState(defaultTargetWeek.endDate);
   const [deadlineInput, setDeadlineInput] = useState("");
   const [taskHoursInput, setTaskHoursInput] = useState<string>("");
   const [taskDayInput, setTaskDayInput] = useState<string>("");

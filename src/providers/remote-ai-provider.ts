@@ -42,9 +42,9 @@ export class RemoteAIProvider implements AIProvider {
       }),
     });
 
-    let json: any;
+    let json: { success?: boolean; data?: unknown; error?: string };
     try {
-      json = await response.json();
+      json = (await response.json()) as { success?: boolean; data?: unknown; error?: string };
     } catch {
       throw new Error(`El servidor devolvió una respuesta no JSON (${response.status})`);
     }
@@ -82,5 +82,20 @@ export class RemoteAIProvider implements AIProvider {
 
   async buildWeek(input: BuildWeekInput): Promise<ProposedWeek> {
     return this.callProxy("build_week", input, (d) => ProposedWeekSchema.parse(d));
+  }
+
+  async completeJson(
+    _systemPrompt: string,
+    _userPrompt: string,
+    _options?: import("./ai-provider").CompletionOptions
+  ): Promise<import("./ai-provider").CompletionResult> {
+    return {
+      rawText: "{}",
+      meta: {
+        provider: this.id,
+        model: this.model,
+        durationMs: 0,
+      },
+    };
   }
 }

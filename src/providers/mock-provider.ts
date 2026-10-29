@@ -75,6 +75,21 @@ export class MockProvider implements AIProvider {
     return this.lastExecutionMeta;
   }
 
+  async completeJson(
+    _systemPrompt: string,
+    _userPrompt: string,
+    _options?: import("./ai-provider").CompletionOptions
+  ): Promise<import("./ai-provider").CompletionResult> {
+    return {
+      rawText: "{}",
+      meta: {
+        provider: this.id,
+        model: this.model,
+        durationMs: 0,
+      },
+    };
+  }
+
   constructor(
     handler?: MockHandler,
     relationshipsHandler?: MockRelationshipsHandler,

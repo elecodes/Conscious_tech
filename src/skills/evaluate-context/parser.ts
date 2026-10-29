@@ -54,9 +54,10 @@ export function sanitizeContextItemSignals(rawAssessments: unknown): {
       return assessment;
     }
 
+    const assessmentObj = assessment as Record<string, unknown>;
     const itemId =
-      typeof (assessment as any).itemId === "string"
-        ? (assessment as any).itemId
+      typeof assessmentObj.itemId === "string"
+        ? assessmentObj.itemId
         : "unknown";
 
     const filteredSignals: ContextSignal[] = [];
@@ -130,8 +131,9 @@ export function parseAndValidateContextOutputWithAudit(
   let droppedSignals: DroppedSignalAudit[] = [];
 
   if (parsed && typeof parsed === "object" && "itemAssessments" in parsed) {
-    const sanitization = sanitizeContextItemSignals((parsed as any).itemAssessments);
-    (parsed as any).itemAssessments = sanitization.sanitized;
+    const parsedObj = parsed as Record<string, unknown>;
+    const sanitization = sanitizeContextItemSignals(parsedObj.itemAssessments);
+    parsedObj.itemAssessments = sanitization.sanitized;
     droppedSignals = sanitization.droppedSignals;
   }
 

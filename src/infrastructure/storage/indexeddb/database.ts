@@ -95,7 +95,9 @@ export function openDatabase(
 
       // Handle version change requested by another tab/connection
       db.onversionchange = () => {
-        console.warn(`[IndexedDB] Database "${dbName}" received a versionchange request. Closing connection.`);
+        if (typeof process === "undefined" || process.env?.NODE_ENV !== "test") {
+          console.warn(`[IndexedDB] Database "${dbName}" received a versionchange request. Closing connection.`);
+        }
         db.close();
       };
 
