@@ -28,6 +28,20 @@ function aiProxyPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [react(), aiProxyPlugin()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom") || id.includes("node_modules/scheduler")) {
+            return "vendor-react";
+          }
+          if (id.includes("node_modules/zod")) {
+            return "vendor-zod";
+          }
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: "node",
