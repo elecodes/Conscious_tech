@@ -309,6 +309,13 @@ Implemented and calibrated skills:
 - **Casos de Calibración 100% Sintéticos**: Se confirmó y documentó formalmente en `cases/README.md` y `README.md` que los 25 casos en `cases/real-dumps.json` (y sus logs de evaluación en `eval-*-results.json`) son ejemplos completamente ficticios/sintéticos diseñados para benchmarking y suites zero-token. No contienen datos reales, PII ni información personal, cumpliendo con la regla 6 de `AGENTS.md`.
 - **Transparencia en Dictado por Voz**: Se documentó en ADR 0019 y en la interfaz (`VoiceDictationButton`) el flujo de procesamiento de la Web Speech API (transcripción en la nube en Chrome vs procesamiento en dispositivo en Safari).
 
+16. **Paridad de Proveedores, Higiene de Concurrencia y Modularización de UI (Plan Oct 2026 - Pasos 5 y 6)**:
+- **Paridad Gemini y Groq**: Implementación de `buildWeek` en `GeminiProvider` con structured output, completando la paridad en todas las habilidades semánticas (01 a 06).
+- **Contrato Unificado `completeJson`**: Abstracción genérica que desacopla el transporte de los parsers específicos de cada skill.
+- **Higiene de Concurrencia**: Eliminación del estado de instancia (`lastRawResponse` / `lastParseResult`) en `GroqProvider` para evitar colisiones en llamadas paralelas.
+- **Modularización de UI y Code-Splitting**: Extracción de componentes y formateadores (`weekly-session-formatters.tsx`, `confirmed-active-memories-section.tsx`, `capacity-protected-space-section.tsx`, `carry-over-tasks-section.tsx`) y configuración de `manualChunks` en Rollup/Vite, reduciendo todos los bundles de producción por debajo de 500 kB.
+- **ADR 0021**: Documentación de mitigaciones de seguridad contra la vulnerabilidad de Zod y aislamiento programado para la migración a Zod 4.
+
 Detailed specifications for individual skills live separately from this file.
 
 ---

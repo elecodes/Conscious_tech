@@ -9,7 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.20.1] - 2026-10-29
 
-### Security & Hardening
+### Provider Parity & Architecture Refactoring
+- **Provider Parity & Concurrency Hygiene**:
+  - Implemented `buildWeek` for `GeminiProvider` using Gemini 2.5 Flash structured output, achieving parity across all skills (01-06).
+  - Added generic `completeJson` method across all providers (`AIProvider`, `GroqProvider`, `GeminiProvider`, `MockProvider`, `RemoteAIProvider`).
+  - Removed instance state leaks (`lastRawResponse` / `lastParseResult`) from `GroqProvider` to eliminate concurrency hazards across concurrent calls.
+  - Eliminated `any` casts across provider consumers and parsers (`build-week/index.ts`, `evaluate-context/parser.ts`).
+  - Suppressed noisy `versionchange` console warnings in `IndexedDbDatabase` during test runs (`NODE_ENV === "test"`).
+  - Added provider parity unit test suite (`tests/ai-provider-parity.test.ts`, 6 tests).
+
+### UI Modularization & Bundle Code-Splitting
+- **Subcomponent Extraction**:
+  - Extracted formatters, helpers, and plan item extractors into `src/web/components/weekly-session-formatters.tsx`.
+  - Extracted confirmed memories view into `src/web/components/confirmed-active-memories-section.tsx`.
+  - Extracted HUD and capacity details into `src/web/components/capacity-protected-space-section.tsx`.
+  - Extracted carryover tasks selection into `src/web/components/carry-over-tasks-section.tsx`.
+  - Dynamically resolved default target dates in `src/web/components/weekly-session-view.tsx` avoiding hardcoded date anchors.
+- **Bundle Optimization**:
+  - Configured Rollup `manualChunks` in `vite.config.ts` separating `vendor-react` and `vendor-zod`, ensuring all production bundle chunks stay well under the 500 kB threshold.
+
+### Documentation & Security
+- **ADR 0021**:
+  - Added `docs/adr/0021-zod-advisory-mitigation-and-v4-migration-strategy.md` analyzing GHSA-mrhx-c7xc-m3w5 and outlining defensive perimeter limits and isolated v4 upgrade scheduling.
 - **Server Proxies Security Hardening (`src/server/calendar-proxy-handler.ts`, `src/server/ai-proxy-handler.ts`)**:
   - Implemented deep asynchronous DNS resolution validating all resolved IPv4 and IPv6 addresses against private and reserved IP ranges (blocking loopback, RFC 1918, CGNAT `100.64.0.0/10`, link-local, multicast, documentation ranges, `0.0.0.0`, and `[::1]`).
   - Mitigated redirect bypass and bounce attacks via manual redirect handling (`redirect: "manual"`) re-validating every redirect target.

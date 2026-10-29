@@ -39,7 +39,8 @@ docs/
     ├── 0017-local-persistence-resilience-data-sovereignty-and-dependency-isolation.md
     ├── 0018-radar-unforeseen-intake-and-plan-incorporation.md
     ├── 0019-native-voice-dictation-and-mcp-integration-architecture.md
-    └── 0020-google-calendar-ical-integration.md
+    ├── 0020-google-calendar-ical-integration.md
+    └── 0021-zod-advisory-mitigation-and-v4-migration-strategy.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
 │   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
@@ -248,7 +249,7 @@ npm run dev
 Open `http://localhost:5173` to test brain dumps interactively, select real-world cases, switch providers, and inspect raw JSON outputs.
 
 ### 4. Run Test Suite
-Unit, behavioral, and security tests run deterministically with zero token consumption (829+ tests across 60 suites):
+Unit, behavioral, and security tests run deterministically with zero token consumption (835+ tests across 61 suites):
 ```bash
 npm test
 ```
