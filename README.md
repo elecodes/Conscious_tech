@@ -40,7 +40,8 @@ docs/
     ├── 0018-radar-unforeseen-intake-and-plan-incorporation.md
     ├── 0019-native-voice-dictation-and-mcp-integration-architecture.md
     ├── 0020-google-calendar-ical-integration.md
-    └── 0021-zod-advisory-mitigation-and-v4-migration-strategy.md
+    ├── 0021-zod-advisory-mitigation-and-v4-migration-strategy.md
+    └── 0022-spanish-first-language-and-deferred-i18n.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
 │   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
@@ -249,7 +250,7 @@ npm run dev
 Open `http://localhost:5173` to test brain dumps interactively, select real-world cases, switch providers, and inspect raw JSON outputs.
 
 ### 4. Run Test Suite
-Unit, behavioral, and security tests run deterministically with zero token consumption (835+ tests across 61 suites):
+Unit, behavioral, and security tests run deterministically with zero token consumption (860+ tests across 62 suites):
 ```bash
 npm test
 ```
@@ -307,7 +308,7 @@ npm run build
 - [x] **Radar de Imprevistos (Sections 21–25)** (Mid-week unforeseen intake, capacity recalculation, sovereign actions)
 - [x] **Native Voice Dictation Mode** (Client-side Web Speech API, zero-cost, zero-dependency streaming dictation in Spanish and English)
 - [x] **Google Calendar Integration (iCal & Capacity Bridge)** (Private feed sync, RFC 5545 parsing, committed hours & collision detection)
-- [ ] **External Context Bridges (MCP)** (Read-only integration for Notion & Google Drive)
+- [ ] **External Context Bridges (MCP)** (Read-only integration for Notion & Google Drive — Deferred post-v1)
 
 ---
 

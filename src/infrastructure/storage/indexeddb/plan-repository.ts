@@ -211,7 +211,9 @@ export class IndexedDbWeeklyPlanRepository implements WeeklyPlanRepository {
         plans.push(parseResult.data);
       } else {
         const id = (raw as Record<string, unknown>)?.planId;
-        console.warn(`[IndexedDbWeeklyPlanRepository] Skipping corrupted plan record ID "${id}":`, parseResult.error.issues);
+        if (process.env.NODE_ENV !== "test") {
+          console.warn(`[IndexedDbWeeklyPlanRepository] Skipping corrupted plan record ID "${id}":`, parseResult.error.issues);
+        }
       }
     }
     return plans;

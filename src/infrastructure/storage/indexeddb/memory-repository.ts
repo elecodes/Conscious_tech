@@ -42,10 +42,12 @@ export class IndexedDbMemoryRepository implements MemoryRepository {
         // Defensive reading: A corrupted record does NOT block reading other independent records.
         if (!parseResult.success) {
           const rawId = (raw as Record<string, unknown>)?.id;
-          console.warn(
-            `[IndexedDbMemoryRepository] Skipping corrupted memory record ID "${rawId}":`,
-            parseResult.error.issues
-          );
+          if (process.env.NODE_ENV !== "test") {
+            console.warn(
+              `[IndexedDbMemoryRepository] Skipping corrupted memory record ID "${rawId}":`,
+              parseResult.error.issues
+            );
+          }
           cursor.continue();
           return;
         }

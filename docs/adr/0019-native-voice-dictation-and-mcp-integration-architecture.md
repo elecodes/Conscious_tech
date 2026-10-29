@@ -37,7 +37,7 @@ El usuario solicitó:
 - **Fase de Lectura Soberana (Read-only Context Bridges)**:
   - Los MCPs se integran como proveedores de contexto externo en la capa de aplicación/infraestructura (`src/infrastructure/mcp/`).
   - **Google Calendar**: Inicialmente conceptualizado como servidor MCP; posteriormente implementado de forma más liviana y sin credenciales en la nube mediante feeds iCal y archivos `.ics` en [ADR 0020](0020-google-calendar-ical-integration.md).
-  - **Notion & Google Drive**: MCP de lectura selectiva para importar páginas de tareas o notas de proyectos como candidatos al brain dump inicial, requiriendo confirmación humana antes de pasar al pipeline semanal.
+  - **Notion & Google Drive**: Puentes de contexto aplazados (*deferred post-v1*). Su implementación requeriría transporte autenticado y configuración adicional de servidores locales, por lo que se mantienen como diseño conceptual en el roadmap hasta validar la adopción del flujo autónomo de cuaderno e iCal.
   - **Seguridad**: Nunca enviar datos de planes privados a MCPs externos sin confirmación explícita.
 
 ---
