@@ -887,5 +887,12 @@ Principios:
 Puede ser útil recordar:
 
 * focos elegidos;
-* decisiones;
-* c
+* decisiones conscientes tomadas durante la semana;
+* compromisos recurrentes o preferencias de trabajo explícitas;
+* aprendizajes y reflexiones identificados tras el cierre semanal.
+
+No recordar:
+
+* pensamientos fugaces no confirmados;
+* detalles íntimos innecesarios para la planificación;
+* cualquier información que la persona decida olvidar.

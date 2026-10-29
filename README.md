@@ -109,9 +109,12 @@ src/
 │   ├── propose-adjustment/  # Skill 09: Adjustment alternatives proposal
 │   │   ├── deterministic.ts # Invariant engine: item partition, raw balance, slot duration
 │   │   └── index.ts         # ProposeAdjustmentService
-│   └── manage-memory/       # Skill 10: Personal memory & context management
-│       ├── deterministic.ts # Invariant engine: forget priority, expiration, canonical sorting
-│       └── index.ts         # ManageMemoryService
+│   ├── manage-memory/       # Skill 10: Personal memory & context management
+│   │   ├── deterministic.ts # Invariant engine: forget priority, expiration, canonical sorting
+│   │   └── index.ts         # ManageMemoryService
+│   └── close-week/          # Skill 11: Reflective weekly review and closure
+│       ├── deterministic.ts # Invariant engine: honest disposition, non-punitive summary
+│       └── index.ts         # CloseWeekService
 ├── application/             # Application orchestration layer
 │   ├── weekly-session-service.ts # Core application service & persistence orchestration
 │   └── radar-pipeline.ts        # Unforeseen events radar pipeline (Sections 21-25)
@@ -132,7 +135,8 @@ cases/
 ├── eval-relationships-results.json # Evaluation output logs (Skill 02)
 ├── eval-group-work-results.json    # Evaluation output logs (Skill 03)
 ├── eval-deadlines-results.json     # Evaluation output logs (Skill 04)
-└── eval-context-results.json       # Evaluation output logs (Skill 05)
+├── eval-context-results.json       # Evaluation output logs (Skill 05)
+└── eval-week-results.json          # Evaluation output logs (Skill 06)
 ```
 
 ### Skill 01: `extract_items`
