@@ -9,6 +9,7 @@ import {
 } from "../../../domain/repositories/types";
 import { TargetWeek } from "../../../domain/week";
 import { STORES, wrapRequest, waitForTransaction } from "./database";
+import { logger } from "../../../utils/logger";
 
 export class IndexedDbWeeklyPlanRepository implements WeeklyPlanRepository {
   constructor(private readonly getDb: () => IDBDatabase) {}
@@ -211,9 +212,7 @@ export class IndexedDbWeeklyPlanRepository implements WeeklyPlanRepository {
         plans.push(parseResult.data);
       } else {
         const id = (raw as Record<string, unknown>)?.planId;
-        if (process.env.NODE_ENV !== "test") {
-          console.warn(`[IndexedDbWeeklyPlanRepository] Skipping corrupted plan record ID "${id}":`, parseResult.error.issues);
-        }
+        logger.warn(`[IndexedDbWeeklyPlanRepository] Skipping corrupted plan record ID "${id}":`, parseResult.error.issues);
       }
     }
     return plans;

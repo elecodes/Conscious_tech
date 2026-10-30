@@ -9,6 +9,7 @@ import {
   validateWeeklyScheduleInvariants,
 } from "../../../domain/schedule";
 import { STORES, wrapRequest, waitForTransaction } from "./database";
+import { logger } from "../../../utils/logger";
 
 export class IndexedDbWeeklyScheduleRepository implements WeeklyScheduleRepository {
   constructor(private readonly getDb: () => IDBDatabase) {}
@@ -144,14 +145,12 @@ export class IndexedDbWeeklyScheduleRepository implements WeeklyScheduleReposito
         const invariantCheck = validateWeeklyScheduleInvariants(parseResult.data);
         if (invariantCheck.valid) {
           schedules.push(parseResult.data);
-        } else if (process.env.NODE_ENV !== "test") {
-          console.warn(`[IndexedDbWeeklyScheduleRepository] Skipping schedule with invariant violations:`, invariantCheck.errors);
+        } else {
+          logger.warn(`[IndexedDbWeeklyScheduleRepository] Skipping schedule with invariant violations:`, invariantCheck.errors);
         }
       } else {
         const id = (raw as Record<string, unknown>)?.scheduleId;
-        if (process.env.NODE_ENV !== "test") {
-          console.warn(`[IndexedDbWeeklyScheduleRepository] Skipping corrupted schedule ID "${id}":`, parseResult.error.issues);
-        }
+        logger.warn(`[IndexedDbWeeklyScheduleRepository] Skipping corrupted schedule ID "${id}":`, parseResult.error.issues);
       }
     }
     return schedules;

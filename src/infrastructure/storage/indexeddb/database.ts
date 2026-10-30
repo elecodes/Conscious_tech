@@ -1,4 +1,5 @@
 import { StorageConnectionError } from "../../../domain/repositories/types";
+import { logger } from "../../../utils/logger";
 
 export const DEFAULT_DB_NAME = "conscious_tech_db";
 export const DB_VERSION = 1;
@@ -49,7 +50,7 @@ export function openDatabase(
 
     request.onblocked = (event) => {
       // Emitted when an upgrade is blocked because an older version is still open in another tab/connection
-      console.warn(`[IndexedDB] Database "${dbName}" upgrade is blocked by another open connection.`, event);
+      logger.warn(`[IndexedDB] Database "${dbName}" upgrade is blocked by another open connection.`, event);
     };
 
     request.onupgradeneeded = (event) => {
@@ -95,14 +96,12 @@ export function openDatabase(
 
       // Handle version change requested by another tab/connection
       db.onversionchange = () => {
-        if (typeof process === "undefined" || process.env?.NODE_ENV !== "test") {
-          console.warn(`[IndexedDB] Database "${dbName}" received a versionchange request. Closing connection.`);
-        }
+        logger.warn(`[IndexedDB] Database "${dbName}" received a versionchange request. Closing connection.`);
         db.close();
       };
 
       db.onerror = (event) => {
-        console.error(`[IndexedDB] Database "${dbName}" encountered an unhandled error:`, event);
+        logger.error(`[IndexedDB] Database "${dbName}" encountered an unhandled error:`, event);
       };
 
       resolve(db);
@@ -123,7 +122,7 @@ export function closeDatabase(db: IDBDatabase | null | undefined): void {
     try {
       db.close();
     } catch (err) {
-      console.warn("[IndexedDB] Error closing database:", err);
+      logger.warn("[IndexedDB] Error closing database:", err);
     }
   }
 }
@@ -147,7 +146,7 @@ export function deleteDatabase(dbName = DEFAULT_DB_NAME, customFactory?: IDBFact
       reject(new StorageConnectionError(`Failed to delete database "${dbName}": ${req.error?.message || "Unknown error"}`));
     };
     req.onblocked = () => {
-      console.warn(`[IndexedDB] Deletion of "${dbName}" is blocked by an active open connection.`);
+      logger.warn(`[IndexedDB] Deletion of "${dbName}" is blocked by an active open connection.`);
     };
   });
 }

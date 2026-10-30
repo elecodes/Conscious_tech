@@ -23,6 +23,7 @@ import {
 import { VoiceDictationButton } from "./voice-dictation-button";
 import { CalendarSyncCard } from "./calendar-sync-card";
 import { CarryOverTasksSection } from "./carry-over-tasks-section";
+import { logger } from "../../utils/logger";
 import {
   CalendarWeekSummary,
   buildGoogleCalendarTemplateUrl,
@@ -282,7 +283,7 @@ export function WeeklyPlanningFromNotes({
           });
         }
       } catch (err) {
-        console.error("Failed to restore draft plan", err);
+        logger.error("Failed to restore draft plan", err);
       }
     }
     restoreDraft();
@@ -322,7 +323,7 @@ export function WeeklyPlanningFromNotes({
     try {
       await service.saveDraftPlan(draftPlan);
     } catch (e) {
-      console.error("Failed to save plan draft", e);
+      logger.error("Failed to save plan draft", e);
     }
   };
 
@@ -380,7 +381,7 @@ export function WeeklyPlanningFromNotes({
         }
       } catch (err) {
         // Log quietly without breaking note planning
-        console.error("Failed to load carryover tasks", err);
+        logger.error("Failed to load carryover tasks", err);
       }
     }
     loadCarryOver();
@@ -475,7 +476,7 @@ export function WeeklyPlanningFromNotes({
       try {
         await service.clearDraftPlan(activeTargetWeek);
       } catch (e) {
-        console.error("Error clearing draft in storage", e);
+        logger.error("Error clearing draft in storage", e);
       }
     }
     setSuccessMessage("Lienzo despejado para planificar una nueva semana.");

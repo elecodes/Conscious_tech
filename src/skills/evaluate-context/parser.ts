@@ -5,6 +5,7 @@ import {
   EvaluateContextOutput,
   EvaluateContextOutputSchema,
 } from "../../domain/context";
+import { logger } from "../../utils/logger";
 
 export class ContextValidationError extends Error {
   public issues: unknown[];
@@ -72,11 +73,9 @@ export function sanitizeContextItemSignals(rawAssessments: unknown): {
             signal: sig,
             reason: `Non-canonical signal "${sig}" discarded; relation types and ad-hoc strings are not allowed in ContextSignalSchema`,
           });
-          if (process.env.NODE_ENV !== "test") {
-            console.warn(
-              `[evaluate_context parser] Descartando señal no canónica "${sig}" en item "${itemId}". Solo se admiten señales válidas del esquema.`
-            );
-          }
+          logger.warn(
+            `[evaluate_context parser] Descartando señal no canónica "${sig}" en item "${itemId}". Solo se admiten señales válidas del esquema.`
+          );
         }
       }
     }

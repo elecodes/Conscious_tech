@@ -11,6 +11,7 @@ import { MockProvider } from "../providers/mock-provider";
 import { AIProvider } from "../providers/ai-provider";
 import { SimpleRateLimiter } from "./rate-limiter";
 import { isOriginAllowed } from "./calendar-proxy-handler";
+import { logger } from "../utils/logger";
 
 export const MAX_PAYLOAD_BYTES = 50 * 1024; // 50 KB limit for brain dump notes & inputs
 
@@ -117,7 +118,7 @@ let hasWarnedMissingAiProxyToken = false;
 export function checkAiProxyTokenWarning(env: Record<string, string | undefined> = process.env): void {
   if (!env.AI_PROXY_TOKEN && !hasWarnedMissingAiProxyToken) {
     hasWarnedMissingAiProxyToken = true;
-    console.warn("[AI Proxy] Advertencia: AI_PROXY_TOKEN no está configurado. El proxy opera en modo desarrollo sin autenticación.");
+    logger.warn("[AI Proxy] Advertencia: AI_PROXY_TOKEN no está configurado. El proxy opera en modo desarrollo sin autenticación.");
   }
 }
 
