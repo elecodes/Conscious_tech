@@ -197,4 +197,3 @@ export type WeeklySchedule = z.infer<typeof WeeklyScheduleSchema>;
 // Re-export invariant validation and adjustment application engines
 export * from "./schedule-invariants";
 export * from "./schedule-adjustment-applier";
-

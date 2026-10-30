@@ -59,7 +59,11 @@ describe("CalendarSyncCard UI Component & Server Proxy Handler", () => {
 
       try {
         const html = renderToStaticMarkup(
-          <CalendarSyncCard targetWeek={targetWeek} onCalendarApplied={vi.fn()} initialOpen={true} />
+          <CalendarSyncCard
+            targetWeek={targetWeek}
+            onCalendarApplied={vi.fn()}
+            initialOpen={true}
+          />
         );
         expect(html).toContain(savedUrl);
         expect(html).toContain('data-testid="forget-ical-url-btn"');

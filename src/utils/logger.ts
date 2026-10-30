@@ -34,7 +34,10 @@ export function sanitizeForLogging(data: unknown): unknown {
   if (typeof data !== "object") return data;
 
   if (data instanceof Error) {
-    if (data.name === "ZodError" || ("issues" in data && Array.isArray((data as unknown as { issues: unknown }).issues))) {
+    if (
+      data.name === "ZodError" ||
+      ("issues" in data && Array.isArray((data as unknown as { issues: unknown }).issues))
+    ) {
       return {
         name: data.name,
         message: "Validation failed",
@@ -43,7 +46,8 @@ export function sanitizeForLogging(data: unknown): unknown {
     }
     return {
       name: data.name,
-      message: data.message.length > MAX_LOG_STRING_LENGTH ? "[REDACTED_LONG_STRING]" : data.message,
+      message:
+        data.message.length > MAX_LOG_STRING_LENGTH ? "[REDACTED_LONG_STRING]" : data.message,
     };
   }
 

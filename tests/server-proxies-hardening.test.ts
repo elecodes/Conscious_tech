@@ -650,8 +650,12 @@ describe("Server Proxies Security Hardening", () => {
         ["ADR 0023", adr0023],
         ["CHANGELOG.md", changelog],
       ]) {
-        expect(content).not.toMatch(/(?:shared\s+secret|secreto\s+compartido).*?(?:AI_PROXY_TOKEN|VITE_AI_PROXY_TOKEN)/i);
-        expect(content).not.toMatch(/(?:AI_PROXY_TOKEN|VITE_AI_PROXY_TOKEN).*?(?:shared\s+secret|secreto\s+compartido)/i);
+        expect(content).not.toMatch(
+          /(?:shared\s+secret|secreto\s+compartido).*?(?:AI_PROXY_TOKEN|VITE_AI_PROXY_TOKEN)/i
+        );
+        expect(content).not.toMatch(
+          /(?:AI_PROXY_TOKEN|VITE_AI_PROXY_TOKEN).*?(?:shared\s+secret|secreto\s+compartido)/i
+        );
       }
 
       expect(readme).toMatch(/dev guard, not a secret/i);

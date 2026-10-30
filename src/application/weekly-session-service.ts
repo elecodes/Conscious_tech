@@ -7,11 +7,7 @@ import {
   StaleVersionConflictError,
 } from "../domain/repositories/types";
 import { TargetWeek } from "../domain/week";
-import {
-  WeeklySchedule,
-  HumanDecision,
-  applyAdjustmentToSchedule,
-} from "../domain/schedule";
+import { WeeklySchedule, HumanDecision, applyAdjustmentToSchedule } from "../domain/schedule";
 import { SuggestedAdjustmentAction } from "../domain/adjustment";
 import { ItemOutcomeInput, UserReflectionInput } from "../domain/close-week";
 import { executeCloseWeekDeterministic } from "../skills/close-week/deterministic";
@@ -40,10 +36,7 @@ import {
   PurgePlanResult,
   ReopenWeekResult,
 } from "./weekly-session-service-types";
-import {
-  findLatestClosedWeek,
-  findPendingCarryOverTasks,
-} from "./weekly-session-carryover";
+import { findLatestClosedWeek, findPendingCarryOverTasks } from "./weekly-session-carryover";
 
 export * from "./weekly-session-service-types";
 export * from "./weekly-session-carryover";
