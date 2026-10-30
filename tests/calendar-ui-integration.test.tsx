@@ -31,7 +31,7 @@ describe("CalendarSyncCard UI Component & Server Proxy Handler", () => {
       expect(html).toContain('data-testid="calendar-privacy-notice"');
       expect(html).toContain("El enlace privado se guarda en este navegador hasta ser olvidado");
       expect(html).toContain(
-        "podés eliminarlo en cualquier momento con &quot;Olvidar enlace&quot;"
+        "puedes eliminarlo en cualquier momento con &quot;Olvidar enlace&quot;"
       );
       expect(html).toContain('data-testid="ical-url-input"');
       expect(html).toContain('data-testid="forget-ical-url-btn"');

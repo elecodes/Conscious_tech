@@ -131,7 +131,7 @@ export async function evaluateRadarInput(
       outcome: "no_change",
       verdictTitle: "🟢 No cambia la semana",
       verdictExplanation:
-        "Esto representa una idea o inquietud. No necesita interrumpir tu semana; podés guardarla como idea o nota sin tocar tu planificación.",
+        "Esto representa una idea o inquietud. No necesita interrumpir tu semana; puedes guardarla como idea o nota sin tocar tu planificación.",
       extractedItems: items,
       changeAnalysis: noImpactAnalysis,
       conflictReport: noConflictsReport,
@@ -211,7 +211,7 @@ export async function evaluateRadarInput(
       outcome: "changes_balance",
       verdictTitle: "🔴 Cambia el equilibrio",
       verdictExplanation:
-        "La nueva actividad no cabe en el margen disponible o genera un conflicto directo. La IA te propone alternativas, pero vos decidís qué trade-off querés realizar.",
+        "La nueva actividad no cabe en el margen disponible o genera un conflicto directo. La IA te propone alternativas, pero tú decides qué trade-off quieres realizar.",
       extractedItems: items,
       changeAnalysis,
       conflictReport,
@@ -226,7 +226,7 @@ export async function evaluateRadarInput(
       outcome: "flexible_option",
       verdictTitle: "🟡 Puede entrar si hay espacio",
       verdictExplanation:
-        "Es una tarea opcional que no compromete plazos fijos ni compromisos externos. Podés incorporarla a tus opciones flexibles si te queda resto.",
+        "Es una tarea opcional que no compromete plazos fijos ni compromisos externos. Puedes incorporarla a tus opciones flexibles si te queda resto.",
       extractedItems: items,
       changeAnalysis,
       conflictReport,

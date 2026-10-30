@@ -358,7 +358,7 @@ export class WeeklySessionController {
     } else {
       return {
         status: "failed",
-        reason: "Por favor recargá la página del navegador para actualizar el servicio en memoria.",
+        reason: "Por favor recarga la página del navegador para actualizar el servicio en memoria.",
       };
     }
 

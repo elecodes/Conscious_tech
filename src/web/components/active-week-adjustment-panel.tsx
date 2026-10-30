@@ -276,7 +276,7 @@ export function ActiveWeekAdjustmentPanel({
                       }}
                     >
                       <p className="calm-muted" style={{ fontSize: "0.8rem", margin: 0 }}>
-                        💡 Si no elegís día, las horas quedan computadas en la semana sin día fijo.
+                        💡 Si no eliges día, las horas quedan computadas en la semana sin día fijo.
                       </p>
                       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                         <button

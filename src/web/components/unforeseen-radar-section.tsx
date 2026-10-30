@@ -49,7 +49,7 @@ export function UnforeseenRadarSection({
           <span>📡 Radar: ¿Ha aparecido algo nuevo?</span>
         </h3>
         <span className="calm-muted" style={{ fontSize: "0.82rem" }}>
-          AI propone, vos decidís · No interrumpe silenciosamente
+          AI propone, tú decides · No interrumpe silenciosamente
         </span>
       </div>
 
@@ -232,7 +232,7 @@ export function UnforeseenRadarSection({
             radarResult.adjustmentProposals.length > 0 && (
               <div style={{ marginTop: "14px" }} data-testid="radar-proposals-list">
                 <h5 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "#991b1b" }}>
-                  Alternativas propuestas por la IA (vos elegís):
+                  Alternativas propuestas por la IA (tú eliges):
                 </h5>
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {radarResult.adjustmentProposals.map((prop, idx) => (

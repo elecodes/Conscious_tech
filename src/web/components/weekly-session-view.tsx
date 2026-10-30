@@ -170,7 +170,7 @@ export function WeeklySessionView({
         setRadarResult(null);
         setRadarInput("");
       } else if (res.status === "concurrency_conflict") {
-        setFeedbackMessage("Conflicto de versión al aplicar el ajuste. Recargá la agenda.");
+        setFeedbackMessage("Conflicto de versión al aplicar el ajuste. Recarga la agenda.");
       } else {
         setFeedbackMessage(`No se pudo aplicar el ajuste: ${res.status}`);
       }
@@ -498,11 +498,11 @@ export function WeeklySessionView({
       const res = await reopenWeek(planId);
       if (res.status === "success") {
         setFeedbackMessage(
-          "Semana reabierta exitosamente. Ahora podés continuar planificando o modificando tus tareas."
+          "Semana reabierta exitosamente. Ahora puedes continuar planificando o modificando tus tareas."
         );
       } else if (res.status === "conflict_active_plan_exists") {
         setReopenFeedback(
-          `No es posible reabrir esta semana porque ya existe otra semana activa (${res.existingActivePlanId}). Cerrá o purgá la semana activa antes de reabrir esta.`
+          `No es posible reabrir esta semana porque ya existe otra semana activa (${res.existingActivePlanId}). Cierra o purga la semana activa antes de reabrir esta.`
         );
       } else {
         setReopenFeedback(

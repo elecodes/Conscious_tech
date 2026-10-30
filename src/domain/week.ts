@@ -477,7 +477,7 @@ export function createEmptyProposedWeek(
       recommendedHours: null,
     },
     confirmationPrompt: {
-      question: "¿Querés agregar algún foco o volcar nuevas notas para esta semana?",
+      question: "¿Quieres agregar algún foco o volcar nuevas notas para esta semana?",
       keyTradeoffs: [],
       pendingQuestions: [],
     },

@@ -54,7 +54,7 @@ export function CalendarSyncCard({
 
   const handleSyncFromUrl = async () => {
     if (!icalUrl.trim()) {
-      setErrorMessage("Por favor ingresá la URL secreta de iCal de tu Google Calendar.");
+      setErrorMessage("Por favor introduce la URL secreta de iCal de tu Google Calendar.");
       return;
     }
 
@@ -184,12 +184,12 @@ export function CalendarSyncCard({
               marginBottom: "10px",
             }}
           >
-            Pegá la <strong>Dirección secreta en formato iCal</strong> de tu Google Calendar (la
-            encontrás en{" "}
+            Pega la <strong>Dirección secreta en formato iCal</strong> de tu Google Calendar (la
+            encuentras en{" "}
             <em>
               Google Calendar &gt; Configuración &gt; Tu calendario &gt; Integrar el calendario
             </em>
-            ) o subí tu archivo <code>.ics</code>:
+            ) o sube tu archivo <code>.ics</code>:
           </p>
 
           <div style={{ display: "flex", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
@@ -256,7 +256,7 @@ export function CalendarSyncCard({
             <span>🔒</span>
             <span data-testid="calendar-privacy-notice">
               <strong>Privacidad:</strong> El enlace privado se guarda en este navegador hasta ser
-              olvidado (podés eliminarlo en cualquier momento con "Olvidar enlace") y se consulta
+              olvidado (puedes eliminarlo en cualquier momento con "Olvidar enlace") y se consulta
               vía POST local seguro sin enviarse a servidores de terceros ni guardarse en registros
               de acceso.
             </span>
