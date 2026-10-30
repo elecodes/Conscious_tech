@@ -31,7 +31,7 @@ import mockCasesData from "../../cases/mock-extractions.json";
 import mockRelationshipsData from "../../cases/mock-relationships.json";
 import mockGroupingsData from "../../cases/mock-groupings.json";
 import mockDeadlinesData from "../../cases/mock-deadlines.json";
-import realDumpsData from "../../cases/real-dumps.json";
+import sampleDumpsData from "../../cases/sample-dumps.json";
 import { extractItemsDeterministically } from "./mock-deterministic-extractor";
 
 export type MockHandler = (input: ExtractItemsInput) => Promise<ExtractedItems> | ExtractedItems;
@@ -141,9 +141,9 @@ export class MockProvider implements AIProvider {
       return await this.handler(input);
     }
 
-    // Try finding exact matching case in real-dumps
+    // Try finding exact matching case in sample-dumps
     const normalizedInput = input.text.trim();
-    const matchedCase = realDumpsData.find(
+    const matchedCase = sampleDumpsData.find(
       (c) => c.text.trim() === normalizedInput
     );
 

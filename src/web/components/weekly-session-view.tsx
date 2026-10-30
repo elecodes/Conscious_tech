@@ -16,7 +16,7 @@ import {
   EstimationCompleteness,
   resolveDefaultTargetWeek,
 } from "../../domain/week";
-import { calculateWeeklyCapacity } from "../../skills/build-week/deterministic";
+import { calculateWeeklyCapacity, resolveTargetWeek } from "../../skills/build-week/deterministic";
 import { WeeklyPlanningFromNotes } from "./weekly-planning-from-notes";
 import {
   evaluateRadarInput,
@@ -1022,20 +1022,19 @@ export function WeeklySessionView({
             aria-label="Iniciar nueva semana de ejemplo"
             onClick={async () => {
               const today = new Date().toISOString().split("T")[0]!;
+              const targetWeek = resolveTargetWeek(today);
+              const monday = targetWeek.startDate;
+              const tuesdayDate = new Date(`${monday}T00:00:00Z`);
+              tuesdayDate.setUTCDate(tuesdayDate.getUTCDate() + 1);
+              const tuesday = tuesdayDate.toISOString().split("T")[0]!;
               const planId = `plan-${today}`;
               const demoPlan: StoredWeeklyPlan = {
                 planId,
                 status: "active",
-                targetWeek: {
-                  startDate: "2026-10-12",
-                  endDate: "2026-10-18",
-                },
+                targetWeek,
                 proposal: {
                   weekSummary: {
-                    targetWeek: {
-                      startDate: "2026-10-12",
-                      endDate: "2026-10-18",
-                    },
+                    targetWeek,
                     capacity: {
                       totalAvailableHours: 30,
                       plannableHours: 22.5,
@@ -1062,7 +1061,7 @@ export function WeeklySessionView({
                     {
                       itemId: "task-reunion",
                       title: "Reunión de equipo",
-                      dueDate: "2026-10-13",
+                      dueDate: tuesday,
                       commitmentType: "external",
                       rationale: "Compromiso de coordinación",
                       estimatedHours: 4,
@@ -1087,22 +1086,19 @@ export function WeeklySessionView({
               const demoSchedule: WeeklySchedule = {
                 scheduleId: `sched-${planId}`,
                 planId,
-                weekRange: {
-                  startDate: "2026-10-12",
-                  endDate: "2026-10-18",
-                },
+                weekRange: targetWeek,
                 version: 1,
                 timeBlocks: [
                   {
                     itemId: "task-reporte",
-                    day: "2026-10-12",
+                    day: monday,
                     startTime: "09:00",
                     endTime: "11:00",
                   },
                 ],
                 dailyAllocations: [
-                  { day: "2026-10-12", allocatedHours: 5, itemId: "task-reporte" },
-                  { day: "2026-10-13", allocatedHours: 4, itemId: "task-reunion" },
+                  { day: monday, allocatedHours: 5, itemId: "task-reporte" },
+                  { day: tuesday, allocatedHours: 4, itemId: "task-reunion" },
                 ],
                 appliedAdjustments: [],
                 createdAt: today,
@@ -1400,20 +1396,19 @@ export function WeeklySessionView({
                 aria-label="Iniciar nueva semana de ejemplo"
                 onClick={async () => {
                   const today = new Date().toISOString().split("T")[0]!;
+                  const targetWeek = resolveTargetWeek(today);
+                  const monday = targetWeek.startDate;
+                  const tuesdayDate = new Date(`${monday}T00:00:00Z`);
+                  tuesdayDate.setUTCDate(tuesdayDate.getUTCDate() + 1);
+                  const tuesday = tuesdayDate.toISOString().split("T")[0]!;
                   const planId = `plan-${today}`;
                   const demoPlan: StoredWeeklyPlan = {
                     planId,
                     status: "active",
-                    targetWeek: {
-                      startDate: "2026-10-12",
-                      endDate: "2026-10-18",
-                    },
+                    targetWeek,
                     proposal: {
                       weekSummary: {
-                        targetWeek: {
-                          startDate: "2026-10-12",
-                          endDate: "2026-10-18",
-                        },
+                        targetWeek,
                         capacity: {
                           totalAvailableHours: 30,
                           plannableHours: 22.5,
@@ -1440,7 +1435,7 @@ export function WeeklySessionView({
                         {
                           itemId: "task-reunion",
                           title: "Reunión de equipo",
-                          dueDate: "2026-10-13",
+                          dueDate: tuesday,
                           commitmentType: "external",
                           rationale: "Compromiso de coordinación",
                           estimatedHours: 4,
@@ -1465,22 +1460,19 @@ export function WeeklySessionView({
                   const demoSchedule: WeeklySchedule = {
                     scheduleId: `sched-${planId}`,
                     planId,
-                    weekRange: {
-                      startDate: "2026-10-12",
-                      endDate: "2026-10-18",
-                    },
+                    weekRange: targetWeek,
                     version: 1,
                     timeBlocks: [
                       {
                         itemId: "task-reporte",
-                        day: "2026-10-12",
+                        day: monday,
                         startTime: "09:00",
                         endTime: "11:00",
                       },
                     ],
                     dailyAllocations: [
-                      { day: "2026-10-12", allocatedHours: 5, itemId: "task-reporte" },
-                      { day: "2026-10-13", allocatedHours: 4, itemId: "task-reunion" },
+                      { day: monday, allocatedHours: 5, itemId: "task-reporte" },
+                      { day: tuesday, allocatedHours: 4, itemId: "task-reunion" },
                     ],
                     appliedAdjustments: [],
                     createdAt: today,

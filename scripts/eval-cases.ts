@@ -1452,7 +1452,7 @@ async function main() {
     process.exit(1);
   }
 
-  const casesPath = path.resolve(__dirname, "../cases/real-dumps.json");
+  const casesPath = path.resolve(__dirname, "../cases/sample-dumps.json");
   const cases: CaseDump[] = JSON.parse(fs.readFileSync(casesPath, "utf-8"));
   const allKnownIds = new Set(cases.map((c) => c.id));
   const requestedCaseIds = caseArg
@@ -1465,7 +1465,7 @@ async function main() {
 
   if (omittedCaseIds.length > 0) {
     console.warn(
-      `\n⚠️  ATENCIÓN: Se solicitaron casos que no existen en real-dumps.json: ${omittedCaseIds.join(
+      `\n⚠️  ATENCIÓN: Se solicitaron casos que no existen en sample-dumps.json: ${omittedCaseIds.join(
         ", "
       )} (posible typo en el argumento --case)`
     );

@@ -4,7 +4,7 @@ This directory contains benchmarking datasets and golden fixtures used for offli
 
 ## Privacy & Synthetic Data Notice
 
-All 25 brain dumps in `real-dumps.json` (and their corresponding golden files `mock-*.json` and evaluation outputs `eval-*-results.json`) are **100% synthetic, fictional examples**.
+All 25 brain dumps in `sample-dumps.json` (and their corresponding golden files `mock-*.json` and evaluation outputs `eval-*-results.json`) are **100% synthetic, fictional examples**.
 
 - They were deliberately crafted to test edge cases in natural language parsing (tax forms, commitments, fuzzy deadlines, external dependencies, and emotional states).
 - They **do not contain any authentic personal user data, real financial records, confidential client info, or private brain dumps**.

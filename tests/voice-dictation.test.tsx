@@ -88,6 +88,8 @@ describe("VoiceDictationButton & useSpeechRecognition (Web Speech API)", () => {
       expect(html).toContain("data-testid=\"voice-lang-select\"");
       expect(html).toContain("es-ES");
       expect(html).toContain("en-US");
+      expect(html).toContain("data-testid=\"voice-dictation-privacy-notice\"");
+      expect(html).toContain("El audio puede ser procesado por el proveedor de tu navegador");
     });
 
     it("renders in disabled state when disabled prop is true", () => {

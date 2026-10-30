@@ -126,7 +126,7 @@ src/
     └── style.css
 cases/
 ├── README.md                # Privacy & synthetic benchmark documentation
-├── real-dumps.json          # 25 synthetic/fictional Spanish brain dumps for calibration
+├── sample-dumps.json        # 25 synthetic/fictional Spanish brain dumps for calibration
 ├── mock-extractions.json    # Golden reference extractions for zero-token tests
 ├── mock-relationships.json  # Golden reference relationships for zero-token tests
 ├── mock-groupings.json      # Golden reference work groups for zero-token tests
@@ -190,7 +190,7 @@ Synthesizes evaluated context and constraints into a realistic, calm, human-cent
   - Zero-token deterministic planning context generator and validation.
 - **Test Suite**: 108 unit, behavioral, and regression tests (including false obligations, strict TDD, and temporal discrepancy tests).
 - **Calibration & Real Groq Evaluation**:
-  - 25/25 authentic brain dump fixtures evaluated with real Groq (`qwen/qwen3.8-27b`).
+  - 25/25 sample brain dump fixtures evaluated with real Groq (`qwen/qwen3.8-27b`).
   - 25 clean passes, 0 repairs, 0 failures.
   - Validation semántica aprobada con observaciones de producto registradas (tareas puntuales pre-semana, seguimiento de delegación y diferenciación visual de compromisos futuros).
   - *Nota*: La cobertura de evaluación calibra el comportamiento pero no garantiza ausencia absoluta de errores en producción.

@@ -306,7 +306,7 @@ Implemented and calibrated skills:
 - **Extractor Determinista Mejorado**: Vocabulario ampliado con verbos en inglés, descomposición limpia de listas separadas por coma, protección de expresiones compuestas de agobio/preocupación y fusión automática de cláusulas de esfuerzo (como `", me llevará 2 horas"`). 789 tests en verde.
 
 15. **Auditoría de Privacidad y Naturaleza de Casos de Benchmark (Plan Oct 2026)**:
-- **Casos de Calibración 100% Sintéticos**: Se confirmó y documentó formalmente en `cases/README.md` y `README.md` que los 25 casos en `cases/real-dumps.json` (y sus logs de evaluación en `eval-*-results.json`) son ejemplos completamente ficticios/sintéticos diseñados para benchmarking y suites zero-token. No contienen datos reales, PII ni información personal, cumpliendo con la regla 6 de `AGENTS.md`.
+- **Casos de Calibración 100% Sintéticos**: Se confirmó y documentó formalmente en `cases/README.md` y `README.md` que los 25 casos en `cases/sample-dumps.json` (y sus logs de evaluación en `eval-*-results.json`) son ejemplos completamente ficticios/sintéticos diseñados para benchmarking y suites zero-token. No contienen datos reales, PII ni información personal, cumpliendo con la regla 6 de `AGENTS.md`.
 - **Transparencia en Dictado por Voz**: Se documentó en ADR 0019 y en la interfaz (`VoiceDictationButton`) el flujo de procesamiento de la Web Speech API (transcripción en la nube en Chrome vs procesamiento en dispositivo en Safari).
 
 16. **Paridad de Proveedores, Higiene de Concurrencia y Modularización de UI (Plan Oct 2026 - Pasos 5 y 6)**:

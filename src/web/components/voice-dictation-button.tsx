@@ -101,6 +101,17 @@ export function VoiceDictationButton({
         <option value="en-US">EN</option>
       </select>
 
+      <span
+        data-testid="voice-dictation-privacy-notice"
+        style={{
+          fontSize: "0.72rem",
+          color: "var(--text-muted, #64748b)",
+          marginLeft: "2px",
+        }}
+      >
+        (El audio puede ser procesado por el proveedor de tu navegador)
+      </span>
+
       {errorMessage && (
         <span
           style={{

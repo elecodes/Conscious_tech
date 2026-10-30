@@ -545,7 +545,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 34 unit and behavioral tests covering 21 discrete scenarios (tasks, ideas, concerns, commitments, deadlines, edge cases).
   - 100% test pass rate with zero external token expenditure.
 - **Evaluation & Calibration Dataset**:
-  - 25 authentic Spanish brain dumps in `cases/real-dumps.json`.
+  - 25 sample Spanish brain dumps in `cases/sample-dumps.json`.
   - Golden expected extraction fixtures in `cases/mock-extractions.json`.
   - Batch evaluation CLI tool in `scripts/eval-cases.ts` with rate-limit throttling.
 - **Testing Web Interface**:

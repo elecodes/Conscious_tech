@@ -3,7 +3,7 @@ import { ExtractedItem, ExtractedItems } from "../domain/items";
 import { MockProvider } from "../providers/mock-provider";
 import { RemoteAIProvider } from "../providers/remote-ai-provider";
 import { extractItems } from "../skills/extract-items";
-import realDumpsData from "../../cases/real-dumps.json";
+import sampleDumpsData from "../../cases/sample-dumps.json";
 import { WeeklySessionProvider, useWeeklySession } from "./context/weekly-session-context";
 import { WeeklySessionView } from "./components/weekly-session-view";
 import { WeeklySessionService } from "../application/weekly-session-service";
@@ -184,7 +184,7 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
       handleClearDump();
       return;
     }
-    const found = realDumpsData.find((c) => c.id === caseId);
+    const found = sampleDumpsData.find((c) => c.id === caseId);
     if (found) {
       setText(found.text);
     }
@@ -334,7 +334,7 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
                 onChange={(e) => handleCaseSelect(e.target.value)}
               >
                 <option value="">-- Escribe tus ideas o elige un ejemplo --</option>
-                {realDumpsData.map((c) => (
+                {sampleDumpsData.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.id} - {c.title}
                   </option>

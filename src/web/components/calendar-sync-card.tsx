@@ -10,6 +10,7 @@ export interface CalendarSyncCardProps {
   targetWeek: TargetWeek;
   onCalendarApplied: (summary: CalendarWeekSummary) => void;
   baseDailyHours?: number;
+  initialOpen?: boolean;
 }
 
 const STORAGE_KEY_ICAL_URL = "conscious_tech_google_ical_url";
@@ -18,8 +19,9 @@ export function CalendarSyncCard({
   targetWeek,
   onCalendarApplied,
   baseDailyHours = 8,
+  initialOpen = false,
 }: CalendarSyncCardProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(initialOpen);
   const [icalUrl, setIcalUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -34,6 +36,15 @@ export function CalendarSyncCard({
       // Ignore localStorage unavailable in some test/sandbox environments
     }
   }, []);
+
+  const handleForgetUrl = () => {
+    setIcalUrl("");
+    try {
+      localStorage.removeItem(STORAGE_KEY_ICAL_URL);
+    } catch {
+      // Ignore
+    }
+  };
 
   const handleSyncFromUrl = async () => {
     if (!icalUrl.trim()) {
@@ -191,6 +202,18 @@ export function CalendarSyncCard({
             >
               {isLoading ? "Sincronizando..." : "Sincronizar"}
             </button>
+            {icalUrl.trim().length > 0 && (
+              <button
+                type="button"
+                data-testid="forget-ical-url-btn"
+                className="secondary small"
+                onClick={handleForgetUrl}
+                disabled={isLoading}
+                style={{ padding: "7px 12px", fontSize: "0.85rem" }}
+              >
+                Olvidar enlace
+              </button>
+            )}
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
@@ -216,8 +239,8 @@ export function CalendarSyncCard({
             }}
           >
             <span>🔒</span>
-            <span>
-              <strong>Privacidad:</strong> La URL privada se procesa localmente en tu máquina (POST seguro) para sincronizar reuniones sin almacenarse en servidores de terceros ni en registros de URL.
+            <span data-testid="calendar-privacy-notice">
+              <strong>Privacidad:</strong> El enlace privado se guarda localmente en este navegador para futuras semanas (podés eliminarlo en cualquier momento con "Olvidar enlace") y se consulta vía POST local seguro sin enviarse a servidores de terceros ni guardarse en registros de acceso.
             </span>
           </div>
 

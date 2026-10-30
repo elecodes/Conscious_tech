@@ -25,6 +25,21 @@ describe("CalendarSyncCard UI Component & Server Proxy Handler", () => {
       // Initially collapsed, input should not be in the DOM
       expect(html).not.toContain("data-testid=\"ical-url-input\"");
     });
+
+    it("displays honest local-storage privacy disclosure and forget button when open", () => {
+      const html = renderToStaticMarkup(
+        <CalendarSyncCard
+          targetWeek={targetWeek}
+          onCalendarApplied={vi.fn()}
+          initialOpen={true}
+        />
+      );
+
+      expect(html).toContain("data-testid=\"calendar-privacy-notice\"");
+      expect(html).toContain("El enlace privado se guarda localmente en este navegador");
+      expect(html).toContain("podés eliminarlo en cualquier momento con &quot;Olvidar enlace&quot;");
+      expect(html).toContain("data-testid=\"ical-url-input\"");
+    });
   });
 
   describe("isSafeCalendarUrl SSRF Protection", () => {
