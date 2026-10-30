@@ -1,27 +1,21 @@
 import {
-  WeeklyPlanRepository,
-  WeeklyScheduleRepository,
-  WeeklyCloseRepository,
-  MemoryRepository,
   StoredWeeklyPlan,
   StoredCloseWeekReport,
   StoredWeeklyPlanSchema,
   ExplicitHumanConfirmation,
   SessionResumeResult,
   StaleVersionConflictError,
-  ClosedWeekSummary,
 } from "../domain/repositories/types";
 import { TargetWeek } from "../domain/week";
 import {
   WeeklySchedule,
   HumanDecision,
-  ScheduleAdjustmentRecord,
   applyAdjustmentToSchedule,
 } from "../domain/schedule";
 import { SuggestedAdjustmentAction } from "../domain/adjustment";
 import { ItemOutcomeInput, UserReflectionInput } from "../domain/close-week";
 import { executeCloseWeekDeterministic } from "../skills/close-week/deterministic";
-import { StoreCandidate, MemoryOperation, MemoryItemSchema } from "../domain/memory";
+import { MemoryOperation, MemoryItemSchema } from "../domain/memory";
 import {
   STORES,
   wrapRequest,
@@ -34,89 +28,25 @@ import {
   ImportBackupOptions,
   ImportBackupResult,
 } from "../infrastructure/storage/indexeddb/backup";
+import {
+  WeeklySessionServiceDependencies,
+  LatestClosedWeekResult,
+  PendingCarryOverTask,
+  CreatePlanResult,
+  GetPlanResult,
+  ApplyAdjustmentServiceResult,
+  CloseWeekServiceResult,
+  ConfirmMemoryResult,
+  PurgePlanResult,
+  ReopenWeekResult,
+} from "./weekly-session-service-types";
+import {
+  findLatestClosedWeek,
+  findPendingCarryOverTasks,
+} from "./weekly-session-carryover";
 
-// ============================================================================
-// Service Input & Output Types
-// ============================================================================
-
-export type CreatePlanResult =
-  | { status: "success"; plan: StoredWeeklyPlan; schedule: WeeklySchedule | null }
-  | { status: "conflict_active_plan_exists"; existingActivePlanId: string }
-  | { status: "inconsistent_references"; reason: string }
-  | { status: "invalid_data"; reason: string };
-
-export type GetPlanResult =
-  | { status: "success"; plan: StoredWeeklyPlan; schedule: WeeklySchedule | null }
-  | { status: "not_found"; reason: string }
-  | { status: "inconsistent_references"; reason: string };
-
-export type ApplyAdjustmentServiceResult =
-  | {
-      status: "success";
-      schedule: WeeklySchedule;
-      appliedRecord: ScheduleAdjustmentRecord;
-    }
-  | {
-      status: "rejected";
-      schedule: WeeklySchedule;
-      reason: string;
-    }
-  | {
-      status: "concurrency_conflict";
-      currentVersion: number;
-      expectedVersion: number;
-    }
-  | {
-      status: "failed";
-      errorCode: string;
-      failureReason: string;
-      schedule: WeeklySchedule;
-    }
-  | {
-      status: "not_found";
-      reason: string;
-    };
-
-export type CloseWeekServiceResult =
-  | {
-      status: "success";
-      closeReport: StoredCloseWeekReport;
-      memoryCandidates: StoreCandidate[];
-    }
-  | {
-      status: "not_found";
-      reason: string;
-    }
-  | {
-      status: "failed";
-      reason: string;
-    };
-
-export type ConfirmMemoryResult =
-  | { status: "applied"; operationType: MemoryOperation["type"]; memoryId: string }
-  | { status: "rejected"; reason: string }
-  | { status: "invalid_operation"; reason: string }
-  | { status: "not_found"; reason: string };
-
-export type PurgePlanResult =
-  | { status: "success"; purgedPlanId: string }
-  | { status: "not_found"; reason: string }
-  | { status: "failed"; reason: string };
-
-export type ReopenWeekResult =
-  | { status: "success"; plan: StoredWeeklyPlan }
-  | { status: "conflict_active_plan_exists"; existingActivePlanId: string }
-  | { status: "not_found"; reason: string }
-  | { status: "not_closed"; reason: string }
-  | { status: "failed"; reason: string };
-
-export interface WeeklySessionServiceDependencies {
-  plans: WeeklyPlanRepository;
-  schedules: WeeklyScheduleRepository;
-  closeReports: WeeklyCloseRepository;
-  memories: MemoryRepository;
-  getDb?: () => IDBDatabase;
-}
+export * from "./weekly-session-service-types";
+export * from "./weekly-session-carryover";
 
 // ============================================================================
 // WeeklySessionService Implementation
@@ -244,318 +174,18 @@ export class WeeklySessionService {
 
   /**
    * Retrieves and cross-validates the most recent closed week summary.
-   * Deterministic ordering:
-   * 1. Primary: closedAt descending (ISO UTC timestamp)
-   * 2. Secondary: reportId descending (lexicographical tie-breaker)
    */
-  async getLatestClosedWeek(): Promise<
-    | { status: "found"; summary: ClosedWeekSummary }
-    | { status: "none" }
-    | { status: "inconsistent"; reason: string }
-  > {
-    const allReports = await this.deps.closeReports.getAll();
-    if (allReports.length === 0) {
-      return { status: "none" };
-    }
-
-    // Deterministic ordering
-    const sortedReports = [...allReports].sort((a, b) => {
-      const timeCmp = b.closedAt.localeCompare(a.closedAt);
-      if (timeCmp !== 0) return timeCmp;
-      return b.reportId.localeCompare(a.reportId);
-    });
-
-    const latestReport = sortedReports[0]!;
-    const plan = await this.deps.plans.getById(latestReport.planId);
-    if (!plan) {
-      return {
-        status: "inconsistent",
-        reason: `Close report "${latestReport.reportId}" references non-existent planId "${latestReport.planId}"`,
-      };
-    }
-
-    if (latestReport.planId !== plan.planId) {
-      return {
-        status: "inconsistent",
-        reason: `Close report planId "${latestReport.planId}" does not match plan "${plan.planId}"`,
-      };
-    }
-
-    let schedule: WeeklySchedule | null = null;
-    if (latestReport.scheduleId) {
-      const foundSchedule = await this.deps.schedules.getById(latestReport.scheduleId);
-      if (!foundSchedule) {
-        return {
-          status: "inconsistent",
-          reason: `Close report references scheduleId "${latestReport.scheduleId}" which does not exist in storage`,
-        };
-      }
-      if (foundSchedule.planId !== plan.planId) {
-        return {
-          status: "inconsistent",
-          reason: `Schedule "${foundSchedule.scheduleId}" references planId "${foundSchedule.planId}", expected "${plan.planId}"`,
-        };
-      }
-      if (
-        foundSchedule.weekRange.startDate !== plan.targetWeek.startDate ||
-        foundSchedule.weekRange.endDate !== plan.targetWeek.endDate
-      ) {
-        return {
-          status: "inconsistent",
-          reason: `Schedule weekRange (${foundSchedule.weekRange.startDate}..${foundSchedule.weekRange.endDate}) does not match plan targetWeek (${plan.targetWeek.startDate}..${plan.targetWeek.endDate})`,
-        };
-      }
-      schedule = foundSchedule;
-    } else {
-      const foundSchedule = await this.deps.schedules.getByPlanId(plan.planId);
-      if (foundSchedule) {
-        if (foundSchedule.planId !== plan.planId) {
-          return {
-            status: "inconsistent",
-            reason: `Schedule references planId "${foundSchedule.planId}", expected "${plan.planId}"`,
-          };
-        }
-        if (
-          foundSchedule.weekRange.startDate !== plan.targetWeek.startDate ||
-          foundSchedule.weekRange.endDate !== plan.targetWeek.endDate
-        ) {
-          return {
-            status: "inconsistent",
-            reason: `Schedule weekRange does not match plan targetWeek`,
-          };
-        }
-        schedule = foundSchedule;
-      }
-    }
-
-    return {
-      status: "found",
-      summary: {
-        plan,
-        closeReport: latestReport,
-        schedule,
-      },
-    };
+  async getLatestClosedWeek(): Promise<LatestClosedWeekResult> {
+    return findLatestClosedWeek(this.deps);
   }
 
   /**
-   * Retrieves pending carryover candidates from the most recent closed week
-   * that correspond to a target week or have no explicit target week.
-   *
-   * Invariants:
-   * 1. Reads from persisted storage (does not depend on in-memory React state).
-   * 2. Preserves original itemId, title, deadline (from plan obligations/items), and postponement reason.
-   * 3. Excludes completed or dropped tasks.
-   * 4. Conservative handling for candidates without explicit targetWeek.
-   */
-  /**
    * Retrieves pending carryover candidates from:
    * 1. Consciously postponed tasks in closed week reports.
-   * 2. Active postponement adjustments (postpone_item) from persisted schedules,
-   *    including the currently active schedule.
-   *
-   * Invariants:
-   * - Reads only from persisted storage.
-   * - Only considers adjustments with humanDecision === "accepted",
-   *   applicationOutcome === "applied" and lifecycleStatus === "active".
-   * - Deduplicates items present in both sources.
-   * - Preserves original itemId, title, deadline (from plan obligations/items), and postponement reason.
-   * - Does not alter, mutate, or close any existing plan or schedule.
+   * 2. Active postponement adjustments (postpone_item) from persisted schedules.
    */
-  async getPendingCarryOverTasks(targetWeek: TargetWeek): Promise<
-    Array<{
-      itemId: string;
-      title: string;
-      originCategory: string;
-      postponementReason: string;
-      targetWeek?: TargetWeek;
-      dueDate?: string;
-      estimatedHours?: number | null;
-    }>
-  > {
-    const resultsMap = new Map<
-      string,
-      {
-        itemId: string;
-        title: string;
-        originCategory: string;
-        postponementReason: string;
-        targetWeek?: TargetWeek;
-        dueDate?: string;
-        estimatedHours?: number | null;
-      }
-    >();
-
-    // --- Fuente 1: Informes de cierre persistidos ---
-    const closedSummaryRes = await this.getLatestClosedWeek();
-    if (closedSummaryRes.status === "found") {
-      const { plan, closeReport, schedule } = closedSummaryRes.summary;
-      const carryOverCandidates = closeReport.output.itemDispositions.carryOverCandidates || [];
-
-      // Index metadata from closed plan
-      const closedPlanItemMap = new Map<
-        string,
-        { dueDate?: string; estimatedHours?: number | null }
-      >();
-      for (const ob of plan.proposal.obligations) {
-        closedPlanItemMap.set(ob.itemId, {
-          dueDate: ob.dueDate,
-          estimatedHours: ob.estimatedHours,
-        });
-      }
-      for (const fl of plan.proposal.flexibleOptions) {
-        closedPlanItemMap.set(fl.itemId, {
-          estimatedHours: fl.estimatedHours,
-        });
-      }
-      for (const fo of plan.proposal.foci) {
-        for (const id of fo.contributingItemIds) {
-          if (!closedPlanItemMap.has(id)) {
-            closedPlanItemMap.set(id, {
-              estimatedHours: fo.estimatedHours,
-            });
-          }
-        }
-      }
-
-      // Index schedule adjustments from closed week
-      const closedAdjustmentMap = new Map<string, TargetWeek>();
-      if (schedule && schedule.appliedAdjustments) {
-        for (const adj of schedule.appliedAdjustments) {
-          if (
-            adj.action.type === "postpone_item" &&
-            adj.humanDecision === "accepted" &&
-            adj.applicationOutcome === "applied" &&
-            adj.lifecycleStatus === "active" &&
-            adj.action.targetWeek
-          ) {
-            closedAdjustmentMap.set(adj.action.itemId, adj.action.targetWeek);
-          }
-        }
-      }
-
-      for (const candidate of carryOverCandidates) {
-        if (
-          candidate.reason !== "consciously_postponed" &&
-          candidate.reason !== "in_progress" &&
-          candidate.reason !== "not_started" &&
-          candidate.reason !== "not_scheduled"
-        ) {
-          continue;
-        }
-
-        const explicitTarget = closedAdjustmentMap.get(candidate.itemId);
-        if (explicitTarget) {
-          const matches =
-            explicitTarget.startDate === targetWeek.startDate &&
-            explicitTarget.endDate === targetWeek.endDate;
-          if (!matches) {
-            continue;
-          }
-        }
-
-        const meta = closedPlanItemMap.get(candidate.itemId);
-        resultsMap.set(candidate.itemId, {
-          itemId: candidate.itemId,
-          title: candidate.title,
-          originCategory: candidate.originCategory,
-          postponementReason: candidate.details,
-          targetWeek: explicitTarget,
-          dueDate: meta?.dueDate,
-          estimatedHours: meta?.estimatedHours,
-        });
-      }
-    }
-
-    // --- Fuente 2: Postergaciones en agendas activas persistidas ---
-    const activePlans = await this.deps.plans.getActivePlans();
-    for (const activePlan of activePlans) {
-      const activeSchedule = await this.deps.schedules.getByPlanId(activePlan.planId);
-      if (!activeSchedule || !activeSchedule.appliedAdjustments) continue;
-
-      // Index metadata from active plan
-      const activePlanItemMap = new Map<
-        string,
-        { title: string; originCategory: string; dueDate?: string; estimatedHours?: number | null }
-      >();
-      for (const ob of activePlan.proposal.obligations) {
-        activePlanItemMap.set(ob.itemId, {
-          title: ob.title,
-          originCategory: "obligation",
-          dueDate: ob.dueDate,
-          estimatedHours: ob.estimatedHours,
-        });
-      }
-      for (const fl of activePlan.proposal.flexibleOptions) {
-        activePlanItemMap.set(fl.itemId, {
-          title: fl.title,
-          originCategory: "flexible_option",
-          estimatedHours: fl.estimatedHours,
-        });
-      }
-      for (const fo of activePlan.proposal.foci) {
-        for (const id of fo.contributingItemIds) {
-          if (!activePlanItemMap.has(id)) {
-            activePlanItemMap.set(id, {
-              title: fo.title,
-              originCategory: "focus",
-              estimatedHours: fo.estimatedHours,
-            });
-          }
-        }
-      }
-      for (const def of activePlan.proposal.deferredItems) {
-        if (!activePlanItemMap.has(def.itemId)) {
-          activePlanItemMap.set(def.itemId, {
-            title: def.title,
-            originCategory: "deferred",
-          });
-        }
-      }
-
-      for (const adj of activeSchedule.appliedAdjustments) {
-        // Enforce strict validity criteria
-        if (
-          adj.action.type === "postpone_item" &&
-          adj.humanDecision === "accepted" &&
-          adj.applicationOutcome === "applied" &&
-          adj.lifecycleStatus === "active"
-        ) {
-          const itemId = adj.action.itemId;
-          const explicitTarget = adj.action.targetWeek;
-
-          // Check targetWeek match if explicit
-          if (explicitTarget) {
-            const matches =
-              explicitTarget.startDate === targetWeek.startDate &&
-              explicitTarget.endDate === targetWeek.endDate;
-            if (!matches) {
-              continue;
-            }
-          }
-
-          const meta = activePlanItemMap.get(itemId);
-          const title = meta?.title || `Tarea ${itemId}`;
-          const originCategory = meta?.originCategory || "deferred";
-          const postponementReason =
-            adj.action.rationale ||
-            `Postergación acordada para ${explicitTarget?.startDate ?? "siguiente ciclo"}`;
-
-          // Deduplicate: active adjustment takes precedence or sets entry
-          resultsMap.set(itemId, {
-            itemId,
-            title,
-            originCategory,
-            postponementReason,
-            targetWeek: explicitTarget,
-            dueDate: meta?.dueDate,
-            estimatedHours: meta?.estimatedHours,
-          });
-        }
-      }
-    }
-
-    return Array.from(resultsMap.values());
+  async getPendingCarryOverTasks(targetWeek: TargetWeek): Promise<PendingCarryOverTask[]> {
+    return findPendingCarryOverTasks(this.deps, targetWeek);
   }
 
   /**
