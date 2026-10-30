@@ -58,4 +58,57 @@ describe("Privacy-preserving Logger Utility", () => {
     expect(errorSpy).toHaveBeenCalledWith("Test error", { error: "disk_full" });
     errorSpy.mockRestore();
   });
+
+  it("does not output rejected values when logging an object shaped like a zod issue with received: 'my private note'", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const zodIssue = {
+      code: "invalid_type",
+      expected: "string",
+      received: "my private note",
+      path: ["tasks", 0, "title"],
+      message: "Expected string, received my private note",
+    };
+
+    logger.warn("Corrupted record detected", zodIssue, { forceLog: true });
+
+    expect(warnSpy).toHaveBeenCalled();
+    const calls = warnSpy.mock.calls;
+    const outputString = JSON.stringify(calls);
+    expect(outputString).not.toContain("my private note");
+    warnSpy.mockRestore();
+  });
+
+  it("redacts received, input, strings longer than 200 chars, and logs only code and path for zod issues", () => {
+    // 1. Zod issue logs only code and path
+    const issue = {
+      code: "invalid_type",
+      expected: "string",
+      received: "my private note",
+      path: ["notes", 1],
+      message: "Expected string, received my private note",
+    };
+    const sanitizedIssue = sanitizeForLogging(issue) as Record<string, unknown>;
+    expect(sanitizedIssue).toEqual({
+      code: "invalid_type",
+      path: ["notes", 1],
+    });
+
+    // 2. Non-zod object with received or input gets redacted
+    const nonZodObj = {
+      received: "sensitive unvalidated value",
+      input: "secret user input",
+      safe: 42,
+    };
+    const sanitizedNonZod = sanitizeForLogging(nonZodObj) as Record<string, unknown>;
+    expect(sanitizedNonZod.received).toBe("[REDACTED_USER_TEXT]");
+    expect(sanitizedNonZod.input).toBe("[REDACTED_USER_TEXT]");
+    expect(sanitizedNonZod.safe).toBe(42);
+
+    // 3. Strings longer than 200 characters are redacted
+    const longString = "x".repeat(201);
+    expect(sanitizeForLogging(longString)).toBe("[REDACTED_LONG_STRING]");
+    const objWithLongString = { detail: "y".repeat(250) };
+    const sanitizedLong = sanitizeForLogging(objWithLongString) as Record<string, unknown>;
+    expect(sanitizedLong.detail).toBe("[REDACTED_LONG_STRING]");
+  });
 });

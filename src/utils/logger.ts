@@ -16,16 +16,34 @@ const USER_TEXT_KEYS = new Set([
   "description",
   "query",
   "prompt",
+  "received",
+  "input",
 ]);
+
+const MAX_LOG_STRING_LENGTH = 200;
+
+function isZodIssue(data: Record<string, unknown>): boolean {
+  return typeof data.code === "string" && Array.isArray(data.path);
+}
 
 export function sanitizeForLogging(data: unknown): unknown {
   if (data === null || data === undefined) return data;
+  if (typeof data === "string") {
+    return data.length > MAX_LOG_STRING_LENGTH ? "[REDACTED_LONG_STRING]" : data;
+  }
   if (typeof data !== "object") return data;
 
   if (data instanceof Error) {
+    if (data.name === "ZodError" || ("issues" in data && Array.isArray((data as unknown as { issues: unknown }).issues))) {
+      return {
+        name: data.name,
+        message: "Validation failed",
+        issues: (data as unknown as { issues: unknown[] }).issues.map(sanitizeForLogging),
+      };
+    }
     return {
       name: data.name,
-      message: data.message,
+      message: data.message.length > MAX_LOG_STRING_LENGTH ? "[REDACTED_LONG_STRING]" : data.message,
     };
   }
 
@@ -33,10 +51,21 @@ export function sanitizeForLogging(data: unknown): unknown {
     return data.map(sanitizeForLogging);
   }
 
+  const record = data as Record<string, unknown>;
+
+  if (isZodIssue(record)) {
+    return {
+      code: record.code,
+      path: record.path,
+    };
+  }
+
   const sanitized: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(data as Record<string, unknown>)) {
+  for (const [k, v] of Object.entries(record)) {
     if (USER_TEXT_KEYS.has(k)) {
       sanitized[k] = "[REDACTED_USER_TEXT]";
+    } else if (typeof v === "string" && v.length > MAX_LOG_STRING_LENGTH) {
+      sanitized[k] = "[REDACTED_LONG_STRING]";
     } else if (typeof v === "object" && v !== null) {
       sanitized[k] = sanitizeForLogging(v);
     } else {
