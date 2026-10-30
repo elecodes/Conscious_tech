@@ -176,7 +176,7 @@ Evaluates situational context, attention levels, and relevance for tasks and wor
   - Strictly enforces that `dependency` requires an explicit, valid `depends_on` relationship (purging spurious signals inferred from `part_of`, `related_to`, or `same_project`).
   - Treats `waiting` as an objective situation descriptor that does not automatically penalize attention level.
   - Zero-token short-circuits for empty inputs.
-- **Test Suite**: 169 passing unit and behavioral tests running in < 700ms with zero token expenditure.
+- **Test Suite**: 169 passing unit and behavioral tests (historical Skill 05 count; now part of the global 870+ test suite) running in < 700ms with zero token expenditure.
 - **Calibration**: Validated across all 25 calibration brain dumps with Mock and Groq (`qwen/qwen3.8-27b`) with 0 invariant violations.
 
 ### Skill 06: `build_week`
