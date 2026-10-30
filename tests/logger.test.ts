@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import { z } from "zod";
 import { logger, sanitizeForLogging } from "../src/utils/logger";
 
 describe("Privacy-preserving Logger Utility", () => {
@@ -110,5 +111,23 @@ describe("Privacy-preserving Logger Utility", () => {
     const objWithLongString = { detail: "y".repeat(250) };
     const sanitizedLong = sanitizeForLogging(objWithLongString) as Record<string, unknown>;
     expect(sanitizedLong.detail).toBe("[REDACTED_LONG_STRING]");
+  });
+
+  it("redacts real Zod 4 ZodError instances, keeping only code and path without rejected user values", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const schema = z.object({
+      taskTitle: z.number(),
+    });
+    const result = schema.safeParse({ taskTitle: "super sensitive personal note" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      logger.warn("Validation error encountered", result.error, { forceLog: true });
+      expect(warnSpy).toHaveBeenCalled();
+      const outputString = JSON.stringify(warnSpy.mock.calls);
+      expect(outputString).not.toContain("super sensitive personal note");
+      expect(outputString).toContain('"code":"invalid_type"');
+      expect(outputString).toContain('"path":["taskTitle"]');
+    }
+    warnSpy.mockRestore();
   });
 });
