@@ -10,7 +10,12 @@ import {
   calendarProxyRateLimiter,
   isOriginAllowed,
 } from "../src/server/calendar-proxy-handler";
-import { handleAIProxyRequest, aiProxyRateLimiter } from "../src/server/ai-proxy-handler";
+import {
+  handleAIProxyRequest,
+  aiProxyRateLimiter,
+  classifyErrorStatus,
+} from "../src/server/ai-proxy-handler";
+import { z, ZodError } from "zod";
 import { SimpleRateLimiter } from "../src/server/rate-limiter";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { Readable } from "node:stream";
@@ -668,6 +673,18 @@ describe("Server Proxies Security Hardening", () => {
       expect(adr0023).toMatch(/localhost/i);
 
       expect(envExample).toMatch(/dev guard/i);
+    });
+
+    it("classifyErrorStatus correctly classifies real ZodError instances as 400 INVALID_INPUT_OR_OUTPUT", () => {
+      const schema = z.object({ count: z.number() });
+      const result = schema.safeParse({ count: "not-a-number" });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const classified = classifyErrorStatus(result.error);
+        expect(classified.status).toBe(400);
+        expect(classified.code).toBe("INVALID_INPUT_OR_OUTPUT");
+        expect(classified.message).toContain("Error de validación de datos:");
+      }
     });
   });
 });

@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { ZodError } from "zod";
 import { ExtractItemsInputSchema } from "../domain/items";
 import { DetectRelationshipsInputSchema } from "../domain/relationships";
 import { GroupWorkInputSchema } from "../domain/work-groups";
@@ -85,7 +86,12 @@ export function classifyErrorStatus(err: unknown): {
     };
   }
 
+  const isZodError =
+    err instanceof ZodError ||
+    (typeof err === "object" && err !== null && (err as { name?: string }).name === "ZodError");
+
   if (
+    isZodError ||
     lower.includes("schema validation") ||
     lower.includes("invalid input") ||
     lower.includes("zod")
