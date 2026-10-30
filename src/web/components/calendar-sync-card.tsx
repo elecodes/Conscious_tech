@@ -10,7 +10,7 @@ export interface CalendarSyncCardProps {
   initialOpen?: boolean;
 }
 
-const STORAGE_KEY_ICAL_URL = "conscious_tech_google_ical_url";
+export const STORAGE_KEY_ICAL_URL = "conscious_tech_google_ical_url";
 
 export function CalendarSyncCard({
   targetWeek,
@@ -19,12 +19,21 @@ export function CalendarSyncCard({
   initialOpen = false,
 }: CalendarSyncCardProps) {
   const [isOpen, setIsOpen] = useState(initialOpen);
-  const [icalUrl, setIcalUrl] = useState("");
+  const [icalUrl, setIcalUrl] = useState(() => {
+    try {
+      if (typeof localStorage !== "undefined") {
+        return localStorage.getItem(STORAGE_KEY_ICAL_URL) || "";
+      }
+    } catch {
+      // Ignore
+    }
+    return "";
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastSummary, setLastSummary] = useState<CalendarWeekSummary | null>(null);
 
-  // Load saved iCal URL
+  // Load saved iCal URL if updated externally
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_ICAL_URL);
@@ -210,18 +219,16 @@ export function CalendarSyncCard({
             >
               {isLoading ? "Sincronizando..." : "Sincronizar"}
             </button>
-            {icalUrl.trim().length > 0 && (
-              <button
-                type="button"
-                data-testid="forget-ical-url-btn"
-                className="secondary small"
-                onClick={handleForgetUrl}
-                disabled={isLoading}
-                style={{ padding: "7px 12px", fontSize: "0.85rem" }}
-              >
-                Olvidar enlace
-              </button>
-            )}
+            <button
+              type="button"
+              data-testid="forget-ical-url-btn"
+              className="secondary small"
+              onClick={handleForgetUrl}
+              disabled={isLoading || !icalUrl.trim()}
+              style={{ padding: "7px 12px", fontSize: "0.85rem" }}
+            >
+              Olvidar enlace
+            </button>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
@@ -248,10 +255,10 @@ export function CalendarSyncCard({
           >
             <span>🔒</span>
             <span data-testid="calendar-privacy-notice">
-              <strong>Privacidad:</strong> El enlace privado se guarda localmente en este navegador
-              para futuras semanas (podés eliminarlo en cualquier momento con "Olvidar enlace") y se
-              consulta vía POST local seguro sin enviarse a servidores de terceros ni guardarse en
-              registros de acceso.
+              <strong>Privacidad:</strong> El enlace privado se guarda en este navegador hasta ser
+              olvidado (podés eliminarlo en cualquier momento con "Olvidar enlace") y se consulta
+              vía POST local seguro sin enviarse a servidores de terceros ni guardarse en registros
+              de acceso.
             </span>
           </div>
 

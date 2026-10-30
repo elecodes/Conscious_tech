@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { CalendarSyncCard } from "../src/web/components/calendar-sync-card";
+import { CalendarSyncCard, STORAGE_KEY_ICAL_URL } from "../src/web/components/calendar-sync-card";
 import { TargetWeek } from "../src/domain/week";
 import { isSafeCalendarUrl } from "../src/server/calendar-proxy-handler";
 
@@ -29,11 +29,44 @@ describe("CalendarSyncCard UI Component & Server Proxy Handler", () => {
       );
 
       expect(html).toContain('data-testid="calendar-privacy-notice"');
-      expect(html).toContain("El enlace privado se guarda localmente en este navegador");
+      expect(html).toContain("El enlace privado se guarda en este navegador hasta ser olvidado");
       expect(html).toContain(
         "podés eliminarlo en cualquier momento con &quot;Olvidar enlace&quot;"
       );
       expect(html).toContain('data-testid="ical-url-input"');
+      expect(html).toContain('data-testid="forget-ical-url-btn"');
+      expect(html).toContain("Olvidar enlace");
+    });
+
+    it("initializes with stored iCal URL from localStorage and renders enabled forget button", () => {
+      const savedUrl = "https://calendar.google.com/calendar/ical/user/private-test/basic.ics";
+      const origStorage = globalThis.localStorage;
+      const fakeStore: Record<string, string> = {
+        [STORAGE_KEY_ICAL_URL]: savedUrl,
+      };
+      globalThis.localStorage = {
+        getItem: vi.fn((key: string) => fakeStore[key] ?? null),
+        setItem: vi.fn((key: string, val: string) => {
+          fakeStore[key] = val;
+        }),
+        removeItem: vi.fn((key: string) => {
+          delete fakeStore[key];
+        }),
+        clear: vi.fn(),
+        length: 1,
+        key: vi.fn(),
+      } as unknown as Storage;
+
+      try {
+        const html = renderToStaticMarkup(
+          <CalendarSyncCard targetWeek={targetWeek} onCalendarApplied={vi.fn()} initialOpen={true} />
+        );
+        expect(html).toContain(savedUrl);
+        expect(html).toContain('data-testid="forget-ical-url-btn"');
+        expect(html).not.toMatch(/data-testid="forget-ical-url-btn"[^>]*disabled=""/);
+      } finally {
+        globalThis.localStorage = origStorage;
+      }
     });
   });
 
