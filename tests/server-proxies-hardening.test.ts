@@ -15,7 +15,7 @@ import {
   aiProxyRateLimiter,
   classifyErrorStatus,
 } from "../src/server/ai-proxy-handler";
-import { z, ZodError } from "zod";
+import { z } from "zod";
 import { SimpleRateLimiter } from "../src/server/rate-limiter";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { Readable } from "node:stream";

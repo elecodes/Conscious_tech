@@ -3,14 +3,10 @@ import { z } from "zod";
 import { indexedDB as fakeIDB, IDBKeyRange as fakeKeyRange } from "fake-indexeddb";
 import { ProposedWeekSchema } from "../src/domain/week";
 import { WeeklyScheduleSchema } from "../src/domain/schedule";
-import {
-  StoredWeeklyPlanSchema,
-  WeeklyPlanDraftContextSchema,
-  StoredWeeklyPlan,
-} from "../src/domain/repositories/types";
+import { WeeklyPlanDraftContextSchema } from "../src/domain/repositories/types";
 import { EffortSchema } from "../src/domain/items";
 import { CalendarEventSchema } from "../src/domain/calendar";
-import { MemoryItemSchema, MemoryItem } from "../src/domain/memory";
+import { MemoryItemSchema } from "../src/domain/memory";
 import { ProposeAdjustmentUserPreferencesSchema } from "../src/domain/adjustment";
 import { TimeBlockSchema } from "../src/domain/conflict";
 import {
