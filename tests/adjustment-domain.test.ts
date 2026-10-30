@@ -290,27 +290,23 @@ describe("Skill 09: Domain & Invariant Unit Tests", () => {
     };
 
     it("passes for perfectly partitioned proposal", () => {
-      const res = validateProposalInvariants(
-        validProposal,
-        samplePlan,
-        [
-          {
-            id: "conf-01",
-            type: "capacity_deficit",
-            certainty: "confirmed",
-            scope: "weekly",
-            title: "Capacity deficit",
-            explanation: "Overloaded",
-            involvedElementIds: ["task-A"],
-            evidence: {
-              metric: "hours_balance",
-              description: "test",
-              availableOrRequired: 20,
-              conflictingValue: 24,
-            },
+      const res = validateProposalInvariants(validProposal, samplePlan, [
+        {
+          id: "conf-01",
+          type: "capacity_deficit",
+          certainty: "confirmed",
+          scope: "weekly",
+          title: "Capacity deficit",
+          explanation: "Overloaded",
+          involvedElementIds: ["task-A"],
+          evidence: {
+            metric: "hours_balance",
+            description: "test",
+            availableOrRequired: 20,
+            conflictingValue: 24,
           },
-        ]
-      );
+        },
+      ]);
       expect(res.valid).toBe(true);
       expect(res.errors).toEqual([]);
     });
@@ -322,7 +318,7 @@ describe("Skill 09: Domain & Invariant Unit Tests", () => {
       };
       const res = validateProposalInvariants(invalid, samplePlan);
       expect(res.valid).toBe(false);
-      expect(res.errors.some((e) => e.includes('omitted from the proposal partition'))).toBe(true);
+      expect(res.errors.some((e) => e.includes("omitted from the proposal partition"))).toBe(true);
     });
 
     it("fails when a phantom item is included in partition", () => {
@@ -342,9 +338,9 @@ describe("Skill 09: Domain & Invariant Unit Tests", () => {
       };
       const res = validateProposalInvariants(invalid, samplePlan);
       expect(res.valid).toBe(false);
-      expect(res.errors.some((e) => e.includes("present in both affected and retained lists"))).toBe(
-        true
-      );
+      expect(
+        res.errors.some((e) => e.includes("present in both affected and retained lists"))
+      ).toBe(true);
     });
 
     it("fails when raw balance is negative", () => {

@@ -1,9 +1,11 @@
 # ADR 0011: Contrato de Cierre y Reflexión Semanal (`close_week`)
 
 ## Estado
+
 Aceptado
 
 ## Contexto
+
 En Conscious Tech, el ciclo semanal no termina simplemente cuando pasan los días; requiere un momento de **cierre y reflexión consciente** antes de planificar un nuevo ciclo o consolidar recuerdos a largo plazo. Según `PROJECT_CONTEXT.md` (§7 y §30):
 
 > **Cierre semanal:** Al terminar la semana se muestra completado, avanzado, pendiente, conscientemente pospuesto y cambios importantes.
@@ -19,7 +21,7 @@ La Skill 11 (`close_week`) compara el plan semanal activo (`ProposedWeek`) con l
    - `close_week` opera completamente mediante TypeScript puro y esquemas Zod en `src/domain/close-week.ts` y `src/skills/close-week/deterministic.ts`.
    - Cero llamadas a proveedores externos de IA y cero consumo de tokens.
 
-2. **Invariante de Conservación Total de Ítems (100% $S_{\text{plan}}$)**:
+2. **Invariante de Conservación Total de Ítems (100% $S\_{\text{plan}}$)**:
    - Todo elemento presente en el plan (`foci`, `obligations`, `flexibleOptions`, `deferredItems`) debe ser mapeado de forma biyectiva y unívoca en `classifiedItems`.
    - Elementos sin resultado en `itemOutcomes` no se descartan ni se transforman arbitrariamente en fallos: se clasifican explícitamente con disposición final `unreported` y activan el estado global `partial_data`.
 
@@ -54,6 +56,7 @@ La Skill 11 (`close_week`) compara el plan semanal activo (`ProposedWeek`) con l
    - Idempotencia garantizada mediante ordenamiento canónico de elementos y listas resultantes.
 
 ## Consecuencias
+
 - Cierra orgánicamente el bucle retrospectivo del producto entre la ejecución de la semana y la planificación del ciclo siguiente.
 - 16 pruebas automatizadas (4 de dominio y 12 de fixtures de comportamiento e invariantes) certifican todos los escenarios canónicos.
 - Proporciona una base sólida y auditable para alimentar tanto el siguiente Brain Dump como la memoria permanente del usuario.

@@ -1,16 +1,19 @@
 import { ProposedWeek } from "../../domain/week";
 import { ExtractedItem } from "../../domain/items";
-import {
-  formatDeferredReason,
-  formatUnscheduledCategory,
-} from "./weekly-session-view";
+import { formatDeferredReason, formatUnscheduledCategory } from "./weekly-session-view";
 
 export interface PlanningDeferredItemsSectionProps {
   proposedWeek: ProposedWeek;
   extractedItems: ExtractedItem[] | null;
   deferredDecisions: Record<string, "pending_decision" | "intentional_postponement" | "included">;
-  handleDeferredDecisionChange: (itemId: string, decision: "postpone" | "include_flexible" | "reconsider_unscheduled") => void;
-  handleApplyOverdueDecision: (itemId: string, decision: "keep_unscheduled" | "include_recovery" | "reschedule_future") => void;
+  handleDeferredDecisionChange: (
+    itemId: string,
+    decision: "postpone" | "include_flexible" | "reconsider_unscheduled"
+  ) => void;
+  handleApplyOverdueDecision: (
+    itemId: string,
+    decision: "keep_unscheduled" | "include_recovery" | "reschedule_future"
+  ) => void;
 }
 
 export function PlanningDeferredItemsSection({
@@ -29,9 +32,27 @@ export function PlanningDeferredItemsSection({
           style={{ marginTop: "24px" }}
           data-testid="proposed-deferred-items-section"
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
-            <h4 style={{ margin: 0, fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px" }}>
-              <span>☕</span> Elementos no programados o diferidos ({proposedWeek.deferredItems.length})
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              flexWrap: "wrap",
+              gap: "8px",
+              marginBottom: "8px",
+            }}
+          >
+            <h4
+              style={{
+                margin: 0,
+                fontSize: "1.1rem",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <span>☕</span> Elementos no programados o diferidos (
+              {proposedWeek.deferredItems.length})
             </h4>
             <span className="calm-muted" style={{ fontSize: "0.82rem" }}>
               Dejar tareas fuera te permite enfocarte en lo prioritario
@@ -89,12 +110,22 @@ export function PlanningDeferredItemsSection({
                           }}
                         >
                           <strong>{def.title}</strong>
-                          <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "6px",
+                              alignItems: "center",
+                              flexWrap: "wrap",
+                            }}
+                          >
                             <span
                               className={`badge ${formatUnscheduledCategory(def.reason, deferredDecisions[def.itemId]).badgeClass}`}
                               data-testid={`unscheduled-category-badge-${def.itemId}`}
                             >
-                              {formatUnscheduledCategory(def.reason, deferredDecisions[def.itemId]).label}
+                              {
+                                formatUnscheduledCategory(def.reason, deferredDecisions[def.itemId])
+                                  .label
+                              }
                             </span>
                             <span className="badge badge-muted">
                               {formatDeferredReason(def.reason)}
@@ -114,7 +145,8 @@ export function PlanningDeferredItemsSection({
                             style={{ fontSize: "0.8rem", color: "#b45309" }}
                             data-testid={`deferred-original-deadline-${def.itemId}`}
                           >
-                            📅 Fecha límite original: <strong>{originalDueDate}</strong> (vencida antes de la semana)
+                            📅 Fecha límite original: <strong>{originalDueDate}</strong> (vencida
+                            antes de la semana)
                           </div>
                         )}
                         <div
@@ -136,7 +168,9 @@ export function PlanningDeferredItemsSection({
                           <button
                             type="button"
                             className="secondary small"
-                            onClick={() => handleDeferredDecisionChange(def.itemId, "include_flexible")}
+                            onClick={() =>
+                              handleDeferredDecisionChange(def.itemId, "include_flexible")
+                            }
                             data-testid={`defer-item-include-button-${def.itemId}`}
                           >
                             Incluir en la semana
@@ -144,7 +178,9 @@ export function PlanningDeferredItemsSection({
                           <button
                             type="button"
                             className="secondary small"
-                            onClick={() => handleDeferredDecisionChange(def.itemId, "reconsider_unscheduled")}
+                            onClick={() =>
+                              handleDeferredDecisionChange(def.itemId, "reconsider_unscheduled")
+                            }
                             data-testid={`defer-item-review-button-${def.itemId}`}
                           >
                             Dejar fuera
@@ -206,7 +242,14 @@ export function PlanningDeferredItemsSection({
                           }}
                         >
                           <strong>{def.title}</strong>
-                          <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "6px",
+                              alignItems: "center",
+                              flexWrap: "wrap",
+                            }}
+                          >
                             <span
                               className="badge badge-idea"
                               data-testid={`postponed-category-badge-${def.itemId}`}
@@ -242,7 +285,9 @@ export function PlanningDeferredItemsSection({
                           <button
                             type="button"
                             className="secondary small"
-                            onClick={() => handleDeferredDecisionChange(def.itemId, "reconsider_unscheduled")}
+                            onClick={() =>
+                              handleDeferredDecisionChange(def.itemId, "reconsider_unscheduled")
+                            }
                             data-testid={`defer-item-unschedule-button-${def.itemId}`}
                           >
                             Volver a evaluar
@@ -250,7 +295,9 @@ export function PlanningDeferredItemsSection({
                           <button
                             type="button"
                             className="secondary small"
-                            onClick={() => handleDeferredDecisionChange(def.itemId, "include_flexible")}
+                            onClick={() =>
+                              handleDeferredDecisionChange(def.itemId, "include_flexible")
+                            }
                             data-testid={`defer-item-include-button-${def.itemId}`}
                           >
                             Incluir en la semana
@@ -276,15 +323,15 @@ export function PlanningDeferredItemsSection({
 
         return (
           <div style={{ marginTop: "16px" }} data-testid="overdue-items-decision-section">
-            <h5 style={{ margin: "0 0 8px 0" }}>Decisiones sobre tareas con fecha límite vencida</h5>
+            <h5 style={{ margin: "0 0 8px 0" }}>
+              Decisiones sobre tareas con fecha límite vencida
+            </h5>
             {overdueList.map((item) => {
               const originalDueDate = item.deadline?.resolved;
               const isRecovery =
                 proposedWeek.foci.some((f) => f.contributingItemIds.includes(item.id)) ||
                 proposedWeek.flexibleOptions.some((o) => o.itemId === item.id);
-              const deferredEntry = proposedWeek.deferredItems.find(
-                (d) => d.itemId === item.id
-              );
+              const deferredEntry = proposedWeek.deferredItems.find((d) => d.itemId === item.id);
               const isPostponed = deferredEntry?.reason === "intentional_postponement";
               const isUnscheduled = !isRecovery && !isPostponed;
 
@@ -328,7 +375,8 @@ export function PlanningDeferredItemsSection({
                     <strong>{originalDueDate}</strong>, anterior a la semana objetivo (
                     {proposedWeek.weekSummary.targetWeek.startDate} a{" "}
                     {proposedWeek.weekSummary.targetWeek.endDate}). La fecha límite original{" "}
-                    <strong>no se altera silenciosamente</strong> ni se presenta falsamente como futura.
+                    <strong>no se altera silenciosamente</strong> ni se presenta falsamente como
+                    futura.
                   </p>
                   <div style={{ marginTop: "12px" }}>
                     <span
@@ -375,18 +423,36 @@ export function PlanningDeferredItemsSection({
                           width: "100%",
                         }}
                       >
-                        <div style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            width: "100%",
+                            alignItems: "center",
+                          }}
+                        >
                           <strong style={{ fontSize: "0.85rem" }}>
                             {isUnscheduled ? "✓ Mantener sin programar" : "Mantener sin programar"}
                           </strong>
                           {isUnscheduled && (
-                            <span className="badge badge-primary" style={{ fontSize: "0.7rem", padding: "1px 6px" }}>
+                            <span
+                              className="badge badge-primary"
+                              style={{ fontSize: "0.7rem", padding: "1px 6px" }}
+                            >
                               Seleccionada
                             </span>
                           )}
                         </div>
-                        <span style={{ fontSize: "0.78rem", color: "#4b5563", marginTop: "4px", fontWeight: "normal" }}>
-                          Permanece en pendientes sin asignar a un foco. No consume capacidad planificable.
+                        <span
+                          style={{
+                            fontSize: "0.78rem",
+                            color: "#4b5563",
+                            marginTop: "4px",
+                            fontWeight: "normal",
+                          }}
+                        >
+                          Permanece en pendientes sin asignar a un foco. No consume capacidad
+                          planificable.
                         </span>
                       </button>
 
@@ -414,20 +480,38 @@ export function PlanningDeferredItemsSection({
                           width: "100%",
                         }}
                       >
-                        <div style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            width: "100%",
+                            alignItems: "center",
+                          }}
+                        >
                           <strong style={{ fontSize: "0.85rem" }}>
                             {isRecovery
                               ? "✓ Prioridad de recuperación"
                               : `Prioridad de recuperación (${item.estimatedEffort?.value ?? 6}h)`}
                           </strong>
                           {isRecovery && (
-                            <span className="badge badge-primary" style={{ fontSize: "0.7rem", padding: "1px 6px" }}>
+                            <span
+                              className="badge badge-primary"
+                              style={{ fontSize: "0.7rem", padding: "1px 6px" }}
+                            >
                               Seleccionada
                             </span>
                           )}
                         </div>
-                        <span style={{ fontSize: "0.78rem", color: "#4b5563", marginTop: "4px", fontWeight: "normal" }}>
-                          Se incorpora como foco principal de la semana consumiendo {item.estimatedEffort?.value ?? 6}h planificables.
+                        <span
+                          style={{
+                            fontSize: "0.78rem",
+                            color: "#4b5563",
+                            marginTop: "4px",
+                            fontWeight: "normal",
+                          }}
+                        >
+                          Se incorpora como foco principal de la semana consumiendo{" "}
+                          {item.estimatedEffort?.value ?? 6}h planificables.
                         </span>
                       </button>
 
@@ -455,18 +539,38 @@ export function PlanningDeferredItemsSection({
                           width: "100%",
                         }}
                       >
-                        <div style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            width: "100%",
+                            alignItems: "center",
+                          }}
+                        >
                           <strong style={{ fontSize: "0.85rem" }}>
-                            {isPostponed ? "✓ Reprogramar a otra semana" : "Reprogramar a otra semana"}
+                            {isPostponed
+                              ? "✓ Reprogramar a otra semana"
+                              : "Reprogramar a otra semana"}
                           </strong>
                           {isPostponed && (
-                            <span className="badge badge-primary" style={{ fontSize: "0.7rem", padding: "1px 6px" }}>
+                            <span
+                              className="badge badge-primary"
+                              style={{ fontSize: "0.7rem", padding: "1px 6px" }}
+                            >
                               Seleccionada
                             </span>
                           )}
                         </div>
-                        <span style={{ fontSize: "0.78rem", color: "#4b5563", marginTop: "4px", fontWeight: "normal" }}>
-                          Se posterga conscientemente a una semana posterior sin consumir horas en este plan.
+                        <span
+                          style={{
+                            fontSize: "0.78rem",
+                            color: "#4b5563",
+                            marginTop: "4px",
+                            fontWeight: "normal",
+                          }}
+                        >
+                          Se posterga conscientemente a una semana posterior sin consumir horas en
+                          este plan.
                         </span>
                       </button>
                     </div>

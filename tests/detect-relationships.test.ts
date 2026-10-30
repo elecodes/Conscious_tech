@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { MockProvider } from "../src/providers/mock-provider";
-import { detectRelationships, DetectRelationshipsService } from "../src/skills/detect-relationships";
+import {
+  detectRelationships,
+  DetectRelationshipsService,
+} from "../src/skills/detect-relationships";
 import { ExtractedItem } from "../src/domain/items";
 import mockCasesData from "../cases/mock-extractions.json";
 
@@ -39,8 +42,18 @@ describe("Skill 02: detect_relationships - Behavioral & Minimum Test Suite", () 
   // 3. Same objective
   it("3. Same objective: detects same_objective when two items pursue the same concrete goal", async () => {
     const items: ExtractedItem[] = [
-      { id: "solid-1", rawText: "Estudiar principios SOLID en profundidad", title: "Estudiar SOLID", type: "task" },
-      { id: "solid-2", rawText: "Aplicar principios SOLID a la arquitectura de ArchitectAI", title: "Aplicar SOLID a ArchitectAI", type: "task" },
+      {
+        id: "solid-1",
+        rawText: "Estudiar principios SOLID en profundidad",
+        title: "Estudiar SOLID",
+        type: "task",
+      },
+      {
+        id: "solid-2",
+        rawText: "Aplicar principios SOLID a la arquitectura de ArchitectAI",
+        title: "Aplicar SOLID a ArchitectAI",
+        type: "task",
+      },
     ];
     const provider = new MockProvider();
     provider.setRelationshipsHandler(async () => ({
@@ -50,7 +63,8 @@ describe("Skill 02: detect_relationships - Behavioral & Minimum Test Suite", () 
           targetItemId: "solid-2",
           type: "same_objective",
           confidence: "high",
-          reason: "Ambos elementos persiguen concretamente dominar y materializar la arquitectura SOLID",
+          reason:
+            "Ambos elementos persiguen concretamente dominar y materializar la arquitectura SOLID",
         },
       ],
     }));
@@ -64,8 +78,20 @@ describe("Skill 02: detect_relationships - Behavioral & Minimum Test Suite", () 
   // 4. Same project
   it("4. Same project: detects same_project for items in the same product/initiative", async () => {
     const items: ExtractedItem[] = [
-      { id: "arch-1", rawText: "Revisar autenticación de ArchitectAI", title: "Revisar autenticación", type: "task", project: "ArchitectAI" },
-      { id: "arch-2", rawText: "Preparar documentación de ArchitectAI", title: "Preparar documentación", type: "task", project: "ArchitectAI" },
+      {
+        id: "arch-1",
+        rawText: "Revisar autenticación de ArchitectAI",
+        title: "Revisar autenticación",
+        type: "task",
+        project: "ArchitectAI",
+      },
+      {
+        id: "arch-2",
+        rawText: "Preparar documentación de ArchitectAI",
+        title: "Preparar documentación",
+        type: "task",
+        project: "ArchitectAI",
+      },
     ];
     const provider = new MockProvider();
     provider.setRelationshipsHandler(async () => ({
@@ -88,8 +114,18 @@ describe("Skill 02: detect_relationships - Behavioral & Minimum Test Suite", () 
   // 5. Part of
   it("5. Part of: detects part_of with correct direction (source = subtarea, target = entregable)", async () => {
     const items: ExtractedItem[] = [
-      { id: "slides-1", rawText: "Preparar las diapositivas de la presentación", title: "Preparar diapositivas", type: "task" },
-      { id: "class-1", rawText: "Preparar la clase de Cibervoluntarios del martes", title: "Preparar clase Cibervoluntarios", type: "commitment" },
+      {
+        id: "slides-1",
+        rawText: "Preparar las diapositivas de la presentación",
+        title: "Preparar diapositivas",
+        type: "task",
+      },
+      {
+        id: "class-1",
+        rawText: "Preparar la clase de Cibervoluntarios del martes",
+        title: "Preparar clase Cibervoluntarios",
+        type: "commitment",
+      },
     ];
     const provider = new MockProvider();
     provider.setRelationshipsHandler(async () => ({
@@ -114,8 +150,18 @@ describe("Skill 02: detect_relationships - Behavioral & Minimum Test Suite", () 
   // 6. Dependency
   it("6. Dependency: detects depends_on with correct direction (webhook depends_on credentials)", async () => {
     const items: ExtractedItem[] = [
-      { id: "stripe-webhook", rawText: "Configurar webhook de Stripe en la tienda", title: "Configurar webhook Stripe", type: "task" },
-      { id: "stripe-creds", rawText: "Conseguir las credenciales de webhook de Stripe del cliente", title: "Conseguir credenciales Stripe", type: "task" },
+      {
+        id: "stripe-webhook",
+        rawText: "Configurar webhook de Stripe en la tienda",
+        title: "Configurar webhook Stripe",
+        type: "task",
+      },
+      {
+        id: "stripe-creds",
+        rawText: "Conseguir las credenciales de webhook de Stripe del cliente",
+        title: "Conseguir credenciales Stripe",
+        type: "task",
+      },
     ];
     const provider = new MockProvider();
     provider.setRelationshipsHandler(async () => ({
@@ -140,8 +186,18 @@ describe("Skill 02: detect_relationships - Behavioral & Minimum Test Suite", () 
   // 7. No false dependency
   it("7. No false dependency: related items without causal link do not produce depends_on", async () => {
     const items: ExtractedItem[] = [
-      { id: "task-a", rawText: "Escribir tests para el login", title: "Escribir tests login", type: "task" },
-      { id: "task-b", rawText: "Revisar diseño de pantalla de registro", title: "Diseño pantalla registro", type: "task" },
+      {
+        id: "task-a",
+        rawText: "Escribir tests para el login",
+        title: "Escribir tests login",
+        type: "task",
+      },
+      {
+        id: "task-b",
+        rawText: "Revisar diseño de pantalla de registro",
+        title: "Diseño pantalla registro",
+        type: "task",
+      },
     ];
     const provider = new MockProvider();
     provider.setRelationshipsHandler(async () => ({
@@ -164,8 +220,18 @@ describe("Skill 02: detect_relationships - Behavioral & Minimum Test Suite", () 
   // 8. Duplicate
   it("8. Duplicate: detects duplicate when two items represent the same intention", async () => {
     const items: ExtractedItem[] = [
-      { id: "doc-1", rawText: "Revisar documentación de la API", title: "Revisar documentación API", type: "task" },
-      { id: "doc-2", rawText: "Mirar la documentación de la API", title: "Mirar documentación API", type: "task" },
+      {
+        id: "doc-1",
+        rawText: "Revisar documentación de la API",
+        title: "Revisar documentación API",
+        type: "task",
+      },
+      {
+        id: "doc-2",
+        rawText: "Mirar la documentación de la API",
+        title: "Mirar documentación API",
+        type: "task",
+      },
     ];
     const provider = new MockProvider();
     provider.setRelationshipsHandler(async () => ({
@@ -188,8 +254,18 @@ describe("Skill 02: detect_relationships - Behavioral & Minimum Test Suite", () 
   // 9. Independent items
   it("9. Independent items: items without connection produce empty relationships", async () => {
     const items: ExtractedItem[] = [
-      { id: "db-1", rawText: "Investigar Postgres vs SQLite para proyecto personal", title: "Investigar Postgres vs SQLite", type: "task" },
-      { id: "paper-1", rawText: "Escribir paper académico sobre cognición", title: "Escribir paper", type: "task" },
+      {
+        id: "db-1",
+        rawText: "Investigar Postgres vs SQLite para proyecto personal",
+        title: "Investigar Postgres vs SQLite",
+        type: "task",
+      },
+      {
+        id: "paper-1",
+        rawText: "Escribir paper académico sobre cognición",
+        title: "Escribir paper",
+        type: "task",
+      },
     ];
     const provider = new MockProvider();
     provider.setRelationshipsHandler(async () => ({
@@ -415,7 +491,11 @@ describe("Skill 02: detect_relationships - Behavioral & Minimum Test Suite", () 
   it("Semantic prompt includes hardened rules for related_to, part_of vs depends_on, and mutual exclusion", async () => {
     const { SYSTEM_PROMPT } = await import("../src/skills/detect-relationships/prompt");
     expect(SYSTEM_PROMPT).toContain("REGLA RELATED_TO (NO POR COEXISTENCIA O DESVÍOS TEMPORALES)");
-    expect(SYSTEM_PROMPT).toContain("REGLA PART_OF VS DEPENDS_ON (PRECONDICIÓN NO ES PARTE CONSTITUTIVA)");
-    expect(SYSTEM_PROMPT).toContain("Avoid emitting both A depends_on B and B part_of A unless the source text clearly establishes both meanings");
+    expect(SYSTEM_PROMPT).toContain(
+      "REGLA PART_OF VS DEPENDS_ON (PRECONDICIÓN NO ES PARTE CONSTITUTIVA)"
+    );
+    expect(SYSTEM_PROMPT).toContain(
+      "Avoid emitting both A depends_on B and B part_of A unless the source text clearly establishes both meanings"
+    );
   });
 });

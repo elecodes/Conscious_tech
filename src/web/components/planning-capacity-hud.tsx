@@ -36,8 +36,7 @@ export function PlanningCapacityHud({
   onCancelEditCapacity,
   onVerifyCapacity,
 }: PlanningCapacityHudProps) {
-  const isCapacityConfigured =
-    proposedWeek.weekSummary.capacity.totalAvailableHours != null;
+  const isCapacityConfigured = proposedWeek.weekSummary.capacity.totalAvailableHours != null;
   const effectivePlanned =
     proposedWeek.weekSummary.capacity.plannedHours ??
     proposedWeek.weekSummary.capacity.knownEstimatedHours;
@@ -70,18 +69,18 @@ export function PlanningCapacityHud({
               proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity"
                 ? "badge-success"
                 : proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity"
-                ? "badge-error"
-                : "badge-warning"
+                  ? "badge-error"
+                  : "badge-warning"
             }`}
             data-testid="planning-capacity-status-summary-badge"
           >
             {proposedWeek.weekSummary.capacity.totalAvailableHours == null
               ? "Capacidad no configurada"
               : proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity"
-              ? "Por encima de la capacidad"
-              : proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity"
-              ? "Dentro de la capacidad"
-              : "Estimación parcial"}
+                ? "Por encima de la capacidad"
+                : proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity"
+                  ? "Dentro de la capacidad"
+                  : "Estimación parcial"}
           </span>
         </div>
         <div
@@ -125,15 +124,18 @@ export function PlanningCapacityHud({
       {/* Tu tiempo de un vistazo (visual bar) */}
       {proposedWeek.weekSummary.capacity.totalAvailableHours != null &&
         proposedWeek.weekSummary.capacity.totalAvailableHours > 0 && (
-          <div className="cognitive-budget-card" style={{ margin: "4px 0 10px", padding: "10px 14px" }}>
+          <div
+            className="cognitive-budget-card"
+            style={{ margin: "4px 0 10px", padding: "10px 14px" }}
+          >
             <div className="cognitive-budget-header">
               <span className="cognitive-budget-title">Tu tiempo de un vistazo</span>
               <span className="cognitive-budget-ratio">
                 {proposedWeek.weekSummary.capacity.plannedHours != null
                   ? `${proposedWeek.weekSummary.capacity.plannedHours}h asignadas`
                   : effectivePlanned != null && effectivePlanned > 0
-                  ? `~${effectivePlanned}h asignadas (parcial)`
-                  : "Tareas sin estimar en horas"}{" "}
+                    ? `~${effectivePlanned}h asignadas (parcial)`
+                    : "Tareas sin estimar en horas"}{" "}
                 / {proposedWeek.weekSummary.capacity.totalAvailableHours}h disponibles
               </span>
             </div>
@@ -145,7 +147,8 @@ export function PlanningCapacityHud({
                     width: `${Math.min(
                       100,
                       Math.round(
-                        (effectivePlanned / proposedWeek.weekSummary.capacity.totalAvailableHours) * 100
+                        (effectivePlanned / proposedWeek.weekSummary.capacity.totalAvailableHours) *
+                          100
                       )
                     )}%`,
                   }}
@@ -174,7 +177,11 @@ export function PlanningCapacityHud({
         )}
 
       {/* Desglose progresivo tipo desplegable */}
-      <details className="calm-details" style={{ marginTop: "4px" }} data-testid="planning-capacity-details">
+      <details
+        className="calm-details"
+        style={{ marginTop: "4px" }}
+        data-testid="planning-capacity-details"
+      >
         <summary
           style={{
             cursor: "pointer",
@@ -218,7 +225,10 @@ export function PlanningCapacityHud({
                     Tiempo disponible real:
                   </span>
                   <strong data-testid="planning-available-hours">
-                    {formatHours(proposedWeek.weekSummary.capacity.totalAvailableHours, "No registrado")}
+                    {formatHours(
+                      proposedWeek.weekSummary.capacity.totalAvailableHours,
+                      "No registrado"
+                    )}
                   </strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
@@ -253,7 +263,10 @@ export function PlanningCapacityHud({
                     Espacio protegido:
                   </span>
                   <strong data-testid="planning-protected-space-hours">
-                    {formatHours(proposedWeek.weekSummary.capacity.protectedSpaceHours, "Desconocido")}
+                    {formatHours(
+                      proposedWeek.weekSummary.capacity.protectedSpaceHours,
+                      "Desconocido"
+                    )}
                   </strong>
                 </div>
                 <div
@@ -270,7 +283,9 @@ export function PlanningCapacityHud({
                     Margen protegido:
                   </span>
                   <span className="badge badge-idea" data-testid="planning-protected-space-badge">
-                    {formatProtectedSpaceStatus(proposedWeek.weekSummary.capacity.protectedSpaceStatus)}
+                    {formatProtectedSpaceStatus(
+                      proposedWeek.weekSummary.capacity.protectedSpaceStatus
+                    )}
                   </span>
                 </div>
               </div>
@@ -349,28 +364,34 @@ export function PlanningCapacityHud({
                           proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity" ||
                           (hasZeroCommitted &&
                             proposedWeek.weekSummary.capacity.totalAvailableHours != null &&
-                            flexibleHours <= (proposedWeek.weekSummary.capacity.plannableHours ?? 0))
+                            flexibleHours <=
+                              (proposedWeek.weekSummary.capacity.plannableHours ?? 0))
                             ? "badge-success"
                             : proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity"
-                            ? "badge-error"
-                            : proposedWeek.weekSummary.capacity.totalAvailableHours != null &&
-                              proposedWeek.weekSummary.capacity.estimationCompleteness !== "complete"
-                            ? "badge-warning"
-                            : "badge-task"
+                              ? "badge-error"
+                              : proposedWeek.weekSummary.capacity.totalAvailableHours != null &&
+                                  proposedWeek.weekSummary.capacity.estimationCompleteness !==
+                                    "complete"
+                                ? "badge-warning"
+                                : "badge-task"
                         }`}
                         data-testid="planning-capacity-status-badge"
                       >
                         {proposedWeek.weekSummary.capacity.totalAvailableHours == null
                           ? "Capacidad desconocida · Viabilidad no verificada"
                           : proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity"
-                          ? "Por encima de la capacidad"
-                          : hasZeroCommitted && flexibleHours > 0
-                          ? `Capacidad disponible (${flexibleHours}h flexibles)`
-                          : proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity"
-                          ? "Dentro de la capacidad"
-                          : proposedWeek.weekSummary.capacity.estimationCompleteness !== "complete"
-                          ? "Estimaciones incompletas · Viabilidad no confirmada"
-                          : formatCapacityStatus(proposedWeek.weekSummary.capacity.capacityStatus)}
+                            ? "Por encima de la capacidad"
+                            : hasZeroCommitted && flexibleHours > 0
+                              ? `Capacidad disponible (${flexibleHours}h flexibles)`
+                              : proposedWeek.weekSummary.capacity.capacityStatus ===
+                                  "within_capacity"
+                                ? "Dentro de la capacidad"
+                                : proposedWeek.weekSummary.capacity.estimationCompleteness !==
+                                    "complete"
+                                  ? "Estimaciones incompletas · Viabilidad no confirmada"
+                                  : formatCapacityStatus(
+                                      proposedWeek.weekSummary.capacity.capacityStatus
+                                    )}
                       </span>
                     </div>
                   </div>
@@ -401,9 +422,12 @@ export function PlanningCapacityHud({
                 }}
                 data-testid="capacity-validated-summary"
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}
+                >
                   <strong style={{ fontSize: "0.88rem", color: "#1f2937" }}>
-                    ✓ Capacidad configurada y validada ({proposedWeek.weekSummary.capacity.totalAvailableHours}h disponibles)
+                    ✓ Capacidad configurada y validada (
+                    {proposedWeek.weekSummary.capacity.totalAvailableHours}h disponibles)
                   </strong>
                   {calendarSummary && (
                     <span style={{ fontSize: "0.82rem", color: "#0369a1" }}>
@@ -414,17 +438,24 @@ export function PlanningCapacityHud({
                   (proposedWeek.foci.length === 0 &&
                     proposedWeek.obligations.length === 0 &&
                     proposedWeek.weekSummary.capacity.totalAvailableHours != null &&
-                    proposedWeek.flexibleOptions.reduce((acc, o) => acc + (o.estimatedHours ?? 0), 0) <=
-                      (proposedWeek.weekSummary.capacity.plannableHours ?? 0)) ? (
+                    proposedWeek.flexibleOptions.reduce(
+                      (acc, o) => acc + (o.estimatedHours ?? 0),
+                      0
+                    ) <= (proposedWeek.weekSummary.capacity.plannableHours ?? 0)) ? (
                     <span className="badge badge-success" data-testid="viability-confirmed-badge">
                       ✓ Viabilidad confirmada
                     </span>
                   ) : proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity" ? (
                     <span className="badge badge-error" data-testid="over-capacity-badge">
-                      ⚠️ Sobrecarga detectada ({formatHours(proposedWeek.weekSummary.capacity.knownEstimatedHours)} estimadas)
+                      ⚠️ Sobrecarga detectada (
+                      {formatHours(proposedWeek.weekSummary.capacity.knownEstimatedHours)}{" "}
+                      estimadas)
                     </span>
                   ) : (
-                    <span className="badge badge-warning" data-testid="incomplete-estimations-badge">
+                    <span
+                      className="badge badge-warning"
+                      data-testid="incomplete-estimations-badge"
+                    >
                       ℹ️ Viabilidad no confirmada: estimaciones incompletas
                     </span>
                   )}
@@ -604,10 +635,13 @@ export function PlanningCapacityHud({
                 data-testid="unverified-capacity-warning"
                 role="status"
               >
-                ⚠️ <strong>Viabilidad no verificada:</strong> Se programó una tarea de recuperación (
+                ⚠️ <strong>Viabilidad no verificada:</strong> Se programó una tarea de recuperación
+                (
                 {proposedWeek.foci
                   .filter((f) => f.id.startsWith("focus-recovery-"))
-                  .reduce((acc, f) => acc + (f.estimatedHours ?? 0), 0)}h) con capacidad disponible desconocida. No se inventa capacidad disponible; la viabilidad no está confirmada hasta registrar tus horas reales disponibles.
+                  .reduce((acc, f) => acc + (f.estimatedHours ?? 0), 0)}
+                h) con capacidad disponible desconocida. No se inventa capacidad disponible; la
+                viabilidad no está confirmada hasta registrar tus horas reales disponibles.
               </div>
             )}
         </div>

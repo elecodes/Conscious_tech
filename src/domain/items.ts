@@ -1,12 +1,6 @@
 import { z } from "zod";
 
-export const ItemTypeSchema = z.enum([
-  "task",
-  "project",
-  "idea",
-  "commitment",
-  "concern",
-]);
+export const ItemTypeSchema = z.enum(["task", "project", "idea", "commitment", "concern"]);
 export type ItemType = z.infer<typeof ItemTypeSchema>;
 
 export const ItemStatusSchema = z.enum(["pending", "started", "exploring", "archived"]);

@@ -3,9 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MockProvider } from "../src/providers/mock-provider";
 import { extractItems } from "../src/skills/extract-items";
 import { TargetWeek } from "../src/domain/week";
-import {
-  generateWeeklyProposalFromItemsDetailed,
-} from "../src/application/planning-pipeline";
+import { generateWeeklyProposalFromItemsDetailed } from "../src/application/planning-pipeline";
 import { WeeklyPlanningFromNotes } from "../src/web/components/weekly-planning-from-notes";
 import {
   WeeklySessionReactContext,
@@ -21,7 +19,9 @@ describe("Corregir el ajuste de una propuesta semanal y manejo de tareas vencida
   const userNote =
     "Preparar el informe trimestral antes del jueves (6 horas). Reunión de alineación con el equipo el martes a las 10 (2 horas). Comprar café.";
 
-  function createMockSessionContext(overrides?: Partial<WeeklySessionContextValue>): WeeklySessionContextValue {
+  function createMockSessionContext(
+    overrides?: Partial<WeeklySessionContextValue>
+  ): WeeklySessionContextValue {
     return {
       state: {
         status: "no_active_session",
@@ -153,8 +153,10 @@ describe("Corregir el ajuste de una propuesta semanal y manejo de tareas vencida
       {
         id: "focus-recovery-item-mock-1",
         title: "Recuperación: Preparar el informe trimestral",
-        desiredOutcome: "Completar como prioridad de recuperación la tarea vencida (fecha límite original: 2026-10-15)",
-        rationale: "Incluida conscientemente como prioridad de recuperación por decisión de la persona. Fecha límite original conservada: 2026-10-15.",
+        desiredOutcome:
+          "Completar como prioridad de recuperación la tarea vencida (fecha límite original: 2026-10-15)",
+        rationale:
+          "Incluida conscientemente como prioridad de recuperación por decisión de la persona. Fecha límite original conservada: 2026-10-15.",
         contributingItemIds: ["item-mock-1"],
         estimatedHours: 6,
       },
@@ -201,7 +203,9 @@ describe("Corregir el ajuste de una propuesta semanal y manejo de tareas vencida
     // DEBE advertir que la viabilidad no está verificada y NO inventar que cabe
     expect(html).toContain('data-testid="unverified-capacity-warning"');
     expect(html).toContain("Viabilidad no verificada");
-    expect(html).toContain("Se programó una tarea de recuperación (6h) con capacidad disponible desconocida");
+    expect(html).toContain(
+      "Se programó una tarea de recuperación (6h) con capacidad disponible desconocida"
+    );
     expect(html).toContain("Capacidad desconocida · Viabilidad no verificada");
 
     // La reunión externa del martes 20 a las 10:00 se mantiene intacta como compromiso
@@ -264,7 +268,8 @@ describe("Corregir el ajuste de una propuesta semanal y manejo de tareas vencida
         itemId: "item-mock-1",
         title: "Preparar el informe trimestral",
         reason: "intentional_postponement" as const,
-        rationale: "Reprogramada conscientemente para la semana posterior (2026-10-26 a 2026-11-01). Fecha límite original conservada: 2026-10-15.",
+        rationale:
+          "Reprogramada conscientemente para la semana posterior (2026-10-26 a 2026-11-01). Fecha límite original conservada: 2026-10-15.",
       },
     ];
 

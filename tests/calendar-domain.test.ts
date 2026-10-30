@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  parseIcalContent,
-  parseIcalDate,
-} from "../src/infrastructure/calendar/ical-parser";
+import { parseIcalContent, parseIcalDate } from "../src/infrastructure/calendar/ical-parser";
 import {
   calculateCalendarWeekSummary,
   filterEventsForTargetWeek,
@@ -88,7 +85,9 @@ describe("Google Calendar & iCal Integration", () => {
       expect(clientMeeting?.endTime).toBe("11:30");
       expect(clientMeeting?.durationHours).toBe(1.5);
       expect(clientMeeting?.allDay).toBe(false);
-      expect(clientMeeting?.description).toContain("Revisar avance trimestral, métricas y próximos pasos.\nUrgente.");
+      expect(clientMeeting?.description).toContain(
+        "Revisar avance trimestral, métricas y próximos pasos.\nUrgente."
+      );
 
       const holiday = events.find((e) => e.id === "holiday-3@google.com");
       expect(holiday).toBeDefined();

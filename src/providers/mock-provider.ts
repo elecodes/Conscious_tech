@@ -40,9 +40,7 @@ export type MockHandler = (input: ExtractItemsInput) => Promise<ExtractedItems> 
 export type MockRelationshipsHandler = (
   input: DetectRelationshipsInput
 ) => Promise<DetectedRelationships> | DetectedRelationships;
-export type MockGroupWorkHandler = (
-  input: GroupWorkInput
-) => Promise<GroupedWork> | GroupedWork;
+export type MockGroupWorkHandler = (input: GroupWorkInput) => Promise<GroupedWork> | GroupedWork;
 export type MockDeadlinesHandler = (
   input: DetectDeadlinesInput
 ) => Promise<DetectedDeadlines> | DetectedDeadlines;
@@ -54,10 +52,14 @@ export type MockBuildWeekHandler = (
 ) => Promise<ProposedWeek | string> | ProposedWeek | string;
 export type MockAnalyzeChangeHandler = (
   input: import("../domain/change").AnalyzeChangeInput
-) => Promise<import("../domain/change").AnalyzeChangeOutput> | import("../domain/change").AnalyzeChangeOutput;
+) =>
+  | Promise<import("../domain/change").AnalyzeChangeOutput>
+  | import("../domain/change").AnalyzeChangeOutput;
 export type MockDetectConflictHandler = (
   input: import("../domain/conflict").DetectConflictInput
-) => Promise<import("../domain/conflict").DetectConflictOutput> | import("../domain/conflict").DetectConflictOutput;
+) =>
+  | Promise<import("../domain/conflict").DetectConflictOutput>
+  | import("../domain/conflict").DetectConflictOutput;
 
 export class MockProvider implements AIProvider {
   readonly id = "mock" as const;
@@ -145,9 +147,7 @@ export class MockProvider implements AIProvider {
 
     // Try finding exact matching case in sample-dumps
     const normalizedInput = input.text.trim();
-    const matchedCase = sampleDumpsData.find(
-      (c) => c.text.trim() === normalizedInput
-    );
+    const matchedCase = sampleDumpsData.find((c) => c.text.trim() === normalizedInput);
 
     if (matchedCase) {
       const caseItems = (mockCasesData as Record<string, ExtractedItems>)[matchedCase.id];
@@ -195,9 +195,7 @@ export class MockProvider implements AIProvider {
 
     // 1. Check if matches any predefined mock grouping in mockGroupingsData
     for (const [_caseId, data] of Object.entries(mockGroupingsData)) {
-      const matches = data.groups.some((g) =>
-        g.itemIds.some((id) => itemIds.has(id))
-      );
+      const matches = data.groups.some((g) => g.itemIds.some((id) => itemIds.has(id)));
       if (matches) {
         return data as GroupedWork;
       }
@@ -241,7 +239,9 @@ export class MockProvider implements AIProvider {
         }
       } else {
         // Empty deadlines case (e.g., case-03, case-09, case-21): check if items match the case in mockCasesData
-        const caseExtraction = (mockCasesData as Record<string, { items: Array<{ id: string }> }>)[caseId];
+        const caseExtraction = (mockCasesData as Record<string, { items: Array<{ id: string }> }>)[
+          caseId
+        ];
         if (caseExtraction && caseExtraction.items.some((i) => itemIds.has(i.id))) {
           return { deadlines: [] };
         }
@@ -358,9 +358,7 @@ export class MockProvider implements AIProvider {
       const rawLower = item.rawText.toLowerCase();
       if (
         item.type !== "concern" &&
-        (isBlockedByConcern ||
-          rawLower.includes("frenada") ||
-          rawLower.includes("frenado"))
+        (isBlockedByConcern || rawLower.includes("frenada") || rawLower.includes("frenado"))
       ) {
         signals.push("waiting");
       }
@@ -369,7 +367,10 @@ export class MockProvider implements AIProvider {
       if (input.declaredGoals && input.declaredGoals.length > 0) {
         const itemText = (item.title + " " + item.rawText).toLowerCase();
         const matchesGoal = input.declaredGoals.some((g) => {
-          const words = g.text.toLowerCase().split(/\s+/).filter((w) => w.length >= 3);
+          const words = g.text
+            .toLowerCase()
+            .split(/\s+/)
+            .filter((w) => w.length >= 3);
           return words.some((w) => itemText.includes(w));
         });
         if (matchesGoal) {
@@ -391,7 +392,9 @@ export class MockProvider implements AIProvider {
     });
 
     const groupAssessments: GroupContextAssessment[] = input.groupedWork.groups.map((group) => {
-      const groupItemAssessments = itemAssessments.filter((ia) => group.itemIds.includes(ia.itemId));
+      const groupItemAssessments = itemAssessments.filter((ia) =>
+        group.itemIds.includes(ia.itemId)
+      );
       const hasHigh = groupItemAssessments.some((ia) => ia.attention === "high");
       return {
         groupId: group.id,
@@ -405,7 +408,10 @@ export class MockProvider implements AIProvider {
     const waitingItems = itemAssessments.filter((ia) => ia.signals.includes("waiting"));
     for (const wItem of waitingItems) {
       const origItem = input.items.find((i) => i.id === wItem.itemId);
-      if (origItem && (origItem.rawText.includes("cliente") || origItem.rawText.includes("credenciales"))) {
+      if (
+        origItem &&
+        (origItem.rawText.includes("cliente") || origItem.rawText.includes("credenciales"))
+      ) {
         openQuestions.push({
           topic: "Bloqueo por tercero",
           question: "¿Se ha solicitado ya al cliente el envío de las credenciales de webhook?",
@@ -472,9 +478,10 @@ export class MockProvider implements AIProvider {
     for (const ec of constraints.externalCommitments) {
       if (!assignedItemIds.has(ec.itemId)) {
         const blockerReasons = blockedMap.get(ec.itemId);
-        const rationale = blockerReasons && blockerReasons.length > 0
-          ? `${ec.rationale}. ATENCIÓN: Bloqueado por dependencias: ${blockerReasons.join("; ")}.`
-          : ec.rationale;
+        const rationale =
+          blockerReasons && blockerReasons.length > 0
+            ? `${ec.rationale}. ATENCIÓN: Bloqueado por dependencias: ${blockerReasons.join("; ")}.`
+            : ec.rationale;
 
         if (blockerReasons && blockerReasons.length > 0) {
           externalTradeoffs.push(
@@ -581,7 +588,8 @@ export class MockProvider implements AIProvider {
           itemId: itm.id,
           title: itm.title,
           reason: "not_scheduled",
-          rationale: "Elemento no programado en la propuesta; conservado para decisión de la persona.",
+          rationale:
+            "Elemento no programado en la propuesta; conservado para decisión de la persona.",
         });
         assignedItemIds.add(itm.id);
       }
@@ -618,9 +626,10 @@ export class MockProvider implements AIProvider {
       flexibleOptions,
       deferredItems,
       unplannedSpace: {
-        rationale: protectedHours != null
-          ? `${protectedHours} horas protegidas para contingencias y descanso.`
-          : "Espacio no planificado protegido para imprevistos.",
+        rationale:
+          protectedHours != null
+            ? `${protectedHours} horas protegidas para contingencias y descanso.`
+            : "Espacio no planificado protegido para imprevistos.",
         recommendedHours: protectedHours,
       },
       confirmationPrompt: {
@@ -691,4 +700,3 @@ export class MockProvider implements AIProvider {
     return result;
   }
 }
-

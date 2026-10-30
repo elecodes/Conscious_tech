@@ -1,10 +1,7 @@
 import { WeeklySchedule } from "../../domain/schedule";
 import { StoredWeeklyPlan } from "../../domain/repositories/types";
 import { SuggestedAdjustmentAction } from "../../domain/adjustment";
-import {
-  buildGoogleCalendarTemplateUrl,
-  generateIcsCalendarExport,
-} from "../../domain/calendar";
+import { buildGoogleCalendarTemplateUrl, generateIcsCalendarExport } from "../../domain/calendar";
 import { getWeekDays } from "./weekly-session-formatters";
 import { PlanItemSummary } from "./weekly-reflective-closing-section";
 
@@ -62,8 +59,21 @@ export function ActiveWeekScheduleSection({
   setFeedbackMessage,
 }: ActiveWeekScheduleSectionProps) {
   return (
-    <section className="results-section" style={{ marginTop: "24px" }} aria-label="Agenda y bloques">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
+    <section
+      className="results-section"
+      style={{ marginTop: "24px" }}
+      aria-label="Agenda y bloques"
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "8px",
+          marginBottom: "8px",
+        }}
+      >
         <div>
           <h3 style={{ margin: 0 }}>Agenda y tareas de la semana ({planItems.length})</h3>
           <span className="calm-muted" style={{ fontSize: "0.82rem" }}>
@@ -75,11 +85,19 @@ export function ActiveWeekScheduleSection({
             type="button"
             className="secondary small"
             data-testid="export-week-to-gcal"
-            style={{ fontSize: "0.8rem", padding: "4px 10px", display: "inline-flex", alignItems: "center", gap: "5px" }}
+            style={{
+              fontSize: "0.8rem",
+              padding: "4px 10px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+            }}
             onClick={() => {
               const exportItems = planItems.map((item) => {
                 const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
-                const day = alloc ? alloc.day : (item.dueDate || plan?.targetWeek.startDate || "2026-10-19");
+                const day = alloc
+                  ? alloc.day
+                  : item.dueDate || plan?.targetWeek.startDate || "2026-10-19";
                 return {
                   title: item.title,
                   day,
@@ -87,7 +105,10 @@ export function ActiveWeekScheduleSection({
                   description: `Categoría: ${item.source}${item.rationale ? `\nMotivo: ${item.rationale}` : ""}`,
                 };
               });
-              const icsContent = generateIcsCalendarExport(exportItems, "Conscious Tech — Semana Activa");
+              const icsContent = generateIcsCalendarExport(
+                exportItems,
+                "Conscious Tech — Semana Activa"
+              );
               const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
@@ -129,9 +150,13 @@ export function ActiveWeekScheduleSection({
                 }}
               >
                 <div style={{ flex: "1 1 240px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}
+                  >
                     <strong>{item.title}</strong>
-                    <span className="badge badge-idea" style={{ fontSize: "0.75rem" }}>{item.source}</span>
+                    <span className="badge badge-idea" style={{ fontSize: "0.75rem" }}>
+                      {item.source}
+                    </span>
                   </div>
                   {item.dueDate && (
                     <div className="calm-muted" style={{ fontSize: "0.8rem", marginTop: "2px" }}>
@@ -140,11 +165,16 @@ export function ActiveWeekScheduleSection({
                   )}
                 </div>
 
-                <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                <div
+                  style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}
+                >
                   <span className="badge badge-muted" style={{ fontSize: "0.8rem" }}>
                     ⏱️ {item.estimatedHours ? `${item.estimatedHours}h` : "Sin estimar"}
                   </span>
-                  <span className={alloc ? "badge badge-task" : "badge badge-muted"} style={{ fontSize: "0.8rem" }}>
+                  <span
+                    className={alloc ? "badge badge-task" : "badge badge-muted"}
+                    style={{ fontSize: "0.8rem" }}
+                  >
                     📅 {alloc ? alloc.day : "En la semana"}
                   </span>
                   <button
@@ -165,10 +195,18 @@ export function ActiveWeekScheduleSection({
                     type="button"
                     className="secondary small"
                     data-testid={`add-to-gcal-${item.itemId}`}
-                    style={{ fontSize: "0.8rem", padding: "4px 8px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                    style={{
+                      fontSize: "0.8rem",
+                      padding: "4px 8px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
                     title="Abrir y guardar en Google Calendar con 1 clic"
                     onClick={() => {
-                      const day = alloc ? alloc.day : (item.dueDate || plan?.targetWeek.startDate || "2026-10-19");
+                      const day = alloc
+                        ? alloc.day
+                        : item.dueDate || plan?.targetWeek.startDate || "2026-10-19";
                       const gcalUrl = buildGoogleCalendarTemplateUrl({
                         title: item.title,
                         day,
@@ -272,21 +310,18 @@ export function ActiveWeekScheduleSection({
             <p className="calm-muted">No hay tareas identificadas en el plan para ajustar.</p>
           ) : (
             (() => {
-              const effectiveItemId =
-                selectedAdjustmentItemId || planItems[0]?.itemId || "";
+              const effectiveItemId = selectedAdjustmentItemId || planItems[0]?.itemId || "";
               const selectedItem =
-                planItems.find((i) => i.itemId === effectiveItemId) ||
-                planItems[0];
+                planItems.find((i) => i.itemId === effectiveItemId) || planItems[0];
 
               const effectiveDeadline =
                 deadlineInput.trim() ||
                 selectedItem?.dueDate ||
-                (selectedItem?.title.toLowerCase().includes("informe")
-                  ? "2026-10-15"
-                  : "");
+                (selectedItem?.title.toLowerCase().includes("informe") ? "2026-10-15" : "");
 
-              const isDeadlineOverdue =
-                Boolean(effectiveDeadline && effectiveDeadline < targetWeekStart);
+              const isDeadlineOverdue = Boolean(
+                effectiveDeadline && effectiveDeadline < targetWeekStart
+              );
 
               const isCapacityUnconfigured =
                 plan?.proposal.weekSummary.capacity.totalAvailableHours === null;
@@ -301,7 +336,12 @@ export function ActiveWeekScheduleSection({
                   <div>
                     <label
                       htmlFor="adjustment-item-select"
-                      style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "4px" }}
+                      style={{
+                        display: "block",
+                        fontSize: "0.85rem",
+                        fontWeight: 600,
+                        marginBottom: "4px",
+                      }}
                     >
                       Tarea a ajustar:
                     </label>
@@ -317,7 +357,9 @@ export function ActiveWeekScheduleSection({
                       style={{ width: "100%", padding: "7px 8px" }}
                     >
                       {planItems.map((item) => {
-                        const alloc = schedule?.dailyAllocations.find((a) => a.itemId === item.itemId);
+                        const alloc = schedule?.dailyAllocations.find(
+                          (a) => a.itemId === item.itemId
+                        );
                         return (
                           <option key={item.itemId} value={item.itemId}>
                             {item.title} ({item.source})
@@ -352,7 +394,12 @@ export function ActiveWeekScheduleSection({
                       <div>
                         <label
                           htmlFor="task-hours-input"
-                          style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "4px" }}
+                          style={{
+                            display: "block",
+                            fontSize: "0.85rem",
+                            fontWeight: 600,
+                            marginBottom: "4px",
+                          }}
                         >
                           ⏱️ Horas estimadas:
                         </label>
@@ -363,7 +410,11 @@ export function ActiveWeekScheduleSection({
                           min="0.25"
                           max="40"
                           step="0.5"
-                          placeholder={selectedItem?.estimatedHours ? `${selectedItem.estimatedHours}` : "Ej: 2"}
+                          placeholder={
+                            selectedItem?.estimatedHours
+                              ? `${selectedItem.estimatedHours}`
+                              : "Ej: 2"
+                          }
                           value={taskHoursInput}
                           onChange={(e) => setTaskHoursInput(e.target.value)}
                           style={{ width: "100%", padding: "8px 10px", borderRadius: "6px" }}
@@ -373,7 +424,12 @@ export function ActiveWeekScheduleSection({
                       <div>
                         <label
                           htmlFor="task-day-select"
-                          style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "4px" }}
+                          style={{
+                            display: "block",
+                            fontSize: "0.85rem",
+                            fontWeight: 600,
+                            marginBottom: "4px",
+                          }}
                         >
                           📅 Día asignado:
                         </label>
@@ -394,7 +450,16 @@ export function ActiveWeekScheduleSection({
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginTop: "4px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: "10px",
+                        marginTop: "4px",
+                      }}
+                    >
                       <p className="calm-muted" style={{ fontSize: "0.8rem", margin: 0 }}>
                         💡 Si no elegís día, las horas quedan computadas en la semana sin día fijo.
                       </p>
@@ -412,7 +477,9 @@ export function ActiveWeekScheduleSection({
                           className="primary"
                           data-testid="save-task-adjustment-button"
                           aria-label="Guardar cambios de la tarea"
-                          onClick={() => handleSaveTaskAdjustment(selectedItem.itemId, selectedItem.title)}
+                          onClick={() =>
+                            handleSaveTaskAdjustment(selectedItem.itemId, selectedItem.title)
+                          }
                           style={{ padding: "8px 18px", fontWeight: 600 }}
                         >
                           Guardar cambios
@@ -443,9 +510,18 @@ export function ActiveWeekScheduleSection({
                     >
                       🗓️ ¿Prefieres mover la tarea a una fecha posterior? (Opcional)
                     </summary>
-                    <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div
+                      style={{
+                        marginTop: "10px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "10px",
+                      }}
+                    >
                       <p className="calm-muted" style={{ fontSize: "0.82rem", margin: 0 }}>
-                        Usa esta opción solo si decides <strong>no hacer esta tarea esta semana</strong> y quieres postergarla a otra fecha.
+                        Usa esta opción solo si decides{" "}
+                        <strong>no hacer esta tarea esta semana</strong> y quieres postergarla a
+                        otra fecha.
                       </p>
                       <div
                         style={{
@@ -457,7 +533,12 @@ export function ActiveWeekScheduleSection({
                         <div>
                           <label
                             htmlFor="target-week-start-input"
-                            style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
+                            style={{
+                              display: "block",
+                              fontSize: "0.82rem",
+                              fontWeight: 500,
+                              marginBottom: "4px",
+                            }}
                           >
                             Semana destino (Inicio):
                           </label>
@@ -477,7 +558,12 @@ export function ActiveWeekScheduleSection({
                         <div>
                           <label
                             htmlFor="target-week-end-input"
-                            style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
+                            style={{
+                              display: "block",
+                              fontSize: "0.82rem",
+                              fontWeight: 500,
+                              marginBottom: "4px",
+                            }}
                           >
                             Semana destino (Fin):
                           </label>
@@ -497,7 +583,12 @@ export function ActiveWeekScheduleSection({
                         <div>
                           <label
                             htmlFor="deadline-input"
-                            style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px" }}
+                            style={{
+                              display: "block",
+                              fontSize: "0.82rem",
+                              fontWeight: 500,
+                              marginBottom: "4px",
+                            }}
                           >
                             Deadline original (para verificar):
                           </label>
@@ -548,12 +639,22 @@ export function ActiveWeekScheduleSection({
                       </div>
 
                       {/* Origen y Destino */}
-                      <div style={{ fontSize: "0.88rem", display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <div
+                        style={{
+                          fontSize: "0.88rem",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "4px",
+                        }}
+                      >
                         <div>
                           <strong>Origen:</strong> {selectedItem.title} ({selectedItem.source})
                           {hoursToFree ? ` · ${hoursToFree}h estimadas` : " · Sin estimación"}
                           {effectiveDeadline && (
-                            <span> · Fecha límite original: <code>{effectiveDeadline}</code></span>
+                            <span>
+                              {" "}
+                              · Fecha límite original: <code>{effectiveDeadline}</code>
+                            </span>
                           )}
                         </div>
                         <div>
@@ -562,7 +663,14 @@ export function ActiveWeekScheduleSection({
                       </div>
 
                       {/* Consecuencias y advertencias evaluadas */}
-                      <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "4px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "6px",
+                          marginTop: "4px",
+                        }}
+                      >
                         {isDeadlineOverdue && (
                           <div
                             className="status-message status-warning"
@@ -576,7 +684,9 @@ export function ActiveWeekScheduleSection({
                               color: "#92400e",
                             }}
                           >
-                            ⚠️ <strong>Fecha límite vencida:</strong> La fecha original ({effectiveDeadline}) vencerá antes de la semana destino ({targetWeekStart} al {targetWeekEnd}).
+                            ⚠️ <strong>Fecha límite vencida:</strong> La fecha original (
+                            {effectiveDeadline}) vencerá antes de la semana destino (
+                            {targetWeekStart} al {targetWeekEnd}).
                           </div>
                         )}
 
@@ -593,7 +703,8 @@ export function ActiveWeekScheduleSection({
                               color: "#92400e",
                             }}
                           >
-                            ⚠️ <strong>Sin capacidad configurada:</strong> No hay horas disponibles confirmadas para esta semana.
+                            ⚠️ <strong>Sin capacidad configurada:</strong> No hay horas disponibles
+                            confirmadas para esta semana.
                           </div>
                         )}
 
@@ -602,13 +713,18 @@ export function ActiveWeekScheduleSection({
                           data-testid="schedule-effect"
                           style={{ fontSize: "0.82rem", lineHeight: 1.4 }}
                         >
-                          ℹ️ La tarea se retirará de tu semana actual y pasará a la semana del {targetWeekStart} al {targetWeekEnd} para que la organices cuando la abras.
+                          ℹ️ La tarea se retirará de tu semana actual y pasará a la semana del{" "}
+                          {targetWeekStart} al {targetWeekEnd} para que la organices cuando la
+                          abras.
                         </div>
                         <span data-testid="domain-boundary-note" style={{ display: "none" }} />
                       </div>
 
                       {/* Acciones de decisión humana */}
-                      <div className="actions" style={{ marginTop: "12px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      <div
+                        className="actions"
+                        style={{ marginTop: "12px", display: "flex", gap: "8px", flexWrap: "wrap" }}
+                      >
                         <button
                           className="secondary"
                           data-testid="reject-proposal-button"
@@ -617,15 +733,19 @@ export function ActiveWeekScheduleSection({
                             const action: SuggestedAdjustmentAction = {
                               type: "postpone_item",
                               itemId: selectedItem.itemId,
-                              currentCategory: (
-                                plan?.proposal.obligations.some((o) => o.itemId === selectedItem.itemId)
-                                  ? "obligations"
-                                  : plan?.proposal.foci.some((f) => f.contributingItemIds.includes(selectedItem.itemId))
+                              currentCategory: plan?.proposal.obligations.some(
+                                (o) => o.itemId === selectedItem.itemId
+                              )
+                                ? "obligations"
+                                : plan?.proposal.foci.some((f) =>
+                                      f.contributingItemIds.includes(selectedItem.itemId)
+                                    )
                                   ? "foci"
-                                  : plan?.proposal.flexibleOptions.some((opt) => opt.itemId === selectedItem.itemId)
-                                  ? "flexible_options"
-                                  : "deferred_items"
-                              ),
+                                  : plan?.proposal.flexibleOptions.some(
+                                        (opt) => opt.itemId === selectedItem.itemId
+                                      )
+                                    ? "flexible_options"
+                                    : "deferred_items",
                               targetReason: "intentional_postponement",
                               hoursFreed: hoursToFree,
                               rationale: `Reprogramación intencional de '${selectedItem.title}' hacia la semana ${targetWeekStart} al ${targetWeekEnd}.`,
@@ -663,15 +783,19 @@ export function ActiveWeekScheduleSection({
                             const action: SuggestedAdjustmentAction = {
                               type: "postpone_item",
                               itemId: selectedItem.itemId,
-                              currentCategory: (
-                                plan?.proposal.obligations.some((o) => o.itemId === selectedItem.itemId)
-                                  ? "obligations"
-                                  : plan?.proposal.foci.some((f) => f.contributingItemIds.includes(selectedItem.itemId))
+                              currentCategory: plan?.proposal.obligations.some(
+                                (o) => o.itemId === selectedItem.itemId
+                              )
+                                ? "obligations"
+                                : plan?.proposal.foci.some((f) =>
+                                      f.contributingItemIds.includes(selectedItem.itemId)
+                                    )
                                   ? "foci"
-                                  : plan?.proposal.flexibleOptions.some((opt) => opt.itemId === selectedItem.itemId)
-                                  ? "flexible_options"
-                                  : "deferred_items"
-                              ),
+                                  : plan?.proposal.flexibleOptions.some(
+                                        (opt) => opt.itemId === selectedItem.itemId
+                                      )
+                                    ? "flexible_options"
+                                    : "deferred_items",
                               targetReason: "intentional_postponement",
                               hoursFreed: hoursToFree,
                               rationale: `Reprogramación intencional de '${selectedItem.title}' hacia la semana ${targetWeekStart} al ${targetWeekEnd}.`,

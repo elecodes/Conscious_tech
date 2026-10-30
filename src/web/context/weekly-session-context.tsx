@@ -398,9 +398,7 @@ export class WeeklySessionController {
       // Human rejected: remove candidate from pending list without persisting
       this.setState((s) => ({
         ...s,
-        memoryCandidates: s.memoryCandidates.filter(
-          (c) => c.candidateId !== candidate.candidateId
-        ),
+        memoryCandidates: s.memoryCandidates.filter((c) => c.candidateId !== candidate.candidateId),
       }));
       return {
         status: "rejected",
@@ -445,18 +443,13 @@ export class WeeklySessionController {
       requiresHumanConfirmation: true,
     };
 
-    const result = await this.service.confirmAndApplyMemoryOperation(
-      operation,
-      confirmation
-    );
+    const result = await this.service.confirmAndApplyMemoryOperation(operation, confirmation);
 
     if (result.status === "applied") {
       // Remove candidate from pending list and add to confirmed memories
       this.setState((s) => ({
         ...s,
-        memoryCandidates: s.memoryCandidates.filter(
-          (c) => c.candidateId !== candidate.candidateId
-        ),
+        memoryCandidates: s.memoryCandidates.filter((c) => c.candidateId !== candidate.candidateId),
         memories: [...s.memories, proposedMemory],
       }));
     }
@@ -471,10 +464,7 @@ export class WeeklySessionController {
     operation: MemoryOperation,
     confirmation: ExplicitHumanConfirmation
   ): Promise<ConfirmMemoryResult> {
-    const result = await this.service.confirmAndApplyMemoryOperation(
-      operation,
-      confirmation
-    );
+    const result = await this.service.confirmAndApplyMemoryOperation(operation, confirmation);
     if (result.status === "applied") {
       await this.reloadSession();
     }
@@ -519,7 +509,9 @@ export class WeeklySessionController {
    */
   public async saveDraftPlan(
     plan: StoredWeeklyPlan
-  ): Promise<{ status: "success"; plan: StoredWeeklyPlan } | { status: "invalid_data"; reason: string }> {
+  ): Promise<
+    { status: "success"; plan: StoredWeeklyPlan } | { status: "invalid_data"; reason: string }
+  > {
     const result = await this.service.saveDraftPlan(plan);
     if (result.status === "success") {
       this.setState((s) => {
@@ -550,9 +542,7 @@ export class WeeklySessionController {
       this.setState((s) => ({
         ...s,
         draftPlan:
-          s.draftPlan?.targetWeek.startDate === planIdOrTargetWeek.startDate
-            ? null
-            : s.draftPlan,
+          s.draftPlan?.targetWeek.startDate === planIdOrTargetWeek.startDate ? null : s.draftPlan,
         draftPlans: (s.draftPlans ?? []).filter(
           (d) => d.targetWeek.startDate !== planIdOrTargetWeek.startDate
         ),
@@ -639,22 +629,19 @@ export interface WeeklySessionContextValue {
   archiveMemory?: (id: string) => Promise<void>;
   deleteMemory?: (id: string) => Promise<void>;
   exportBackup?: () => Promise<UserDataBackup>;
-  importBackup?: (
-    jsonString: string,
-    options?: ImportBackupOptions
-  ) => Promise<ImportBackupResult>;
+  importBackup?: (jsonString: string, options?: ImportBackupOptions) => Promise<ImportBackupResult>;
   purgeSession: (planId: string) => Promise<PurgePlanResult>;
   resolveAmbiguity: (keepPlanId: string) => Promise<void>;
   getDraftPlan?: (targetWeek?: TargetWeek) => Promise<StoredWeeklyPlan | null>;
   saveDraftPlan: (
     plan: StoredWeeklyPlan
-  ) => Promise<{ status: "success"; plan: StoredWeeklyPlan } | { status: "invalid_data"; reason: string }>;
+  ) => Promise<
+    { status: "success"; plan: StoredWeeklyPlan } | { status: "invalid_data"; reason: string }
+  >;
   clearDraftPlan: (planIdOrTargetWeek?: string | TargetWeek) => Promise<void>;
 }
 
-export const WeeklySessionReactContext = createContext<WeeklySessionContextValue | null>(
-  null
-);
+export const WeeklySessionReactContext = createContext<WeeklySessionContextValue | null>(null);
 
 export async function createDefaultWeeklySessionService(): Promise<WeeklySessionService> {
   const storage = await createIndexedDbStorage();
@@ -678,9 +665,7 @@ export function WeeklySessionProvider({
   service,
   autoResume = true,
 }: WeeklySessionProviderProps) {
-  const [activeService, setActiveService] = useState<WeeklySessionService | null>(
-    service ?? null
-  );
+  const [activeService, setActiveService] = useState<WeeklySessionService | null>(service ?? null);
 
   useEffect(() => {
     if (service) {
@@ -703,10 +688,7 @@ export function WeeklySessionProvider({
   }
 
   return (
-    <WeeklySessionProviderWithService
-      service={activeService}
-      autoResume={autoResume}
-    >
+    <WeeklySessionProviderWithService service={activeService} autoResume={autoResume}>
       {children}
     </WeeklySessionProviderWithService>
   );
@@ -721,10 +703,7 @@ function WeeklySessionProviderWithService({
   service: WeeklySessionService;
   autoResume: boolean;
 }) {
-  const controller = useMemo(
-    () => new WeeklySessionController(service),
-    [service]
-  );
+  const controller = useMemo(() => new WeeklySessionController(service), [service]);
 
   const state = useSyncExternalStore(
     controller.subscribe,
@@ -777,9 +756,7 @@ function WeeklySessionProviderWithService({
 export function useWeeklySession(): WeeklySessionContextValue {
   const context = useContext(WeeklySessionReactContext);
   if (!context) {
-    throw new Error(
-      "useWeeklySession must be used within a <WeeklySessionProvider>."
-    );
+    throw new Error("useWeeklySession must be used within a <WeeklySessionProvider>.");
   }
   return context;
 }

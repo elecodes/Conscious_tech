@@ -18,15 +18,15 @@ Tampoco pretende decirle a la persona qué tiene que hacer.
 
 La idea es utilizar IA para ayudar a una persona a:
 
-* sacar de su cabeza todo lo que tiene abierto;
-* entender qué hay realmente ahí;
-* detectar relaciones entre cosas;
-* reducir la fragmentación;
-* decidir qué merece atención;
-* construir una semana realista;
-* adaptarse cuando la realidad cambia;
-* conservar el contexto de sus decisiones;
-* y poder olvidar o eliminar aquello que ya no quiere conservar.
+- sacar de su cabeza todo lo que tiene abierto;
+- entender qué hay realmente ahí;
+- detectar relaciones entre cosas;
+- reducir la fragmentación;
+- decidir qué merece atención;
+- construir una semana realista;
+- adaptarse cuando la realidad cambia;
+- conservar el contexto de sus decisiones;
+- y poder olvidar o eliminar aquello que ya no quiere conservar.
 
 El resultado esperado es:
 
@@ -42,16 +42,16 @@ No:
 
 Muchas personas que trabajan con información tienen demasiadas cosas abiertas simultáneamente:
 
-* tareas;
-* proyectos;
-* ideas;
-* obligaciones;
-* aprendizaje;
-* compromisos;
-* decisiones pendientes;
-* cosas que han empezado pero no terminado;
-* cosas que quieren hacer;
-* cosas que creen que deberían hacer.
+- tareas;
+- proyectos;
+- ideas;
+- obligaciones;
+- aprendizaje;
+- compromisos;
+- decisiones pendientes;
+- cosas que han empezado pero no terminado;
+- cosas que quieren hacer;
+- cosas que creen que deberían hacer.
 
 La dificultad no es necesariamente la falta de organización.
 
@@ -63,12 +63,12 @@ Además, la realidad cambia.
 
 Una semana que parecía clara el lunes puede cambiar el miércoles porque:
 
-* aparece un compromiso;
-* cambia una fecha;
-* termina antes un proyecto;
-* algo requiere más tiempo del esperado;
-* aparece una oportunidad;
-* desaparece una obligación.
+- aparece un compromiso;
+- cambia una fecha;
+- termina antes un proyecto;
+- algo requiere más tiempo del esperado;
+- aparece una oportunidad;
+- desaparece una obligación.
 
 Por eso el producto no debe crear simplemente un plan estático.
 
@@ -82,23 +82,23 @@ Debe ayudar a **navegar la semana**.
 
 La IA puede:
 
-* entender;
-* extraer;
-* relacionar;
-* agrupar;
-* explicar;
-* detectar conflictos;
-* proponer;
-* sugerir ajustes.
+- entender;
+- extraer;
+- relacionar;
+- agrupar;
+- explicar;
+- detectar conflictos;
+- proponer;
+- sugerir ajustes.
 
 La persona decide:
 
-* qué importa;
-* qué quiere cuidar;
-* qué acepta;
-* qué pospone;
-* qué descarta;
-* qué cambia cuando aparece algo nuevo.
+- qué importa;
+- qué quiere cuidar;
+- qué acepta;
+- qué pospone;
+- qué descarta;
+- qué cambia cuando aparece algo nuevo.
 
 Nunca debe producirse una modificación importante de la semana sin que la persona pueda verla y aceptarla.
 
@@ -147,13 +147,13 @@ Espacio protegido:     7 h
 
 Ese espacio puede utilizarse para:
 
-* imprevistos;
-* tareas que duran más;
-* pensar;
-* descansar;
-* pequeños asuntos;
-* cambios de contexto;
-* o simplemente no hacer nada.
+- imprevistos;
+- tareas que duran más;
+- pensar;
+- descansar;
+- pequeños asuntos;
+- cambios de contexto;
+- o simplemente no hacer nada.
 
 El sistema debe evitar convertir todo el tiempo disponible en trabajo.
 
@@ -163,12 +163,12 @@ El sistema debe evitar convertir todo el tiempo disponible en trabajo.
 
 Una cosa puede estar pendiente porque:
 
-* se olvidó;
-* no importa;
-* se decidió esperar;
-* depende de otra cosa;
-* no cabe esta semana;
-* se descartó.
+- se olvidó;
+- no importa;
+- se decidió esperar;
+- depende de otra cosa;
+- no cabe esta semana;
+- se descartó.
 
 El producto debe distinguir estos estados.
 
@@ -180,14 +180,14 @@ El producto debe distinguir estos estados.
 
 No queremos:
 
-* gamificación;
-* rachas;
-* puntos;
-* presión;
-* lenguaje de productividad agresivo;
-* dashboards llenos de métricas;
-* notificaciones constantes;
-* listas infinitas de tareas.
+- gamificación;
+- rachas;
+- puntos;
+- presión;
+- lenguaje de productividad agresivo;
+- dashboards llenos de métricas;
+- notificaciones constantes;
+- listas infinitas de tareas.
 
 La experiencia debe sentirse como:
 
@@ -199,23 +199,23 @@ La experiencia debe sentirse como:
 
 El usuario inicial es una persona profesional que trabaja principalmente con información o conocimiento y que:
 
-* tiene muchas responsabilidades;
-* trabaja en varios proyectos;
-* utiliza o quiere utilizar IA;
-* tiene demasiadas posibilidades;
-* quiere organizar mejor su atención;
-* pero no quiere otro sistema complejo de productividad.
+- tiene muchas responsabilidades;
+- trabaja en varios proyectos;
+- utiliza o quiere utilizar IA;
+- tiene demasiadas posibilidades;
+- quiere organizar mejor su atención;
+- pero no quiere otro sistema complejo de productividad.
 
 Ejemplos:
 
-* desarrolladores;
-* diseñadores;
-* consultores;
-* investigadores;
-* docentes;
-* profesionales independientes;
-* pequeños equipos;
-* personas que trabajan en remoto.
+- desarrolladores;
+- diseñadores;
+- consultores;
+- investigadores;
+- docentes;
+- profesionales independientes;
+- pequeños equipos;
+- personas que trabajan en remoto.
 
 ---
 
@@ -277,8 +277,8 @@ La entrada principal es:
 
 La persona puede:
 
-* escribir;
-* hablar.
+- escribir;
+- hablar.
 
 La voz es una parte importante de la experiencia.
 
@@ -300,10 +300,10 @@ Antes de que la IA reorganice el contenido, debe mostrar:
 
 La persona puede:
 
-* confirmar;
-* corregir;
-* añadir;
-* eliminar.
+- confirmar;
+- corregir;
+- añadir;
+- eliminar.
 
 Esto es especialmente importante cuando la entrada procede de voz.
 
@@ -319,16 +319,16 @@ El sistema transforma el lenguaje libre en elementos estructurados.
 
 Puede identificar:
 
-* tareas;
-* proyectos;
-* ideas;
-* preocupaciones;
-* compromisos;
-* estado;
-* fechas;
-* deadlines;
-* dependencias;
-* información explícitamente indicada por la persona.
+- tareas;
+- proyectos;
+- ideas;
+- preocupaciones;
+- compromisos;
+- estado;
+- fechas;
+- deadlines;
+- dependencias;
+- información explícitamente indicada por la persona.
 
 Pero esta fase **no prioriza**.
 
@@ -348,13 +348,13 @@ Después de extraer los elementos, el sistema busca relaciones semánticas.
 
 Puede detectar:
 
-* elementos del mismo proyecto;
-* elementos con el mismo objetivo;
-* tareas relacionadas;
-* dependencias;
-* duplicados;
-* actividades que pueden concentrarse en una misma línea;
-* elementos que parecen independientes pero forman parte de algo mayor.
+- elementos del mismo proyecto;
+- elementos con el mismo objetivo;
+- tareas relacionadas;
+- dependencias;
+- duplicados;
+- actividades que pueden concentrarse en una misma línea;
+- elementos que parecen independientes pero forman parte de algo mayor.
 
 Ejemplo:
 
@@ -389,9 +389,9 @@ Ejemplo:
 
 La persona debe poder:
 
-* aceptar;
-* separar;
-* corregir.
+- aceptar;
+- separar;
+- corregir.
 
 ---
 
@@ -424,16 +424,16 @@ Después de entender y agrupar, llega la decisión humana:
 
 La IA puede ayudar a detectar:
 
-* deadlines;
-* compromisos externos;
-* importancia declarada;
-* dependencias;
-* esfuerzo;
-* estado;
-* objetivos;
-* capacidad;
-* número de líneas abiertas;
-* oportunidades de concentración.
+- deadlines;
+- compromisos externos;
+- importancia declarada;
+- dependencias;
+- esfuerzo;
+- estado;
+- objetivos;
+- capacidad;
+- número de líneas abiertas;
+- oportunidades de concentración.
 
 Pero no debe reducir todo a una puntuación matemática.
 
@@ -535,12 +535,12 @@ Ejemplo:
 
 Cada foco puede tener:
 
-* nombre;
-* resultado deseado;
-* motivo;
-* esfuerzo estimado;
-* siguiente paso;
-* estado.
+- nombre;
+- resultado deseado;
+- motivo;
+- esfuerzo estimado;
+- siguiente paso;
+- estado.
 
 Los tres focos representan el **centro de gravedad de la semana**.
 
@@ -610,12 +610,12 @@ La persona puede escribir o hablar naturalmente:
 
 La IA identifica:
 
-* qué ha aparecido;
-* cuándo;
-* deadline;
-* esfuerzo;
-* tipo de compromiso;
-* impacto potencial.
+- qué ha aparecido;
+- cuándo;
+- deadline;
+- esfuerzo;
+- tipo de compromiso;
+- impacto potencial.
 
 ---
 
@@ -761,10 +761,10 @@ La capacidad debe basarse en tiempo **realista**, no aspiracional.
 
 La persona puede indicar:
 
-* horas disponibles por día;
-* horas semanales;
-* días especialmente ocupados;
-* compromisos ya existentes.
+- horas disponibles por día;
+- horas semanales;
+- días especialmente ocupados;
+- compromisos ya existentes.
 
 La capacidad planificable debe dejar espacio.
 
@@ -845,11 +845,11 @@ La decisión es de la persona.
 
 Al terminar la semana se muestra:
 
-* completado;
-* avanzado;
-* pendiente;
-* conscientemente pospuesto;
-* cambios importantes ocurridos durante la semana.
+- completado;
+- avanzado;
+- pendiente;
+- conscientemente pospuesto;
+- cambios importantes ocurridos durante la semana.
 
 Evitar lenguaje de fracaso.
 
@@ -886,13 +886,13 @@ Principios:
 
 Puede ser útil recordar:
 
-* focos elegidos;
-* decisiones conscientes tomadas durante la semana;
-* compromisos recurrentes o preferencias de trabajo explícitas;
-* aprendizajes y reflexiones identificados tras el cierre semanal.
+- focos elegidos;
+- decisiones conscientes tomadas durante la semana;
+- compromisos recurrentes o preferencias de trabajo explícitas;
+- aprendizajes y reflexiones identificados tras el cierre semanal.
 
 No recordar:
 
-* pensamientos fugaces no confirmados;
-* detalles íntimos innecesarios para la planificación;
-* cualquier información que la persona decida olvidar.
+- pensamientos fugaces no confirmados;
+- detalles íntimos innecesarios para la planificación;
+- cualquier información que la persona decida olvidar.

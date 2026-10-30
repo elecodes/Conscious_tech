@@ -194,7 +194,10 @@ describe("Persistencia Local: IndexedDB Storage & Repositories (Fase P2)", () =>
       expect(db.objectStoreNames.contains(STORES.CLOSE_REPORTS)).toBe(true);
       expect(db.objectStoreNames.contains(STORES.MEMORIES)).toBe(true);
 
-      const tx = db.transaction([STORES.PLANS, STORES.SCHEDULES, STORES.CLOSE_REPORTS, STORES.MEMORIES], "readonly");
+      const tx = db.transaction(
+        [STORES.PLANS, STORES.SCHEDULES, STORES.CLOSE_REPORTS, STORES.MEMORIES],
+        "readonly"
+      );
       const plansStore = tx.objectStore(STORES.PLANS);
       expect(plansStore.indexNames.contains("by_target_week_start")).toBe(true);
       expect(plansStore.indexNames.contains("by_status")).toBe(true);
@@ -230,11 +233,17 @@ describe("Persistencia Local: IndexedDB Storage & Repositories (Fase P2)", () =>
   // ==========================================================================
   describe("2. Operaciones CRUD y reconexión", () => {
     it("guarda, recupera y conserva planes tras cerrar y reabrir conexión", async () => {
-      const storage1 = await createIndexedDbStorage({ dbName: TEST_DB_NAME, customFactory: fakeIDB });
+      const storage1 = await createIndexedDbStorage({
+        dbName: TEST_DB_NAME,
+        customFactory: fakeIDB,
+      });
       await storage1.plans.save(samplePlan);
       storage1.close();
 
-      const storage2 = await createIndexedDbStorage({ dbName: TEST_DB_NAME, customFactory: fakeIDB });
+      const storage2 = await createIndexedDbStorage({
+        dbName: TEST_DB_NAME,
+        customFactory: fakeIDB,
+      });
       const retrieved = await storage2.plans.getById(samplePlan.planId);
       expect(retrieved).not.toBeNull();
       expect(retrieved?.planId).toBe(samplePlan.planId);
@@ -262,7 +271,10 @@ describe("Persistencia Local: IndexedDB Storage & Repositories (Fase P2)", () =>
     });
 
     it("detecta múltiples planes activos y lanza AmbiguousActivePlanError en getActivePlan()", async () => {
-      const storage = await createIndexedDbStorage({ dbName: TEST_DB_NAME, customFactory: fakeIDB });
+      const storage = await createIndexedDbStorage({
+        dbName: TEST_DB_NAME,
+        customFactory: fakeIDB,
+      });
       const planA = { ...samplePlan, planId: "plan-A", status: "active" as const };
       const planB = { ...samplePlan, planId: "plan-B", status: "active" as const };
 
@@ -277,7 +289,10 @@ describe("Persistencia Local: IndexedDB Storage & Repositories (Fase P2)", () =>
     });
 
     it("devuelve null ante registros inexistentes sin arrojar excepciones", async () => {
-      const storage = await createIndexedDbStorage({ dbName: TEST_DB_NAME, customFactory: fakeIDB });
+      const storage = await createIndexedDbStorage({
+        dbName: TEST_DB_NAME,
+        customFactory: fakeIDB,
+      });
       expect(await storage.plans.getById("nonexistent")).toBeNull();
       expect(await storage.schedules.getById("nonexistent")).toBeNull();
       expect(await storage.closeReports.getById("nonexistent")).toBeNull();
@@ -291,7 +306,10 @@ describe("Persistencia Local: IndexedDB Storage & Repositories (Fase P2)", () =>
   // ==========================================================================
   describe("3. Concurrencia optimista y atomicidad en WeeklySchedule", () => {
     it("incrementa la versión en uno al actualizar con expectedScheduleVersion coincidente", async () => {
-      const storage = await createIndexedDbStorage({ dbName: TEST_DB_NAME, customFactory: fakeIDB });
+      const storage = await createIndexedDbStorage({
+        dbName: TEST_DB_NAME,
+        customFactory: fakeIDB,
+      });
       await storage.schedules.save(sampleSchedule);
 
       const current = await storage.schedules.getById(sampleSchedule.scheduleId);
@@ -312,7 +330,10 @@ describe("Persistencia Local: IndexedDB Storage & Repositories (Fase P2)", () =>
     });
 
     it("aborta la transacción y lanza StaleVersionConflictError si la versión esperada difiere", async () => {
-      const storage = await createIndexedDbStorage({ dbName: TEST_DB_NAME, customFactory: fakeIDB });
+      const storage = await createIndexedDbStorage({
+        dbName: TEST_DB_NAME,
+        customFactory: fakeIDB,
+      });
       await storage.schedules.save(sampleSchedule);
 
       // Intento de actualización esperando versión 99 cuando en DB está en versión 1
@@ -328,7 +349,10 @@ describe("Persistencia Local: IndexedDB Storage & Repositories (Fase P2)", () =>
     });
 
     it("resuelve colisión de dos actualizaciones concurrentes con la misma versión: solo una triunfa", async () => {
-      const storage = await createIndexedDbStorage({ dbName: TEST_DB_NAME, customFactory: fakeIDB });
+      const storage = await createIndexedDbStorage({
+        dbName: TEST_DB_NAME,
+        customFactory: fakeIDB,
+      });
       await storage.schedules.save(sampleSchedule);
 
       // Rama A y Rama B intentan actualizar concurrentemente desde la versión 1
@@ -340,10 +364,7 @@ describe("Persistencia Local: IndexedDB Storage & Repositories (Fase P2)", () =>
       await updateA;
 
       await expect(
-        storage.schedules.save(
-          { ...sampleSchedule, updatedAt: "2026-10-12T11:00:00Z" },
-          1
-        )
+        storage.schedules.save({ ...sampleSchedule, updatedAt: "2026-10-12T11:00:00Z" }, 1)
       ).rejects.toThrow(StaleVersionConflictError);
 
       const finalState = await storage.schedules.getById(sampleSchedule.scheduleId);
@@ -354,8 +375,11 @@ describe("Persistencia Local: IndexedDB Storage & Repositories (Fase P2)", () =>
     });
 
     it("conserva íntegro el historial de appliedAdjustments y no produce escrituras parciales", async () => {
-      const storage = await createIndexedDbStorage({ dbName: TEST_DB_NAME, customFactory: fakeIDB });
-      
+      const storage = await createIndexedDbStorage({
+        dbName: TEST_DB_NAME,
+        customFactory: fakeIDB,
+      });
+
       const scheduleWithHistory: WeeklySchedule = {
         ...sampleSchedule,
         appliedAdjustments: [
@@ -407,15 +431,19 @@ describe("Persistencia Local: IndexedDB Storage & Repositories (Fase P2)", () =>
       });
       closeDatabase(db);
 
-      const storage = await createIndexedDbStorage({ dbName: TEST_DB_NAME, customFactory: fakeIDB });
-      await expect(storage.plans.getById("corrupt-plan")).rejects.toThrow(
-        InvalidRecordDataError
-      );
+      const storage = await createIndexedDbStorage({
+        dbName: TEST_DB_NAME,
+        customFactory: fakeIDB,
+      });
+      await expect(storage.plans.getById("corrupt-plan")).rejects.toThrow(InvalidRecordDataError);
       storage.close();
     });
 
     it("en memoria, un registro corrupto no bloquea la lectura de registros válidos independientes", async () => {
-      const storage = await createIndexedDbStorage({ dbName: TEST_DB_NAME, customFactory: fakeIDB });
+      const storage = await createIndexedDbStorage({
+        dbName: TEST_DB_NAME,
+        customFactory: fakeIDB,
+      });
       await storage.memories.save(sampleMemory);
 
       // Insertar directamente un registro inválido en memories
@@ -442,7 +470,10 @@ describe("Persistencia Local: IndexedDB Storage & Repositories (Fase P2)", () =>
   // ==========================================================================
   describe("5. Memoria, soberanía y separación de candidatos", () => {
     it("filtra recuerdos por categoría, certeza epistémica y vigencia temporal", async () => {
-      const storage = await createIndexedDbStorage({ dbName: TEST_DB_NAME, customFactory: fakeIDB });
+      const storage = await createIndexedDbStorage({
+        dbName: TEST_DB_NAME,
+        customFactory: fakeIDB,
+      });
 
       const memFact: MemoryItem = {
         id: "mem-fact",
@@ -496,7 +527,10 @@ describe("Persistencia Local: IndexedDB Storage & Repositories (Fase P2)", () =>
     });
 
     it("rechaza la persistencia de candidatos crudos que violen las invariantes epistémicas", async () => {
-      const storage = await createIndexedDbStorage({ dbName: TEST_DB_NAME, customFactory: fakeIDB });
+      const storage = await createIndexedDbStorage({
+        dbName: TEST_DB_NAME,
+        customFactory: fakeIDB,
+      });
 
       // Un recuerdo con fuente conversation_inference no puede tener confirmationStatus 'confirmed'
       const invalidEpistemicMemory = {
@@ -513,7 +547,9 @@ describe("Persistencia Local: IndexedDB Storage & Repositories (Fase P2)", () =>
         createdAt: "2026-10-12",
       };
 
-      await expect(storage.memories.save(invalidEpistemicMemory as unknown as MemoryItem)).rejects.toThrow();
+      await expect(
+        storage.memories.save(invalidEpistemicMemory as unknown as MemoryItem)
+      ).rejects.toThrow();
       expect(await storage.memories.getById("mem-unearned")).toBeNull();
 
       storage.close();
@@ -525,14 +561,20 @@ describe("Persistencia Local: IndexedDB Storage & Repositories (Fase P2)", () =>
   // ==========================================================================
   describe("6. Reanudación integral de sesión semanal", () => {
     it("recupera coherentemente el plan activo, la agenda vinculada y los recuerdos vigentes", async () => {
-      const storage1 = await createIndexedDbStorage({ dbName: TEST_DB_NAME, customFactory: fakeIDB });
+      const storage1 = await createIndexedDbStorage({
+        dbName: TEST_DB_NAME,
+        customFactory: fakeIDB,
+      });
       await storage1.plans.save(samplePlan);
       await storage1.schedules.save(sampleSchedule);
       await storage1.closeReports.save(sampleCloseReport);
       await storage1.memories.save(sampleMemory);
       storage1.close();
 
-      const storage2 = await createIndexedDbStorage({ dbName: TEST_DB_NAME, customFactory: fakeIDB });
+      const storage2 = await createIndexedDbStorage({
+        dbName: TEST_DB_NAME,
+        customFactory: fakeIDB,
+      });
       const session = await storage2.resumeSession();
 
       expect(session.activePlan?.planId).toBe(samplePlan.planId);

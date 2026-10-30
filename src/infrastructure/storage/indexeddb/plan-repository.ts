@@ -67,7 +67,8 @@ export class IndexedDbWeeklyPlanRepository implements WeeklyPlanRepository {
         plans.push(parseResult.data);
         cursor.continue();
       };
-      request.onerror = () => reject(request.error || new Error("Failed to query active plans cursor"));
+      request.onerror = () =>
+        reject(request.error || new Error("Failed to query active plans cursor"));
     });
 
     return plans;
@@ -112,7 +113,8 @@ export class IndexedDbWeeklyPlanRepository implements WeeklyPlanRepository {
         plans.push(parseResult.data);
         cursor.continue();
       };
-      request.onerror = () => reject(request.error || new Error("Failed to query draft plans cursor"));
+      request.onerror = () =>
+        reject(request.error || new Error("Failed to query draft plans cursor"));
     });
 
     return plans;
@@ -161,7 +163,13 @@ export class IndexedDbWeeklyPlanRepository implements WeeklyPlanRepository {
         const parseResult = StoredWeeklyPlanSchema.safeParse(raw);
         if (!parseResult.success) {
           const id = (raw as Record<string, unknown>)?.planId;
-          return reject(new InvalidRecordDataError(STORES.PLANS, typeof id === "string" ? id : "unknown", parseResult.error.issues));
+          return reject(
+            new InvalidRecordDataError(
+              STORES.PLANS,
+              typeof id === "string" ? id : "unknown",
+              parseResult.error.issues
+            )
+          );
         }
 
         if (parseResult.data.targetWeek.endDate === week.endDate) {
@@ -212,7 +220,10 @@ export class IndexedDbWeeklyPlanRepository implements WeeklyPlanRepository {
         plans.push(parseResult.data);
       } else {
         const id = (raw as Record<string, unknown>)?.planId;
-        logger.warn(`[IndexedDbWeeklyPlanRepository] Skipping corrupted plan record ID "${id}":`, parseResult.error.issues);
+        logger.warn(
+          `[IndexedDbWeeklyPlanRepository] Skipping corrupted plan record ID "${id}":`,
+          parseResult.error.issues
+        );
       }
     }
     return plans;

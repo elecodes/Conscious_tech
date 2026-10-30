@@ -184,16 +184,10 @@ function createDefaultItemAssessment(
   // Check dependencies: only causal "depends_on" between valid items implies dependency signal
   const validItemIds = new Set(input.items.map((i) => i.id));
   const isSourceOfDepends = input.relationships.some(
-    (r) =>
-      r.sourceItemId === item.id &&
-      r.type === "depends_on" &&
-      validItemIds.has(r.targetItemId)
+    (r) => r.sourceItemId === item.id && r.type === "depends_on" && validItemIds.has(r.targetItemId)
   );
   const isTargetOfDepends = input.relationships.some(
-    (r) =>
-      r.targetItemId === item.id &&
-      r.type === "depends_on" &&
-      validItemIds.has(r.sourceItemId)
+    (r) => r.targetItemId === item.id && r.type === "depends_on" && validItemIds.has(r.sourceItemId)
   );
 
   if (isSourceOfDepends || isTargetOfDepends) {
@@ -212,9 +206,7 @@ function createDefaultItemAssessment(
   const rawLower = item.rawText.toLowerCase();
   if (
     item.type !== "concern" &&
-    (isBlockedByConcern ||
-      rawLower.includes("frenada") ||
-      rawLower.includes("frenado"))
+    (isBlockedByConcern || rawLower.includes("frenada") || rawLower.includes("frenado"))
   ) {
     signals.push("waiting");
   }

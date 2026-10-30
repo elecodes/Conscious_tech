@@ -24,7 +24,9 @@ export function validateBuildWeekInput(input: BuildWeekInput): WeekInvariantVali
 
   // 1. Calendar validation
   if (!isValidCalendarDate(input.currentDate)) {
-    errors.push(`Invalid currentDate: "${input.currentDate}". Must be a valid real ISO calendar date.`);
+    errors.push(
+      `Invalid currentDate: "${input.currentDate}". Must be a valid real ISO calendar date.`
+    );
   }
 
   if (input.targetWeek) {
@@ -39,7 +41,9 @@ export function validateBuildWeekInput(input: BuildWeekInput): WeekInvariantVali
       isValidCalendarDate(input.targetWeek.endDate) &&
       input.targetWeek.startDate > input.targetWeek.endDate
     ) {
-      errors.push(`targetWeek.startDate ("${input.targetWeek.startDate}") must be <= targetWeek.endDate ("${input.targetWeek.endDate}").`);
+      errors.push(
+        `targetWeek.startDate ("${input.targetWeek.startDate}") must be <= targetWeek.endDate ("${input.targetWeek.endDate}").`
+      );
     }
   }
 
@@ -52,8 +56,14 @@ export function validateBuildWeekInput(input: BuildWeekInput): WeekInvariantVali
     itemIds.add(item.id);
 
     if (item.estimatedEffort) {
-      if (typeof item.estimatedEffort.value !== "number" || !Number.isFinite(item.estimatedEffort.value) || item.estimatedEffort.value <= 0) {
-        errors.push(`Item "${item.id}" has invalid estimatedEffort value: ${item.estimatedEffort.value}. Must be a positive finite number.`);
+      if (
+        typeof item.estimatedEffort.value !== "number" ||
+        !Number.isFinite(item.estimatedEffort.value) ||
+        item.estimatedEffort.value <= 0
+      ) {
+        errors.push(
+          `Item "${item.id}" has invalid estimatedEffort value: ${item.estimatedEffort.value}. Must be a positive finite number.`
+        );
       }
     }
   }
@@ -114,7 +124,9 @@ export function validateBuildWeekInput(input: BuildWeekInput): WeekInvariantVali
   const seenAssessmentGroupIds = new Set<string>();
   for (const groupAssessment of input.context.groupAssessments) {
     if (!groupIds.has(groupAssessment.groupId)) {
-      errors.push(`Context groupAssessment references nonexistent groupId: "${groupAssessment.groupId}".`);
+      errors.push(
+        `Context groupAssessment references nonexistent groupId: "${groupAssessment.groupId}".`
+      );
     }
     if (seenAssessmentGroupIds.has(groupAssessment.groupId)) {
       errors.push(`Duplicate context groupAssessment for groupId: "${groupAssessment.groupId}".`);
@@ -134,7 +146,8 @@ export function validateBuildWeekInput(input: BuildWeekInput): WeekInvariantVali
   if (input.capacity) {
     if (
       input.capacity.totalAvailableHours != null &&
-      (!Number.isFinite(input.capacity.totalAvailableHours) || input.capacity.totalAvailableHours < 0)
+      (!Number.isFinite(input.capacity.totalAvailableHours) ||
+        input.capacity.totalAvailableHours < 0)
     ) {
       errors.push(`Capacity totalAvailableHours must be a non-negative finite number.`);
     }
@@ -151,7 +164,9 @@ export function validateBuildWeekInput(input: BuildWeekInput): WeekInvariantVali
     if (input.capacity.daysWithConstraints) {
       for (const day of input.capacity.daysWithConstraints) {
         if (!Number.isFinite(day.availableHours) || day.availableHours < 0) {
-          errors.push(`Day constraint for "${day.day}" has invalid availableHours: ${day.availableHours}.`);
+          errors.push(
+            `Day constraint for "${day.day}" has invalid availableHours: ${day.availableHours}.`
+          );
         }
       }
     }
@@ -206,7 +221,8 @@ export function evaluateProposedWeekSemanticQuality(
     if (
       item.status !== "archived" &&
       item.type !== "idea" &&
-      (item.commitment === "external" || (item.type === "commitment" && item.commitment !== "personal"))
+      (item.commitment === "external" ||
+        (item.type === "commitment" && item.commitment !== "personal"))
     ) {
       externalCommitmentIds.add(item.id);
     }
@@ -311,7 +327,9 @@ export function evaluateProposedWeekSemanticQuality(
     );
     if (!inDeferredArchived) {
       archivedPreserved = false;
-      errors.push(`Archived item "${archId}" is not preserved in deferredItems with reason "archived".`);
+      errors.push(
+        `Archived item "${archId}" is not preserved in deferredItems with reason "archived".`
+      );
     }
   }
 
@@ -368,8 +386,12 @@ export function evaluateProposedWeekSemanticQuality(
           `Focus "${focus.id}" (${focus.title}) declared estimatedHours=${focus.estimatedHours}, but none of its contributing items have structured estimatedEffort.`
         );
       } else {
-        const expectedFocusHours = Math.round(knownContributingHours.reduce((sum, h) => sum + h, 0) * 100) / 100;
-        if (knownContributingHours.length === contributingItems.length && Math.abs(focus.estimatedHours - expectedFocusHours) > 0.05) {
+        const expectedFocusHours =
+          Math.round(knownContributingHours.reduce((sum, h) => sum + h, 0) * 100) / 100;
+        if (
+          knownContributingHours.length === contributingItems.length &&
+          Math.abs(focus.estimatedHours - expectedFocusHours) > 0.05
+        ) {
           noInventedEstimates = false;
           errors.push(
             `Focus "${focus.id}" (${focus.title}) declared estimatedHours=${focus.estimatedHours}, which contradicts sum of contributing items (${expectedFocusHours}h).`
@@ -517,7 +539,11 @@ export function evaluateProposedWeekSemanticQuality(
   // 9. Integrity of deferredItems and not_scheduled rationale
   for (const def of proposal.deferredItems) {
     if (def.reason === "not_scheduled") {
-      if (/(el\s+usuario\s+decidi|decisi(ó|o)n\s+del\s+usuario|usuario\s+pospuso|decidi(ó|o)\s+posponer)/i.test(def.rationale)) {
+      if (
+        /(el\s+usuario\s+decidi|decisi(ó|o)n\s+del\s+usuario|usuario\s+pospuso|decidi(ó|o)\s+posponer)/i.test(
+          def.rationale
+        )
+      ) {
         errors.push(
           `Item "${def.itemId}" (${def.title}) was deferred with reason "not_scheduled", but its rationale falsely asserts a deliberate user decision to postpone.`
         );

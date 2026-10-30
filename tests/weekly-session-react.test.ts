@@ -243,9 +243,7 @@ describe("Fase P4 — Integración de WeeklySessionService con React (Controller
           endTime: "11:00",
         },
       ],
-      dailyAllocations: [
-        { day: "2026-11-02", allocatedHours: 2, itemId: "task-audit" },
-      ],
+      dailyAllocations: [{ day: "2026-11-02", allocatedHours: 2, itemId: "task-audit" }],
       appliedAdjustments: [],
       createdAt: "2026-10-12T08:00:00Z",
       updatedAt: "2026-10-12T08:00:00Z",
@@ -691,4 +689,3 @@ describe("Fase P4 — Integración de WeeklySessionService con React (Controller
     expect(recoveredClose?.output.status).toBe("success");
   });
 });
-

@@ -15,6 +15,7 @@
 The first capability of the product is processing unconstrained natural language brain dumps (written or spoken) into structured units without turning the tool into an aggressive productivity tracker or generating cognitive pressure.
 
 During early prototyping with LLMs, several failure modes appeared:
+
 1. **Over-inferring commitments:** Tagging ordinary workplace tasks or items mentioning another person as `commitment: "external"`, and tagging personal tasks as `commitment: "personal"`.
 2. **Pressure hallucination:** Converting doubts, curiosities, and conditional ideas ("if I have time", "maybe look into X") into actionable, pending tasks.
 3. **Date hallucination:** Resolving broad temporal windows ("in November", "this week") into artificial exact ISO calendar deadlines.
@@ -25,18 +26,18 @@ During early prototyping with LLMs, several failure modes appeared:
 
 ## Decision Drivers
 
-* **Fidelity over completeness:** Preserve exactly what the user expressed; never assume or invent unstated data.
-* **Deterministic code over AI:** If something can be computed reliably with code (date math, capacity calculation, schema validation), do not delegate it to an LLM.
-* **Low-cost & free-tier first:** Decouple domain logic from LLM vendors and enable zero-token test suites.
-* **Controlled memory lifecycle:** Acknowledge that consciously deciding *not* to do something or archiving an initiative is a first-class decision.
+- **Fidelity over completeness:** Preserve exactly what the user expressed; never assume or invent unstated data.
+- **Deterministic code over AI:** If something can be computed reliably with code (date math, capacity calculation, schema validation), do not delegate it to an LLM.
+- **Low-cost & free-tier first:** Decouple domain logic from LLM vendors and enable zero-token test suites.
+- **Controlled memory lifecycle:** Acknowledge that consciously deciding _not_ to do something or archiving an initiative is a first-class decision.
 
 ---
 
 ## Considered Options
 
-1. **Monolithic agent prompt:** Rely on a general-purpose prompt that extracts, prioritizes, groups, and plans the week in one pass. *(Rejected: produces high hallucination, black-box decisions, and removes user agency).*
-2. **Vendor-locked implementation:** Direct integration with Groq or OpenAI APIs within domain handlers. *(Rejected: leaks infrastructure details, breaks test determinism, incurs token costs during CI).*
-3. **Layered architecture with conservative extraction & provider abstraction:** Pure domain schemas with Zod, an `AIProvider` interface, an ultra-conservative `extract_items` skill, and deterministic mock golden fixtures. *(Accepted).*
+1. **Monolithic agent prompt:** Rely on a general-purpose prompt that extracts, prioritizes, groups, and plans the week in one pass. _(Rejected: produces high hallucination, black-box decisions, and removes user agency)._
+2. **Vendor-locked implementation:** Direct integration with Groq or OpenAI APIs within domain handlers. _(Rejected: leaks infrastructure details, breaks test determinism, incurs token costs during CI)._
+3. **Layered architecture with conservative extraction & provider abstraction:** Pure domain schemas with Zod, an `AIProvider` interface, an ultra-conservative `extract_items` skill, and deterministic mock golden fixtures. _(Accepted)._
 
 ---
 
@@ -65,11 +66,13 @@ We decided to implement:
 ## Consequences
 
 ### Positive
+
 - Zero token cost during CI and local unit test execution.
 - Clear separation between raw extraction (`extract_items`) and higher-order skills (`detect_relationships`, `build_week`).
 - Faithful preservation of user intent without unwanted productivity pressure.
 - Easy benchmarking across different LLM backends (Groq `qwen/qwen3.8-27b`, Gemini `gemini-2.5-flash`).
 
 ### Negative / Trade-offs
+
 - Relative date math ("next Tuesday" vs "this Tuesday") requires an upcoming deterministic calendar resolver module rather than relying on LLM resolution.
 - Prompts must remain strictly guarded against model drift toward over-helpfulness.

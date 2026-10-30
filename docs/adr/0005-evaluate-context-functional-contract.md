@@ -9,12 +9,14 @@
 ## 1. Context and Problem Statement
 
 Following the incremental pipeline of **Conscious Tech**:
+
 1. **Skill 01 (`extract_items`)**: Extracts structured items (`task`, `project`, `idea`, `commitment`, `concern`) from natural language brain dumps.
 2. **Skill 02 (`detect_relationships`)**: Identifies pairwise semantic links (`same_project`, `same_objective`, `part_of`, `depends_on`, `related_to`, `duplicate`).
 3. **Skill 03 (`group_work`)**: Synthesizes items into coherent lines of attention (`WorkGroup[]` and `ungroupedItemIds`).
 4. **Skill 04 (`detect_deadlines`)**: Extracts and normalizes temporal constraints (`DetectedDeadlines`) anchored to an explicit base date.
 
 Before constructing a realistic week (Skill 06 `build_week`), the system needs to assess the **situational context** of each task and each line of work:
+
 - What obligations or external promises exist?
 - What temporal pressure or upcoming horizons are present?
 - What work has already started?
@@ -26,6 +28,7 @@ Before constructing a realistic week (Skill 06 `build_week`), the system needs t
 ### The Core Risk: Premature Planning & AI Overreach
 
 Without strict functional boundaries, an evaluation skill tends to overreach by:
+
 - Deciding what the user "should" do first.
 - Arbitrarily picking the 2–3 weekly focus areas.
 - Scoring items into a single mechanical priority ranking.
@@ -34,6 +37,7 @@ Without strict functional boundaries, an evaluation skill tends to overreach by:
 - Mandating sacrifices ("drop task X to do task Y").
 
 In accordance with our core principle:
+
 > **AI proposes. The person decides.**
 
 Skill 05 must **illuminate context and explain the situation**, leaving scheduling, trade-off decisions, and capacity planning strictly to downstream stages and the person.
@@ -96,6 +100,7 @@ export type EvaluateContextInput = {
 ```
 
 ### Architectural Decision on `DeclaredGoal`:
+
 - `DeclaredGoal` represents long-term or explicit objectives directly formulated by the user (e.g. "Lanzar MVP en octubre", "Aprobar certificación AWS").
 - **Optional nature**: `declaredGoals` is strictly optional (`declaredGoals?: DeclaredGoal[]`).
 - **Zero-inference rule**: If omitted or empty, Skill 05 **must never infer or extract goals from brain dump items**. Goals are first-class user statements, not AI deductions.
@@ -166,28 +171,29 @@ export type EvaluateContextOutput = {
 
 ### 5.3 Evidence Criteria for Context Signals
 
-| Signal | Required Factual Evidence in Inputs |
-| :--- | :--- |
-| `external_commitment` | `item.commitment === "external"` |
-| `approaching_deadline` | `deadlines` contains entry for `itemId` with `resolvedStart` or `resolvedEnd` within current weekly planning window ($\le 7$ days from `currentDate`). |
-| `overdue_deadline` | `deadlines` contains entry for `itemId` with terminal date `< currentDate`. |
-| `explicit_importance` | `item.importance === "high"` (or explicitly stated in raw text). |
-| `already_started` | `item.status === "started"`. |
-| `dependency` | Item appears as `sourceItemId` or `targetItemId` in a `depends_on` relationship, or is a prerequisite `part_of`. |
-| `supports_declared_goal` | Explicit semantic relationship between the item and one of the `declaredGoals`. |
-| `waiting` | Item is blocked by an uncompleted dependency or waiting on a third-party response. |
-| `insufficient_information` | Item has missing deadline, ambiguous commitment, or unclear scope when assessing situational gravity. |
+| Signal                     | Required Factual Evidence in Inputs                                                                                                                    |
+| :------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `external_commitment`      | `item.commitment === "external"`                                                                                                                       |
+| `approaching_deadline`     | `deadlines` contains entry for `itemId` with `resolvedStart` or `resolvedEnd` within current weekly planning window ($\le 7$ days from `currentDate`). |
+| `overdue_deadline`         | `deadlines` contains entry for `itemId` with terminal date `< currentDate`.                                                                            |
+| `explicit_importance`      | `item.importance === "high"` (or explicitly stated in raw text).                                                                                       |
+| `already_started`          | `item.status === "started"`.                                                                                                                           |
+| `dependency`               | Item appears as `sourceItemId` or `targetItemId` in a `depends_on` relationship, or is a prerequisite `part_of`.                                       |
+| `supports_declared_goal`   | Explicit semantic relationship between the item and one of the `declaredGoals`.                                                                        |
+| `waiting`                  | Item is blocked by an uncompleted dependency or waiting on a third-party response.                                                                     |
+| `insufficient_information` | Item has missing deadline, ambiguous commitment, or unclear scope when assessing situational gravity.                                                  |
 
 ### 5.4 Asymmetric Dependency Propagation Rule
 
 - If Task A depends on Task B (`Task A -> depends_on -> Task B`), Task B is a **prerequisite**.
 - If Task A has an approaching deadline or is an external commitment, Task B gains situational attention because it **unblocks** Task A.
-- However, Task B **does NOT inherit** Task A's deadline date or commitment type. Each item retains its own authentic attributes. The rationale must explicitly explain: *"Task B requires attention because it unblocks Task A which is due on [Date]"*.
+- However, Task B **does NOT inherit** Task A's deadline date or commitment type. Each item retains its own authentic attributes. The rationale must explicitly explain: _"Task B requires attention because it unblocks Task A which is due on [Date]"_.
 - Similarly, if Task B is delayed, Task A cannot proceed (`waiting` signal on Task A).
 
 ### 5.5 Threshold for `openQuestions`
 
 To avoid cognitive noise and respect the user's peace of mind:
+
 - **Only ask when ambiguity actively blocks situational clarity**:
   - Example: A blocking task has an external commitment, but its date or scope is completely unknown.
   - Example: A critical conflict exists between two mutually exclusive dependencies.
@@ -226,7 +232,7 @@ Consistent with our deterministic engine patterns in Skills 01–04, the followi
 
 1. **Representation of Ungrouped Items in Group Assessments**:
    - Skill 03 outputs `groups: WorkGroup[]` and `ungroupedItemIds: string[]`.
-   - *Adopted contract:* `groupAssessments` evaluates existing `groups` (lines of attention). Ungrouped items are individually evaluated in `itemAssessments`. Downstream planning (Skill 06) consumes both seamlessly.
+   - _Adopted contract:_ `groupAssessments` evaluates existing `groups` (lines of attention). Ungrouped items are individually evaluated in `itemAssessments`. Downstream planning (Skill 06) consumes both seamlessly.
 2. **Calibration of Approaching Horizon Window**:
    - The operational threshold for `approaching_deadline` is set to $\le 7$ days from `currentDate` (matching the weekly planning scope).
 3. **Integration with Golden Cases Dataset**:
@@ -238,10 +244,10 @@ Consistent with our deterministic engine patterns in Skills 01–04, the followi
 
 1. **Strict "Code before AI" for `dependency` Signal**:
    - Semantic evaluation via LLM tended to assign `dependency` to composition relations (`part_of`) or thematic links (`related_to`, `same_project`).
-   - *Resolution:* Strictly enforced in `prompt.ts` and guaranteed deterministically in `cleanAndValidateContextOutput`: the `dependency` signal is only valid if backed by an explicit, valid `depends_on` relationship between input items. Spurious signals are purged by code.
+   - _Resolution:_ Strictly enforced in `prompt.ts` and guaranteed deterministically in `cleanAndValidateContextOutput`: the `dependency` signal is only valid if backed by an explicit, valid `depends_on` relationship between input items. Spurious signals are purged by code.
 2. **Objective `waiting` Signal**:
    - Being blocked by a third party describes situational friction, not an automatic devaluation of user attention.
-   - *Resolution:* Items in `waiting` preserve `high` or `medium` attention when upcoming deadlines, gravity, or follow-up actions demand it (e.g. Case 06 Stripe integration).
+   - _Resolution:_ Items in `waiting` preserve `high` or `medium` attention when upcoming deadlines, gravity, or follow-up actions demand it (e.g. Case 06 Stripe integration).
 3. **Exploratory & Optional Items**:
    - Items explicitly qualified as optional ("si me da tiempo", "si tengo un rato") or exploratory preserve `low` attention even if calendar deadlines or proximity are present (e.g. Case 03, Case 22).
 4. **Verification & Invariant Health**:

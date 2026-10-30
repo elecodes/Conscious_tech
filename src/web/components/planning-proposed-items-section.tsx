@@ -32,15 +32,42 @@ export function PlanningProposedItemsSection({
       {/* Weekly Foci */}
       {proposedWeek.foci.length > 0 && (
         <div style={{ marginTop: "24px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px", marginBottom: "4px" }}>
-            <h4 style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "1.25rem" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              flexWrap: "wrap",
+              gap: "8px",
+              marginBottom: "4px",
+            }}
+          >
+            <h4
+              style={{
+                margin: 0,
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "1.25rem",
+              }}
+            >
               <span>🔖</span> Tus {proposedWeek.foci.length} Focos de Atención
             </h4>
-            <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "0.85rem", color: "var(--text-muted)" }}>
+            <span
+              style={{
+                fontFamily: "var(--font-serif)",
+                fontStyle: "italic",
+                fontSize: "0.85rem",
+                color: "var(--text-muted)",
+              }}
+            >
               donde reside mi mente
             </span>
           </div>
-          <span className="calm-muted" style={{ fontSize: "0.82rem", display: "block", marginBottom: "14px" }}>
+          <span
+            className="calm-muted"
+            style={{ fontSize: "0.82rem", display: "block", marginBottom: "14px" }}
+          >
             Focos principales ({proposedWeek.foci.length})
           </span>
 
@@ -65,16 +92,40 @@ export function PlanningProposedItemsSection({
                   }}
                   data-testid={`proposed-focus-${focus.id}`}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "6px" }}>
-                    <span className="badge" style={{ background: "#edf3ee", color: "#2d4233", border: "1px solid #c8d9cc", fontWeight: 600 }}>
-                      FOCO {romanLabel}{focus.estimatedHours !== null ? ` · ${focus.estimatedHours}H` : ""}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "10px",
+                      flexWrap: "wrap",
+                      gap: "6px",
+                    }}
+                  >
+                    <span
+                      className="badge"
+                      style={{
+                        background: "#edf3ee",
+                        color: "#2d4233",
+                        border: "1px solid #c8d9cc",
+                        fontWeight: 600,
+                      }}
+                    >
+                      FOCO {romanLabel}
+                      {focus.estimatedHours !== null ? ` · ${focus.estimatedHours}H` : ""}
                     </span>
                     <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                       <button
                         type="button"
                         className="secondary small"
                         data-testid={`focus-add-to-gcal-${focus.id}`}
-                        style={{ fontSize: "0.78rem", padding: "2px 8px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                        style={{
+                          fontSize: "0.78rem",
+                          padding: "2px 8px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
                         title="Abrir y guardar en Google Calendar con 1 clic"
                         onClick={() => {
                           const gcalUrl = buildGoogleCalendarTemplateUrl({
@@ -110,7 +161,8 @@ export function PlanningProposedItemsSection({
                       style={{ fontSize: "0.8rem", marginTop: "2px", color: "#b45309" }}
                       data-testid={`focus-original-deadline-${focus.id}`}
                     >
-                      📅 Fecha límite original: <strong>{originalDueDate}</strong> (vencida antes del inicio de la semana)
+                      📅 Fecha límite original: <strong>{originalDueDate}</strong> (vencida antes
+                      del inicio de la semana)
                     </div>
                   )}
 
@@ -123,12 +175,23 @@ export function PlanningProposedItemsSection({
                     </div>
                   </div>
 
-                  <div className="calm-muted" style={{ fontSize: "0.82rem", marginTop: "10px", fontStyle: "italic" }}>
+                  <div
+                    className="calm-muted"
+                    style={{ fontSize: "0.82rem", marginTop: "10px", fontStyle: "italic" }}
+                  >
                     <em>Fundamentación:</em> {focus.rationale}
                   </div>
 
                   {/* Actions on Focus */}
-                  <div style={{ display: "flex", gap: "8px", marginTop: "12px", flexWrap: "wrap", alignItems: "center" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      marginTop: "12px",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                    }}
+                  >
                     <button
                       type="button"
                       className="secondary small"
@@ -142,7 +205,9 @@ export function PlanningProposedItemsSection({
                       className="secondary small"
                       onClick={() => {
                         setEditingProposalItemId(focus.id);
-                        setProposalItemHoursInput(focus.estimatedHours !== null ? String(focus.estimatedHours) : "");
+                        setProposalItemHoursInput(
+                          focus.estimatedHours !== null ? String(focus.estimatedHours) : ""
+                        );
                       }}
                       data-testid={`adjust-focus-hours-${focus.id}`}
                     >
@@ -181,7 +246,10 @@ export function PlanningProposedItemsSection({
                         type="button"
                         className="primary small"
                         onClick={() => {
-                          const val = proposalItemHoursInput.trim() !== "" ? Number(proposalItemHoursInput) : null;
+                          const val =
+                            proposalItemHoursInput.trim() !== ""
+                              ? Number(proposalItemHoursInput)
+                              : null;
                           handleSaveProposalItemHours(focus.id, val);
                         }}
                         data-testid={`save-hours-${focus.id}`}
@@ -237,13 +305,23 @@ export function PlanningProposedItemsSection({
                 )}
 
                 {/* Actions on Obligation */}
-                <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    marginTop: "8px",
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                  }}
+                >
                   <button
                     type="button"
                     className="secondary small"
                     onClick={() => {
                       setEditingProposalItemId(ob.itemId);
-                      setProposalItemHoursInput(ob.estimatedHours !== null ? String(ob.estimatedHours) : "");
+                      setProposalItemHoursInput(
+                        ob.estimatedHours !== null ? String(ob.estimatedHours) : ""
+                      );
                     }}
                     data-testid={`adjust-obligation-hours-${ob.itemId}`}
                   >
@@ -253,7 +331,13 @@ export function PlanningProposedItemsSection({
                     type="button"
                     className="secondary small"
                     data-testid={`obligation-add-to-gcal-${ob.itemId}`}
-                    style={{ fontSize: "0.8rem", padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                    style={{
+                      fontSize: "0.8rem",
+                      padding: "3px 8px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
                     title="Abrir y guardar en Google Calendar con 1 clic"
                     onClick={() => {
                       const gcalUrl = buildGoogleCalendarTemplateUrl({
@@ -301,7 +385,10 @@ export function PlanningProposedItemsSection({
                       type="button"
                       className="primary small"
                       onClick={() => {
-                        const val = proposalItemHoursInput.trim() !== "" ? Number(proposalItemHoursInput) : null;
+                        const val =
+                          proposalItemHoursInput.trim() !== ""
+                            ? Number(proposalItemHoursInput)
+                            : null;
                         handleSaveProposalItemHours(ob.itemId, val);
                       }}
                       data-testid={`save-hours-${ob.itemId}`}
@@ -340,7 +427,15 @@ export function PlanningProposedItemsSection({
                 style={{ padding: "8px 12px", background: "#fbfbfb" }}
                 data-testid={`proposed-flexible-item-${opt.itemId}`}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "6px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                    flexWrap: "wrap",
+                    gap: "6px",
+                  }}
+                >
                   <strong>{opt.title}</strong>
                   <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                     <span className="badge badge-idea">Flexible</span>
@@ -356,14 +451,26 @@ export function PlanningProposedItemsSection({
                 )}
 
                 {/* Actions on Flexible Option */}
-                <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    marginTop: "10px",
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                  }}
+                >
                   <button
                     type="button"
                     className="primary small"
                     onClick={() => handlePromoteFlexibleToFocus(opt.itemId)}
                     data-testid={`promote-flexible-to-focus-${opt.itemId}`}
                     disabled={proposedWeek.foci.length >= 3}
-                    title={proposedWeek.foci.length >= 3 ? "Límite máximo de 3 focos alcanzado" : "Elegir como foco principal de la semana"}
+                    title={
+                      proposedWeek.foci.length >= 3
+                        ? "Límite máximo de 3 focos alcanzado"
+                        : "Elegir como foco principal de la semana"
+                    }
                   >
                     ⭐ Elegir como foco
                   </button>
@@ -372,7 +479,9 @@ export function PlanningProposedItemsSection({
                     className="secondary small"
                     onClick={() => {
                       setEditingProposalItemId(opt.itemId);
-                      setProposalItemHoursInput(opt.estimatedHours !== null ? String(opt.estimatedHours) : "");
+                      setProposalItemHoursInput(
+                        opt.estimatedHours !== null ? String(opt.estimatedHours) : ""
+                      );
                     }}
                     data-testid={`adjust-flexible-hours-${opt.itemId}`}
                   >
@@ -382,7 +491,13 @@ export function PlanningProposedItemsSection({
                     type="button"
                     className="secondary small"
                     data-testid={`flexible-add-to-gcal-${opt.itemId}`}
-                    style={{ fontSize: "0.8rem", padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                    style={{
+                      fontSize: "0.8rem",
+                      padding: "3px 8px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
                     title="Abrir y guardar en Google Calendar con 1 clic"
                     onClick={() => {
                       const gcalUrl = buildGoogleCalendarTemplateUrl({
@@ -430,7 +545,10 @@ export function PlanningProposedItemsSection({
                       type="button"
                       className="primary small"
                       onClick={() => {
-                        const val = proposalItemHoursInput.trim() !== "" ? Number(proposalItemHoursInput) : null;
+                        const val =
+                          proposalItemHoursInput.trim() !== ""
+                            ? Number(proposalItemHoursInput)
+                            : null;
                         handleSaveProposalItemHours(opt.itemId, val);
                       }}
                       data-testid={`save-hours-${opt.itemId}`}

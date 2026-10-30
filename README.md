@@ -140,7 +140,9 @@ cases/
 ```
 
 ### Skill 01: `extract_items`
+
 Converts unstructured natural language (brain dumps) into structured, faithful items:
+
 - **Types**: `task`, `project`, `idea`, `commitment`, `concern`
 - **Statuses**: `pending`, `started`, `exploring`, `archived`
 - **Commitments**: `external` (strict third-party commitments only), `personal` (explicit self-promises only), `none`
@@ -148,25 +150,33 @@ Converts unstructured natural language (brain dumps) into structured, faithful i
 - **Effort & Importance**: Extracted exclusively when explicitly declared by the user
 
 ### Skill 02: `detect_relationships`
+
 Detects semantic links between items without grouping or prioritizing:
+
 - **Relationship Types**: `same_project`, `same_objective`, `related_to`, `part_of`, `depends_on`, `blocks` (canonicalized to `depends_on`), `duplicate`
 - **Strict Semantic Boundaries**: Concerns remain completely isolated, pre-conditions are strictly `depends_on` (not `part_of`), `related_to` rejects co-existence or "mientras tanto" workarounds, and mutual exclusion prevents redundant simultaneous `depends_on` and `part_of`.
 - **Deterministic post-processing**: Short-circuits inputs < 2 items, strips self-relations and invalid IDs, deduplicates symmetric edges with canonical sorting.
 
 ### Skill 03: `group_work`
+
 Synthesizes items into coherent lines of attention without deciding weekly priorities or capacities:
+
 - **Output**: Disjoint `WorkGroup` entities (`title`, `itemIds`, `rationale`) and `ungroupedItemIds`.
 - **Deterministic Invariant Engine**: Guarantees total item conservation (no lost items, no phantom items), disjoint partitions (no item in two groups), and group dissolution if $< 2$ items.
 - **Short-circuits**: Returns in 0ms (0 tokens) for empty inputs, single items, or items with zero relationships.
 
 ### Skill 04: `detect_deadlines`
+
 Detects and normalizes explicit and relative temporal constraints without prioritizing or scheduling:
+
 - **Output**: Structured `DetectedDeadlines` (`itemId`, `raw`, `kind`, `resolvedStart`, `resolvedEnd`, `confidence`).
 - **Core Principle**: Never invent a date. Distinguishes deadlines from past narrative context ("El viernes estuve hablando con Marta"). Discards vague desires ("algún día", "cuando estemos más tranquilos").
 - **Deterministic Engine**: Pure UTC date math relative to `currentDate` ("hoy", "mañana", "este fin de semana", weekdays), calendar validity verification (`YYYY-MM-DD`), and range consistency (`resolvedStart <= resolvedEnd`).
 
 ### Skill 05: `evaluate_context`
+
 Evaluates situational context, attention levels, and relevance for tasks and work groups without deciding weekly focus or schedules:
+
 - **Output**: Structured `EvaluateContextOutput` (`itemAssessments`, `groupAssessments`, `openQuestions`).
 - **Signal Taxonomy**: `external_commitment`, `approaching_deadline`, `overdue_deadline`, `explicit_importance`, `already_started`, `dependency`, `supports_declared_goal`, `waiting`, `insufficient_information`.
 - **Core Principles**: Never plan or allocate hours; never invent unstated goals or deadlines; treat missing data as `unclear` instead of low importance; dependencies do not symmetrically clone deadline dates.
@@ -180,7 +190,9 @@ Evaluates situational context, attention levels, and relevance for tasks and wor
 - **Calibration**: Validated across all 25 calibration brain dumps with Mock and Groq (`qwen/qwen3.8-27b`) with 0 invariant violations.
 
 ### Skill 06: `build_week`
+
 Synthesizes evaluated context and constraints into a realistic, calm, human-centered weekly focus proposal without taking over user decisions:
+
 - **Output**: Structured `ProposedWeek` (`weekSummary` with plannable & protected space capacity, `foci` 0..3, `obligations`, `flexibleOptions`, `deferredItems`, `unplannedSpace`, `confirmationPrompt`).
 - **Core Principles**: "AI proposes. The person decides." Never plan 100% capacity (minimum 25–30% protected space). Never invent hours or preferences (`unknown` status when unstated). 100% item conservation (0 dropped items, 0 phantom IDs, 0 duplicates). Urgent wording does not invent contractual obligations.
 - **Deterministic Invariant Engine & "Code before AI"**:
@@ -193,10 +205,12 @@ Synthesizes evaluated context and constraints into a realistic, calm, human-cent
   - 25/25 sample brain dump fixtures evaluated with real Groq (`qwen/qwen3.8-27b`).
   - 25 clean passes, 0 repairs, 0 failures.
   - Validation semántica aprobada con observaciones de producto registradas (tareas puntuales pre-semana, seguimiento de delegación y diferenciación visual de compromisos futuros).
-  - *Nota*: La cobertura de evaluación calibra el comportamiento pero no garantiza ausencia absoluta de errores en producción.
+  - _Nota_: La cobertura de evaluación calibra el comportamiento pero no garantiza ausencia absoluta de errores en producción.
 
 ### Skill 07: `analyze_change`
+
 Evaluates and explains the impact of mid-week changes, unexpected inputs, and trade-offs against an active weekly plan without taking over user decisions:
+
 - **Output**: Structured `AnalyzeChangeOutput` (`status`, `changeType`, `summary`, `affectedElements`, `capacityImpact`, `unaffectedAreas`, `validationErrors`, `requiresUserIntervention`, `interventionReason`).
 - **Change Taxonomy**: `new_item`, `drop_item`, `modified_item`, `deadline_change`, `dependency_change`, `capacity_change`, `mixed_change`, `none_detected`.
 - **Core Principles**: Read-only analysis (the active plan is never modified, regenerated, or replaced). Explain what is affected without resolving conflicts or dictating priorities. Past deadlines communicate risk without forcing plan re-creation. Unblocking dependencies informs without requiring user intervention.
@@ -208,7 +222,9 @@ Evaluates and explains the impact of mid-week changes, unexpected inputs, and tr
 - **Test Suite**: 34 unit and regression tests covering delta operations, capacity arithmetic, causal graphs, reference validation, and all 10 agreed change fixtures.
 
 ### Skill 08: `detect_conflict`
+
 Detects objective and structural incompatibilities within the active plan or against incoming changes without modifying state or dictating solutions:
+
 - **Output**: Structured `DetectConflictOutput` (`status`, `summary`, `conflicts`, `unconflictedAreas`, `hasBlockingConflicts`).
 - **Conflict Taxonomy**: `capacity_deficit`, `blocked_by_dependency`, `deadline_incompatibility`, `schedule_overlap`.
 - **Core Principles**: "Code before AI" (100% deterministic engine). Objective conflicts must be backed by verifiable metrics (`hours_balance`, `fixed_time_interval`, `dependency_state`, `calendar_dates`). `potential` and `insufficient_information` warnings never trigger `hasBlockingConflicts: true`.
@@ -223,15 +239,18 @@ Detects objective and structural incompatibilities within the active plan or aga
 ## Quick Start
 
 ### Prerequisites
+
 - Node.js `>= 20` (Node 22 recommended)
 - npm
 
 ### 1. Install Dependencies
+
 ```bash
 npm install
 ```
 
 ### 2. Configure Environment (Optional)
+
 Create a `.env` file (see `.env.example`) or configure credentials directly in the web UI:
 
 ```bash
@@ -248,26 +267,34 @@ GEMINI_MODEL=gemini-2.5-flash
 ```
 
 ### 3. Run Development UI
+
 ```bash
 npm run dev
 ```
+
 Open `http://localhost:5173` to test brain dumps interactively, select real-world cases, switch providers, and inspect raw JSON outputs.
 
 ### 4. Run Test Suite
+
 Unit, behavioral, and security tests run deterministically with zero token consumption (860+ tests across 62 suites):
+
 ```bash
 npm test
 ```
 
 ### 5. Development & Local Proxies
+
 The web UI communicates with local Vite development middleware endpoints (`/api/ai` and `/api/calendar/fetch-ical`) configured in `vite.config.ts`:
+
 - `/api/ai`: Forwards LLM requests while keeping `GROQ_API_KEY` and `GEMINI_API_KEY` secure on the server side, with in-memory sliding window rate limiting and credential redaction.
 - `/api/calendar/fetch-ical`: Fetches external iCal calendars to calculate real committed hours without browser CORS restrictions. Protected with deep DNS-level SSRF validation (blocking loopback, RFC 1918, CGNAT, link-local, and reserved IP ranges), manual redirect hopping validation, and a strict 5 MB streaming body limit. Calendar URLs are transmitted via `POST` body to prevent credential leakage in server access logs.
 
 > **Warning:** These proxies run exclusively as local Vite middleware (`vite` and `vite preview`) for local-first development. They are dev-only and must never be exposed to the local network or public internet using `vite --host`. Origin validation restricts requests to localhost or an explicit `ALLOWED_ORIGINS` allowlist, and an optional shared secret can be required via `AI_PROXY_TOKEN`.
 
 ### 6. Run Batch Evaluation
+
 Evaluate the 25 calibration brain dumps through the CLI runner:
+
 ```bash
 # Deterministic mock (0 tokens)
 npm run eval -- --provider=mock
@@ -280,6 +307,7 @@ npm run eval -- --provider=groq --case=case-01
 ```
 
 ### 7. Typecheck & Build
+
 ```bash
 npm run typecheck
 npm run build

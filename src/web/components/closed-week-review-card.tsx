@@ -39,8 +39,7 @@ export function ClosedWeekReviewCard({
       >
         <h3>Última semana cerrada</h3>
         <span className="badge badge-muted">
-          {latestClosedWeek.plan.targetWeek.startDate} al{" "}
-          {latestClosedWeek.plan.targetWeek.endDate}
+          {latestClosedWeek.plan.targetWeek.startDate} al {latestClosedWeek.plan.targetWeek.endDate}
         </span>
       </div>
       <p className="calm-text" style={{ marginTop: "8px" }}>
@@ -51,10 +50,10 @@ export function ClosedWeekReviewCard({
           Cerrada el: {latestClosedWeek.closeReport.closedAt}
         </span>
         <span className="badge badge-muted">
-          Completadas:{" "}
-          {latestClosedWeek.closeReport.output.itemDispositions.completed.length}
+          Completadas: {latestClosedWeek.closeReport.output.itemDispositions.completed.length}
         </span>
-        {latestClosedWeek.closeReport.output.reflectiveSummary.consciousPostponements.length > 0 && (
+        {latestClosedWeek.closeReport.output.reflectiveSummary.consciousPostponements.length >
+          0 && (
           <span className="badge badge-idea">
             Postergadas:{" "}
             {latestClosedWeek.closeReport.output.reflectiveSummary.consciousPostponements.length}
@@ -62,8 +61,7 @@ export function ClosedWeekReviewCard({
         )}
         {latestClosedWeek.closeReport.output.itemDispositions.dropped.length > 0 && (
           <span className="badge badge-muted">
-            Descartadas:{" "}
-            {latestClosedWeek.closeReport.output.itemDispositions.dropped.length}
+            Descartadas: {latestClosedWeek.closeReport.output.itemDispositions.dropped.length}
           </span>
         )}
       </div>
@@ -99,7 +97,11 @@ export function ClosedWeekReviewCard({
           data-testid="reopen-closed-week-button"
           disabled={isReopening}
           onClick={() => handleReopenWeek(latestClosedWeek.plan.planId)}
-          style={{ fontSize: "0.88rem", padding: "6px 12px", cursor: isReopening ? "not-allowed" : "pointer" }}
+          style={{
+            fontSize: "0.88rem",
+            padding: "6px 12px",
+            cursor: isReopening ? "not-allowed" : "pointer",
+          }}
         >
           {isReopening ? "Reabriendo semana..." : "Reabrir semana para modificar"}
         </button>
@@ -148,10 +150,18 @@ export function ClosedWeekReviewCard({
                       borderRadius: "6px",
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "baseline",
+                      }}
+                    >
                       <strong>{focus.title}</strong>
                       <span className="badge badge-task">
-                        {focus.estimatedHours ? `${focus.estimatedHours}h estimadas` : "Sin estimación"}
+                        {focus.estimatedHours
+                          ? `${focus.estimatedHours}h estimadas`
+                          : "Sin estimación"}
                       </span>
                     </div>
                     {focus.desiredOutcome && (
@@ -173,8 +183,18 @@ export function ClosedWeekReviewCard({
           {/* 2. Obligaciones y Compromisos */}
           {latestClosedWeek.plan.proposal.obligations.length > 0 && (
             <div style={{ marginBottom: "16px" }}>
-              <h4 style={{ fontSize: "0.95rem", marginBottom: "8px" }}>Obligaciones y compromisos fijos</h4>
-              <ul style={{ margin: 0, paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "6px" }}>
+              <h4 style={{ fontSize: "0.95rem", marginBottom: "8px" }}>
+                Obligaciones y compromisos fijos
+              </h4>
+              <ul
+                style={{
+                  margin: 0,
+                  paddingLeft: "20px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px",
+                }}
+              >
                 {latestClosedWeek.plan.proposal.obligations.map((ob) => (
                   <li key={ob.itemId} style={{ fontSize: "0.88rem" }}>
                     <strong>{ob.title}</strong>
@@ -190,7 +210,15 @@ export function ClosedWeekReviewCard({
           {latestClosedWeek.plan.proposal.flexibleOptions.length > 0 && (
             <div style={{ marginBottom: "16px" }}>
               <h4 style={{ fontSize: "0.95rem", marginBottom: "8px" }}>Opciones flexibles</h4>
-              <ul style={{ margin: 0, paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "6px" }}>
+              <ul
+                style={{
+                  margin: 0,
+                  paddingLeft: "20px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px",
+                }}
+              >
                 {latestClosedWeek.plan.proposal.flexibleOptions.map((flex) => (
                   <li key={flex.itemId} style={{ fontSize: "0.88rem" }}>
                     <strong>{flex.title}</strong>
@@ -206,7 +234,9 @@ export function ClosedWeekReviewCard({
           {latestClosedWeek.closeReport.output.classifiedItems &&
             latestClosedWeek.closeReport.output.classifiedItems.length > 0 && (
               <div style={{ marginBottom: "16px" }}>
-                <h4 style={{ fontSize: "0.95rem", marginBottom: "8px" }}>Balance de tareas e ítems</h4>
+                <h4 style={{ fontSize: "0.95rem", marginBottom: "8px" }}>
+                  Balance de tareas e ítems
+                </h4>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {latestClosedWeek.closeReport.output.classifiedItems.map((item) => (
                     <div
@@ -227,8 +257,12 @@ export function ClosedWeekReviewCard({
                         <span style={{ fontSize: "0.9rem", fontWeight: 500 }}>{item.title}</span>
                         <div style={{ fontSize: "0.8rem", color: "#666", marginTop: "2px" }}>
                           {item.actualHours != null && <span>{item.actualHours}h reales</span>}
-                          {item.actualHours != null && item.estimatedHours != null && <span> · </span>}
-                          {item.estimatedHours != null && <span>{item.estimatedHours}h estimadas</span>}
+                          {item.actualHours != null && item.estimatedHours != null && (
+                            <span> · </span>
+                          )}
+                          {item.estimatedHours != null && (
+                            <span>{item.estimatedHours}h estimadas</span>
+                          )}
                           {item.postponementReason && (
                             <span style={{ display: "block", color: "#8a6d3b" }}>
                               Motivo postergación: {item.postponementReason}
@@ -246,21 +280,21 @@ export function ClosedWeekReviewCard({
                           item.finalDisposition === "completed"
                             ? "badge-task"
                             : item.finalDisposition === "consciously_postponed"
-                            ? "badge-idea"
-                            : "badge-muted"
+                              ? "badge-idea"
+                              : "badge-muted"
                         }`}
                       >
                         {item.finalDisposition === "completed"
                           ? "Completada"
                           : item.finalDisposition === "consciously_postponed"
-                          ? "Postergada"
-                          : item.finalDisposition === "dropped"
-                          ? "Descartada"
-                          : item.finalDisposition === "in_progress"
-                          ? "En progreso"
-                          : item.finalDisposition === "not_started"
-                          ? "No iniciada"
-                          : "Sin reportar"}
+                            ? "Postergada"
+                            : item.finalDisposition === "dropped"
+                              ? "Descartada"
+                              : item.finalDisposition === "in_progress"
+                                ? "En progreso"
+                                : item.finalDisposition === "not_started"
+                                  ? "No iniciada"
+                                  : "Sin reportar"}
                       </span>
                     </div>
                   ))}
@@ -269,30 +303,43 @@ export function ClosedWeekReviewCard({
             )}
 
           {/* 5. Reflexiones de cierre */}
-          <div style={{ marginTop: "12px", background: "var(--bg-secondary, #f8f9fa)", padding: "12px", borderRadius: "6px" }}>
+          <div
+            style={{
+              marginTop: "12px",
+              background: "var(--bg-secondary, #f8f9fa)",
+              padding: "12px",
+              borderRadius: "6px",
+            }}
+          >
             <h4 style={{ fontSize: "0.9rem", marginBottom: "6px" }}>Reflexión del cierre</h4>
             {latestClosedWeek.closeReport.output.capacityAnalysis?.explanation && (
               <p className="calm-text" style={{ fontSize: "0.85rem", marginBottom: "4px" }}>
-                <strong>Capacidad y espacio:</strong> {latestClosedWeek.closeReport.output.capacityAnalysis.explanation}
+                <strong>Capacidad y espacio:</strong>{" "}
+                {latestClosedWeek.closeReport.output.capacityAnalysis.explanation}
               </p>
             )}
             {latestClosedWeek.closeReport.output.reflectiveSummary.accomplishments.length > 0 && (
               <div style={{ fontSize: "0.85rem", marginBottom: "4px" }}>
                 <strong>Logros:</strong>
                 <ul style={{ margin: "4px 0 0 20px", padding: 0 }}>
-                  {latestClosedWeek.closeReport.output.reflectiveSummary.accomplishments.map((acc, i) => (
-                    <li key={i}>{acc}</li>
-                  ))}
+                  {latestClosedWeek.closeReport.output.reflectiveSummary.accomplishments.map(
+                    (acc, i) => (
+                      <li key={i}>{acc}</li>
+                    )
+                  )}
                 </ul>
               </div>
             )}
-            {latestClosedWeek.closeReport.output.reflectiveSummary.questionsForNextCycle.length > 0 && (
+            {latestClosedWeek.closeReport.output.reflectiveSummary.questionsForNextCycle.length >
+              0 && (
               <div style={{ fontSize: "0.85rem", marginTop: "4px" }}>
                 <strong>Preguntas para el próximo ciclo:</strong>
                 <ul style={{ margin: "4px 0 0 20px", padding: 0 }}>
-                  {latestClosedWeek.closeReport.output.reflectiveSummary.questionsForNextCycle.map((q, i) => (
-                    <li key={i}>{q}</li>
-                  ))}
+                  {latestClosedWeek.closeReport.output.reflectiveSummary.questionsForNextCycle.map(
+                    (q, i) => (
+                      <li key={i}>{q}</li>
+                    )
+                  )}
                 </ul>
               </div>
             )}

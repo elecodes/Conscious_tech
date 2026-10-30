@@ -23,11 +23,12 @@ function createMockReq(options: {
   const method = options.method || "GET";
   const url = options.url || "/";
   const headers = options.headers || {};
-  const bodyText = options.body !== undefined
-    ? typeof options.body === "string"
-      ? options.body
-      : JSON.stringify(options.body)
-    : "";
+  const bodyText =
+    options.body !== undefined
+      ? typeof options.body === "string"
+        ? options.body
+        : JSON.stringify(options.body)
+      : "";
 
   const stream = new Readable({
     read() {
@@ -74,7 +75,8 @@ function createMockRes(): {
     },
     end(chunk?: unknown) {
       if (chunk) {
-        body += typeof chunk === "string" ? chunk : Buffer.from(chunk as Uint8Array).toString("utf-8");
+        body +=
+          typeof chunk === "string" ? chunk : Buffer.from(chunk as Uint8Array).toString("utf-8");
       }
     },
   } as unknown as ServerResponse;
@@ -186,9 +188,7 @@ describe("Server Proxies Security Hardening", () => {
 
   describe("validateSafeCalendarUrl with DNS Resolution", () => {
     it("blocks hostnames that resolve to private or loopback IPs (DNS rebinding / localtest.me)", async () => {
-      const mockDnsLookup = vi.fn().mockResolvedValue([
-        { address: "127.0.0.1", family: 4 },
-      ]);
+      const mockDnsLookup = vi.fn().mockResolvedValue([{ address: "127.0.0.1", family: 4 }]);
 
       const result = await validateSafeCalendarUrl("https://localtest.me/feed.ics", mockDnsLookup);
       expect(result.safe).toBe(false);
@@ -196,18 +196,17 @@ describe("Server Proxies Security Hardening", () => {
     });
 
     it("blocks hostnames that resolve to any private IPv6", async () => {
-      const mockDnsLookup = vi.fn().mockResolvedValue([
-        { address: "fd00::1", family: 6 },
-      ]);
+      const mockDnsLookup = vi.fn().mockResolvedValue([{ address: "fd00::1", family: 6 }]);
 
-      const result = await validateSafeCalendarUrl("https://internal-calendar.corp.net/feed.ics", mockDnsLookup);
+      const result = await validateSafeCalendarUrl(
+        "https://internal-calendar.corp.net/feed.ics",
+        mockDnsLookup
+      );
       expect(result.safe).toBe(false);
     });
 
     it("allows hostnames that resolve strictly to public IPs", async () => {
-      const mockDnsLookup = vi.fn().mockResolvedValue([
-        { address: "142.250.190.46", family: 4 },
-      ]);
+      const mockDnsLookup = vi.fn().mockResolvedValue([{ address: "142.250.190.46", family: 4 }]);
 
       const result = await validateSafeCalendarUrl(
         "https://calendar.google.com/calendar/ical/user/basic.ics",
@@ -261,9 +260,7 @@ describe("Server Proxies Security Hardening", () => {
     });
 
     it("streams response with byte cap and cuts off at 5 MB", async () => {
-      const mockDnsLookup = vi.fn().mockResolvedValue([
-        { address: "93.184.216.34", family: 4 },
-      ]);
+      const mockDnsLookup = vi.fn().mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
 
       // Mock fetch with a stream exceeding 5MB
       const chunkSize = 1024 * 1024; // 1 MB
@@ -314,7 +311,8 @@ describe("Server Proxies Security Hardening", () => {
 
       const validIcs = "BEGIN:VCALENDAR\nVERSION:2.0\nSUMMARY:Test\nEND:VCALENDAR";
 
-      const fetchSpy = vi.spyOn(globalThis, "fetch")
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
         .mockResolvedValueOnce({
           ok: false,
           status: 302,
@@ -350,17 +348,14 @@ describe("Server Proxies Security Hardening", () => {
     });
 
     it("blocks redirects that target internal IP addresses", async () => {
-      const mockDnsLookup = vi.fn().mockResolvedValue([
-        { address: "93.184.216.34", family: 4 },
-      ]);
+      const mockDnsLookup = vi.fn().mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
 
-      const fetchSpy = vi.spyOn(globalThis, "fetch")
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 302,
-          statusText: "Found",
-          headers: new Headers({ location: "http://127.0.0.1/admin.ics" }),
-        } as unknown as Response);
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: false,
+        status: 302,
+        statusText: "Found",
+        headers: new Headers({ location: "http://127.0.0.1/admin.ics" }),
+      } as unknown as Response);
 
       const req = createMockReq({
         method: "POST",
@@ -377,11 +372,12 @@ describe("Server Proxies Security Hardening", () => {
     });
 
     it("enforces rate limits on repeated requests", async () => {
-      const reqFactory = () => createMockReq({
-        method: "POST",
-        body: { url: "https://invalid.test" },
-        remoteAddress: "192.0.2.99",
-      });
+      const reqFactory = () =>
+        createMockReq({
+          method: "POST",
+          body: { url: "https://invalid.test" },
+          remoteAddress: "192.0.2.99",
+        });
 
       // Exhaust limit of 20 requests
       for (let i = 0; i < 20; i++) {
@@ -427,11 +423,12 @@ describe("Server Proxies Security Hardening", () => {
     });
 
     it("rate limits AI proxy requests when exceeded", async () => {
-      const reqFactory = () => createMockReq({
-        method: "POST",
-        body: { provider: "mock", action: "extract_items", payload: { notes: "test" } },
-        remoteAddress: "192.0.2.88",
-      });
+      const reqFactory = () =>
+        createMockReq({
+          method: "POST",
+          body: { provider: "mock", action: "extract_items", payload: { notes: "test" } },
+          remoteAddress: "192.0.2.88",
+        });
 
       for (let i = 0; i < 40; i++) {
         const { res } = createMockRes();
@@ -498,7 +495,9 @@ describe("Server Proxies Security Hardening", () => {
     });
 
     it("allows origins from explicit ALLOWED_ORIGINS env allowlist", () => {
-      const env = { ALLOWED_ORIGINS: "https://app.conscioustech.com,https://staging.conscioustech.com" };
+      const env = {
+        ALLOWED_ORIGINS: "https://app.conscioustech.com,https://staging.conscioustech.com",
+      };
       expect(isOriginAllowed("https://app.conscioustech.com", env)).toBe(true);
       expect(isOriginAllowed("https://staging.conscioustech.com", env)).toBe(true);
       expect(isOriginAllowed("https://unauthorized.com", env)).toBe(false);
@@ -577,9 +576,13 @@ describe("Server Proxies Security Hardening", () => {
         const dispatcher = (init as any)?.dispatcher;
         if (dispatcher && typeof dispatcher === "object") {
           // Check agent lookup behavior
-          const lookup = dispatcher[Object.getOwnPropertySymbols(dispatcher).find(s => s.description === "connect") || "connect"]?.lookup
-            || (dispatcher as any).connect?.lookup
-            || (dispatcher as any).options?.connect?.lookup;
+          const lookup =
+            dispatcher[
+              Object.getOwnPropertySymbols(dispatcher).find((s) => s.description === "connect") ||
+                "connect"
+            ]?.lookup ||
+            (dispatcher as any).connect?.lookup ||
+            (dispatcher as any).options?.connect?.lookup;
           if (lookup) {
             let pinnedResult: any = null;
             lookup("rebind.example.com", {}, (_err: any, addrs: any) => {
@@ -600,7 +603,9 @@ describe("Server Proxies Security Hardening", () => {
           headers: new Headers({ "Content-Type": "text/calendar" }),
           body: new ReadableStream({
             start(controller) {
-              controller.enqueue(new TextEncoder().encode("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR"));
+              controller.enqueue(
+                new TextEncoder().encode("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR")
+              );
               controller.close();
             },
           }),

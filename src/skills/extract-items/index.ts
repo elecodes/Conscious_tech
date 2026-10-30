@@ -1,11 +1,10 @@
 import { AIProvider } from "../../providers/ai-provider";
-import {
-  ExtractItemsInput,
-  ExtractItemsInputSchema,
-  ExtractedItems,
-} from "../../domain/items";
+import { ExtractItemsInput, ExtractItemsInputSchema, ExtractedItems } from "../../domain/items";
 import { ExtractionValidationError, parseAndValidateExtractedItems } from "./parser";
-import { SYSTEM_PROMPT as EXTRACT_SYSTEM_PROMPT, buildUserPrompt as buildExtractUserPrompt } from "./prompt";
+import {
+  SYSTEM_PROMPT as EXTRACT_SYSTEM_PROMPT,
+  buildUserPrompt as buildExtractUserPrompt,
+} from "./prompt";
 
 export interface ExtractItemsOptions {
   maxRetries?: number;
@@ -33,10 +32,7 @@ export class ExtractItemsService {
       try {
         if (useCompleteJson && this.provider.completeJson) {
           const userPrompt = buildExtractUserPrompt(validatedInput);
-          const { rawText } = await this.provider.completeJson(
-            EXTRACT_SYSTEM_PROMPT,
-            userPrompt
-          );
+          const { rawText } = await this.provider.completeJson(EXTRACT_SYSTEM_PROMPT, userPrompt);
           return parseAndValidateExtractedItems(rawText);
         }
         if (this.provider.extractItems) {
@@ -44,13 +40,12 @@ export class ExtractItemsService {
         }
         if (this.provider.completeJson) {
           const userPrompt = buildExtractUserPrompt(validatedInput);
-          const { rawText } = await this.provider.completeJson(
-            EXTRACT_SYSTEM_PROMPT,
-            userPrompt
-          );
+          const { rawText } = await this.provider.completeJson(EXTRACT_SYSTEM_PROMPT, userPrompt);
           return parseAndValidateExtractedItems(rawText);
         }
-        throw new Error(`Provider "${this.provider.id}" does not support completeJson or extractItems.`);
+        throw new Error(
+          `Provider "${this.provider.id}" does not support completeJson or extractItems.`
+        );
       } catch (error) {
         lastError = error;
         if (error instanceof ExtractionValidationError && attempts < maxAttempts) {

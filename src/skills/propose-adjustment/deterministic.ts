@@ -94,8 +94,7 @@ export function proposeAdjustmentsDeterministically(
       unaddressedConflictIds: [],
       proposals: [],
       clarificationQuestions: [],
-      summary:
-        "El plan está equilibrado y verificado positivamente sin conflictos ni sobrecargas.",
+      summary: "El plan está equilibrado y verificado positivamente sin conflictos ni sobrecargas.",
     };
   }
 
@@ -125,23 +124,21 @@ export function proposeAdjustmentsDeterministically(
   const proposals: AdjustmentProposal[] = [];
 
   // Helper to build partition and breakdown
-  const buildProposal = (
-    params: {
-      id: string;
-      strategy: AdjustmentProposal["strategy"];
-      title: string;
-      explanation: string;
-      viability: AdjustmentProposal["viability"];
-      viabilityCondition: string | null;
-      addressedConflictIds: string[];
-      resolvedConflictIds: string[];
-      netHoursFreed: number | null;
-      resultingPlannedHours: number | null;
-      affectedPlanItemIds: string[];
-      actions: SuggestedAdjustmentAction[];
-      tradeoffs: string[];
-    }
-  ): AdjustmentProposal => {
+  const buildProposal = (params: {
+    id: string;
+    strategy: AdjustmentProposal["strategy"];
+    title: string;
+    explanation: string;
+    viability: AdjustmentProposal["viability"];
+    viabilityCondition: string | null;
+    addressedConflictIds: string[];
+    resolvedConflictIds: string[];
+    netHoursFreed: number | null;
+    resultingPlannedHours: number | null;
+    affectedPlanItemIds: string[];
+    actions: SuggestedAdjustmentAction[];
+    tradeoffs: string[];
+  }): AdjustmentProposal => {
     const affectedSet = new Set(params.affectedPlanItemIds);
     const retainedPlanItemIds = Array.from(allPlanIds).filter(
       (id) => !affectedSet.has(id) && !previouslyDeferredIds.has(id)
@@ -149,9 +146,7 @@ export function proposeAdjustmentsDeterministically(
     const previouslyDeferredItemIds = Array.from(previouslyDeferredIds);
 
     const resolvedSet = new Set(params.resolvedConflictIds);
-    const unresolvedConflictIds = conflicts
-      .map((c) => c.id)
-      .filter((id) => !resolvedSet.has(id));
+    const unresolvedConflictIds = conflicts.map((c) => c.id).filter((id) => !resolvedSet.has(id));
 
     const unresolvedBreakdown = {
       confirmed: conflicts
@@ -297,9 +292,7 @@ export function proposeAdjustmentsDeterministically(
                 hoursFreed: netFreed / focus.contributingItemIds.length,
                 rationale: `Liberar capacidad posponiendo foco "${focus.title}".`,
               })),
-              tradeoffs: [
-                `El foco "${focus.title}" no se ejecutará en la semana planificada.`,
-              ],
+              tradeoffs: [`El foco "${focus.title}" no se ejecutará en la semana planificada.`],
             })
           );
         }
@@ -358,9 +351,7 @@ export function proposeAdjustmentsDeterministically(
                 question: `¿Cuántas horas estimas para completar el foco "${focus.title}"?`,
               },
             ],
-            tradeoffs: [
-              "Se requiere estimación precisa antes de reajustar el plan.",
-            ],
+            tradeoffs: ["Se requiere estimación precisa antes de reajustar el plan."],
           })
         );
       }
@@ -440,11 +431,9 @@ export function proposeAdjustmentsDeterministically(
       const b2 = blocksInConflict[1];
 
       const b2StartMin =
-        parseInt(b2.startTime.slice(0, 2), 10) * 60 +
-        parseInt(b2.startTime.slice(3, 5), 10);
+        parseInt(b2.startTime.slice(0, 2), 10) * 60 + parseInt(b2.startTime.slice(3, 5), 10);
       const b2EndMin =
-        parseInt(b2.endTime.slice(0, 2), 10) * 60 +
-        parseInt(b2.endTime.slice(3, 5), 10);
+        parseInt(b2.endTime.slice(0, 2), 10) * 60 + parseInt(b2.endTime.slice(3, 5), 10);
       const b2DurationMin = b2EndMin - b2StartMin;
 
       // Find an open day slot in dayConstraints / timeBlocks
@@ -482,8 +471,7 @@ export function proposeAdjustmentsDeterministically(
             if (isSelf) return false;
 
             return (
-              tb.day === tDay &&
-              isTimeIntervalOverlapping(cStart, cEnd, tb.startTime, tb.endTime)
+              tb.day === tDay && isTimeIntervalOverlapping(cStart, cEnd, tb.startTime, tb.endTime)
             );
           });
 
@@ -563,9 +551,7 @@ export function proposeAdjustmentsDeterministically(
             rationale: "Desbloquear dependencia causal antes de iniciar el trabajo activo.",
           },
         ],
-        tradeoffs: [
-          `El avance de "${dependentId}" queda sujeto a cumplimiento de terceros.`,
-        ],
+        tradeoffs: [`El avance de "${dependentId}" queda sujeto a cumplimiento de terceros.`],
       })
     );
   }

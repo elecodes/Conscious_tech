@@ -62,12 +62,18 @@ export function WeeklyReflectiveClosingSection({
       >
         <h3>⚠️ Cierre anticipado de semana</h3>
         <p className="calm-text">
-          Esta semana está programada hasta el <strong>{plan?.targetWeek.endDate}</strong> y aún no ha concluido. Cerrarla ahora impedirá registrar avances naturales en los días restantes.
+          Esta semana está programada hasta el <strong>{plan?.targetWeek.endDate}</strong> y aún no
+          ha concluido. Cerrarla ahora impedirá registrar avances naturales en los días restantes.
         </p>
         <p className="calm-muted" style={{ fontSize: "0.88rem" }}>
-          <strong>Alternativa segura:</strong> Puedes mantenerla activa y continuar tu seguimiento en «Mi semana», o preparar borradores para semanas futuras desde «Preparar semana» sin necesidad de cerrar esta prematuramente.
+          <strong>Alternativa segura:</strong> Puedes mantenerla activa y continuar tu seguimiento
+          en «Mi semana», o preparar borradores para semanas futuras desde «Preparar semana» sin
+          necesidad de cerrar esta prematuramente.
         </p>
-        <div className="actions" style={{ marginTop: "16px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        <div
+          className="actions"
+          style={{ marginTop: "16px", display: "flex", gap: "10px", flexWrap: "wrap" }}
+        >
           {onNavigateSpace && (
             <button
               type="button"
@@ -92,8 +98,20 @@ export function WeeklyReflectiveClosingSection({
   }
 
   return (
-    <section className="calm-box" style={{ marginTop: "24px" }} aria-label="Sección de cierre de semana">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px" }}>
+    <section
+      className="calm-box"
+      style={{ marginTop: "24px" }}
+      aria-label="Sección de cierre de semana"
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          flexWrap: "wrap",
+          gap: "8px",
+        }}
+      >
         <h3>Cierre de semana</h3>
         <div style={{ display: "flex", gap: "6px" }}>
           <button
@@ -117,8 +135,8 @@ export function WeeklyReflectiveClosingSection({
         </div>
       </div>
       <p className="calm-muted" style={{ marginTop: "4px" }}>
-        Al cerrar la semana, evaluamos qué se completó y qué aprendizajes surgen.
-        Nada se guarda en memoria sin tu confirmación explícita.
+        Al cerrar la semana, evaluamos qué se completó y qué aprendizajes surgen. Nada se guarda en
+        memoria sin tu confirmación explícita.
       </p>
 
       {/* Step 1: Dispositions per item */}

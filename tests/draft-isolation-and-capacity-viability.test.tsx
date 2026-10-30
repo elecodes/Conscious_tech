@@ -12,10 +12,7 @@ import {
   WeeklySessionReactContext,
   WeeklySessionContextValue,
 } from "../src/web/context/weekly-session-context";
-import {
-  AmbiguousDraftPlanError,
-  StoredWeeklyPlan,
-} from "../src/domain/repositories/types";
+import { AmbiguousDraftPlanError, StoredWeeklyPlan } from "../src/domain/repositories/types";
 import { ProposedWeek, TargetWeek } from "../src/domain/week";
 import { WeeklySchedule } from "../src/domain/schedule";
 import { MockProvider } from "../src/providers/mock-provider";
@@ -43,7 +40,10 @@ describe("Aislamiento de borradores, honestidad de capacidad y transición entre
     endDate: "2026-11-01",
   };
 
-  const createSampleProposal = (targetWeek: TargetWeek, customProps?: Partial<ProposedWeek>): ProposedWeek => ({
+  const createSampleProposal = (
+    targetWeek: TargetWeek,
+    customProps?: Partial<ProposedWeek>
+  ): ProposedWeek => ({
     weekSummary: {
       targetWeek,
       capacity: {
@@ -116,7 +116,9 @@ describe("Aislamiento de borradores, honestidad de capacidad y transición entre
     updatedAt: "2026-10-14T10:00:00.000Z",
   });
 
-  function createTestContextValue(overrides?: Partial<WeeklySessionContextValue>): WeeklySessionContextValue {
+  function createTestContextValue(
+    overrides?: Partial<WeeklySessionContextValue>
+  ): WeeklySessionContextValue {
     return {
       state: {
         status: "no_active_session",

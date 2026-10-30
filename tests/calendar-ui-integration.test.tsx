@@ -13,32 +13,27 @@ describe("CalendarSyncCard UI Component & Server Proxy Handler", () => {
   describe("CalendarSyncCard Component Rendering", () => {
     it("renders card in initial calm collapsed state", () => {
       const html = renderToStaticMarkup(
-        <CalendarSyncCard
-          targetWeek={targetWeek}
-          onCalendarApplied={vi.fn()}
-        />
+        <CalendarSyncCard targetWeek={targetWeek} onCalendarApplied={vi.fn()} />
       );
 
-      expect(html).toContain("data-testid=\"calendar-sync-card\"");
+      expect(html).toContain('data-testid="calendar-sync-card"');
       expect(html).toContain("Google Calendar (Compromisos fijos)");
       expect(html).toContain("Conectar / Sincronizar");
       // Initially collapsed, input should not be in the DOM
-      expect(html).not.toContain("data-testid=\"ical-url-input\"");
+      expect(html).not.toContain('data-testid="ical-url-input"');
     });
 
     it("displays honest local-storage privacy disclosure and forget button when open", () => {
       const html = renderToStaticMarkup(
-        <CalendarSyncCard
-          targetWeek={targetWeek}
-          onCalendarApplied={vi.fn()}
-          initialOpen={true}
-        />
+        <CalendarSyncCard targetWeek={targetWeek} onCalendarApplied={vi.fn()} initialOpen={true} />
       );
 
-      expect(html).toContain("data-testid=\"calendar-privacy-notice\"");
+      expect(html).toContain('data-testid="calendar-privacy-notice"');
       expect(html).toContain("El enlace privado se guarda localmente en este navegador");
-      expect(html).toContain("podés eliminarlo en cualquier momento con &quot;Olvidar enlace&quot;");
-      expect(html).toContain("data-testid=\"ical-url-input\"");
+      expect(html).toContain(
+        "podés eliminarlo en cualquier momento con &quot;Olvidar enlace&quot;"
+      );
+      expect(html).toContain('data-testid="ical-url-input"');
     });
   });
 

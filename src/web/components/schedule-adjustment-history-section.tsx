@@ -38,8 +38,8 @@ export function ScheduleAdjustmentHistorySection({
         </summary>
         <div style={{ marginTop: "12px" }}>
           <p className="calm-muted" style={{ marginTop: "4px", marginBottom: "16px" }}>
-            Una propuesta no es una decisión; una decisión no es una aplicación; una
-            aplicación no implica que el ajuste siga vigente.
+            Una propuesta no es una decisión; una decisión no es una aplicación; una aplicación no
+            implica que el ajuste siga vigente.
           </p>
 
           {schedule.appliedAdjustments.length === 0 ? (
@@ -68,7 +68,8 @@ export function ScheduleAdjustmentHistorySection({
                       }}
                     >
                       <div className="item-title">
-                        <strong>{typeLabel}</strong> · Ítem: <code>{getAdjustmentTargetItem(action)}</code>
+                        <strong>{typeLabel}</strong> · Ítem:{" "}
+                        <code>{getAdjustmentTargetItem(action)}</code>
                       </div>
                       <div
                         className="item-tags"
@@ -88,13 +89,12 @@ export function ScheduleAdjustmentHistorySection({
                           }`}
                           aria-label={`Resultado de aplicación: ${rec.applicationOutcome}`}
                         >
-                          Aplicación: {rec.applicationOutcome === "applied" ? "Aplicado" : "Fallido"}
+                          Aplicación:{" "}
+                          {rec.applicationOutcome === "applied" ? "Aplicado" : "Fallido"}
                         </span>
                         <span
                           className={`badge ${
-                            rec.lifecycleStatus === "active"
-                              ? "badge-idea"
-                              : "badge-muted"
+                            rec.lifecycleStatus === "active" ? "badge-idea" : "badge-muted"
                           }`}
                           aria-label={`Estado del ciclo de vida: ${rec.lifecycleStatus}`}
                         >
@@ -102,16 +102,14 @@ export function ScheduleAdjustmentHistorySection({
                           {rec.lifecycleStatus === "active"
                             ? "Vigente"
                             : rec.lifecycleStatus === "superseded"
-                            ? "Sustituido"
-                            : "Revertido"}
+                              ? "Sustituido"
+                              : "Revertido"}
                         </span>
                       </div>
                     </div>
 
                     {/* Temporal details */}
-                    <div style={{ marginTop: "8px" }}>
-                      {renderAdjustmentDetails(action)}
-                    </div>
+                    <div style={{ marginTop: "8px" }}>{renderAdjustmentDetails(action)}</div>
 
                     {/* Metadata & Timestamps */}
                     <div

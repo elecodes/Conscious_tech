@@ -552,11 +552,7 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
         {
           itemId: "item-1",
           attention: "high",
-          signals: [
-            "external_commitment",
-            "external_commitment",
-            "already_started",
-          ],
+          signals: ["external_commitment", "external_commitment", "already_started"],
           rationale: "Compromiso duplicado",
         },
       ],
@@ -580,10 +576,7 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
     };
 
     const result = await evaluateContext(provider, input);
-    expect(result.itemAssessments[0].signals).toEqual([
-      "external_commitment",
-      "already_started",
-    ]);
+    expect(result.itemAssessments[0].signals).toEqual(["external_commitment", "already_started"]);
   });
 
   // 18. Cobertura completa y sin duplicados de elementos y grupos
@@ -701,7 +694,8 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
       items: [
         {
           id: "c06-1",
-          rawText: "Seguir con la integración de Stripe en la tienda, pero estoy frenada porque falta que el cliente mande las credenciales",
+          rawText:
+            "Seguir con la integración de Stripe en la tienda, pero estoy frenada porque falta que el cliente mande las credenciales",
           title: "Integración de Stripe en tienda",
           type: "project",
           status: "started",
@@ -889,7 +883,8 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
       items: [
         {
           id: "item-blocked-urgent",
-          rawText: "Despliegue crítico en producción frenado a la espera de credenciales del cliente",
+          rawText:
+            "Despliegue crítico en producción frenado a la espera de credenciales del cliente",
           title: "Despliegue crítico producción",
           type: "task",
           status: "started",
@@ -937,85 +932,157 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
       const input: EvaluateContextInput = {
         ...defaultInput,
         relationships: [
-          { sourceItemId: "i1", targetItemId: "i2", type: "part_of", confidence: "high", reason: "i1 is part of i2" },
+          {
+            sourceItemId: "i1",
+            targetItemId: "i2",
+            type: "part_of",
+            confidence: "high",
+            reason: "i1 is part of i2",
+          },
         ],
       };
       const rawOutput = {
         itemAssessments: [
-          { itemId: "i1", attention: "medium" as const, signals: ["dependency" as const], rationale: "Part of i2" },
+          {
+            itemId: "i1",
+            attention: "medium" as const,
+            signals: ["dependency" as const],
+            rationale: "Part of i2",
+          },
           { itemId: "i2", attention: "medium" as const, signals: [], rationale: "Parent task" },
         ],
         groupAssessments: [],
         openQuestions: [],
       };
       const cleaned = cleanAndValidateContextOutput(rawOutput, input);
-      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "i1")?.signals).not.toContain("dependency");
+      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "i1")?.signals).not.toContain(
+        "dependency"
+      );
     });
 
     it("strips dependency signal when relationship is only related_to without depends_on", () => {
       const input: EvaluateContextInput = {
         ...defaultInput,
         relationships: [
-          { sourceItemId: "i1", targetItemId: "i2", type: "related_to", confidence: "high", reason: "similar tasks" },
+          {
+            sourceItemId: "i1",
+            targetItemId: "i2",
+            type: "related_to",
+            confidence: "high",
+            reason: "similar tasks",
+          },
         ],
       };
       const rawOutput = {
         itemAssessments: [
-          { itemId: "i1", attention: "medium" as const, signals: ["dependency" as const], rationale: "Related" },
-          { itemId: "i2", attention: "medium" as const, signals: ["dependency" as const], rationale: "Related" },
+          {
+            itemId: "i1",
+            attention: "medium" as const,
+            signals: ["dependency" as const],
+            rationale: "Related",
+          },
+          {
+            itemId: "i2",
+            attention: "medium" as const,
+            signals: ["dependency" as const],
+            rationale: "Related",
+          },
         ],
         groupAssessments: [],
         openQuestions: [],
       };
       const cleaned = cleanAndValidateContextOutput(rawOutput, input);
-      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "i1")?.signals).not.toContain("dependency");
-      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "i2")?.signals).not.toContain("dependency");
+      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "i1")?.signals).not.toContain(
+        "dependency"
+      );
+      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "i2")?.signals).not.toContain(
+        "dependency"
+      );
     });
 
     it("strips dependency signal when relationship is only same_project without depends_on", () => {
       const input: EvaluateContextInput = {
         ...defaultInput,
         relationships: [
-          { sourceItemId: "i1", targetItemId: "i2", type: "same_project", confidence: "high", reason: "same project" },
+          {
+            sourceItemId: "i1",
+            targetItemId: "i2",
+            type: "same_project",
+            confidence: "high",
+            reason: "same project",
+          },
         ],
       };
       const rawOutput = {
         itemAssessments: [
-          { itemId: "i1", attention: "medium" as const, signals: ["dependency" as const], rationale: "Same project" },
+          {
+            itemId: "i1",
+            attention: "medium" as const,
+            signals: ["dependency" as const],
+            rationale: "Same project",
+          },
           { itemId: "i2", attention: "medium" as const, signals: [], rationale: "Same project" },
         ],
         groupAssessments: [],
         openQuestions: [],
       };
       const cleaned = cleanAndValidateContextOutput(rawOutput, input);
-      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "i1")?.signals).not.toContain("dependency");
+      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "i1")?.signals).not.toContain(
+        "dependency"
+      );
     });
 
     it("preserves dependency signal when explicit depends_on relationship exists for backed items", () => {
       const input: EvaluateContextInput = {
         ...defaultInput,
         relationships: [
-          { sourceItemId: "i1", targetItemId: "i2", type: "depends_on", confidence: "high", reason: "i1 depends on i2" },
+          {
+            sourceItemId: "i1",
+            targetItemId: "i2",
+            type: "depends_on",
+            confidence: "high",
+            reason: "i1 depends on i2",
+          },
         ],
       };
       const rawOutput = {
         itemAssessments: [
-          { itemId: "i1", attention: "medium" as const, signals: ["dependency" as const], rationale: "Depends on i2" },
-          { itemId: "i2", attention: "medium" as const, signals: ["dependency" as const], rationale: "Blocks i1" },
+          {
+            itemId: "i1",
+            attention: "medium" as const,
+            signals: ["dependency" as const],
+            rationale: "Depends on i2",
+          },
+          {
+            itemId: "i2",
+            attention: "medium" as const,
+            signals: ["dependency" as const],
+            rationale: "Blocks i1",
+          },
         ],
         groupAssessments: [],
         openQuestions: [],
       };
       const cleaned = cleanAndValidateContextOutput(rawOutput, input);
-      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "i1")?.signals).toContain("dependency");
-      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "i2")?.signals).toContain("dependency");
+      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "i1")?.signals).toContain(
+        "dependency"
+      );
+      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "i2")?.signals).toContain(
+        "dependency"
+      );
     });
 
     it("stripping dependency does not remove other valid signals or alter attention level", () => {
       const input: EvaluateContextInput = {
         ...defaultInput,
         relationships: [
-          { sourceItemId: "i1", targetItemId: "i2", type: "part_of", confidence: "high", reason: "part of" },
+          {
+            sourceItemId: "i1",
+            targetItemId: "i2",
+            type: "part_of",
+            confidence: "high",
+            reason: "part of",
+          },
         ],
       };
       const rawOutput = {
@@ -1023,7 +1090,11 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
           {
             itemId: "i1",
             attention: "high" as const,
-            signals: ["already_started" as const, "dependency" as const, "explicit_importance" as const],
+            signals: [
+              "already_started" as const,
+              "dependency" as const,
+              "explicit_importance" as const,
+            ],
             rationale: "Important and started",
           },
           { itemId: "i2", attention: "medium" as const, signals: [], rationale: "Parent" },
@@ -1044,19 +1115,32 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
       const input: EvaluateContextInput = {
         ...defaultInput,
         relationships: [
-          { sourceItemId: "i1", targetItemId: "non-existent-id", type: "depends_on", confidence: "high", reason: "invalid target" },
+          {
+            sourceItemId: "i1",
+            targetItemId: "non-existent-id",
+            type: "depends_on",
+            confidence: "high",
+            reason: "invalid target",
+          },
         ],
       };
       const rawOutput = {
         itemAssessments: [
-          { itemId: "i1", attention: "medium" as const, signals: ["dependency" as const], rationale: "Depends on phantom" },
+          {
+            itemId: "i1",
+            attention: "medium" as const,
+            signals: ["dependency" as const],
+            rationale: "Depends on phantom",
+          },
           { itemId: "i2", attention: "medium" as const, signals: [], rationale: "Task 2" },
         ],
         groupAssessments: [],
         openQuestions: [],
       };
       const cleaned = cleanAndValidateContextOutput(rawOutput, input);
-      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "i1")?.signals).not.toContain("dependency");
+      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "i1")?.signals).not.toContain(
+        "dependency"
+      );
     });
   });
 
@@ -1117,11 +1201,30 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
           { id: "c12-3", title: "Pulir onboarding", type: "task", rawText: "Onboarding" },
         ],
         relationships: [
-          { sourceItemId: "c12-2", targetItemId: "c12-1", type: "part_of", confidence: "high", reason: "testing es parte del hito" },
-          { sourceItemId: "c12-3", targetItemId: "c12-1", type: "part_of", confidence: "high", reason: "onboarding es parte del hito" },
+          {
+            sourceItemId: "c12-2",
+            targetItemId: "c12-1",
+            type: "part_of",
+            confidence: "high",
+            reason: "testing es parte del hito",
+          },
+          {
+            sourceItemId: "c12-3",
+            targetItemId: "c12-1",
+            type: "part_of",
+            confidence: "high",
+            reason: "onboarding es parte del hito",
+          },
         ],
         groupedWork: {
-          groups: [{ id: "g-beta", title: "Beta", itemIds: ["c12-1", "c12-2", "c12-3"], rationale: "Lanzamiento" }],
+          groups: [
+            {
+              id: "g-beta",
+              title: "Beta",
+              itemIds: ["c12-1", "c12-2", "c12-3"],
+              rationale: "Lanzamiento",
+            },
+          ],
           ungroupedItemIds: [],
         },
         deadlines: { deadlines: [] },
@@ -1129,13 +1232,21 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
 
       const rawOutput = {
         itemAssessments: [
-          { itemId: "c12-1", attention: "high" as const, signals: ["dependency" as const], rationale: "Beta" },
-          { itemId: "c12-2", attention: "medium" as const, signals: ["dependency" as const], rationale: "Testing" },
+          {
+            itemId: "c12-1",
+            attention: "high" as const,
+            signals: ["dependency" as const],
+            rationale: "Beta",
+          },
+          {
+            itemId: "c12-2",
+            attention: "medium" as const,
+            signals: ["dependency" as const],
+            rationale: "Testing",
+          },
           { itemId: "c12-3", attention: "medium" as const, signals: [], rationale: "Onboarding" },
         ],
-        groupAssessments: [
-          { groupId: "g-beta", relevance: "high" as const, rationale: "Beta" },
-        ],
+        groupAssessments: [{ groupId: "g-beta", relevance: "high" as const, rationale: "Beta" }],
         openQuestions: [],
       };
 
@@ -1152,15 +1263,39 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
         currentDate: "2026-10-09",
         items: [
           { id: "c06-1", title: "Integración Stripe", type: "task", rawText: "Stripe" },
-          { id: "c06-2", title: "Esperar credenciales webhook", type: "task", rawText: "Credenciales" },
+          {
+            id: "c06-2",
+            title: "Esperar credenciales webhook",
+            type: "task",
+            rawText: "Credenciales",
+          },
           { id: "c06-3", title: "Diseñar checkout", type: "task", rawText: "Checkout" },
         ],
         relationships: [
-          { sourceItemId: "c06-1", targetItemId: "c06-2", type: "depends_on", confidence: "high", reason: "frenado por credenciales" },
-          { sourceItemId: "c06-1", targetItemId: "c06-3", type: "same_project", confidence: "high", reason: "tienda online" },
+          {
+            sourceItemId: "c06-1",
+            targetItemId: "c06-2",
+            type: "depends_on",
+            confidence: "high",
+            reason: "frenado por credenciales",
+          },
+          {
+            sourceItemId: "c06-1",
+            targetItemId: "c06-3",
+            type: "same_project",
+            confidence: "high",
+            reason: "tienda online",
+          },
         ],
         groupedWork: {
-          groups: [{ id: "g-store", title: "Tienda", itemIds: ["c06-1", "c06-2", "c06-3"], rationale: "E-commerce" }],
+          groups: [
+            {
+              id: "g-store",
+              title: "Tienda",
+              itemIds: ["c06-1", "c06-2", "c06-3"],
+              rationale: "E-commerce",
+            },
+          ],
           ungroupedItemIds: [],
         },
         deadlines: { deadlines: [] },
@@ -1168,14 +1303,27 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
 
       const rawOutput = {
         itemAssessments: [
-          { itemId: "c06-1", attention: "high" as const, signals: ["dependency" as const, "already_started" as const], rationale: "Stripe" },
-          { itemId: "c06-2", attention: "medium" as const, signals: ["dependency" as const, "waiting" as const], rationale: "Credenciales" },
+          {
+            itemId: "c06-1",
+            attention: "high" as const,
+            signals: ["dependency" as const, "already_started" as const],
+            rationale: "Stripe",
+          },
+          {
+            itemId: "c06-2",
+            attention: "medium" as const,
+            signals: ["dependency" as const, "waiting" as const],
+            rationale: "Credenciales",
+          },
           // c06-3 falsely claims dependency from same_project
-          { itemId: "c06-3", attention: "medium" as const, signals: ["dependency" as const, "explicit_importance" as const], rationale: "Checkout" },
+          {
+            itemId: "c06-3",
+            attention: "medium" as const,
+            signals: ["dependency" as const, "explicit_importance" as const],
+            rationale: "Checkout",
+          },
         ],
-        groupAssessments: [
-          { groupId: "g-store", relevance: "high" as const, rationale: "Tienda" },
-        ],
+        groupAssessments: [{ groupId: "g-store", relevance: "high" as const, rationale: "Tienda" }],
         openQuestions: [],
       };
 
@@ -1201,11 +1349,22 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
       const input: EvaluateContextInput = {
         currentDate: "2026-10-09",
         items: [
-          { id: "c19-1", title: "Mandar presupuesto a Lucía", type: "task", rawText: "Presupuesto" },
+          {
+            id: "c19-1",
+            title: "Mandar presupuesto a Lucía",
+            type: "task",
+            rawText: "Presupuesto",
+          },
           { id: "c19-2", title: "Hablar con Pablo", type: "task", rawText: "Pablo" },
         ],
         relationships: [
-          { sourceItemId: "c19-1", targetItemId: "c19-2", type: "depends_on", confidence: "high", reason: "Se enviará después de hablar con Pablo" },
+          {
+            sourceItemId: "c19-1",
+            targetItemId: "c19-2",
+            type: "depends_on",
+            confidence: "high",
+            reason: "Se enviará después de hablar con Pablo",
+          },
         ],
         groupedWork: {
           groups: [],
@@ -1216,16 +1375,30 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
 
       const rawOutput = {
         itemAssessments: [
-          { itemId: "c19-1", attention: "high" as const, signals: ["dependency" as const, "external_commitment" as const], rationale: "Presupuesto cliente" },
-          { itemId: "c19-2", attention: "medium" as const, signals: ["dependency" as const], rationale: "Llamar a Pablo" },
+          {
+            itemId: "c19-1",
+            attention: "high" as const,
+            signals: ["dependency" as const, "external_commitment" as const],
+            rationale: "Presupuesto cliente",
+          },
+          {
+            itemId: "c19-2",
+            attention: "medium" as const,
+            signals: ["dependency" as const],
+            rationale: "Llamar a Pablo",
+          },
         ],
         groupAssessments: [],
         openQuestions: [],
       };
 
       const cleaned = cleanAndValidateContextOutput(rawOutput, input);
-      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "c19-1")?.signals).toContain("dependency");
-      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "c19-2")?.signals).toContain("dependency");
+      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "c19-1")?.signals).toContain(
+        "dependency"
+      );
+      expect(cleaned.itemAssessments.find((ia) => ia.itemId === "c19-2")?.signals).toContain(
+        "dependency"
+      );
       expect(validateContextInvariants(cleaned, input).valid).toBe(true);
     });
 
@@ -1245,7 +1418,8 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
             title: "Renovar el dominio conscious-tech.org antes del domingo",
             type: "commitment",
             commitment: "external",
-            rawText: "no olvidarme de renovar el dominio conscious-tech.org antes de que venza el domingo.",
+            rawText:
+              "no olvidarme de renovar el dominio conscious-tech.org antes de que venza el domingo.",
           },
         ],
         relationships: [],
@@ -1282,13 +1456,15 @@ describe("Skill 05: evaluate_context behavioral & invariant tests", () => {
             itemId: "c22-1",
             attention: "low" as const,
             signals: ["approaching_deadline" as const],
-            rationale: "Actividad expresamente opcional ('si tengo un rato') y recreativa; plazo próximo no exige alta atención.",
+            rationale:
+              "Actividad expresamente opcional ('si tengo un rato') y recreativa; plazo próximo no exige alta atención.",
           },
           {
             itemId: "c22-2",
             attention: "high" as const,
             signals: ["external_commitment" as const, "approaching_deadline" as const],
-            rationale: "Compromiso crítico con vencimiento dominical que causa interrupción de servicio si no se renueva.",
+            rationale:
+              "Compromiso crítico con vencimiento dominical que causa interrupción de servicio si no se renueva.",
           },
         ],
         groupAssessments: [],

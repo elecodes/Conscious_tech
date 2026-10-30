@@ -161,8 +161,18 @@ describe("Fase P5.2 — Historial de ajustes visible, trazable y honesto", () =>
           action: {
             type: "reassign_time_block",
             itemId: "task-1",
-            currentBlock: { itemId: "task-1", day: "2026-10-12", startTime: "09:00", endTime: "11:00" },
-            proposedBlock: { itemId: "task-1", day: "2026-10-12", startTime: "14:00", endTime: "16:00" },
+            currentBlock: {
+              itemId: "task-1",
+              day: "2026-10-12",
+              startTime: "09:00",
+              endTime: "11:00",
+            },
+            proposedBlock: {
+              itemId: "task-1",
+              day: "2026-10-12",
+              startTime: "14:00",
+              endTime: "16:00",
+            },
             rationale: "Mover a la tarde por cansancio matutino",
           },
           humanDecision: "accepted",
@@ -179,8 +189,18 @@ describe("Fase P5.2 — Historial de ajustes visible, trazable y honesto", () =>
           action: {
             type: "reassign_time_block",
             itemId: "task-1",
-            currentBlock: { itemId: "task-1", day: "2026-10-12", startTime: "14:00", endTime: "16:00" },
-            proposedBlock: { itemId: "task-1", day: "2026-10-14", startTime: "10:00", endTime: "12:00" },
+            currentBlock: {
+              itemId: "task-1",
+              day: "2026-10-12",
+              startTime: "14:00",
+              endTime: "16:00",
+            },
+            proposedBlock: {
+              itemId: "task-1",
+              day: "2026-10-14",
+              startTime: "10:00",
+              endTime: "12:00",
+            },
             rationale: "Pasar al miércoles",
           },
           humanDecision: "accepted",
@@ -309,7 +329,12 @@ describe("Fase P5.2 — Historial de ajustes visible, trazable y honesto", () =>
         type: "reassign_time_block",
         itemId: "task-1",
         currentBlock: { itemId: "task-1", day: "2026-10-12", startTime: "09:00", endTime: "11:00" },
-        proposedBlock: { itemId: "task-1", day: "2026-10-12", startTime: "14:00", endTime: "16:00" },
+        proposedBlock: {
+          itemId: "task-1",
+          day: "2026-10-12",
+          startTime: "14:00",
+          endTime: "16:00",
+        },
         rationale: "Reasignación inicial",
       };
 
@@ -333,7 +358,12 @@ describe("Fase P5.2 — Historial de ajustes visible, trazable y honesto", () =>
         type: "reassign_time_block",
         itemId: "task-1",
         currentBlock: { itemId: "task-1", day: "2026-10-12", startTime: "14:00", endTime: "16:00" },
-        proposedBlock: { itemId: "task-1", day: "2026-10-14", startTime: "09:00", endTime: "11:00" },
+        proposedBlock: {
+          itemId: "task-1",
+          day: "2026-10-14",
+          startTime: "09:00",
+          endTime: "11:00",
+        },
         rationale: "Segunda reasignación",
       };
 
@@ -360,8 +390,12 @@ describe("Fase P5.2 — Historial de ajustes visible, trazable y honesto", () =>
 
   describe("2. Ayudantes de UI: formateo y extracción honesta", () => {
     it("formatAdjustmentActionType debe devolver etiquetas descriptivas en español", () => {
-      expect(formatAdjustmentActionType("reassign_time_block")).toBe("Reasignación de bloque horario");
-      expect(formatAdjustmentActionType("reallocate_day_work")).toBe("Redistribución de esfuerzo diario");
+      expect(formatAdjustmentActionType("reassign_time_block")).toBe(
+        "Reasignación de bloque horario"
+      );
+      expect(formatAdjustmentActionType("reallocate_day_work")).toBe(
+        "Redistribución de esfuerzo diario"
+      );
       expect(formatAdjustmentActionType("postpone_item")).toBe("Postergación de tarea");
       expect(formatAdjustmentActionType("unblock_dependency")).toBe("Desbloqueo de dependencia");
       expect(formatAdjustmentActionType("accept_risk")).toBe("Aceptación de riesgo");
@@ -374,8 +408,18 @@ describe("Fase P5.2 — Historial de ajustes visible, trazable y honesto", () =>
         getAdjustmentTargetItem({
           type: "reassign_time_block",
           itemId: "task-reassign",
-          currentBlock: { itemId: "task-reassign", day: "2026-10-12", startTime: "09:00", endTime: "11:00" },
-          proposedBlock: { itemId: "task-reassign", day: "2026-10-12", startTime: "11:00", endTime: "13:00" },
+          currentBlock: {
+            itemId: "task-reassign",
+            day: "2026-10-12",
+            startTime: "09:00",
+            endTime: "11:00",
+          },
+          proposedBlock: {
+            itemId: "task-reassign",
+            day: "2026-10-12",
+            startTime: "11:00",
+            endTime: "13:00",
+          },
           rationale: "Ajuste horario",
         })
       ).toBe("task-reassign");
@@ -439,7 +483,12 @@ describe("Fase P5.2 — Historial de ajustes visible, trazable y honesto", () =>
         type: "reassign_time_block",
         itemId: "task-1",
         currentBlock: { itemId: "task-1", day: "2026-10-12", startTime: "09:00", endTime: "11:00" },
-        proposedBlock: { itemId: "task-1", day: "2026-10-12", startTime: "14:00", endTime: "16:00" },
+        proposedBlock: {
+          itemId: "task-1",
+          day: "2026-10-12",
+          startTime: "14:00",
+          endTime: "16:00",
+        },
         rationale: "Cambio de turno",
       });
       expect(elBlock).toBeDefined();
@@ -512,8 +561,18 @@ describe("Fase P5.2 — Historial de ajustes visible, trazable y honesto", () =>
         action: {
           type: "reassign_time_block",
           itemId: "task-1",
-          currentBlock: { itemId: "task-1", day: "2026-10-12", startTime: "09:00", endTime: "11:00" },
-          proposedBlock: { itemId: "task-1", day: "2026-10-12", startTime: "14:00", endTime: "16:00" },
+          currentBlock: {
+            itemId: "task-1",
+            day: "2026-10-12",
+            startTime: "09:00",
+            endTime: "11:00",
+          },
+          proposedBlock: {
+            itemId: "task-1",
+            day: "2026-10-12",
+            startTime: "14:00",
+            endTime: "16:00",
+          },
           rationale: "Reorganización voluntaria",
         },
         humanDecision: "accepted",

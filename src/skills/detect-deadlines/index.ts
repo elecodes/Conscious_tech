@@ -7,7 +7,10 @@ import {
 } from "../../domain/deadlines";
 import { DeadlinesValidationError, parseAndValidateDeadlines } from "./parser";
 import { cleanAndValidateDeadlines } from "./deterministic";
-import { SYSTEM_PROMPT as DEADLINES_SYSTEM_PROMPT, buildUserPrompt as buildDeadlinesUserPrompt } from "./prompt";
+import {
+  SYSTEM_PROMPT as DEADLINES_SYSTEM_PROMPT,
+  buildUserPrompt as buildDeadlinesUserPrompt,
+} from "./prompt";
 
 export interface DetectDeadlinesOptions {
   maxRetries?: number;
@@ -42,22 +45,18 @@ export class DetectDeadlinesService {
       try {
         if (useCompleteJson && this.provider.completeJson) {
           const userPrompt = buildDeadlinesUserPrompt(validatedInput);
-          const { rawText } = await this.provider.completeJson(
-            DEADLINES_SYSTEM_PROMPT,
-            userPrompt
-          );
+          const { rawText } = await this.provider.completeJson(DEADLINES_SYSTEM_PROMPT, userPrompt);
           rawResult = parseAndValidateDeadlines(rawText);
         } else if (this.provider.detectDeadlines) {
           rawResult = await this.provider.detectDeadlines(validatedInput);
         } else if (this.provider.completeJson) {
           const userPrompt = buildDeadlinesUserPrompt(validatedInput);
-          const { rawText } = await this.provider.completeJson(
-            DEADLINES_SYSTEM_PROMPT,
-            userPrompt
-          );
+          const { rawText } = await this.provider.completeJson(DEADLINES_SYSTEM_PROMPT, userPrompt);
           rawResult = parseAndValidateDeadlines(rawText);
         } else {
-          throw new Error(`Provider "${this.provider.id}" does not support completeJson or detectDeadlines.`);
+          throw new Error(
+            `Provider "${this.provider.id}" does not support completeJson or detectDeadlines.`
+          );
         }
 
         const parseCheck = DetectedDeadlinesSchema.safeParse(rawResult);

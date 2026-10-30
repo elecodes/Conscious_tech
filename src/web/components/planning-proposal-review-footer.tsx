@@ -58,7 +58,9 @@ export function PlanningProposalReviewFooter({
           </p>
           {proposedWeek.confirmationPrompt.keyTradeoffs.length > 0 && (
             <div style={{ marginTop: "8px" }}>
-              <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>Puntos a tener en cuenta:</span>
+              <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                Puntos a tener en cuenta:
+              </span>
               <ul style={{ margin: "4px 0 0 16px", fontSize: "0.85rem", color: "#444" }}>
                 {proposedWeek.confirmationPrompt.keyTradeoffs.map((tradeoff, idx) => (
                   <li key={idx}>{tradeoff}</li>
@@ -92,7 +94,8 @@ export function PlanningProposalReviewFooter({
             <ul style={{ margin: "8px 0 0 0", paddingLeft: "20px", fontSize: "0.85rem" }}>
               {fallbackWarnings.map((diag, idx) => (
                 <li key={idx}>
-                  <strong>{diag.stage}:</strong> {diag.fallbackRationale || diag.sanitizedError || "Fallback aplicado"}
+                  <strong>{diag.stage}:</strong>{" "}
+                  {diag.fallbackRationale || diag.sanitizedError || "Fallback aplicado"}
                 </li>
               ))}
             </ul>
@@ -116,10 +119,19 @@ export function PlanningProposalReviewFooter({
             🗓️ Propuesta guardada como borrador futuro
           </h4>
           <p style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "#1e3a8a" }}>
-            Ya tienes una semana activa en curso (<code>{activePlanConflict.existingActivePlanId}</code>). Para proteger tu claridad mental y no saturar tu atención con múltiples agendas simultáneas, <strong>solo puede haber una semana activa a la vez</strong>.
+            Ya tienes una semana activa en curso (
+            <code>{activePlanConflict.existingActivePlanId}</code>). Para proteger tu claridad
+            mental y no saturar tu atención con múltiples agendas simultáneas,{" "}
+            <strong>solo puede haber una semana activa a la vez</strong>.
           </p>
           <p style={{ margin: "0 0 12px 0", fontSize: "0.85rem", color: "#2563eb" }}>
-            Tu planificación para la semana del <strong>{activePlanConflict.targetWeek.startDate}</strong> al <strong>{activePlanConflict.targetWeek.endDate}</strong> está guardada de forma segura como borrador en tu cuaderno local (almacenamiento en este dispositivo). Podés volver a verla y ajustarla en cualquier momento desde esta pestaña (<strong>2. Preparar semana</strong>). En cuanto completes el cierre reflexivo de tu semana actual, podrás activarla directamente.
+            Tu planificación para la semana del{" "}
+            <strong>{activePlanConflict.targetWeek.startDate}</strong> al{" "}
+            <strong>{activePlanConflict.targetWeek.endDate}</strong> está guardada de forma segura
+            como borrador en tu cuaderno local (almacenamiento en este dispositivo). Podés volver a
+            verla y ajustarla en cualquier momento desde esta pestaña (
+            <strong>2. Preparar semana</strong>). En cuanto completes el cierre reflexivo de tu
+            semana actual, podrás activarla directamente.
           </p>
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <button
@@ -146,11 +158,7 @@ export function PlanningProposalReviewFooter({
       )}
 
       {confirmationError && (
-        <div
-          className="status-message status-error"
-          style={{ marginTop: "16px" }}
-          role="alert"
-        >
+        <div className="status-message status-error" style={{ marginTop: "16px" }} role="alert">
           <strong>No se pudo activar la semana:</strong> {confirmationError}
         </div>
       )}

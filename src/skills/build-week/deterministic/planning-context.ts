@@ -115,8 +115,11 @@ export function prepareWeekConstraints(
         ? (matchingDl.resolvedStart ?? matchingDl.resolvedEnd ?? undefined)
         : undefined;
 
-      const textToSearch = `${item.title} ${matchingDl?.raw || ""} ${item.rawText || ""}`.toLowerCase();
-      const dayMatch = textToSearch.match(/\b(lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)\b/i);
+      const textToSearch =
+        `${item.title} ${matchingDl?.raw || ""} ${item.rawText || ""}`.toLowerCase();
+      const dayMatch = textToSearch.match(
+        /\b(lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)\b/i
+      );
       if (dayMatch && targetWeek) {
         const dayMap: Record<string, number> = {
           lunes: 0,

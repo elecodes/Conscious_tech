@@ -42,12 +42,21 @@ export function sanitizeErrorMessage(message: string): string {
     .replace(/(?:file:\/\/)?[/\\][A-Za-z0-9_.\-\\/]+(?:\.ts|\.js|\.mjs)/g, "[INTERNAL_PATH]");
 }
 
-export function classifyErrorStatus(err: unknown): { status: number; code: string; message: string } {
+export function classifyErrorStatus(err: unknown): {
+  status: number;
+  code: string;
+  message: string;
+} {
   const originalMsg = err instanceof Error ? err.message : String(err);
   const sanitized = sanitizeErrorMessage(originalMsg);
   const lower = originalMsg.toLowerCase();
 
-  if (lower.includes("401") || lower.includes("unauthorized") || lower.includes("invalid api key") || lower.includes("api_key")) {
+  if (
+    lower.includes("401") ||
+    lower.includes("unauthorized") ||
+    lower.includes("invalid api key") ||
+    lower.includes("api_key")
+  ) {
     return {
       status: 401,
       code: "AUTHENTICATION_ERROR",
@@ -55,7 +64,12 @@ export function classifyErrorStatus(err: unknown): { status: number; code: strin
     };
   }
 
-  if (lower.includes("429") || lower.includes("rate limit") || lower.includes("quota") || lower.includes("resource_exhausted")) {
+  if (
+    lower.includes("429") ||
+    lower.includes("rate limit") ||
+    lower.includes("quota") ||
+    lower.includes("resource_exhausted")
+  ) {
     return {
       status: 429,
       code: "QUOTA_EXCEEDED",
@@ -71,7 +85,11 @@ export function classifyErrorStatus(err: unknown): { status: number; code: strin
     };
   }
 
-  if (lower.includes("schema validation") || lower.includes("invalid input") || lower.includes("zod")) {
+  if (
+    lower.includes("schema validation") ||
+    lower.includes("invalid input") ||
+    lower.includes("zod")
+  ) {
     return {
       status: 400,
       code: "INVALID_INPUT_OR_OUTPUT",
@@ -115,10 +133,14 @@ export function createServerProvider(
 
 let hasWarnedMissingAiProxyToken = false;
 
-export function checkAiProxyTokenWarning(env: Record<string, string | undefined> = process.env): void {
+export function checkAiProxyTokenWarning(
+  env: Record<string, string | undefined> = process.env
+): void {
   if (!env.AI_PROXY_TOKEN && !hasWarnedMissingAiProxyToken) {
     hasWarnedMissingAiProxyToken = true;
-    logger.warn("[AI Proxy] Advertencia: AI_PROXY_TOKEN no está configurado. El proxy opera en modo desarrollo sin autenticación.");
+    logger.warn(
+      "[AI Proxy] Advertencia: AI_PROXY_TOKEN no está configurado. El proxy opera en modo desarrollo sin autenticación."
+    );
   }
 }
 
@@ -171,7 +193,9 @@ export async function handleAIProxyRequest(
 
   if (req.method !== "POST") {
     res.statusCode = 405;
-    res.end(JSON.stringify({ error: "Método no permitido. Use POST.", code: "METHOD_NOT_ALLOWED" }));
+    res.end(
+      JSON.stringify({ error: "Método no permitido. Use POST.", code: "METHOD_NOT_ALLOWED" })
+    );
     return;
   }
 
@@ -212,7 +236,9 @@ export async function handleAIProxyRequest(
     }
   } catch {
     res.statusCode = 400;
-    res.end(JSON.stringify({ error: "Error leyendo el cuerpo de la petición.", code: "BAD_REQUEST" }));
+    res.end(
+      JSON.stringify({ error: "Error leyendo el cuerpo de la petición.", code: "BAD_REQUEST" })
+    );
     return;
   }
 
@@ -230,7 +256,12 @@ export async function handleAIProxyRequest(
 
   if (!providerType || !["groq", "gemini", "mock"].includes(providerType)) {
     res.statusCode = 400;
-    res.end(JSON.stringify({ error: "Proveedor no válido. Debe ser 'groq', 'gemini' o 'mock'.", code: "INVALID_PROVIDER" }));
+    res.end(
+      JSON.stringify({
+        error: "Proveedor no válido. Debe ser 'groq', 'gemini' o 'mock'.",
+        code: "INVALID_PROVIDER",
+      })
+    );
     return;
   }
 
@@ -260,7 +291,12 @@ export async function handleAIProxyRequest(
         const validatedInput = ExtractItemsInputSchema.parse(payload);
         if (!validatedInput.text.trim()) {
           res.statusCode = 400;
-          res.end(JSON.stringify({ error: "El texto de entrada no puede estar vacío.", code: "EMPTY_INPUT" }));
+          res.end(
+            JSON.stringify({
+              error: "El texto de entrada no puede estar vacío.",
+              code: "EMPTY_INPUT",
+            })
+          );
           return;
         }
         result = await providerInstance.extractItems(validatedInput);
@@ -295,7 +331,12 @@ export async function handleAIProxyRequest(
         const validatedInput = BuildWeekInputSchema.parse(payload);
         if (!providerInstance.buildWeek) {
           res.statusCode = 400;
-          res.end(JSON.stringify({ error: `El proveedor '${providerType}' no soporta buildWeek.`, code: "ACTION_NOT_SUPPORTED" }));
+          res.end(
+            JSON.stringify({
+              error: `El proveedor '${providerType}' no soporta buildWeek.`,
+              code: "ACTION_NOT_SUPPORTED",
+            })
+          );
           return;
         }
         result = await providerInstance.buildWeek(validatedInput);
@@ -304,7 +345,9 @@ export async function handleAIProxyRequest(
 
       default:
         res.statusCode = 400;
-        res.end(JSON.stringify({ error: `Acción '${action}' no reconocida.`, code: "UNKNOWN_ACTION" }));
+        res.end(
+          JSON.stringify({ error: `Acción '${action}' no reconocida.`, code: "UNKNOWN_ACTION" })
+        );
         return;
     }
 

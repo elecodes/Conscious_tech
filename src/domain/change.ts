@@ -30,26 +30,13 @@ export const ImpactCategorySchema = z.enum([
 ]);
 export type ImpactCategory = z.infer<typeof ImpactCategorySchema>;
 
-export const ImpactCertaintySchema = z.enum([
-  "confirmed",
-  "potential",
-  "insufficient_information",
-]);
+export const ImpactCertaintySchema = z.enum(["confirmed", "potential", "insufficient_information"]);
 export type ImpactCertainty = z.infer<typeof ImpactCertaintySchema>;
 
-export const DependencyStateSchema = z.enum([
-  "satisfied",
-  "pending",
-  "unknown",
-]);
+export const DependencyStateSchema = z.enum(["satisfied", "pending", "unknown"]);
 export type DependencyState = z.infer<typeof DependencyStateSchema>;
 
-export const TemporalScopeSchema = z.enum([
-  "current_week",
-  "future_week",
-  "past",
-  "timeless",
-]);
+export const TemporalScopeSchema = z.enum(["current_week", "future_week", "past", "timeless"]);
 export type TemporalScope = z.infer<typeof TemporalScopeSchema>;
 
 export const CommitmentNatureSchema = z.enum([
@@ -132,90 +119,100 @@ export const CapacityDeltaOperationSchema = z.object({
 });
 export type CapacityDeltaOperation = z.infer<typeof CapacityDeltaOperationSchema>;
 
-export const IncomingChangeDeltaSchema = z.object({
-  itemOperations: z.array(ItemDeltaOperationSchema).optional(),
-  relationshipOperations: z.array(RelationshipDeltaOperationSchema).optional(),
-  deadlineOperations: z.array(DeadlineDeltaOperationSchema).optional(),
-  capacityOperations: z.array(CapacityDeltaOperationSchema).optional(),
-}).strict();
+export const IncomingChangeDeltaSchema = z
+  .object({
+    itemOperations: z.array(ItemDeltaOperationSchema).optional(),
+    relationshipOperations: z.array(RelationshipDeltaOperationSchema).optional(),
+    deadlineOperations: z.array(DeadlineDeltaOperationSchema).optional(),
+    capacityOperations: z.array(CapacityDeltaOperationSchema).optional(),
+  })
+  .strict();
 export type IncomingChangeDelta = z.infer<typeof IncomingChangeDeltaSchema>;
 
 // ============================================================================
 // Input & Validation Schemas
 // ============================================================================
 
-export const AnalyzeChangeInputSchema = z.object({
-  currentDate: CalendarDateSchema,
-  activePlan: ProposedWeekSchema,
-  changeDescription: z.string().min(1),
-  incomingDelta: IncomingChangeDeltaSchema.optional(),
-}).strict();
+export const AnalyzeChangeInputSchema = z
+  .object({
+    currentDate: CalendarDateSchema,
+    activePlan: ProposedWeekSchema,
+    changeDescription: z.string().min(1),
+    incomingDelta: IncomingChangeDeltaSchema.optional(),
+  })
+  .strict();
 export type AnalyzeChangeInput = z.infer<typeof AnalyzeChangeInputSchema>;
 
-export const ValidationErrorSchema = z.object({
-  type: z.enum([
-    "unresolved_reference",
-    "invalid_operation",
-    "malformed_delta",
-  ]),
-  referenceId: z.string().optional(),
-  message: z.string().min(1),
-  fatal: z.boolean(),
-}).strict();
+export const ValidationErrorSchema = z
+  .object({
+    type: z.enum(["unresolved_reference", "invalid_operation", "malformed_delta"]),
+    referenceId: z.string().optional(),
+    message: z.string().min(1),
+    fatal: z.boolean(),
+  })
+  .strict();
 export type ValidationError = z.infer<typeof ValidationErrorSchema>;
 
 // ============================================================================
 // Detailed Impact Elements
 // ============================================================================
 
-export const AffectedElementSchema = z.object({
-  elementId: z.string().min(1),
-  elementType: z.enum([
-    "focus",
-    "obligation",
-    "flexible_option",
-    "deferred_item",
-    "unplanned_space",
-    "item",
-  ]),
-  category: ImpactCategorySchema,
-  certainty: ImpactCertaintySchema,
-  explanation: z.string().min(1),
-  dependencyState: DependencyStateSchema.optional(),
-  temporalScope: TemporalScopeSchema.optional(),
-  commitmentNature: CommitmentNatureSchema.optional(),
-}).strict();
+export const AffectedElementSchema = z
+  .object({
+    elementId: z.string().min(1),
+    elementType: z.enum([
+      "focus",
+      "obligation",
+      "flexible_option",
+      "deferred_item",
+      "unplanned_space",
+      "item",
+    ]),
+    category: ImpactCategorySchema,
+    certainty: ImpactCertaintySchema,
+    explanation: z.string().min(1),
+    dependencyState: DependencyStateSchema.optional(),
+    temporalScope: TemporalScopeSchema.optional(),
+    commitmentNature: CommitmentNatureSchema.optional(),
+  })
+  .strict();
 export type AffectedElement = z.infer<typeof AffectedElementSchema>;
 
-export const CapacityImpactAnalysisSchema = z.object({
-  previousTotalHours: z.number().finite().nonnegative().nullable(),
-  projectedTotalHours: z.number().finite().nonnegative().nullable(),
-  deltaHours: z.number().finite().nullable(),
-  arithmeticBalance: ArithmeticBalanceSchema,
-  notes: z.string().min(1),
-}).strict();
+export const CapacityImpactAnalysisSchema = z
+  .object({
+    previousTotalHours: z.number().finite().nonnegative().nullable(),
+    projectedTotalHours: z.number().finite().nonnegative().nullable(),
+    deltaHours: z.number().finite().nullable(),
+    arithmeticBalance: ArithmeticBalanceSchema,
+    notes: z.string().min(1),
+  })
+  .strict();
 export type CapacityImpactAnalysis = z.infer<typeof CapacityImpactAnalysisSchema>;
 
-export const UnaffectedAreaVerificationSchema = z.object({
-  areaName: z.string().min(1),
-  elementIds: z.array(z.string().min(1)),
-  isolationReason: z.string().min(1),
-}).strict();
+export const UnaffectedAreaVerificationSchema = z
+  .object({
+    areaName: z.string().min(1),
+    elementIds: z.array(z.string().min(1)),
+    isolationReason: z.string().min(1),
+  })
+  .strict();
 export type UnaffectedAreaVerification = z.infer<typeof UnaffectedAreaVerificationSchema>;
 
 // ============================================================================
 // Output Contract: AnalyzeChangeOutput
 // ============================================================================
 
-export const AnalyzeChangeOutputSchema = z.object({
-  status: AnalyzeChangeStatusSchema,
-  changeType: ChangeTypeSchema,
-  summary: z.string().min(1),
-  affectedElements: z.array(AffectedElementSchema),
-  capacityImpact: CapacityImpactAnalysisSchema,
-  unaffectedAreas: z.array(UnaffectedAreaVerificationSchema),
-  validationErrors: z.array(ValidationErrorSchema),
-  requiresUserIntervention: z.boolean(),
-  interventionReason: z.string().nullable(),
-}).strict();
+export const AnalyzeChangeOutputSchema = z
+  .object({
+    status: AnalyzeChangeStatusSchema,
+    changeType: ChangeTypeSchema,
+    summary: z.string().min(1),
+    affectedElements: z.array(AffectedElementSchema),
+    capacityImpact: CapacityImpactAnalysisSchema,
+    unaffectedAreas: z.array(UnaffectedAreaVerificationSchema),
+    validationErrors: z.array(ValidationErrorSchema),
+    requiresUserIntervention: z.boolean(),
+    interventionReason: z.string().nullable(),
+  })
+  .strict();
 export type AnalyzeChangeOutput = z.infer<typeof AnalyzeChangeOutputSchema>;

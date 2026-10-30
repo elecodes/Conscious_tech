@@ -104,19 +104,26 @@ export function PlanningExtractedItemsReview({
       </div>
 
       <p className="calm-muted" style={{ fontSize: "0.85rem", margin: "0 0 10px 0" }}>
-        Selecciona qué elementos deseas incluir en la propuesta semanal. Los no seleccionados
-        se descartarán de esta planificación.
+        Selecciona qué elementos deseas incluir en la propuesta semanal. Los no seleccionados se
+        descartarán de esta planificación.
       </p>
 
       {extractedItems.length === 0 ? (
         <p className="calm-muted" style={{ marginTop: "12px" }}>
-          No se identificaron elementos accionables en el texto. Puedes intentar expresarlo con
-          más detalle.
+          No se identificaron elementos accionables en el texto. Puedes intentar expresarlo con más
+          detalle.
         </p>
       ) : (
         <ul
           className="items-list"
-          style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "6px" }}
+          style={{
+            listStyle: "none",
+            padding: 0,
+            margin: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: "6px",
+          }}
           aria-label="Lista de elementos identificados"
         >
           {extractedItems.map((item) => {
@@ -173,11 +180,16 @@ export function PlanningExtractedItemsReview({
                     >
                       {item.title}
                     </strong>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        flexWrap: "wrap",
+                      }}
+                    >
                       <span className={`badge badge-${item.type}`}>{item.type}</span>
-                      {item.project && (
-                        <span className="badge badge-muted">📁 {item.project}</span>
-                      )}
+                      {item.project && <span className="badge badge-muted">📁 {item.project}</span>}
                       {item.estimatedEffort && (
                         <span className="badge badge-muted">
                           ⏱ {item.estimatedEffort.value} {item.estimatedEffort.unit}
@@ -280,7 +292,16 @@ export function PlanningExtractedItemsReview({
           borderRadius: "8px",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", flexWrap: "wrap", gap: "8px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "6px",
+            flexWrap: "wrap",
+            gap: "8px",
+          }}
+        >
           <label
             htmlFor="planning-notes-input"
             style={{ fontWeight: 600, fontSize: "0.88rem", color: "var(--text-main)" }}
@@ -291,10 +312,7 @@ export function PlanningExtractedItemsReview({
             <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
               {noteText.length} caracteres
             </span>
-            <VoiceDictationButton
-              getText={() => noteText}
-              onTranscript={(t) => setNoteText(t)}
-            />
+            <VoiceDictationButton getText={() => noteText} onTranscript={(t) => setNoteText(t)} />
           </div>
         </div>
         <textarea
@@ -303,7 +321,12 @@ export function PlanningExtractedItemsReview({
           value={noteText}
           onChange={(e) => setNoteText(e.target.value)}
           placeholder="Escribe tareas o ideas adicionales que quieras sumar a la lista de arriba..."
-          style={{ width: "100%", padding: "8px 10px", fontSize: "0.88rem", boxSizing: "border-box" }}
+          style={{
+            width: "100%",
+            padding: "8px 10px",
+            fontSize: "0.88rem",
+            boxSizing: "border-box",
+          }}
           disabled={isExtracting}
         />
         <div
@@ -372,13 +395,20 @@ export function PlanningExtractedItemsReview({
           Límites de capacidad y espacio protegido (opcional)
         </div>
         <p className="calm-muted" style={{ fontSize: "0.82rem", margin: "0 0 10px 0" }}>
-          Registra cuántas horas tienes disponibles y cuánto margen quieres proteger para comprobar la viabilidad real.
+          Registra cuántas horas tienes disponibles y cuánto margen quieres proteger para comprobar
+          la viabilidad real.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
           <div style={{ flex: "1 1 200px" }}>
             <label
               htmlFor="planning-available-hours-input"
-              style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px", color: "#4b5563" }}
+              style={{
+                display: "block",
+                fontSize: "0.82rem",
+                fontWeight: 500,
+                marginBottom: "4px",
+                color: "#4b5563",
+              }}
             >
               Horas realmente disponibles:
             </label>
@@ -390,7 +420,12 @@ export function PlanningExtractedItemsReview({
               value={availableHoursInput}
               onChange={(e) => setAvailableHoursInput(e.target.value)}
               placeholder="Ej: 30 (deja vacío si es desconocida)"
-              style={{ width: "100%", padding: "6px 10px", fontSize: "0.88rem", boxSizing: "border-box" }}
+              style={{
+                width: "100%",
+                padding: "6px 10px",
+                fontSize: "0.88rem",
+                boxSizing: "border-box",
+              }}
               disabled={isPlanning}
               data-testid="planning-available-hours-input"
             />
@@ -398,7 +433,13 @@ export function PlanningExtractedItemsReview({
           <div style={{ flex: "1 1 200px" }}>
             <label
               htmlFor="planning-protected-space-ratio-input"
-              style={{ display: "block", fontSize: "0.82rem", fontWeight: 500, marginBottom: "4px", color: "#4b5563" }}
+              style={{
+                display: "block",
+                fontSize: "0.82rem",
+                fontWeight: 500,
+                marginBottom: "4px",
+                color: "#4b5563",
+              }}
             >
               Espacio a proteger (% margen):
             </label>
@@ -411,7 +452,12 @@ export function PlanningExtractedItemsReview({
               value={protectedSpacePercentInput}
               onChange={(e) => setProtectedSpacePercentInput(e.target.value)}
               placeholder="25"
-              style={{ width: "100%", padding: "6px 10px", fontSize: "0.88rem", boxSizing: "border-box" }}
+              style={{
+                width: "100%",
+                padding: "6px 10px",
+                fontSize: "0.88rem",
+                boxSizing: "border-box",
+              }}
               disabled={isPlanning}
               data-testid="planning-protected-space-input"
             />
@@ -420,11 +466,7 @@ export function PlanningExtractedItemsReview({
       </div>
 
       {planningError && (
-        <div
-          className="status-message status-error"
-          style={{ marginTop: "12px" }}
-          role="alert"
-        >
+        <div className="status-message status-error" style={{ marginTop: "12px" }} role="alert">
           <strong>Error de planificación:</strong> {planningError}
         </div>
       )}
@@ -439,8 +481,8 @@ export function PlanningExtractedItemsReview({
           {isPlanning
             ? "Estructurando propuesta semanal..."
             : selectedCarryOverItemIds.size > 0
-            ? `Generar propuesta semanal (${acceptedCount} notas + ${selectedCarryOverItemIds.size} postergadas)`
-            : `Generar propuesta semanal (${acceptedCount} elementos)`}
+              ? `Generar propuesta semanal (${acceptedCount} notas + ${selectedCarryOverItemIds.size} postergadas)`
+              : `Generar propuesta semanal (${acceptedCount} elementos)`}
         </button>
       </div>
     </div>

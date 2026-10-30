@@ -22,10 +22,7 @@ export class WeekValidationError extends Error {
 /**
  * Pure function to resolve the target planning week.
  */
-export function resolveTargetWeek(
-  currentDate: string,
-  targetWeek?: TargetWeek
-): TargetWeek {
+export function resolveTargetWeek(currentDate: string, targetWeek?: TargetWeek): TargetWeek {
   if (!isValidCalendarDate(currentDate)) {
     throw new WeekValidationError(
       `Invalid currentDate: "${currentDate}". Must be a valid ISO YYYY-MM-DD date.`
@@ -58,7 +55,10 @@ export function extractItemHours(item: ExtractedItem): number | null {
   return null;
 }
 
-export function isDateInTargetWeek(dateStr: string | null | undefined, targetWeek: TargetWeek): boolean {
+export function isDateInTargetWeek(
+  dateStr: string | null | undefined,
+  targetWeek: TargetWeek
+): boolean {
   if (!dateStr || !isValidCalendarDate(dateStr)) return false;
   return dateStr >= targetWeek.startDate && dateStr <= targetWeek.endDate;
 }
@@ -127,8 +127,7 @@ export function calculateWeeklyCapacity(
   }
 
   // plannedHours is strictly null unless completeness is complete
-  const plannedHours =
-    estimationCompleteness === "complete" ? knownEstimatedHours : null;
+  const plannedHours = estimationCompleteness === "complete" ? knownEstimatedHours : null;
 
   // 3. Resolve capacityStatus and protectedSpaceStatus
   if (total == null) {

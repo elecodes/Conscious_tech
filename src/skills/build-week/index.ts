@@ -1,9 +1,5 @@
 import { AIProvider, ProviderExecutionMeta } from "../../providers/ai-provider";
-import {
-  BuildWeekInput,
-  ProposedWeek,
-  createEmptyProposedWeek,
-} from "../../domain/week";
+import { BuildWeekInput, ProposedWeek, createEmptyProposedWeek } from "../../domain/week";
 import {
   assertValidBuildWeekInput,
   buildDeterministicPlanningContext,
@@ -82,14 +78,10 @@ export class BuildWeekService {
       attempts++;
       try {
         if (useCompleteJson && this.provider.completeJson) {
-          const { rawText, meta } = await this.provider.completeJson(
-            systemPrompt,
-            userPrompt,
-            {
-              temperature: 0.1,
-              maxTokens: 3500,
-            }
-          );
+          const { rawText, meta } = await this.provider.completeJson(systemPrompt, userPrompt, {
+            temperature: 0.1,
+            maxTokens: 3500,
+          });
           const parseOutcome = parseProposedWeek(rawText, input);
           if (!parseOutcome.success) {
             const issues = "issues" in parseOutcome ? parseOutcome.issues : [];
@@ -139,14 +131,10 @@ export class BuildWeekService {
         }
 
         if (this.provider.completeJson) {
-          const { rawText, meta } = await this.provider.completeJson(
-            systemPrompt,
-            userPrompt,
-            {
-              temperature: 0.1,
-              maxTokens: 3500,
-            }
-          );
+          const { rawText, meta } = await this.provider.completeJson(systemPrompt, userPrompt, {
+            temperature: 0.1,
+            maxTokens: 3500,
+          });
           const parseOutcome = parseProposedWeek(rawText, input);
           if (!parseOutcome.success) {
             const issues = "issues" in parseOutcome ? parseOutcome.issues : [];
@@ -163,7 +151,9 @@ export class BuildWeekService {
           break;
         }
 
-        throw new Error(`Provider "${this.provider.id}" does not support buildWeek or completeJson.`);
+        throw new Error(
+          `Provider "${this.provider.id}" does not support buildWeek or completeJson.`
+        );
       } catch (err) {
         lastError = err;
         if (err instanceof WeekValidationError && attempts < maxAttempts) {
@@ -229,9 +219,5 @@ export async function buildWeekWithAudit(
   return service.execute(input);
 }
 
-export {
-  evaluateProposedWeekSemanticQuality,
-};
-export type {
-  SemanticQualityCheckResult,
-};
+export { evaluateProposedWeekSemanticQuality };
+export type { SemanticQualityCheckResult };

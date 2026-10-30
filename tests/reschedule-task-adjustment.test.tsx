@@ -73,7 +73,8 @@ describe("Reprogramación segura de tareas y propuestas de ajuste interactivas",
           itemId: "item-informe",
           title: "Preparar el informe trimestral",
           reason: "not_scheduled",
-          rationale: "Elemento no programado en la propuesta; conservado para decisión de la persona.",
+          rationale:
+            "Elemento no programado en la propuesta; conservado para decisión de la persona.",
         },
       ],
       unplannedSpace: {
@@ -123,7 +124,9 @@ describe("Reprogramación segura de tareas y propuestas de ajuste interactivas",
     await controller.reloadSession();
   });
 
-  function createMockContextValue(overrides?: Partial<WeeklySessionContextValue>): WeeklySessionContextValue {
+  function createMockContextValue(
+    overrides?: Partial<WeeklySessionContextValue>
+  ): WeeklySessionContextValue {
     return {
       state: controller.getSnapshot(),
       service,
@@ -271,7 +274,8 @@ describe("Reprogramación segura de tareas y propuestas de ajuste interactivas",
       const targetWeekStart = "2026-10-26";
       const targetWeekEnd = "2026-11-01";
       const isDeadlineOverdue = effectiveDeadline < targetWeekStart;
-      const isCapacityUnconfigured = samplePlan.proposal.weekSummary.capacity.totalAvailableHours === null;
+      const isCapacityUnconfigured =
+        samplePlan.proposal.weekSummary.capacity.totalAvailableHours === null;
 
       expect(isDeadlineOverdue).toBe(true);
       expect(targetWeekEnd).toBe("2026-11-01");
@@ -287,7 +291,8 @@ describe("Reprogramación segura de tareas y propuestas de ajuste interactivas",
         currentCategory: "deferred_items",
         targetReason: "intentional_postponement",
         hoursFreed: 6,
-        rationale: "Reprogramación intencional de 'Preparar el informe trimestral' hacia 2026-10-26 al 2026-11-01.",
+        rationale:
+          "Reprogramación intencional de 'Preparar el informe trimestral' hacia 2026-10-26 al 2026-11-01.",
         targetWeek: {
           startDate: "2026-10-26",
           endDate: "2026-11-01",

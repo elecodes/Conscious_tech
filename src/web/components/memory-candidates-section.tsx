@@ -3,7 +3,10 @@ import { formatMemoryCategory, formatProvenanceSource } from "./weekly-session-f
 
 export interface MemoryCandidatesSectionProps {
   memoryCandidates: StoreCandidate[];
-  confirmMemoryCandidate: (candidate: StoreCandidate, decision: "accepted" | "rejected") => Promise<any>;
+  confirmMemoryCandidate: (
+    candidate: StoreCandidate,
+    decision: "accepted" | "rejected"
+  ) => Promise<any>;
   setFeedbackMessage: (msg: string | null) => void;
 }
 
@@ -23,15 +26,18 @@ export function MemoryCandidatesSection({
     >
       <h3>Candidatos de memoria pendientes de decisión</h3>
       <p className="calm-text" style={{ marginBottom: "12px" }}>
-        El sistema identificó posibles aprendizajes.{" "}
-        <strong>No están guardados todavía.</strong> Tú decides cuáles conservar:
+        El sistema identificó posibles aprendizajes. <strong>No están guardados todavía.</strong> Tú
+        decides cuáles conservar:
       </p>
       <div className="items-list">
         {memoryCandidates.map((candidate: StoreCandidate) => (
           <div key={candidate.candidateId} className="item-card">
             <div className="item-content">
               <div className="item-title">"{candidate.rawText}"</div>
-              <div className="item-tags" style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "6px" }}>
+              <div
+                className="item-tags"
+                style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "6px" }}
+              >
                 <span className="badge badge-idea">
                   {formatMemoryCategory(candidate.suggestedCategory)}
                 </span>

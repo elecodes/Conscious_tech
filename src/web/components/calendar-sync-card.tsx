@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
 import { TargetWeek } from "../../domain/week";
-import {
-  CalendarWeekSummary,
-  calculateCalendarWeekSummary,
-} from "../../domain/calendar";
+import { CalendarWeekSummary, calculateCalendarWeekSummary } from "../../domain/calendar";
 import { parseIcalContent } from "../../infrastructure/calendar/ical-parser";
 
 export interface CalendarSyncCardProps {
@@ -171,8 +168,19 @@ export function CalendarSyncCard({
 
       {isOpen && (
         <div style={{ marginTop: "14px", borderTop: "1px solid #e2e8f0", paddingTop: "12px" }}>
-          <p style={{ fontSize: "0.82rem", color: "var(--text-muted, #475569)", marginBottom: "10px" }}>
-            Pegá la <strong>Dirección secreta en formato iCal</strong> de tu Google Calendar (la encontrás en <em>Google Calendar &gt; Configuración &gt; Tu calendario &gt; Integrar el calendario</em>) o subí tu archivo <code>.ics</code>:
+          <p
+            style={{
+              fontSize: "0.82rem",
+              color: "var(--text-muted, #475569)",
+              marginBottom: "10px",
+            }}
+          >
+            Pegá la <strong>Dirección secreta en formato iCal</strong> de tu Google Calendar (la
+            encontrás en{" "}
+            <em>
+              Google Calendar &gt; Configuración &gt; Tu calendario &gt; Integrar el calendario
+            </em>
+            ) o subí tu archivo <code>.ics</code>:
           </p>
 
           <div style={{ display: "flex", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
@@ -240,7 +248,10 @@ export function CalendarSyncCard({
           >
             <span>🔒</span>
             <span data-testid="calendar-privacy-notice">
-              <strong>Privacidad:</strong> El enlace privado se guarda localmente en este navegador para futuras semanas (podés eliminarlo en cualquier momento con "Olvidar enlace") y se consulta vía POST local seguro sin enviarse a servidores de terceros ni guardarse en registros de acceso.
+              <strong>Privacidad:</strong> El enlace privado se guarda localmente en este navegador
+              para futuras semanas (podés eliminarlo en cualquier momento con "Olvidar enlace") y se
+              consulta vía POST local seguro sin enviarse a servidores de terceros ni guardarse en
+              registros de acceso.
             </span>
           </div>
 
@@ -271,7 +282,9 @@ export function CalendarSyncCard({
                 fontSize: "0.82rem",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+              <div
+                style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}
+              >
                 <strong style={{ color: "#1e293b" }}>
                   Semana {lastSummary.targetWeek.startDate} al {lastSummary.targetWeek.endDate}
                 </strong>
@@ -282,13 +295,18 @@ export function CalendarSyncCard({
 
               {lastSummary.events.length === 0 ? (
                 <div style={{ color: "#64748b", fontStyle: "italic" }}>
-                  No se encontraron eventos con horario para esta semana. Tenés tu capacidad 100% libre.
+                  No se encontraron eventos con horario para esta semana. Tenés tu capacidad 100%
+                  libre.
                 </div>
               ) : (
                 <ul style={{ margin: 0, paddingLeft: "18px", color: "#334155" }}>
                   {lastSummary.events.slice(0, 5).map((ev) => (
                     <li key={ev.id} style={{ marginBottom: "3px" }}>
-                      <strong>{ev.day}</strong> {ev.startTime !== "00:00" ? `(${ev.startTime} - ${ev.endTime})` : "(Todo el día)"}: {ev.title} {ev.durationHours > 0 ? `· ${ev.durationHours}h` : ""}
+                      <strong>{ev.day}</strong>{" "}
+                      {ev.startTime !== "00:00"
+                        ? `(${ev.startTime} - ${ev.endTime})`
+                        : "(Todo el día)"}
+                      : {ev.title} {ev.durationHours > 0 ? `· ${ev.durationHours}h` : ""}
                     </li>
                   ))}
                   {lastSummary.events.length > 5 && (

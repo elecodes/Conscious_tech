@@ -1,9 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { ProposedWeek, DayConstraint } from "../src/domain/week";
-import {
-  TimeBlock,
-  DailyWorkAllocation,
-} from "../src/domain/conflict";
+import { TimeBlock, DailyWorkAllocation } from "../src/domain/conflict";
 import { ProposeAdjustmentInput, validateProposalInvariants } from "../src/domain/adjustment";
 import { proposeAdjustmentsDeterministically } from "../src/skills/propose-adjustment/deterministic";
 
@@ -218,9 +215,7 @@ describe("Skill 09: propose_adjustment - 10 Canonical Fixture Suite (adj-01 to a
     expect(prop2).toBeDefined();
     expect(prop2.resolvedConflictIds).toContain("conflict-schedule-overlap-task-B-task-C");
     expect(prop2.unresolvedConflictIds).toContain("conflict-weekly-capacity-deficit");
-    expect(prop2.unresolvedBreakdown.confirmed).toContain(
-      "conflict-weekly-capacity-deficit"
-    );
+    expect(prop2.unresolvedBreakdown.confirmed).toContain("conflict-weekly-capacity-deficit");
 
     // Global unaddressed conflict IDs should be empty because both were addressed across the proposals
     expect(res.unaddressedConflictIds).toEqual([]);
@@ -300,9 +295,7 @@ describe("Skill 09: propose_adjustment - 10 Canonical Fixture Suite (adj-01 to a
     const invalidRealloc = res.proposals.find(
       (p) =>
         p.strategy === "reallocate_daily_work" &&
-        p.actions.some(
-          (a) => a.type === "reallocate_day_work" && a.targetDay === "2026-10-16"
-        )
+        p.actions.some((a) => a.type === "reallocate_day_work" && a.targetDay === "2026-10-16")
     );
     expect(invalidRealloc).toBeUndefined();
   });

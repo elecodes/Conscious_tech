@@ -187,14 +187,18 @@ describe("WeeklySchedule Domain Model & Schemas", () => {
           ...baseFailed,
           lifecycleStatus: "superseded",
         })
-      ).toThrow("An adjustment that failed to apply cannot have lifecycleStatus 'superseded' or 'reverted'");
+      ).toThrow(
+        "An adjustment that failed to apply cannot have lifecycleStatus 'superseded' or 'reverted'"
+      );
 
       expect(() =>
         ScheduleAdjustmentRecordSchema.parse({
           ...baseFailed,
           lifecycleStatus: "reverted",
         })
-      ).toThrow("An adjustment that failed to apply cannot have lifecycleStatus 'superseded' or 'reverted'");
+      ).toThrow(
+        "An adjustment that failed to apply cannot have lifecycleStatus 'superseded' or 'reverted'"
+      );
     });
 
     it("accepts lifecycleStatus 'superseded' or 'reverted' when applicationOutcome is 'applied' (H-02)", () => {
@@ -490,9 +494,7 @@ describe("WeeklySchedule Domain Model & Schemas", () => {
 
     it("enforces positive explicit DayConstraint capacity when allocated hours exceed limit (H-01)", () => {
       const schedule = createBaseSchedule({
-        dayConstraints: [
-          { day: "2026-10-14", availableHours: 4, note: "Medio día disponible" },
-        ],
+        dayConstraints: [{ day: "2026-10-14", availableHours: 4, note: "Medio día disponible" }],
         dailyAllocations: [
           { itemId: "item-task-1", day: "2026-10-14", allocatedHours: 2.5 },
           { itemId: "item-task-2", day: "2026-10-14", allocatedHours: 2.0 }, // Sum = 4.5 > 4.0
@@ -506,9 +508,7 @@ describe("WeeklySchedule Domain Model & Schemas", () => {
 
     it("allows allocations within positive explicit DayConstraint capacity (H-01)", () => {
       const schedule = createBaseSchedule({
-        dayConstraints: [
-          { day: "2026-10-14", availableHours: 5, note: "5 horas disponibles" },
-        ],
+        dayConstraints: [{ day: "2026-10-14", availableHours: 5, note: "5 horas disponibles" }],
         dailyAllocations: [
           { itemId: "item-task-1", day: "2026-10-14", allocatedHours: 2.5 },
           { itemId: "item-task-2", day: "2026-10-14", allocatedHours: 2.0 }, // Sum = 4.5 <= 5.0

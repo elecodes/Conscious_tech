@@ -62,7 +62,15 @@ export function UnforeseenRadarSection({
       </p>
 
       <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "8px",
+          }}
+        >
           <label htmlFor="radar-input" style={{ fontSize: "0.85rem", fontWeight: 600 }}>
             Describe el nuevo evento o tarea:
           </label>
@@ -120,11 +128,7 @@ export function UnforeseenRadarSection({
       </div>
 
       {radarError && (
-        <div
-          className="status-message status-error"
-          style={{ marginTop: "12px" }}
-          role="alert"
-        >
+        <div className="status-message status-error" style={{ marginTop: "12px" }} role="alert">
           {radarError}
         </div>
       )}
@@ -142,14 +146,14 @@ export function UnforeseenRadarSection({
               radarResult.outcome === "changes_balance"
                 ? "1px solid #f87171"
                 : radarResult.outcome === "flexible_option"
-                ? "1px solid #fbbf24"
-                : "1px solid #86efac",
+                  ? "1px solid #fbbf24"
+                  : "1px solid #86efac",
             background:
               radarResult.outcome === "changes_balance"
                 ? "#fff5f5"
                 : radarResult.outcome === "flexible_option"
-                ? "#fffdf5"
-                : "#f0fdf4",
+                  ? "#fffdf5"
+                  : "#f0fdf4",
           }}
         >
           <div
@@ -170,8 +174,8 @@ export function UnforeseenRadarSection({
                 radarResult.outcome === "changes_balance"
                   ? "badge badge-concern"
                   : radarResult.outcome === "flexible_option"
-                  ? "badge badge-idea"
-                  : "badge badge-task"
+                    ? "badge badge-idea"
+                    : "badge badge-task"
               }
               data-testid="radar-verdict-badge"
             >
@@ -248,9 +252,7 @@ export function UnforeseenRadarSection({
                       data-testid={`radar-proposal-${prop.id}`}
                     >
                       <div style={{ flex: 1, minWidth: "220px" }}>
-                        <div style={{ fontWeight: 600, fontSize: "0.88rem" }}>
-                          {prop.title}
-                        </div>
+                        <div style={{ fontWeight: 600, fontSize: "0.88rem" }}>{prop.title}</div>
                         <div
                           className="calm-muted"
                           style={{ fontSize: "0.82rem", marginTop: "2px" }}

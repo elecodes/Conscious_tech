@@ -40,7 +40,11 @@ export class IndexedDbWeeklyScheduleRepository implements WeeklyScheduleReposito
       const existingParsed = WeeklyScheduleSchema.safeParse(existingRaw);
       if (!existingParsed.success) {
         tx.abort();
-        throw new InvalidRecordDataError(STORES.SCHEDULES, schedule.scheduleId, existingParsed.error.issues);
+        throw new InvalidRecordDataError(
+          STORES.SCHEDULES,
+          schedule.scheduleId,
+          existingParsed.error.issues
+        );
       }
       existingVersion = existingParsed.data.version;
     }
@@ -62,9 +66,9 @@ export class IndexedDbWeeklyScheduleRepository implements WeeklyScheduleReposito
     // 3. Prepare updated schedule with version incremented exactly by one if updating
     const nextVersion = options?.force
       ? schedule.version
-      : (expectedScheduleVersion !== undefined
+      : expectedScheduleVersion !== undefined
         ? expectedScheduleVersion + 1
-        : schedule.version);
+        : schedule.version;
 
     const toWrite: WeeklySchedule = {
       ...schedule,
@@ -75,7 +79,11 @@ export class IndexedDbWeeklyScheduleRepository implements WeeklyScheduleReposito
     const schemaValidation = WeeklyScheduleSchema.safeParse(toWrite);
     if (!schemaValidation.success) {
       tx.abort();
-      throw new InvalidRecordDataError(STORES.SCHEDULES, schedule.scheduleId, schemaValidation.error.issues);
+      throw new InvalidRecordDataError(
+        STORES.SCHEDULES,
+        schedule.scheduleId,
+        schemaValidation.error.issues
+      );
     }
 
     const invariantValidation = validateWeeklyScheduleInvariants(schemaValidation.data);
@@ -105,7 +113,9 @@ export class IndexedDbWeeklyScheduleRepository implements WeeklyScheduleReposito
 
     const invariantCheck = validateWeeklyScheduleInvariants(parseResult.data);
     if (!invariantCheck.valid) {
-      throw new Error(`Corrupted schedule invariants in storage for "${scheduleId}": ${invariantCheck.errors.join("; ")}`);
+      throw new Error(
+        `Corrupted schedule invariants in storage for "${scheduleId}": ${invariantCheck.errors.join("; ")}`
+      );
     }
 
     return parseResult.data;
@@ -122,12 +132,18 @@ export class IndexedDbWeeklyScheduleRepository implements WeeklyScheduleReposito
     const parseResult = WeeklyScheduleSchema.safeParse(raw);
     if (!parseResult.success) {
       const id = (raw as Record<string, unknown>)?.scheduleId;
-      throw new InvalidRecordDataError(STORES.SCHEDULES, typeof id === "string" ? id : "unknown", parseResult.error.issues);
+      throw new InvalidRecordDataError(
+        STORES.SCHEDULES,
+        typeof id === "string" ? id : "unknown",
+        parseResult.error.issues
+      );
     }
 
     const invariantCheck = validateWeeklyScheduleInvariants(parseResult.data);
     if (!invariantCheck.valid) {
-      throw new Error(`Corrupted schedule invariants in storage for plan "${planId}": ${invariantCheck.errors.join("; ")}`);
+      throw new Error(
+        `Corrupted schedule invariants in storage for plan "${planId}": ${invariantCheck.errors.join("; ")}`
+      );
     }
 
     return parseResult.data;
@@ -146,11 +162,17 @@ export class IndexedDbWeeklyScheduleRepository implements WeeklyScheduleReposito
         if (invariantCheck.valid) {
           schedules.push(parseResult.data);
         } else {
-          logger.warn(`[IndexedDbWeeklyScheduleRepository] Skipping schedule with invariant violations:`, invariantCheck.errors);
+          logger.warn(
+            `[IndexedDbWeeklyScheduleRepository] Skipping schedule with invariant violations:`,
+            invariantCheck.errors
+          );
         }
       } else {
         const id = (raw as Record<string, unknown>)?.scheduleId;
-        logger.warn(`[IndexedDbWeeklyScheduleRepository] Skipping corrupted schedule ID "${id}":`, parseResult.error.issues);
+        logger.warn(
+          `[IndexedDbWeeklyScheduleRepository] Skipping corrupted schedule ID "${id}":`,
+          parseResult.error.issues
+        );
       }
     }
     return schedules;

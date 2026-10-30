@@ -1,9 +1,11 @@
 # ADR 0009: Contrato de Propuesta de Ajustes (`propose_adjustment`)
 
 ## Estado
+
 Aceptado
 
 ## Contexto
+
 En Conscious Tech, tras detectar conflictos materiales, temporales o de capacidad mediante la Skill 08 (`detect_conflict`), el sistema debe proporcionar alternativas de ajuste respetando el principio central del producto:
 
 > **La IA propone. La persona decide.**
@@ -25,7 +27,7 @@ La Skill 09 (`propose_adjustment`) formula hasta tres alternativas de reajuste e
    - `accept_risk`: registra la decisión consciente de asumir una tensión o riesgo potencial sin modificar el plan.
    - `request_information`: solicita datos faltantes indispensables al usuario.
 
-3. **Invariante de Conservación y Partición Exacta del 100 % ($S_{\text{total}}$)**:
+3. **Invariante de Conservación y Partición Exacta del 100 % ($S\_{\text{total}}$)**:
    - Para cada propuesta generada, todos los ítems de `activePlan` se particionan de forma biyectiva y disjunta en:
      $$S_{\text{total}} = \text{affectedPlanItemIds} \ \dot\cup \ \text{retainedPlanItemIds} \ \dot\cup \ \text{previouslyDeferredItemIds}$$
    - Se prohíben terminantemente ítems fantasma, omisiones o duplicaciones entre subconjuntos.
@@ -55,5 +57,6 @@ La Skill 09 (`propose_adjustment`) formula hasta tres alternativas de reajuste e
    - Todo el motor opera mediante reglas de código puro en TypeScript y esquemas Zod, con cero llamadas a proveedores de IA y cero consumo de tokens.
 
 ## Consecuencias
+
 - 14 tests canónicos de fixtures y 20 tests unitarios de dominio verifican la totalidad de las invariantes.
 - Proporciona una base sólida, auditable y segura para la interacción del usuario o la posterior confirmación de ajustes (Skill 10).

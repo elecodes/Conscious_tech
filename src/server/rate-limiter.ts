@@ -34,7 +34,10 @@ export class SimpleRateLimiter {
     return pruned;
   }
 
-  public check(key: string, currentTime?: number): { allowed: boolean; remaining: number; resetMs: number } {
+  public check(
+    key: string,
+    currentTime?: number
+  ): { allowed: boolean; remaining: number; resetMs: number } {
     const now = currentTime ?? Date.now();
     const windowStart = now - this.windowMs;
 

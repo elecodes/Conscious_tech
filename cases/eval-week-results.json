@@ -58,10 +58,7 @@
     "fociReview": [
       {
         "title": "Avance en definición de MVP y proyecto ArchitectAI",
-        "contributingItemIds": [
-          "c01-2",
-          "c01-4"
-        ],
+        "contributingItemIds": ["c01-2", "c01-4"],
         "desiredOutcome": "Progresar en la definición del MVP y continuar el desarrollo de ArchitectAI aprovechando el estado 'started' de ambas tareas.",
         "estimatedHours": null
       }
@@ -90,10 +87,7 @@
           "title": "Avance en definición de MVP y proyecto ArchitectAI",
           "desiredOutcome": "Progresar en la definición del MVP y continuar el desarrollo de ArchitectAI aprovechando el estado 'started' de ambas tareas.",
           "rationale": "Ambas tareas tienen atención media y están ya iniciadas, lo que sugiere un flujo de trabajo activo. Agruparlas permite mantener el impulso en el desarrollo técnico sin la presión de plazos estrictos.",
-          "contributingItemIds": [
-            "c01-2",
-            "c01-4"
-          ],
+          "contributingItemIds": ["c01-2", "c01-4"],
           "estimatedHours": null
         }
       ],
@@ -395,9 +389,7 @@
         },
         "invariants": {
           "valid": false,
-          "errors": [
-            "Connection error."
-          ]
+          "errors": ["Connection error."]
         },
         "conservation": {
           "inputCount": 0,
@@ -478,9 +470,7 @@
     "fociReview": [
       {
         "title": "Avance en cierre contable y fiscal trimestral",
-        "contributingItemIds": [
-          "c02-3"
-        ],
+        "contributingItemIds": ["c02-3"],
         "desiredOutcome": "Completar la preparación de la documentación necesaria para la presentación tributaria y resolver la gestión de facturas.",
         "estimatedHours": null
       }
@@ -510,9 +500,7 @@
           "groupId": "group-cierre-fiscal",
           "desiredOutcome": "Completar la preparación de la documentación necesaria para la presentación tributaria y resolver la gestión de facturas.",
           "rationale": "Agrupa las tareas operativas que estructuran el avance hacia el objetivo del grupo de trabajo, excluyendo el compromiso externo directo que se gestiona como obligación.",
-          "contributingItemIds": [
-            "c02-3"
-          ],
+          "contributingItemIds": ["c02-3"],
           "estimatedHours": null
         }
       ],
@@ -605,9 +593,7 @@
         "fociReview": [
           {
             "title": "Cierre contable y fiscal trimestral",
-            "contributingItemIds": [
-              "c02-3"
-            ],
+            "contributingItemIds": ["c02-3"],
             "desiredOutcome": "Avanzar en la línea estructurante de \"Cierre contable y fiscal trimestral\"",
             "estimatedHours": null
           }
@@ -637,9 +623,7 @@
               "groupId": "group-cierre-fiscal",
               "desiredOutcome": "Avanzar en la línea estructurante de \"Cierre contable y fiscal trimestral\"",
               "rationale": "Ambas tareas persiguen directamente el mismo objetivo de completar la presentación tributaria y facturación del trimestre",
-              "contributingItemIds": [
-                "c02-3"
-              ],
+              "contributingItemIds": ["c02-3"],
               "estimatedHours": null
             }
           ],
@@ -727,9 +711,7 @@
         "fociReview": [
           {
             "title": "Cierre contable y fiscal trimestral",
-            "contributingItemIds": [
-              "c02-3"
-            ],
+            "contributingItemIds": ["c02-3"],
             "desiredOutcome": "Avanzar en la línea estructurante de \"Cierre contable y fiscal trimestral\"",
             "estimatedHours": null
           }
@@ -759,9 +741,7 @@
               "groupId": "group-cierre-fiscal",
               "desiredOutcome": "Avanzar en la línea estructurante de \"Cierre contable y fiscal trimestral\"",
               "rationale": "Ambas tareas persiguen directamente el mismo objetivo de completar la presentación tributaria y facturación del trimestre",
-              "contributingItemIds": [
-                "c02-3"
-              ],
+              "contributingItemIds": ["c02-3"],
               "estimatedHours": null
             }
           ],
@@ -1341,9 +1321,7 @@
     "fociReview": [
       {
         "title": "Gestión de comunicación profesional",
-        "contributingItemIds": [
-          "c05-2"
-        ],
+        "contributingItemIds": ["c05-2"],
         "desiredOutcome": "Responder a Martín para mantener el flujo de la propuesta",
         "estimatedHours": null
       }
@@ -1372,9 +1350,7 @@
           "title": "Gestión de comunicación profesional",
           "desiredOutcome": "Responder a Martín para mantener el flujo de la propuesta",
           "rationale": "El item c05-2 tiene alta atención y una señal de plazo cercano, lo que lo convierte en la línea de avance principal de la semana, aunque no constituya una obligación formal.",
-          "contributingItemIds": [
-            "c05-2"
-          ],
+          "contributingItemIds": ["c05-2"],
           "estimatedHours": null
         }
       ],
@@ -1575,9 +1551,7 @@
     "fociReview": [
       {
         "title": "Avance en desarrollo de la tienda online",
-        "contributingItemIds": [
-          "c06-3"
-        ],
+        "contributingItemIds": ["c06-3"],
         "desiredOutcome": "Avanzar en la página de agradecimiento mientras se gestiona la espera por credenciales de Stripe.",
         "estimatedHours": null
       }
@@ -1607,9 +1581,7 @@
           "groupId": "group-tienda-online",
           "desiredOutcome": "Avanzar en la página de agradecimiento mientras se gestiona la espera por credenciales de Stripe.",
           "rationale": "El grupo 'Desarrollo de la tienda online' contiene una tarea iniciada (c06-3) que puede avanzar independientemente del bloqueo en la integración de Stripe (c06-1). Se propone un foco para estructurar el avance en la parte no bloqueada del proyecto.",
-          "contributingItemIds": [
-            "c06-3"
-          ],
+          "contributingItemIds": ["c06-3"],
           "estimatedHours": null
         }
       ],
@@ -1699,9 +1671,7 @@
         "fociReview": [
           {
             "title": "Desarrollo de la tienda online",
-            "contributingItemIds": [
-              "c06-3"
-            ],
+            "contributingItemIds": ["c06-3"],
             "desiredOutcome": "Avanzar en la línea estructurante de \"Desarrollo de la tienda online\"",
             "estimatedHours": null
           }
@@ -1731,9 +1701,7 @@
               "groupId": "group-tienda-online",
               "desiredOutcome": "Avanzar en la línea estructurante de \"Desarrollo de la tienda online\"",
               "rationale": "Ambas tareas corresponden al mismo proyecto de tienda online y avanzan en su desarrollo",
-              "contributingItemIds": [
-                "c06-3"
-              ],
+              "contributingItemIds": ["c06-3"],
               "estimatedHours": null
             }
           ],
@@ -1821,9 +1789,7 @@
         "fociReview": [
           {
             "title": "Desarrollo de la tienda online",
-            "contributingItemIds": [
-              "c06-3"
-            ],
+            "contributingItemIds": ["c06-3"],
             "desiredOutcome": "Avanzar en la línea estructurante de \"Desarrollo de la tienda online\"",
             "estimatedHours": null
           }
@@ -1853,9 +1819,7 @@
               "groupId": "group-tienda-online",
               "desiredOutcome": "Avanzar en la línea estructurante de \"Desarrollo de la tienda online\"",
               "rationale": "Ambas tareas corresponden al mismo proyecto de tienda online y avanzan en su desarrollo",
-              "contributingItemIds": [
-                "c06-3"
-              ],
+              "contributingItemIds": ["c06-3"],
               "estimatedHours": null
             }
           ],
@@ -1946,11 +1910,7 @@
     "fociReview": [
       {
         "title": "Profundización en programación y revisión de calidad",
-        "contributingItemIds": [
-          "c07-1",
-          "c07-2",
-          "c07-3"
-        ],
+        "contributingItemIds": ["c07-1", "c07-2", "c07-3"],
         "desiredOutcome": "Avance sustancial en el desarrollo de código y aseguramiento de la calidad mediante revisión de PRs, mitigando la dispersión entre herramientas.",
         "estimatedHours": null
       }
@@ -1979,11 +1939,7 @@
           "title": "Profundización en programación y revisión de calidad",
           "desiredOutcome": "Avance sustancial en el desarrollo de código y aseguramiento de la calidad mediante revisión de PRs, mitigando la dispersión entre herramientas.",
           "rationale": "El usuario expresa una intención de reflexionar sobre la dispersión vs. tareas concretas. Los items 'c07-2' (bloquear foco de programación) y 'c07-3' (revisar PRs) son acciones concretas que permiten materializar esa reflexión a través de la práctica, mientras que 'c07-1' es la preocupación subyacente que este foco aborda directamente.",
-          "contributingItemIds": [
-            "c07-1",
-            "c07-2",
-            "c07-3"
-          ],
+          "contributingItemIds": ["c07-1", "c07-2", "c07-3"],
           "estimatedHours": null
         }
       ],
@@ -2675,18 +2631,13 @@
     "fociReview": [
       {
         "title": "Gestión de salud y energía",
-        "contributingItemIds": [
-          "c10-1",
-          "c10-2"
-        ],
+        "contributingItemIds": ["c10-1", "c10-2"],
         "desiredOutcome": "Establecer rutinas o acciones concretas para mejorar el descanso y la energía durante la semana.",
         "estimatedHours": null
       },
       {
         "title": "Avance en trabajo pendiente",
-        "contributingItemIds": [
-          "c10-4"
-        ],
+        "contributingItemIds": ["c10-4"],
         "desiredOutcome": "Completar la tarea de trabajo iniciada para liberar carga mental.",
         "estimatedHours": null
       }
@@ -2715,10 +2666,7 @@
           "title": "Gestión de salud y energía",
           "desiredOutcome": "Establecer rutinas o acciones concretas para mejorar el descanso y la energía durante la semana.",
           "rationale": "El usuario ha declarado una intención explícita de cuidar su salud y energía. Los items c10-1 (concern) y c10-2 (tarea de acción directa) son sustanciales y no tienen plazos estrictos ni compromisos externos, por lo que estructuran un foco cualitativo de atención personal.",
-          "contributingItemIds": [
-            "c10-1",
-            "c10-2"
-          ],
+          "contributingItemIds": ["c10-1", "c10-2"],
           "estimatedHours": null
         },
         {
@@ -2726,9 +2674,7 @@
           "title": "Avance en trabajo pendiente",
           "desiredOutcome": "Completar la tarea de trabajo iniciada para liberar carga mental.",
           "rationale": "El item c10-4 es una tarea de trabajo con alta atención y señal de 'approaching_deadline'. Aunque no figura en 'strictDeadlinesInWeek' (por lo que no es una obligación formal según las reglas estrictas), es un avance sustancial que justifica un foco propio para no mezclarlo con la gestión de salud.",
-          "contributingItemIds": [
-            "c10-4"
-          ],
+          "contributingItemIds": ["c10-4"],
           "estimatedHours": null
         }
       ],
@@ -3255,13 +3201,7 @@
     "fociReview": [
       {
         "title": "Avance en Lanzamiento Beta Cerrada",
-        "contributingItemIds": [
-          "c12-1",
-          "c12-2",
-          "c12-3",
-          "c12-4",
-          "c12-5"
-        ],
+        "contributingItemIds": ["c12-1", "c12-2", "c12-3", "c12-4", "c12-5"],
         "desiredOutcome": "Progresar de manera consciente en las tareas constitutivas de la beta cerrada, priorizando la estabilidad técnica y la preparación del entorno de usuario.",
         "estimatedHours": null
       }
@@ -3291,13 +3231,7 @@
           "groupId": "group-lanzamiento-beta",
           "desiredOutcome": "Progresar de manera consciente en las tareas constitutivas de la beta cerrada, priorizando la estabilidad técnica y la preparación del entorno de usuario.",
           "rationale": "El grupo de trabajo 'Lanzamiento beta cerrada' agrupa elementos sustanciales y relacionados (testing, onboarding, bugs, legal) que estructuran el avance del proyecto. Al no haber fechas estrictas ni compromisos externos, se propone como foco cualitativo para organizar la atención semanal.",
-          "contributingItemIds": [
-            "c12-1",
-            "c12-2",
-            "c12-3",
-            "c12-4",
-            "c12-5"
-          ],
+          "contributingItemIds": ["c12-1", "c12-2", "c12-3", "c12-4", "c12-5"],
           "estimatedHours": null
         }
       ],
@@ -3372,13 +3306,7 @@
         "fociReview": [
           {
             "title": "Lanzamiento beta cerrada",
-            "contributingItemIds": [
-              "c12-1",
-              "c12-2",
-              "c12-3",
-              "c12-4",
-              "c12-5"
-            ],
+            "contributingItemIds": ["c12-1", "c12-2", "c12-3", "c12-4", "c12-5"],
             "desiredOutcome": "Avanzar en la línea estructurante de \"Lanzamiento beta cerrada\"",
             "estimatedHours": null
           }
@@ -3408,13 +3336,7 @@
               "groupId": "group-lanzamiento-beta",
               "desiredOutcome": "Avanzar en la línea estructurante de \"Lanzamiento beta cerrada\"",
               "rationale": "Todas las subtareas son constitutivas y preparatorias para la puesta en marcha de la beta cerrada",
-              "contributingItemIds": [
-                "c12-1",
-                "c12-2",
-                "c12-3",
-                "c12-4",
-                "c12-5"
-              ],
+              "contributingItemIds": ["c12-1", "c12-2", "c12-3", "c12-4", "c12-5"],
               "estimatedHours": null
             }
           ],
@@ -4107,10 +4029,7 @@
     "fociReview": [
       {
         "title": "Preparación y publicación de versión",
-        "contributingItemIds": [
-          "c15-1",
-          "c15-2"
-        ],
+        "contributingItemIds": ["c15-1", "c15-2"],
         "desiredOutcome": "Completar la publicación de la nueva versión en npm y dejar los tests de integración listos para ejecución.",
         "estimatedHours": 0.25
       }
@@ -4139,10 +4058,7 @@
           "title": "Preparación y publicación de versión",
           "desiredOutcome": "Completar la publicación de la nueva versión en npm y dejar los tests de integración listos para ejecución.",
           "rationale": "El usuario indica un esfuerzo breve. La tarea c15-1 es pequeña (15 min) y es el precursor de c15-2. Agruparlas permite avanzar en la línea de trabajo sin sobrecargar la semana.",
-          "contributingItemIds": [
-            "c15-1",
-            "c15-2"
-          ],
+          "contributingItemIds": ["c15-1", "c15-2"],
           "estimatedHours": 0.25
         }
       ],
@@ -4322,9 +4238,7 @@
     "fociReview": [
       {
         "title": "Avance en refactor de providers de IA",
-        "contributingItemIds": [
-          "c16-2"
-        ],
+        "contributingItemIds": ["c16-2"],
         "desiredOutcome": "Continuar y avanzar en la tarea de refactorización ya iniciada, manteniendo el flujo de trabajo técnico.",
         "estimatedHours": null
       }
@@ -4353,9 +4267,7 @@
           "title": "Avance en refactor de providers de IA",
           "desiredOutcome": "Continuar y avanzar en la tarea de refactorización ya iniciada, manteniendo el flujo de trabajo técnico.",
           "rationale": "El item c16-2 está marcado como 'started' y tiene una atención media. Al no ser una obligación externa ni tener fecha límite estricta, se estructura como un foco cualitativo para permitir un avance consciente sin la presión de un compromiso externo.",
-          "contributingItemIds": [
-            "c16-2"
-          ],
+          "contributingItemIds": ["c16-2"],
           "estimatedHours": null
         }
       ],
@@ -4573,10 +4485,7 @@
     "fociReview": [
       {
         "title": "Limpieza y deuda técnica de infraestructura",
-        "contributingItemIds": [
-          "c17-1",
-          "c17-2"
-        ],
+        "contributingItemIds": ["c17-1", "c17-2"],
         "desiredOutcome": "Reducir la deuda técnica acumulada eliminando componentes obsoletos de la base de datos y el entorno.",
         "estimatedHours": null
       }
@@ -4606,10 +4515,7 @@
           "groupId": "group-limpieza-deuda",
           "desiredOutcome": "Reducir la deuda técnica acumulada eliminando componentes obsoletos de la base de datos y el entorno.",
           "rationale": "Las tareas c17-1 y c17-2 forman parte de un grupo de trabajo coherente alineado con la intención declarada de la semana. No hay compromisos externos ni plazos estrictos que impidan agruparlas como un foco cualitativo de avance.",
-          "contributingItemIds": [
-            "c17-1",
-            "c17-2"
-          ],
+          "contributingItemIds": ["c17-1", "c17-2"],
           "estimatedHours": null
         }
       ],
@@ -4682,10 +4588,7 @@
         "fociReview": [
           {
             "title": "Limpieza y deuda técnica de infraestructura",
-            "contributingItemIds": [
-              "c17-1",
-              "c17-2"
-            ],
+            "contributingItemIds": ["c17-1", "c17-2"],
             "desiredOutcome": "Avanzar en la línea estructurante de \"Limpieza y deuda técnica de infraestructura\"",
             "estimatedHours": null
           }
@@ -4715,10 +4618,7 @@
               "groupId": "group-limpieza-deuda",
               "desiredOutcome": "Avanzar en la línea estructurante de \"Limpieza y deuda técnica de infraestructura\"",
               "rationale": "Ambas tareas comparten el mismo hilo de mantenimiento y resolución de deuda técnica del sprint anterior",
-              "contributingItemIds": [
-                "c17-1",
-                "c17-2"
-              ],
+              "contributingItemIds": ["c17-1", "c17-2"],
               "estimatedHours": null
             }
           ],
@@ -5106,10 +5006,7 @@
     "fociReview": [
       {
         "title": "Resolución de incidentes críticos y desbloqueo de flujos",
-        "contributingItemIds": [
-          "c19-3",
-          "c19-2"
-        ],
+        "contributingItemIds": ["c19-3", "c19-2"],
         "desiredOutcome": "Estabilizar el sistema (hotfix) y habilitar la comunicación necesaria para avanzar en el presupuesto.",
         "estimatedHours": null
       }
@@ -5138,10 +5035,7 @@
           "title": "Resolución de incidentes críticos y desbloqueo de flujos",
           "desiredOutcome": "Estabilizar el sistema (hotfix) y habilitar la comunicación necesaria para avanzar en el presupuesto.",
           "rationale": "Agrupamos el hotfix (importancia alta, vencido) y la llamada a Pablo (dependencia clave) como una línea de atención cualitativa para resolver bloqueos y urgencias técnicas sin tratarlos como obligaciones formales, ya que no figuran en las listas estructuradas de compromisos externos ni plazos estrictos de la semana.",
-          "contributingItemIds": [
-            "c19-3",
-            "c19-2"
-          ],
+          "contributingItemIds": ["c19-3", "c19-2"],
           "estimatedHours": null
         }
       ],
@@ -5337,10 +5231,7 @@
     "fociReview": [
       {
         "title": "Avance en el diseño conceptual del motor de capacidad",
-        "contributingItemIds": [
-          "c20-3",
-          "c20-1"
-        ],
+        "contributingItemIds": ["c20-3", "c20-1"],
         "desiredOutcome": "Completar las notas de diseño conceptual para desbloquear el desarrollo del motor.",
         "estimatedHours": null
       }
@@ -5370,10 +5261,7 @@
           "groupId": "group-motor-capacidad",
           "desiredOutcome": "Completar las notas de diseño conceptual para desbloquear el desarrollo del motor.",
           "rationale": "El grupo de trabajo 'Diseño conceptual del motor de capacidad' agrupa la tarea pendiente de escribir notas (c20-3) y el proyecto en curso (c20-1). Dado que c20-1 está bloqueado por c20-3, el foco principal de la semana debe centrarse en avanzar en la tarea desbloqueante (c20-3) para permitir el progreso del proyecto. No hay obligaciones externas ni plazos estrictos que impidan este enfoque cualitativo.",
-          "contributingItemIds": [
-            "c20-3",
-            "c20-1"
-          ],
+          "contributingItemIds": ["c20-3", "c20-1"],
           "estimatedHours": null
         }
       ],
@@ -5458,9 +5346,7 @@
         "fociReview": [
           {
             "title": "Diseño conceptual del motor de capacidad",
-            "contributingItemIds": [
-              "c20-3"
-            ],
+            "contributingItemIds": ["c20-3"],
             "desiredOutcome": "Avanzar en la línea estructurante de \"Diseño conceptual del motor de capacidad\"",
             "estimatedHours": null
           }
@@ -5490,9 +5376,7 @@
               "groupId": "group-motor-capacidad",
               "desiredOutcome": "Avanzar en la línea estructurante de \"Diseño conceptual del motor de capacidad\"",
               "rationale": "Escribir las notas es la actividad preparatoria indispensable para avanzar con el motor de capacidad",
-              "contributingItemIds": [
-                "c20-3"
-              ],
+              "contributingItemIds": ["c20-3"],
               "estimatedHours": null
             }
           ],
@@ -5868,9 +5752,7 @@
     "fociReview": [
       {
         "title": "Mantenimiento de infraestructura digital",
-        "contributingItemIds": [
-          "c22-2"
-        ],
+        "contributingItemIds": ["c22-2"],
         "desiredOutcome": "Garantizar la continuidad del dominio conscious-tech.org",
         "estimatedHours": null
       }
@@ -5899,9 +5781,7 @@
           "title": "Mantenimiento de infraestructura digital",
           "desiredOutcome": "Garantizar la continuidad del dominio conscious-tech.org",
           "rationale": "El item c22-2 tiene alta importancia y señales de fecha límite próxima, pero no figura en las listas estructuradas de compromisos externos ni plazos estrictos de la semana. Por tanto, se estructura como un foco cualitativo para asegurar su avance sin clasificarlo erróneamente como obligación.",
-          "contributingItemIds": [
-            "c22-2"
-          ],
+          "contributingItemIds": ["c22-2"],
           "estimatedHours": null
         }
       ],
@@ -6470,10 +6350,7 @@
     "fociReview": [
       {
         "title": "Coordinación de delegación y avance técnico",
-        "contributingItemIds": [
-          "c24-1",
-          "c24-2"
-        ],
+        "contributingItemIds": ["c24-1", "c24-2"],
         "desiredOutcome": "Avanzar en la delegación de tareas de revisión y consolidar el progreso en la automatización de pruebas.",
         "estimatedHours": null
       }
@@ -6502,10 +6379,7 @@
           "title": "Coordinación de delegación y avance técnico",
           "desiredOutcome": "Avanzar en la delegación de tareas de revisión y consolidar el progreso en la automatización de pruebas.",
           "rationale": "La intención declarada es la delegación y coordinación. El item c24-1 (baja atención) se alinea con esta intención aunque sea menor, y c24-2 (mediana atención, ya iniciado) representa el avance técnico principal disponible. Al no haber grupos de trabajo definidos, se agrupan en un foco cualitativo único para estructurar la atención semanal.",
-          "contributingItemIds": [
-            "c24-1",
-            "c24-2"
-          ],
+          "contributingItemIds": ["c24-1", "c24-2"],
           "estimatedHours": null
         }
       ],
@@ -6782,10 +6656,7 @@
     "fociReview": [
       {
         "title": "Revisión y organización de pendientes",
-        "contributingItemIds": [
-          "c25-1",
-          "c25-2"
-        ],
+        "contributingItemIds": ["c25-1", "c25-2"],
         "desiredOutcome": "Completar la revisión de la semana y tener las notas del cuaderno organizadas y a limpio.",
         "estimatedHours": null
       }
@@ -6815,10 +6686,7 @@
           "groupId": "group-cierre-semana",
           "desiredOutcome": "Completar la revisión de la semana y tener las notas del cuaderno organizadas y a limpio.",
           "rationale": "El grupo de trabajo 'Revisión semanal de pendientes' agrupa las dos tareas pendientes activas. Al no haber obligaciones externas ni plazos estrictos, esta línea de trabajo se estructura como un foco cualitativo para avanzar de forma consciente durante la semana.",
-          "contributingItemIds": [
-            "c25-1",
-            "c25-2"
-          ],
+          "contributingItemIds": ["c25-1", "c25-2"],
           "estimatedHours": null
         }
       ],
@@ -6890,10 +6758,7 @@
         "fociReview": [
           {
             "title": "Revisión semanal de pendientes",
-            "contributingItemIds": [
-              "c25-1",
-              "c25-2"
-            ],
+            "contributingItemIds": ["c25-1", "c25-2"],
             "desiredOutcome": "Avanzar en la línea estructurante de \"Revisión semanal de pendientes\"",
             "estimatedHours": null
           }
@@ -6923,10 +6788,7 @@
               "groupId": "group-cierre-semana",
               "desiredOutcome": "Avanzar en la línea estructurante de \"Revisión semanal de pendientes\"",
               "rationale": "Rescatar notas valiosas es una subtarea constitutiva de la revisión de pendientes de la semana",
-              "contributingItemIds": [
-                "c25-1",
-                "c25-2"
-              ],
+              "contributingItemIds": ["c25-1", "c25-2"],
               "estimatedHours": null
             }
           ],
@@ -6996,10 +6858,7 @@
         "fociReview": [
           {
             "title": "Revisión semanal de pendientes",
-            "contributingItemIds": [
-              "c25-1",
-              "c25-2"
-            ],
+            "contributingItemIds": ["c25-1", "c25-2"],
             "desiredOutcome": "Avanzar en la línea estructurante de \"Revisión semanal de pendientes\"",
             "estimatedHours": null
           }
@@ -7029,10 +6888,7 @@
               "groupId": "group-cierre-semana",
               "desiredOutcome": "Avanzar en la línea estructurante de \"Revisión semanal de pendientes\"",
               "rationale": "Rescatar notas valiosas es una subtarea constitutiva de la revisión de pendientes de la semana",
-              "contributingItemIds": [
-                "c25-1",
-                "c25-2"
-              ],
+              "contributingItemIds": ["c25-1", "c25-2"],
               "estimatedHours": null
             }
           ],

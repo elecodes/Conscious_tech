@@ -91,7 +91,8 @@ export function PlanningHeaderSection({
           }}
         >
           ℹ️ <strong>Nota:</strong> Actualmente ya tienes una semana activa. Si generas y confirmas
-          un nuevo plan, deberás haber cerrado la semana en curso previamente para evitar conflictos.
+          un nuevo plan, deberás haber cerrado la semana en curso previamente para evitar
+          conflictos.
         </div>
       )}
 
@@ -107,16 +108,14 @@ export function PlanningHeaderSection({
           }}
           data-testid="transferred-items-notice"
         >
-          📋 <strong>Elementos transferidos:</strong> Se cargaron {initialItems.length} elemento(s) extraídos del volcado mental. Puedes ajustar la semana objetivo y seleccionar cuáles incluir antes de generar la propuesta.
+          📋 <strong>Elementos transferidos:</strong> Se cargaron {initialItems.length} elemento(s)
+          extraídos del volcado mental. Puedes ajustar la semana objetivo y seleccionar cuáles
+          incluir antes de generar la propuesta.
         </div>
       )}
 
       {successMessage && (
-        <div
-          className="status-message status-info"
-          style={{ marginTop: "12px" }}
-          role="status"
-        >
+        <div className="status-message status-info" style={{ marginTop: "12px" }} role="status">
           {successMessage}
         </div>
       )}
@@ -276,9 +275,7 @@ export function PlanningHeaderSection({
           selectedCarryOverItemIds={selectedCarryOverItemIds}
           onToggleCarryOverItem={handleToggleCarryOverItem}
           onSelectAll={() =>
-            setSelectedCarryOverItemIds(
-              new Set(carryOverTasks.map((t) => t.itemId))
-            )
+            setSelectedCarryOverItemIds(new Set(carryOverTasks.map((t) => t.itemId)))
           }
           onDeselectAll={() => setSelectedCarryOverItemIds(new Set())}
           isPlanning={isPlanning}
@@ -288,10 +285,7 @@ export function PlanningHeaderSection({
       )}
 
       {/* Calendar Integration (Always available in planning) */}
-      <CalendarSyncCard
-        targetWeek={activeTargetWeek}
-        onCalendarApplied={handleCalendarApplied}
-      />
+      <CalendarSyncCard targetWeek={activeTargetWeek} onCalendarApplied={handleCalendarApplied} />
     </>
   );
 }

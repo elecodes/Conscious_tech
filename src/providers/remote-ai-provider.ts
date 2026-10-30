@@ -1,9 +1,21 @@
 import { AIProvider } from "./ai-provider";
 import { ExtractItemsInput, ExtractedItems, ExtractedItemsSchema } from "../domain/items";
-import { DetectRelationshipsInput, DetectedRelationships, DetectedRelationshipsSchema } from "../domain/relationships";
+import {
+  DetectRelationshipsInput,
+  DetectedRelationships,
+  DetectedRelationshipsSchema,
+} from "../domain/relationships";
 import { GroupWorkInput, GroupedWork, GroupedWorkSchema } from "../domain/work-groups";
-import { DetectDeadlinesInput, DetectedDeadlines, DetectedDeadlinesSchema } from "../domain/deadlines";
-import { EvaluateContextInput, EvaluateContextOutput, EvaluateContextOutputSchema } from "../domain/context";
+import {
+  DetectDeadlinesInput,
+  DetectedDeadlines,
+  DetectedDeadlinesSchema,
+} from "../domain/deadlines";
+import {
+  EvaluateContextInput,
+  EvaluateContextOutput,
+  EvaluateContextOutputSchema,
+} from "../domain/context";
 import { BuildWeekInput, ProposedWeek, ProposedWeekSchema } from "../domain/week";
 
 export interface RemoteAIProviderOptions {
@@ -27,11 +39,21 @@ export class RemoteAIProvider implements AIProvider {
     this.proxyToken =
       options.proxyToken ??
       (globalThis as { __AI_PROXY_TOKEN__?: string }).__AI_PROXY_TOKEN__ ??
-      (typeof import.meta !== "undefined" ? (import.meta as { env?: Record<string, string> }).env?.VITE_AI_PROXY_TOKEN : undefined);
-    this.fetchClient = options.fetchFn || (typeof fetch !== "undefined" ? fetch.bind(globalThis) : (undefined as unknown as typeof fetch));
+      (typeof import.meta !== "undefined"
+        ? (import.meta as { env?: Record<string, string> }).env?.VITE_AI_PROXY_TOKEN
+        : undefined);
+    this.fetchClient =
+      options.fetchFn ||
+      (typeof fetch !== "undefined"
+        ? fetch.bind(globalThis)
+        : (undefined as unknown as typeof fetch));
   }
 
-  private async callProxy<T>(action: string, payload: unknown, validator?: (data: unknown) => T): Promise<T> {
+  private async callProxy<T>(
+    action: string,
+    payload: unknown,
+    validator?: (data: unknown) => T
+  ): Promise<T> {
     if (!this.fetchClient) {
       throw new Error("No fetch client available for RemoteAIProvider.");
     }
@@ -76,7 +98,9 @@ export class RemoteAIProvider implements AIProvider {
   }
 
   async detectRelationships(input: DetectRelationshipsInput): Promise<DetectedRelationships> {
-    return this.callProxy("detect_relationships", input, (d) => DetectedRelationshipsSchema.parse(d));
+    return this.callProxy("detect_relationships", input, (d) =>
+      DetectedRelationshipsSchema.parse(d)
+    );
   }
 
   async groupWork(input: GroupWorkInput): Promise<GroupedWork> {

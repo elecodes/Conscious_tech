@@ -145,9 +145,7 @@ export function normalizeAndConserveProposedWeek(
         });
       }
 
-      const remainingItemIds = focus.contributingItemIds.filter(
-        (id) => !obligationItemIds.has(id)
-      );
+      const remainingItemIds = focus.contributingItemIds.filter((id) => !obligationItemIds.has(id));
 
       if (remainingItemIds.length === 0) {
         repairs.push({
@@ -330,7 +328,8 @@ export function normalizeAndConserveProposedWeek(
           itemId: item.id,
           title: item.title,
           reason: "not_scheduled",
-          rationale: "Elemento no programado en la propuesta; conservado para decisión de la persona sin motivo demostrado.",
+          rationale:
+            "Elemento no programado en la propuesta; conservado para decisión de la persona sin motivo demostrado.",
         });
         repairs.push({
           type: "rescued_omitted_to_not_scheduled",

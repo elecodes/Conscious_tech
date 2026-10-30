@@ -1,8 +1,5 @@
 import { MemoryItem } from "../../domain/memory";
-import {
-  formatMemoryCategory,
-  formatConfirmationStatus,
-} from "./weekly-session-formatters";
+import { formatMemoryCategory, formatConfirmationStatus } from "./weekly-session-formatters";
 
 export interface ConfirmedActiveMemoriesSectionProps {
   memories: MemoryItem[];
@@ -54,7 +51,9 @@ export function ConfirmedActiveMemoriesSection({
           data-testid="no-memories-placeholder"
         >
           <p className="calm-muted" style={{ margin: 0, fontSize: "0.9rem" }}>
-            🌱 <em>No tienes memorias activas guardadas todavía.</em> Cuando completes el cierre reflexivo en «4. Revisar y aprender», el sistema te propondrá aprendizajes identificados y podrás decidir explícitamente cuáles conservar en tu cuaderno.
+            🌱 <em>No tienes memorias activas guardadas todavía.</em> Cuando completes el cierre
+            reflexivo en «4. Revisar y aprender», el sistema te propondrá aprendizajes identificados
+            y podrás decidir explícitamente cuáles conservar en tu cuaderno.
           </p>
         </div>
       ) : (
@@ -73,9 +72,13 @@ export function ConfirmedActiveMemoriesSection({
             >
               <div className="item-content" style={{ flex: 1, minWidth: "200px" }}>
                 <div className="item-title">{mem.content}</div>
-                <div className="item-tags" style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "4px" }}>
+                <div
+                  className="item-tags"
+                  style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "4px" }}
+                >
                   <span className="badge badge-muted">
-                    {formatMemoryCategory(mem.category)} · {formatConfirmationStatus(mem.confirmationStatus)}
+                    {formatMemoryCategory(mem.category)} ·{" "}
+                    {formatConfirmationStatus(mem.confirmationStatus)}
                   </span>
                 </div>
               </div>

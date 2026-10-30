@@ -56,10 +56,7 @@ export function sanitizeContextItemSignals(rawAssessments: unknown): {
     }
 
     const assessmentObj = assessment as Record<string, unknown>;
-    const itemId =
-      typeof assessmentObj.itemId === "string"
-        ? assessmentObj.itemId
-        : "unknown";
+    const itemId = typeof assessmentObj.itemId === "string" ? assessmentObj.itemId : "unknown";
 
     const filteredSignals: ContextSignal[] = [];
 
@@ -106,9 +103,7 @@ export function extractJsonFromMarkdown(raw: string): string {
  * Parses raw JSON string into EvaluateContextOutput and validates against Zod schema,
  * recording any non-canonical signals that were discarded.
  */
-export function parseAndValidateContextOutputWithAudit(
-  rawJson: string
-): ParseContextOutputResult {
+export function parseAndValidateContextOutputWithAudit(rawJson: string): ParseContextOutputResult {
   const cleaned = extractJsonFromMarkdown(rawJson);
   let parsed: unknown;
   try {
@@ -158,4 +153,3 @@ export function parseAndValidateContextOutputWithAudit(
 export function parseAndValidateContextOutput(rawJson: string): EvaluateContextOutput {
   return parseAndValidateContextOutputWithAudit(rawJson).output;
 }
-

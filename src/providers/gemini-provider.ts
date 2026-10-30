@@ -30,11 +30,15 @@ export class GeminiProvider implements AIProvider {
   private lastExecutionMeta?: ProviderExecutionMeta;
 
   constructor(options: GeminiProviderOptions = {}) {
-    const apiKey = options.apiKey || (typeof process !== "undefined" ? process.env?.GEMINI_API_KEY : undefined);
+    const apiKey =
+      options.apiKey || (typeof process !== "undefined" ? process.env?.GEMINI_API_KEY : undefined);
     if (!apiKey) {
       throw new Error("GEMINI_API_KEY is required for GeminiProvider");
     }
-    this.model = options.model || (typeof process !== "undefined" ? process.env?.GEMINI_MODEL : undefined) || "gemini-2.5-flash";
+    this.model =
+      options.model ||
+      (typeof process !== "undefined" ? process.env?.GEMINI_MODEL : undefined) ||
+      "gemini-2.5-flash";
     this.client = new GoogleGenAI({ apiKey });
   }
 

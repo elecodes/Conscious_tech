@@ -7,11 +7,7 @@ import {
   ItemDeltaOperation,
   DeadlineDeltaOperation,
 } from "../domain/change";
-import {
-  DetectConflictOutput,
-  TimeBlock,
-  DailyWorkAllocation,
-} from "../domain/conflict";
+import { DetectConflictOutput, TimeBlock, DailyWorkAllocation } from "../domain/conflict";
 import { AdjustmentProposal } from "../domain/adjustment";
 import { extractItems } from "../skills/extract-items";
 import { AnalyzeChangeService } from "../skills/analyze-change";
@@ -19,10 +15,10 @@ import { DetectConflictService } from "../skills/detect-conflict";
 import { ProposeAdjustmentService } from "../skills/propose-adjustment";
 
 export type RadarVerdictOutcome =
-  | "no_change"            // 🟢 No cambia la semana (idea, inquietud, reflexión)
-  | "flexible_option"      // 🟡 Puede entrar si hay espacio (opción flexible sin compromiso)
+  | "no_change" // 🟢 No cambia la semana (idea, inquietud, reflexión)
+  | "flexible_option" // 🟡 Puede entrar si hay espacio (opción flexible sin compromiso)
   | "fits_available_space" // 🟢 Cabe en el espacio disponible (cabe en el margen sin tocar focos)
-  | "changes_balance";     // 🔴 Cambia el equilibrio (déficit de horas o conflicto; requiere decisión)
+  | "changes_balance"; // 🔴 Cambia el equilibrio (déficit de horas o conflicto; requiere decisión)
 
 export interface EvaluateRadarParams {
   changeDescription: string;
@@ -102,8 +98,7 @@ export async function evaluateRadarInput(
 
   // 3. Check for pure ideas / concerns (🟢 No cambia la semana)
   const isPureIdeaOrConcern =
-    items.length > 0 &&
-    items.every((it) => it.type === "idea" || it.type === "concern");
+    items.length > 0 && items.every((it) => it.type === "idea" || it.type === "concern");
 
   if (isPureIdeaOrConcern || items.length === 0) {
     const noImpactAnalysis: AnalyzeChangeOutput = {

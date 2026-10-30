@@ -143,7 +143,15 @@ export function isPrivateOrReservedIp(ip: string): boolean {
     // 2002::/16 (6to4 relay)
     if (words[0] === 0x2002) return true;
     // 64:ff9b::/96 (IPv4/IPv6 translation)
-    if (words[0] === 0x0064 && words[1] === 0xff9b && words[2] === 0 && words[3] === 0 && words[4] === 0 && words[5] === 0) return true;
+    if (
+      words[0] === 0x0064 &&
+      words[1] === 0xff9b &&
+      words[2] === 0 &&
+      words[3] === 0 &&
+      words[4] === 0 &&
+      words[5] === 0
+    )
+      return true;
     // 64:ff9b:1::/48 (Local-Use IPv4/IPv6 Translation RFC 8215)
     if (words[0] === 0x0064 && words[1] === 0xff9b && words[2] === 0x0001) return true;
 
@@ -320,7 +328,11 @@ export function isOriginAllowed(
         .filter(Boolean);
       const originLower = originHeader.trim().toLowerCase();
       const originUrlOrigin = originUrl.origin.toLowerCase();
-      if (allowedList.includes(originLower) || allowedList.includes(originUrlOrigin) || allowedList.includes(host)) {
+      if (
+        allowedList.includes(originLower) ||
+        allowedList.includes(originUrlOrigin) ||
+        allowedList.includes(host)
+      ) {
         return true;
       }
     }
@@ -366,7 +378,8 @@ export async function handleCalendarProxyRequest(
     res.statusCode = 405;
     res.end(
       JSON.stringify({
-        error: "El método GET no está permitido por seguridad para evitar registrar la URL privada en logs. Use POST con { url } en el cuerpo.",
+        error:
+          "El método GET no está permitido por seguridad para evitar registrar la URL privada en logs. Use POST con { url } en el cuerpo.",
         code: "METHOD_NOT_ALLOWED",
       })
     );
@@ -375,7 +388,9 @@ export async function handleCalendarProxyRequest(
 
   if (req.method !== "POST") {
     res.statusCode = 405;
-    res.end(JSON.stringify({ error: "Método no permitido. Use POST.", code: "METHOD_NOT_ALLOWED" }));
+    res.end(
+      JSON.stringify({ error: "Método no permitido. Use POST.", code: "METHOD_NOT_ALLOWED" })
+    );
     return;
   }
 
@@ -401,7 +416,12 @@ export async function handleCalendarProxyRequest(
       bodyText += chunk;
       if (bodyText.length > 10 * 1024) {
         res.statusCode = 413;
-        res.end(JSON.stringify({ error: "Carga útil de la petición demasiado grande.", code: "PAYLOAD_TOO_LARGE" }));
+        res.end(
+          JSON.stringify({
+            error: "Carga útil de la petición demasiado grande.",
+            code: "PAYLOAD_TOO_LARGE",
+          })
+        );
         return;
       }
     }
@@ -423,7 +443,9 @@ export async function handleCalendarProxyRequest(
 
   if (!targetUrl || typeof targetUrl !== "string" || !targetUrl.trim()) {
     res.statusCode = 400;
-    res.end(JSON.stringify({ error: "Falta el parámetro 'url' en el cuerpo JSON.", code: "MISSING_URL" }));
+    res.end(
+      JSON.stringify({ error: "Falta el parámetro 'url' en el cuerpo JSON.", code: "MISSING_URL" })
+    );
     return;
   }
 
@@ -520,7 +542,12 @@ export async function handleCalendarProxyRequest(
 
     if (!finalResponse) {
       res.statusCode = 502;
-      res.end(JSON.stringify({ error: "No se recibió respuesta del servidor de calendario.", code: "CALENDAR_FETCH_FAILED" }));
+      res.end(
+        JSON.stringify({
+          error: "No se recibió respuesta del servidor de calendario.",
+          code: "CALENDAR_FETCH_FAILED",
+        })
+      );
       return;
     }
 
@@ -538,7 +565,12 @@ export async function handleCalendarProxyRequest(
     // Stream the body with a strict 5 MB byte cap to prevent memory exhaustion
     if (!finalResponse.body) {
       res.statusCode = 502;
-      res.end(JSON.stringify({ error: "Cuerpo de respuesta vacío del servidor de calendario.", code: "EMPTY_CALENDAR_BODY" }));
+      res.end(
+        JSON.stringify({
+          error: "Cuerpo de respuesta vacío del servidor de calendario.",
+          code: "EMPTY_CALENDAR_BODY",
+        })
+      );
       return;
     }
 
@@ -587,7 +619,9 @@ export async function handleCalendarProxyRequest(
     res.statusCode = isTimeout ? 504 : 502;
     res.end(
       JSON.stringify({
-        error: isTimeout ? "Tiempo de espera agotado al conectar con el calendario." : "No se pudo conectar con el servidor de calendario.",
+        error: isTimeout
+          ? "Tiempo de espera agotado al conectar con el calendario."
+          : "No se pudo conectar con el servidor de calendario.",
         code: isTimeout ? "CALENDAR_TIMEOUT" : "CALENDAR_NETWORK_ERROR",
       })
     );

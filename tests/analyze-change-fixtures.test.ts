@@ -76,9 +76,7 @@ describe("Skill 07: analyze_change - 10 Agreed Fixture Test Suite", () => {
       activePlan: basePlan,
       changeDescription: "Only 15 hours available this week due to sudden family emergency.",
       incomingDelta: {
-        capacityOperations: [
-          { previousAvailableHours: 40, newAvailableHours: 15 },
-        ],
+        capacityOperations: [{ previousAvailableHours: 40, newAvailableHours: 15 }],
       },
     };
 
@@ -196,7 +194,8 @@ describe("Skill 07: analyze_change - 10 Agreed Fixture Test Suite", () => {
     const input: AnalyzeChangeInput = {
       currentDate: "2026-10-11",
       activePlan: basePlan,
-      changeDescription: "External team delivered API early, item-02 is no longer waiting on prerequisite.",
+      changeDescription:
+        "External team delivered API early, item-02 is no longer waiting on prerequisite.",
       incomingDelta: {
         relationshipOperations: [
           {

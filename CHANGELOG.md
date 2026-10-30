@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Provider Layering & Hidden State
+
 - **Decoupled Prompting & Parsing from Providers**:
   - Moved prompt-building and JSON parsing logic out of `GroqProvider` and `GeminiProvider` into the domain skills (`01` through `06`), keeping providers focused strictly on `completeJson`.
   - Removed hidden instance state (`lastParseResult` and `getLastParseResult()`) from `GroqProvider`.
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.20.1] - 2026-10-29
 
 ### Provider Parity & Architecture Refactoring
+
 - **Provider Parity & Concurrency Hygiene**:
   - Implemented `buildWeek` for `GeminiProvider` using Gemini 2.5 Flash structured output, achieving parity across all skills (01-06).
   - Added generic `completeJson` method across all providers (`AIProvider`, `GroqProvider`, `GeminiProvider`, `MockProvider`, `RemoteAIProvider`).
@@ -28,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added provider parity unit test suite (`tests/ai-provider-parity.test.ts`, 6 tests).
 
 ### UI Modularization & Bundle Code-Splitting
+
 - **Subcomponent Extraction**:
   - Extracted formatters, helpers, and plan item extractors into `src/web/components/weekly-session-formatters.tsx`.
   - Extracted confirmed memories view into `src/web/components/confirmed-active-memories-section.tsx`.
@@ -38,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Configured Rollup `manualChunks` in `vite.config.ts` separating `vendor-react` and `vendor-zod`, ensuring all production bundle chunks stay well under the 500 kB threshold.
 
 ### Documentation & Security
+
 - **ADR 0021 & ADR 0022**:
   - Added `docs/adr/0021-zod-advisory-mitigation-and-v4-migration-strategy.md` analyzing GHSA-mrhx-c7xc-m3w5 and outlining defensive perimeter limits and isolated v4 upgrade scheduling.
   - Added `docs/adr/0022-spanish-first-language-and-deferred-i18n.md` documenting Spanish-first native design, calm copy, and deferred i18n abstractions.
@@ -64,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.20.0] - 2026-10-23
 
 ### Added
+
 - **Google Calendar iCal Integration & Committed Capacity Analysis**:
   - Implemented zero-cost, zero-dependency calendar integration supporting Google Calendar private iCal feeds and `.ics` file imports (`src/domain/calendar.ts`, `src/infrastructure/calendar/ical-parser.ts`).
   - RFC 5545 compliant parser handling line unfolding, UTC/local/all-day date-times, text unescaping, cancellation status filtering, and weekly recurrence rule (`RRULE:FREQ=WEEKLY`) expansion.
@@ -83,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.19.0] - 2026-10-23
 
 ### Added
+
 - **Native Voice Dictation Mode (`src/web/hooks/use-speech-recognition.ts`, `src/web/components/voice-dictation-button.tsx`)**:
   - Implemented client-side voice dictation powered by the browser's native Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`), adhering strictly to the zero-cost (free-tier first) and zero-dependency architecture.
   - Streaming continuous voice recognition with real-time interim results and automatic stream drop recovery.
@@ -101,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.18.0] - 2026-10-23
 
 ### Added
+
 - **Unforeseen Events Radar Application Pipeline (`src/application/radar-pipeline.ts`)**:
   - Implemented end-to-end evaluation pipeline for mid-week unforeseen events (Sections 21-25 of `PROJECT_CONTEXT.md`).
   - Classifies incoming events into 4 distinct verdicts:
@@ -135,6 +142,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.17.0] - 2026-10-21
 
 ### Added
+
 - **Compensating Transaction Pattern in Persistence (`WeeklySessionService`)**:
   - Implemented rollback snapshots in `createOrSavePlanAndSchedule` ensuring pre-existing plans are safely restored if a schedule write fails, avoiding destructive plan deletion.
   - Added optimistic locking support via `expectedScheduleVersion` with automatic version incrementing for existing schedules.
@@ -162,6 +170,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.16.0] - 2026-10-15
 
 ### Added
+
 - **Strict 3-Foci Limit & Full Item Conservation Invariant**:
   - Resolved `Array must contain at most 3 element(s)` Zod schema validation failure when activating weeks planned from 7 or more extracted items.
   - Enforced domain constraint of at most 3 primary weekly foci (`foci.length <= 3`) in `deterministic.ts`.
@@ -189,22 +198,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.15.0] - 2026-10-14
 
 ### Added
+
 - **Guided 4-Space Navigation Architecture**:
-  - Reorganized application navigation into four conscious spaces (*Capturar*, *Preparar semana*, *Mi semana*, *Revisar y aprender*).
+  - Reorganized application navigation into four conscious spaces (_Capturar_, _Preparar semana_, _Mi semana_, _Revisar y aprender_).
   - Clear primary actions per view with progressive disclosure of secondary options.
   - Independent session state: drafting a new week no longer forces closing or mutating the currently active week.
   - "Comenzar semana desde cero" action cleanly clearing stored drafts in IndexedDB.
 - **Progressive Disclosure & Human-Centered Capacity Language**:
   - Replaced repetitive formula cards with a compact summary strip and collapsible calculation breakdown (`<details className="calm-details">`), closed by default.
   - Humanized capacity labels:
-    - *«Resumen de viabilidad y capacidad»* $\to$ **Balance de tu semana**.
-    - *«Presupuesto de energía cognitiva»* $\to$ **Tu tiempo de un vistazo**.
-    - *«Espacio protegido»* accompanied by the subtitle **Margen de calma**.
-    - *«Capacidad desconocida»* $\to$ **Tareas sin estimar** when items lack explicit hours.
+    - _«Resumen de viabilidad y capacidad»_ $\to$ **Balance de tu semana**.
+    - _«Presupuesto de energía cognitiva»_ $\to$ **Tu tiempo de un vistazo**.
+    - _«Espacio protegido»_ accompanied by the subtitle **Margen de calma**.
+    - _«Capacidad desconocida»_ $\to$ **Tareas sin estimar** when items lack explicit hours.
     - Remaining hours indicator shows `Hasta Xh` instead of the alarming `"Desconocido"`.
 - **Deterministic Coordinated Action Decomposition**:
   - Introduced `normalizeFusedWords` in `mock-deterministic-extractor.ts` to separate fused fast-typing words (e.g. `"quieroavanzar"` $\to$ `"quiero avanzar"`).
-  - Introduced `splitCoordinatedActions` to decompose compound natural language clauses into separate tasks when subsequent parts start with action verbs (*"avanzar X, estudiar Y y seguir con Z"* $\to$ 3 separate items), while preserving noun lists (*"Comprar manzanas, peras y plátanos"*).
+  - Introduced `splitCoordinatedActions` to decompose compound natural language clauses into separate tasks when subsequent parts start with action verbs (_"avanzar X, estudiar Y y seguir con Z"_ $\to$ 3 separate items), while preserving noun lists (_"Comprar manzanas, peras y plátanos"_).
   - Enhanced `cleanTitle` and `extractProject` to strip conversational prefixes and automatically associate project contexts.
 - **ADR 0015**:
   - Documented in `docs/adr/0015-progressive-disclosure-guided-navigation-and-human-capacity-language.md`.
@@ -218,12 +228,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.14.0] - 2026-10-14
 
 ### Added
+
 - **Closed Week Detailed Inspection (`ClosedWeekSummary`)**:
   - Expandable accordion in `WeeklySessionView` («Ver detalle de la semana» / «Ocultar detalle») allowing full audit of closed week contents without mutating state:
     - Planned foci with desired outcomes and estimated hours.
     - Fixed obligations and commitments with due dates.
     - Flexible options and execution conditions.
-    - Granular item-by-item breakdown with disposition badges (*Completada*, *Postergada*, *En progreso*, *Descartada*, *Sin reportar*), actual hours vs. estimated hours, notes, and postponement rationales.
+    - Granular item-by-item breakdown with disposition badges (_Completada_, _Postergada_, _En progreso_, _Descartada_, _Sin reportar_), actual hours vs. estimated hours, notes, and postponement rationales.
     - Retrospective reflection summary including capacity analysis, consolidated accomplishments, and open questions for the next cycle.
 - **Sovereignty & Atomic Reopening (`reopenWeek`)**:
   - Implemented `WeeklySessionService.reopenWeek(planId)` and `WeeklySessionController.reopenWeek(planId)`:
@@ -242,6 +253,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.13.0] - 2026-10-13
 
 ### Added
+
 - **Local Persistence Architecture with IndexedDB (`LocalPersistence`)**:
   - IndexedDB storage layer across 4 canonical object stores: `plans`, `schedules`, `close_reports`, and `memories`.
   - Storage envelopes: `StoredWeeklyPlan` with canonical UUIDs and lifecycle status (`draft`, `active`, `closed`), `StoredCloseWeekReport`, and versioned `WeeklySchedule`.
@@ -253,6 +265,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.12.0] - 2026-10-12
 
 ### Added
+
 - **Weekly Schedule Continuity & Real-Time Adjustments**:
   - `WeeklySchedule` domain entity with optimistic concurrency versioning.
   - Deterministic schedule adjustment engine (`applyAdjustmentToSchedule`).
@@ -264,6 +277,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.11.0] - 2026-10-12
 
 ### Added
+
 - **Weekly Close Engine (`close_week`)**:
   - Deterministic evaluation of completed, postponed, and dropped items.
   - Reflective summary generator and candidate memory extractor requiring explicit human sovereignty.
@@ -274,6 +288,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.10.0] - 2026-10-12
 
 ### Added
+
 - **Domain Modeling for Memory Management (`manage_memory`)**:
   - Zod schemas and TypeScript types in `src/domain/memory.ts`:
     - Strict Gregorian ISO-8601 UTC timestamp validator (`isValidIsoUtcTimestamp`, `IsoUtcTimestampSchema`) guarding against `Date.UTC()` year mapping and out-of-bounds clock/calendar values.
@@ -302,6 +317,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.0] - 2026-10-11
 
 ### Added
+
 - **Domain Modeling for Adjustment Proposals (`propose_adjustment`)**:
   - Zod schemas and TypeScript types in `src/domain/adjustment.ts`:
     - Typed actions via discriminated union: `PostponeItemAction`, `ReassignTimeBlockAction`, `ReallocateDayWorkAction`, `UnblockDependencyAction`, `AcceptRiskAction`, `RequestInformationAction`.
@@ -328,6 +344,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.8.0] - 2026-10-11
 
 ### Added
+
 - **Domain Modeling for Conflict Detection (`detect_conflict`)**:
   - Zod schemas and TypeScript types in `src/domain/conflict.ts`: `ConflictType`, `ConflictCertainty`, `ConflictScope`, `ConflictEvidence`, `DetectedConflict`, `UnconflictedAreaVerification`, `TimeBlock`, `DailyWorkAllocation`, `DetectConflictInput`, and `DetectConflictOutput`.
   - Canonical 4-type taxonomy: `capacity_deficit`, `blocked_by_dependency`, `deadline_incompatibility`, and `schedule_overlap`.
@@ -356,6 +373,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.0] - 2026-10-11
 
 ### Added
+
 - **Domain Modeling for Impact & Change Analysis (`analyze_change`)**:
   - Zod schemas and TypeScript types in `src/domain/change.ts`: `ChangeType`, `IncomingChangeDelta`, `AffectedElement`, `CapacityImpactAnalysis`, `UnaffectedAreaVerification`, `ValidationError`, `AnalyzeChangeInput`, and `AnalyzeChangeOutput`.
   - Orthogonal taxonomy of change types: `new_item`, `drop_item`, `modified_item`, `deadline_change`, `dependency_change`, `capacity_change`, `mixed_change`, and `none_detected`.
@@ -386,6 +404,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0] - 2026-10-10
 
 ### Added
+
 - **Domain Modeling for Weekly Planning (`build_week`)**:
   - Zod schemas and TypeScript types in `src/domain/week.ts`: `TargetWeek`, `ProposedWeek`, `WeeklyFocus`, `WeeklyObligation`, `FlexibleOption`, `DeferredItem`, `UnplannedSpace`, `ConfirmationPrompt`, `WeeklyCapacitySummary`, and `BuildWeekInput`.
   - Negative constraints enforcing human sovereignty: "AI proposes. The person decides."
@@ -420,9 +439,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.0] - 2026-10-09
 
 ### Added
+
 - **Domain Modeling for Context Evaluation**: Zod schemas and TypeScript types in `src/domain/context.ts` for `ContextSignal`, `ContextAttentionLevel`, `GroupRelevanceLevel`, `ItemContextAssessment`, `GroupContextAssessment`, `OpenQuestion`, `EvaluateContextInput`, and `EvaluateContextOutput`.
 - **Skill 05 (`evaluate_context`)**:
-  - Implemented `EvaluateContextService` answering *"What context matters to understand the situation of each task and line of work?"* without building the weekly plan, deciding trade-offs, or dictating actions.
+  - Implemented `EvaluateContextService` answering _"What context matters to understand the situation of each task and line of work?"_ without building the weekly plan, deciding trade-offs, or dictating actions.
   - Semantic prompt in `src/skills/evaluate-context/prompt.ts` with strict rules: explain situation, never allocate hours or decide focus, treat unstated items as `unclear` instead of low importance, enforce grounded evidence, and restrict open questions to material uncertainties.
   - JSON parser with Markdown code fence extraction in `src/skills/evaluate-context/parser.ts`.
   - Deterministic invariant engine in `src/skills/evaluate-context/deterministic.ts`:
@@ -449,9 +469,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.0] - 2026-10-09
 
 ### Added
+
 - **Domain Modeling for Deadlines**: Zod schemas and TypeScript types in `src/domain/deadlines.ts` for `DeadlineKind`, `DetectedDeadline`, `DetectedDeadlines`, and `DetectDeadlinesInput`.
 - **Skill 04 (`detect_deadlines`)**:
-  - Implemented `DetectDeadlinesService` answering *"When does this need to happen according to what the person said?"* without prioritizing, scheduling, or estimating effort.
+  - Implemented `DetectDeadlinesService` answering _"When does this need to happen according to what the person said?"_ without prioritizing, scheduling, or estimating effort.
   - Semantic prompt in `src/skills/detect-deadlines/prompt.ts` with strict rules: never invent dates, anchor relative dates to explicit `currentDate`, treat intervals as single entities, and separate future deadlines from past narrative context.
   - JSON parser with Markdown fence extraction in `src/skills/detect-deadlines/parser.ts`.
   - Deterministic engine in `src/skills/detect-deadlines/deterministic.ts`:
@@ -481,9 +502,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-10-08
 
 ### Added
+
 - **Domain Modeling for Work Groups**: Zod schemas and TypeScript types in `src/domain/work-groups.ts` for `WorkGroup`, `GroupedWork`, and `GroupWorkInput`.
 - **Skill 03 (`group_work`)**:
-  - Implemented `GroupWorkService` answering *"What elements belong to the same coherent line of work?"* without prioritizing or weekly planning.
+  - Implemented `GroupWorkService` answering _"What elements belong to the same coherent line of work?"_ without prioritizing or weekly planning.
   - Semantic prompt in `src/skills/group-work/prompt.ts` with strict relationship weighting (`same_project`, `same_objective`, `part_of`, `depends_on`, `related_to`, `duplicate`) and isolation of emotional `concern` items.
   - Robust JSON parser with Markdown fence stripping in `src/skills/group-work/parser.ts`.
   - Deterministic invariant engine in `src/skills/group-work/deterministic.ts`:
@@ -507,6 +529,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2026-10-07
 
 ### Added
+
 - **Domain Modeling for Relationships**: Strict Zod schemas and types in `src/domain/relationships.ts` covering `RelationshipType` (`same_project`, `same_objective`, `related_to`, `part_of`, `depends_on`, `duplicate`), `Relationship` (with `.refine` rejecting self-relations), `DetectedRelationships`, and `DetectRelationshipsInput`.
 - **Skill 02 (`detect_relationships`)**:
   - Implemented `DetectRelationshipsService` adhering to "Detect relationships, don't group".
@@ -527,6 +550,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ADR 0002: Detect Relationships — Conservative Semantic Links and Deterministic Post-Processing.
 
 ### Changed
+
 - **Calibrated `detect_relationships` Semantic Prompt & Evaluation**:
   - Enforced strict isolation of `CONCERN` elements: emotional/cognitive load reflections remain excluded from task dependency graphs.
   - Hardened `related_to` boundaries (Rule 1): prohibited links driven merely by co-existence in the same dump/sprint or temporary workarounds ("mientras tanto").
@@ -540,6 +564,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2026-10-06
 
 ### Added
+
 - **Domain Modeling & Validation**: Strict Zod schemas and TypeScript types in `src/domain/items.ts` covering `ItemType`, `ItemStatus`, `CommitmentType`, `DateReference`, `Effort`, `Importance`, and `ExtractedItem`.
 - **Archived State Support**: Added `"archived"` to `ItemStatus` to faithfully capture consciously postponed or dismissed initiatives without forcing them into active or exploratory states.
 - **Provider Abstraction Layer**: Decoupled domain from LLM vendors via `AIProvider` interface and factory in `src/providers/`.
@@ -563,6 +588,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ADR 0001: Conservative Semantic Extraction and AI Provider Abstraction in `docs/adr/0001-conservative-semantic-extraction-and-provider-architecture.md`.
 
 ### Changed
+
 - Refined `extract_items` system prompt to eliminate over-inferences:
   - Restricted `commitment: "external"` solely to third-party agreements and deadlines.
   - Restricted `commitment: "personal"` strictly to explicit self-commitments.

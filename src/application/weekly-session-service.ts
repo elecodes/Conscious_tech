@@ -19,13 +19,14 @@ import {
   applyAdjustmentToSchedule,
 } from "../domain/schedule";
 import { SuggestedAdjustmentAction } from "../domain/adjustment";
-import {
-  ItemOutcomeInput,
-  UserReflectionInput,
-} from "../domain/close-week";
+import { ItemOutcomeInput, UserReflectionInput } from "../domain/close-week";
 import { executeCloseWeekDeterministic } from "../skills/close-week/deterministic";
 import { StoreCandidate, MemoryOperation, MemoryItemSchema } from "../domain/memory";
-import { STORES, wrapRequest, waitForTransaction } from "../infrastructure/storage/indexeddb/database";
+import {
+  STORES,
+  wrapRequest,
+  waitForTransaction,
+} from "../infrastructure/storage/indexeddb/database";
 import {
   exportUserData,
   importUserData,
@@ -557,7 +558,6 @@ export class WeeklySessionService {
     return Array.from(resultsMap.values());
   }
 
-
   /**
    * Saves a weekly plan and its optional schedule, validating referential integrity,
    * preventing duplicate active plans, and preserving previous state on schedule failure.
@@ -672,7 +672,9 @@ export class WeeklySessionService {
    */
   async saveDraftPlan(
     plan: StoredWeeklyPlan
-  ): Promise<{ status: "success"; plan: StoredWeeklyPlan } | { status: "invalid_data"; reason: string }> {
+  ): Promise<
+    { status: "success"; plan: StoredWeeklyPlan } | { status: "invalid_data"; reason: string }
+  > {
     const draftPlan: StoredWeeklyPlan = {
       ...plan,
       status: "draft",
@@ -822,10 +824,7 @@ export class WeeklySessionService {
 
     // Persist with optimistic concurrency check in storage
     try {
-      await this.deps.schedules.save(
-        domainResult.schedule,
-        params.expectedScheduleVersion
-      );
+      await this.deps.schedules.save(domainResult.schedule, params.expectedScheduleVersion);
     } catch (err) {
       if (err instanceof StaleVersionConflictError) {
         return {
@@ -1023,10 +1022,7 @@ export class WeeklySessionService {
     operation: MemoryOperation,
     confirmation: ExplicitHumanConfirmation
   ): Promise<ConfirmMemoryResult> {
-    if (
-      confirmation.confirmedBy !== "user_explicit" ||
-      confirmation.decision !== "accepted"
-    ) {
+    if (confirmation.confirmedBy !== "user_explicit" || confirmation.decision !== "accepted") {
       return {
         status: "rejected",
         reason: "Operation rejected: explicit human acceptance was not provided.",
@@ -1164,10 +1160,7 @@ export class WeeklySessionService {
     }
 
     const db = this.deps.getDb();
-    const tx = db.transaction(
-      [STORES.PLANS, STORES.SCHEDULES, STORES.CLOSE_REPORTS],
-      "readwrite"
-    );
+    const tx = db.transaction([STORES.PLANS, STORES.SCHEDULES, STORES.CLOSE_REPORTS], "readwrite");
 
     try {
       const plansStore = tx.objectStore(STORES.PLANS);

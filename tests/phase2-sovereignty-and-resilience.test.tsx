@@ -104,9 +104,7 @@ describe("Fase 2: Soberanía de Datos y Resiliencia (H-03, H-05, H-08)", () => {
   const closeOutput = executeCloseWeekDeterministic({
     closedAt: "2026-10-25T18:00:00Z",
     activePlan: samplePlan.proposal,
-    itemOutcomes: [
-      { itemId: "item-1", status: "completed", actualHours: 6 },
-    ],
+    itemOutcomes: [{ itemId: "item-1", status: "completed", actualHours: 6 }],
   });
 
   const sampleCloseReport: StoredCloseWeekReport = {
@@ -282,15 +280,43 @@ describe("Fase 2: Soberanía de Datos y Resiliencia (H-03, H-05, H-08)", () => {
         service,
         controller,
         reloadSession: async () => {},
-        createOrSavePlan: async () => ({ status: "success", plan: samplePlan, schedule: sampleSchedule }),
-        applyAdjustment: async () => ({ status: "success", schedule: sampleSchedule, appliedRecord: {} as any }),
-        closeWeek: async () => ({ status: "success", closeReport: sampleCloseReport, memoryCandidates: [] }),
-        confirmMemoryCandidate: async () => ({ status: "applied", operationType: "add", memoryId: "c1" }),
-        confirmMemoryOperation: async () => ({ status: "applied", operationType: "add", memoryId: "m1" }),
+        createOrSavePlan: async () => ({
+          status: "success",
+          plan: samplePlan,
+          schedule: sampleSchedule,
+        }),
+        applyAdjustment: async () => ({
+          status: "success",
+          schedule: sampleSchedule,
+          appliedRecord: {} as any,
+        }),
+        closeWeek: async () => ({
+          status: "success",
+          closeReport: sampleCloseReport,
+          memoryCandidates: [],
+        }),
+        confirmMemoryCandidate: async () => ({
+          status: "applied",
+          operationType: "add",
+          memoryId: "c1",
+        }),
+        confirmMemoryOperation: async () => ({
+          status: "applied",
+          operationType: "add",
+          memoryId: "m1",
+        }),
         archiveMemory: async () => {},
         deleteMemory: async () => {},
-        exportBackup: async () => ({ version: 1, app: "conscious_tech", exportedAt: "", data: { plans: [], schedules: [], closeReports: [], memories: [] } }),
-        importBackup: async () => ({ importedCounts: { plans: 0, schedules: 0, closeReports: 0, memories: 0 }, exportedAt: "" }),
+        exportBackup: async () => ({
+          version: 1,
+          app: "conscious_tech",
+          exportedAt: "",
+          data: { plans: [], schedules: [], closeReports: [], memories: [] },
+        }),
+        importBackup: async () => ({
+          importedCounts: { plans: 0, schedules: 0, closeReports: 0, memories: 0 },
+          exportedAt: "",
+        }),
         purgeSession: async () => ({ status: "success", purgedPlanId: "p1" }),
         resolveAmbiguity: async () => {},
         saveDraftPlan: async () => ({ status: "success", plan: samplePlan }),
@@ -320,13 +346,15 @@ describe("Fase 2: Soberanía de Datos y Resiliencia (H-03, H-05, H-08)", () => {
       globalThis.localStorage = {
         ...globalThis.localStorage,
         getItem: (k: string) => mockStorage[k] || null,
-        setItem: (k: string, v: string) => { mockStorage[k] = v; },
-        removeItem: (k: string) => { delete mockStorage[k]; },
+        setItem: (k: string, v: string) => {
+          mockStorage[k] = v;
+        },
+        removeItem: (k: string) => {
+          delete mockStorage[k];
+        },
       } as Storage;
 
-      const html = renderToStaticMarkup(
-        <App initialTab="dump" service={service} />
-      );
+      const html = renderToStaticMarkup(<App initialTab="dump" service={service} />);
 
       expect(html).toContain('data-testid="dump-autosave-indicator"');
       expect(html).toContain("Borrador guardado automáticamente");

@@ -29,11 +29,7 @@ export function isValidCalendarDate(dateStr: string): boolean {
   const [y, m, d] = dateStr.split("-").map(Number);
   if (m < 1 || m > 12 || d < 1 || d > 31) return false;
   const date = new Date(Date.UTC(y, m - 1, d));
-  return (
-    date.getUTCFullYear() === y &&
-    date.getUTCMonth() === m - 1 &&
-    date.getUTCDate() === d
-  );
+  return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
 }
 
 function formatUtcIso(d: Date): string {
@@ -43,11 +39,9 @@ function formatUtcIso(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-export const CalendarDateSchema = z
-  .string()
-  .refine(isValidCalendarDate, {
-    message: "Must be a valid real ISO calendar date (YYYY-MM-DD)",
-  });
+export const CalendarDateSchema = z.string().refine(isValidCalendarDate, {
+  message: "Must be a valid real ISO calendar date (YYYY-MM-DD)",
+});
 
 export const TargetWeekSchema = z
   .object({
@@ -132,55 +126,65 @@ export type ProtectedSpaceStatus = z.infer<typeof ProtectedSpaceStatusSchema>;
 export const EstimationCompletenessSchema = z.enum(["complete", "partial", "none"]);
 export type EstimationCompleteness = z.infer<typeof EstimationCompletenessSchema>;
 
-export const WeeklyCapacitySummarySchema = z.object({
-  totalAvailableHours: z.number().finite().nonnegative().nullable(),
-  plannableHours: z.number().finite().nonnegative().nullable(),
-  plannedHours: z.number().finite().nonnegative().nullable(),
-  knownEstimatedHours: z.number().finite().nonnegative().nullable(),
-  estimationCompleteness: EstimationCompletenessSchema,
-  protectedSpaceHours: z.number().finite().nonnegative().nullable(),
-  capacityStatus: CapacityStatusSchema,
-  protectedSpaceStatus: ProtectedSpaceStatusSchema,
-}).strict();
+export const WeeklyCapacitySummarySchema = z
+  .object({
+    totalAvailableHours: z.number().finite().nonnegative().nullable(),
+    plannableHours: z.number().finite().nonnegative().nullable(),
+    plannedHours: z.number().finite().nonnegative().nullable(),
+    knownEstimatedHours: z.number().finite().nonnegative().nullable(),
+    estimationCompleteness: EstimationCompletenessSchema,
+    protectedSpaceHours: z.number().finite().nonnegative().nullable(),
+    capacityStatus: CapacityStatusSchema,
+    protectedSpaceStatus: ProtectedSpaceStatusSchema,
+  })
+  .strict();
 export type WeeklyCapacitySummary = z.infer<typeof WeeklyCapacitySummarySchema>;
 
-export const WeekSummarySchema = z.object({
-  targetWeek: TargetWeekSchema,
-  intent: z.string().optional(),
-  capacity: WeeklyCapacitySummarySchema,
-}).strict();
+export const WeekSummarySchema = z
+  .object({
+    targetWeek: TargetWeekSchema,
+    intent: z.string().optional(),
+    capacity: WeeklyCapacitySummarySchema,
+  })
+  .strict();
 export type WeekSummary = z.infer<typeof WeekSummarySchema>;
 
-export const WeeklyFocusSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1),
-  groupId: z.string().min(1).optional(),
-  desiredOutcome: z.string().min(1),
-  rationale: z.string().min(1),
-  contributingItemIds: z.array(z.string().min(1)).min(1),
-  estimatedHours: z.number().finite().nonnegative().nullable(),
-}).strict();
+export const WeeklyFocusSchema = z
+  .object({
+    id: z.string().min(1),
+    title: z.string().min(1),
+    groupId: z.string().min(1).optional(),
+    desiredOutcome: z.string().min(1),
+    rationale: z.string().min(1),
+    contributingItemIds: z.array(z.string().min(1)).min(1),
+    estimatedHours: z.number().finite().nonnegative().nullable(),
+  })
+  .strict();
 export type WeeklyFocus = z.infer<typeof WeeklyFocusSchema>;
 
 export const ObligationCommitmentTypeSchema = z.enum(["external", "strict_deadline"]);
 export type ObligationCommitmentType = z.infer<typeof ObligationCommitmentTypeSchema>;
 
-export const WeeklyObligationSchema = z.object({
-  itemId: z.string().min(1),
-  title: z.string().min(1),
-  dueDate: z.string().min(1).optional(),
-  commitmentType: ObligationCommitmentTypeSchema,
-  rationale: z.string().min(1),
-  estimatedHours: z.number().finite().nonnegative().nullable(),
-}).strict();
+export const WeeklyObligationSchema = z
+  .object({
+    itemId: z.string().min(1),
+    title: z.string().min(1),
+    dueDate: z.string().min(1).optional(),
+    commitmentType: ObligationCommitmentTypeSchema,
+    rationale: z.string().min(1),
+    estimatedHours: z.number().finite().nonnegative().nullable(),
+  })
+  .strict();
 export type WeeklyObligation = z.infer<typeof WeeklyObligationSchema>;
 
-export const WeeklyFlexibleOptionSchema = z.object({
-  itemId: z.string().min(1),
-  title: z.string().min(1),
-  condition: z.string().min(1).optional(),
-  estimatedHours: z.number().finite().nonnegative().nullable(),
-}).strict();
+export const WeeklyFlexibleOptionSchema = z
+  .object({
+    itemId: z.string().min(1),
+    title: z.string().min(1),
+    condition: z.string().min(1).optional(),
+    estimatedHours: z.number().finite().nonnegative().nullable(),
+  })
+  .strict();
 export type WeeklyFlexibleOption = z.infer<typeof WeeklyFlexibleOptionSchema>;
 
 export const DeferredReasonSchema = z.enum([
@@ -193,36 +197,44 @@ export const DeferredReasonSchema = z.enum([
 ]);
 export type DeferredReason = z.infer<typeof DeferredReasonSchema>;
 
-export const DeferredItemSchema = z.object({
-  itemId: z.string().min(1),
-  title: z.string().min(1),
-  reason: DeferredReasonSchema,
-  rationale: z.string().min(1),
-}).strict();
+export const DeferredItemSchema = z
+  .object({
+    itemId: z.string().min(1),
+    title: z.string().min(1),
+    reason: DeferredReasonSchema,
+    rationale: z.string().min(1),
+  })
+  .strict();
 export type DeferredItem = z.infer<typeof DeferredItemSchema>;
 
-export const UnplannedSpaceSchema = z.object({
-  rationale: z.string().min(1),
-  recommendedHours: z.number().finite().nonnegative().nullable(),
-}).strict();
+export const UnplannedSpaceSchema = z
+  .object({
+    rationale: z.string().min(1),
+    recommendedHours: z.number().finite().nonnegative().nullable(),
+  })
+  .strict();
 export type UnplannedSpace = z.infer<typeof UnplannedSpaceSchema>;
 
-export const ConfirmationPromptSchema = z.object({
-  question: z.string().min(1),
-  keyTradeoffs: z.array(z.string().min(1)),
-  pendingQuestions: z.array(z.string().min(1)).max(2),
-}).strict();
+export const ConfirmationPromptSchema = z
+  .object({
+    question: z.string().min(1),
+    keyTradeoffs: z.array(z.string().min(1)),
+    pendingQuestions: z.array(z.string().min(1)).max(2),
+  })
+  .strict();
 export type ConfirmationPrompt = z.infer<typeof ConfirmationPromptSchema>;
 
-export const ProposedWeekSchema = z.object({
-  weekSummary: WeekSummarySchema,
-  foci: z.array(WeeklyFocusSchema).max(3),
-  obligations: z.array(WeeklyObligationSchema),
-  flexibleOptions: z.array(WeeklyFlexibleOptionSchema),
-  deferredItems: z.array(DeferredItemSchema),
-  unplannedSpace: UnplannedSpaceSchema,
-  confirmationPrompt: ConfirmationPromptSchema,
-}).strict();
+export const ProposedWeekSchema = z
+  .object({
+    weekSummary: WeekSummarySchema,
+    foci: z.array(WeeklyFocusSchema).max(3),
+    obligations: z.array(WeeklyObligationSchema),
+    flexibleOptions: z.array(WeeklyFlexibleOptionSchema),
+    deferredItems: z.array(DeferredItemSchema),
+    unplannedSpace: UnplannedSpaceSchema,
+    confirmationPrompt: ConfirmationPromptSchema,
+  })
+  .strict();
 export type ProposedWeek = z.infer<typeof ProposedWeekSchema>;
 
 // ============================================================================
@@ -315,7 +327,9 @@ export function validateProposedWeekInvariants(
   // C. Check for lost items (items in input missing from proposal)
   for (const item of input.items) {
     if (!itemAssignments.has(item.id)) {
-      errors.push(`Input item "${item.id}" (${item.title}) is not accounted for in any proposal category`);
+      errors.push(
+        `Input item "${item.id}" (${item.title}) is not accounted for in any proposal category`
+      );
     }
   }
 
@@ -326,7 +340,7 @@ export function validateProposedWeekInvariants(
   if (cap?.totalAvailableHours != null) {
     const total = cap.totalAvailableHours;
     const ratio = cap.minProtectedSpaceRatio ?? 0.25;
-    const expectedPlannable = Math.round((total * (1 - ratio)) * 100) / 100;
+    const expectedPlannable = Math.round(total * (1 - ratio) * 100) / 100;
 
     if (propCap.totalAvailableHours !== total) {
       errors.push(
@@ -419,7 +433,8 @@ export function validateProposedWeekInvariants(
   if (input.items.length === 0) {
     if (proposal.foci.length > 0) errors.push("Empty input must not yield foci");
     if (proposal.obligations.length > 0) errors.push("Empty input must not yield obligations");
-    if (proposal.flexibleOptions.length > 0) errors.push("Empty input must not yield flexibleOptions");
+    if (proposal.flexibleOptions.length > 0)
+      errors.push("Empty input must not yield flexibleOptions");
     if (proposal.deferredItems.length > 0) errors.push("Empty input must not yield deferredItems");
   }
 

@@ -13,18 +13,12 @@ export function VoiceDictationButton({
   defaultLang = "es-ES",
   disabled = false,
 }: VoiceDictationButtonProps) {
-  const {
-    isSupported,
-    isListening,
-    lang,
-    setLang,
-    toggleListening,
-    errorMessage,
-  } = useSpeechRecognition({
-    initialLang: defaultLang,
-    onTranscript,
-    getText,
-  });
+  const { isSupported, isListening, lang, setLang, toggleListening, errorMessage } =
+    useSpeechRecognition({
+      initialLang: defaultLang,
+      onTranscript,
+      getText,
+    });
 
   if (!isSupported) {
     return (

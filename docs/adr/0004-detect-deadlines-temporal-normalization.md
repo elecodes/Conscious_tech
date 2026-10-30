@@ -8,9 +8,10 @@ Accepted
 
 Following Skill 01 (`extract_items`), Skill 02 (`detect_relationships`), and Skill 03 (`group_work`), the pipeline needs to extract and normalize temporal constraints from user input.
 
-Before planning or scheduling work into a week (Skill 06 `build_week`) or evaluating personal context and energy (Skill 05 `evaluate_context`), the system must accurately understand *when* work is expected to happen according to what the person explicitly said:
+Before planning or scheduling work into a week (Skill 06 `build_week`) or evaluating personal context and energy (Skill 05 `evaluate_context`), the system must accurately understand _when_ work is expected to happen according to what the person explicitly said:
+
 - **Never invent dates**: If the user didn't mention a deadline, horizon, or date, the system must never hallucinate one (e.g. turning "Quiero preparar el examen AWS" into "este mes" or "antes de diciembre").
-- **Strictly separate deadlines from priorities**: A deadline answers *"When does this need to happen according to the person?"*, never *"What should I do first?"*, *"What is more urgent?"*, or *"What should fit into this week?"*.
+- **Strictly separate deadlines from priorities**: A deadline answers _"When does this need to happen according to the person?"_, never _"What should I do first?"_, _"What is more urgent?"_, or _"What should fit into this week?"_.
 - **No transitive inheritance via dependencies**: If Task A depends on Task B, Task B does not inherit Task A's deadline in Skill 04. Skill 04 extracts only what was expressed for each item.
 - **Differentiate future deadlines from past narrative context**: Mentions of past events ("El viernes estuve hablando con Marta") provide context, not deadlines.
 - **Deterministic resolution anchored to `currentDate`**: Relative terms ("mañana", "este fin de semana", "el viernes") must be resolved deterministically relative to an explicit anchor date using UTC calendar calculations, preventing timezone drift.
@@ -22,6 +23,7 @@ Before planning or scheduling work into a week (Skill 06 `build_week`) or evalua
 ### 1. Domain Modeling (`src/domain/deadlines.ts`)
 
 Defined explicit Zod schemas and TypeScript types:
+
 - `DeadlineKind`: `"exact_date" | "relative_date" | "date_range" | "recurring" | "unspecified"`.
 - `DetectedDeadline`:
   - `itemId`: Valid extracted item ID.
@@ -36,6 +38,7 @@ Defined explicit Zod schemas and TypeScript types:
 ### 2. Deterministic Temporal Engine (`src/skills/detect-deadlines/deterministic.ts`)
 
 Implemented pure UTC deterministic logic:
+
 - **`isValidIsoDate`**: Rigorously verifies format and Gregorian calendar validity (rejecting leap year anomalies like Feb 29 in non-leap years, Feb 30, etc.).
 - **`isVagueNonDeadline`**: Detects and purges non-actionable wishes ("algún día", "más adelante", "cuando estemos más tranquilos", "cuando pueda", "en algún momento", "no corre prisa").
 - **`resolveDateDeterministically`**:

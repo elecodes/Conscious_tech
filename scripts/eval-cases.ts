@@ -7,25 +7,15 @@ import { detectRelationships } from "../src/skills/detect-relationships";
 import { groupWork } from "../src/skills/group-work";
 import { validateGroupWorkInvariants } from "../src/skills/group-work/deterministic";
 import { ExtractedItem } from "../src/domain/items";
-import {
-  Relationship,
-  DetectedRelationshipsSchema,
-} from "../src/domain/relationships";
+import { Relationship, DetectedRelationshipsSchema } from "../src/domain/relationships";
 import { detectDeadlines } from "../src/skills/detect-deadlines";
 import { validateDeadlinesInvariants } from "../src/skills/detect-deadlines/deterministic";
 import { DetectedDeadline, DetectedDeadlines } from "../src/domain/deadlines";
 import { evaluateContext } from "../src/skills/evaluate-context";
 import { validateContextInvariants } from "../src/skills/evaluate-context/deterministic";
 import { EvaluateContextOutput } from "../src/domain/context";
-import {
-  buildWeekWithAudit,
-  evaluateProposedWeekSemanticQuality,
-} from "../src/skills/build-week";
-import {
-  validateProposedWeekInvariants,
-  BuildWeekInput,
-  ProposedWeek,
-} from "../src/domain/week";
+import { buildWeekWithAudit, evaluateProposedWeekSemanticQuality } from "../src/skills/build-week";
+import { validateProposedWeekInvariants, BuildWeekInput, ProposedWeek } from "../src/domain/week";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -38,7 +28,10 @@ function loadEnvFile() {
       if (!trimmed || trimmed.startsWith("#")) continue;
       const [key, ...rest] = trimmed.split("=");
       if (key && rest.length > 0) {
-        const val = rest.join("=").trim().replace(/^["']|["']$/g, "");
+        const val = rest
+          .join("=")
+          .trim()
+          .replace(/^["']|["']$/g, "");
         if (!process.env[key.trim()]) {
           process.env[key.trim()] = val;
         }
@@ -55,7 +48,8 @@ export interface BuildWeekCaseEvaluationRecord {
   provider: string;
   model: string;
   executedAt?: string;
-  status: "success" | "repaired_success" | "semantic_failure" | "invalid_response" | "provider_error";
+  status:
+    "success" | "repaired_success" | "semantic_failure" | "invalid_response" | "provider_error";
   metrics: {
     durationMs: number;
     latencyRating?: "fast" | "acceptable" | "slow";
@@ -440,7 +434,9 @@ async function runSkill02Evaluation(
       } catch (err) {
         const msg = (err as Error).message;
         if (msg.includes("429") || msg.includes("rate_limit")) {
-          console.log(`⏳ Rate limit en Groq (intento ${attempt}/4). Esperando 10 segundos antes de reintentar...`);
+          console.log(
+            `⏳ Rate limit en Groq (intento ${attempt}/4). Esperando 10 segundos antes de reintentar...`
+          );
           await new Promise((r) => setTimeout(r, 10000));
         } else {
           console.error(`❌ Error en pipeline: ${msg}`);
@@ -619,7 +615,9 @@ async function runSkill03Evaluation(
         const errorMsg = (err as Error).message;
         if (errorMsg.includes("rate_limit_exceeded") || errorMsg.includes("429")) {
           const waitSec = attempt * 12;
-          console.warn(`⏳ Rate limit alcanzado en ${c.id}. Reintentando en ${waitSec}s (intento ${attempt}/4)...`);
+          console.warn(
+            `⏳ Rate limit alcanzado en ${c.id}. Reintentando en ${waitSec}s (intento ${attempt}/4)...`
+          );
           await new Promise((r) => setTimeout(r, waitSec * 1000));
         } else {
           console.error(`\n❌ Error en pipeline: ${errorMsg}`);
@@ -850,10 +848,15 @@ async function runSkill05Evaluation(
     try {
       const items = mockItemsMap[c.id]?.items || [];
       const relationships = mockRelsMap[c.id]?.relationships || [];
-      const groupedWork = mockGroupsMap[c.id] || { groups: [], ungroupedItemIds: items.map((i) => i.id) };
+      const groupedWork = mockGroupsMap[c.id] || {
+        groups: [],
+        ungroupedItemIds: items.map((i) => i.id),
+      };
       const deadlines = mockDeadlinesMap[c.id] || { deadlines: [] };
 
-      console.log(`Items: ${items.length}, Grupos: ${groupedWork.groups.length}, Deadlines: ${deadlines.deadlines.length}`);
+      console.log(
+        `Items: ${items.length}, Grupos: ${groupedWork.groups.length}, Deadlines: ${deadlines.deadlines.length}`
+      );
 
       const contextOutput = await evaluateContext(provider, {
         currentDate,
@@ -867,7 +870,9 @@ async function runSkill05Evaluation(
       console.log(`\nItem assessments (${contextOutput.itemAssessments.length}):`);
       for (const ia of contextOutput.itemAssessments) {
         const item = items.find((i) => i.id === ia.itemId);
-        console.log(`- [${ia.attention.toUpperCase()}] ${item?.title || ia.itemId}: signals=[${ia.signals.join(", ")}]`);
+        console.log(
+          `- [${ia.attention.toUpperCase()}] ${item?.title || ia.itemId}: signals=[${ia.signals.join(", ")}]`
+        );
         attentionCounts[ia.attention] = (attentionCounts[ia.attention] || 0) + 1;
         for (const s of ia.signals) {
           signalCounts[s] = (signalCounts[s] || 0) + 1;
@@ -945,10 +950,14 @@ async function runSkill05Evaluation(
   console.log(`🤖 Proveedor: ${providerArg}`);
   console.log(`======================================================`);
   console.log(`Casos solicitados: ${requestedCount}`);
-  console.log(`Casos omitidos / no encontrados: ${omittedCount}${omittedCount > 0 ? ` [${omittedList.join(", ")}]` : ""}`);
+  console.log(
+    `Casos omitidos / no encontrados: ${omittedCount}${omittedCount > 0 ? ` [${omittedList.join(", ")}]` : ""}`
+  );
   console.log(`Casos ejecutados: ${executedCases.length}`);
   console.log(`Casos aprobados (invariantes válidas): ${passedCases.length}`);
-  console.log(`Casos fallidos (invariantes o error): ${failedCases.length}${failedCases.length > 0 ? ` [${failedCases.join(", ")}]` : ""}`);
+  console.log(
+    `Casos fallidos (invariantes o error): ${failedCases.length}${failedCases.length > 0 ? ` [${failedCases.join(", ")}]` : ""}`
+  );
   console.log(`Total items evaluados: ${totalItemsAssessed}`);
   console.log(`Total grupos evaluados: ${totalGroupsAssessed}`);
   console.log(`Total preguntas abiertas: ${totalQuestions}`);
@@ -989,9 +998,7 @@ async function runSkill06Evaluation(
   console.log(`======================================================\n`);
 
   if (!provider.buildWeek) {
-    console.warn(
-      `⚠️ El proveedor "${providerArg}" no implementa buildWeek todavía.`
-    );
+    console.warn(`⚠️ El proveedor "${providerArg}" no implementa buildWeek todavía.`);
     console.warn(
       `Ejecutá "npm run eval:week -- --provider=mock" para ejecutar la evaluación offline determinista con 0 tokens.`
     );
@@ -1067,7 +1074,9 @@ async function runSkill06Evaluation(
           ...g,
           itemIds: g.itemIds.filter((id: string) => itemIds.has(id)),
         })),
-        ungroupedItemIds: (rawGrouped.ungroupedItemIds || []).filter((id: string) => itemIds.has(id)),
+        ungroupedItemIds: (rawGrouped.ungroupedItemIds || []).filter((id: string) =>
+          itemIds.has(id)
+        ),
       };
       const rawDeadlines = mockDeadlinesMap[c.id] || { deadlines: [] };
       const deadlines = {
@@ -1111,9 +1120,10 @@ async function runSkill06Evaluation(
       const proposal = auditResult.proposal;
 
       // Extract provider execution metadata if available
-      const executionMeta = typeof (provider as any).getLastExecutionMeta === "function"
-        ? (provider as any).getLastExecutionMeta()
-        : undefined;
+      const executionMeta =
+        typeof (provider as any).getLastExecutionMeta === "function"
+          ? (provider as any).getLastExecutionMeta()
+          : undefined;
 
       const duration = executionMeta?.durationMs ?? elapsed;
       totalDurationMs += duration;
@@ -1145,12 +1155,16 @@ async function runSkill06Evaluation(
       console.log(`\nEstructura semanal:`);
       console.log(`- Focos propuestos (${proposal.foci.length}):`);
       for (const f of proposal.foci) {
-        console.log(`  🎯 [${f.title}] (${f.contributingItemIds.length} items, est: ${f.estimatedHours ?? "n/a"}h) -> outcome: "${f.desiredOutcome}"`);
+        console.log(
+          `  🎯 [${f.title}] (${f.contributingItemIds.length} items, est: ${f.estimatedHours ?? "n/a"}h) -> outcome: "${f.desiredOutcome}"`
+        );
       }
 
       console.log(`- Obligaciones (${proposal.obligations.length}):`);
       for (const o of proposal.obligations) {
-        console.log(`  🔒 [${o.commitmentType}] ${o.title} (est: ${o.estimatedHours ?? "n/a"}h, due: ${o.dueDate || "semana"})`);
+        console.log(
+          `  🔒 [${o.commitmentType}] ${o.title} (est: ${o.estimatedHours ?? "n/a"}h, due: ${o.dueDate || "semana"})`
+        );
       }
 
       console.log(`- Opciones flexibles (${proposal.flexibleOptions.length}):`);
@@ -1168,8 +1182,12 @@ async function runSkill06Evaluation(
 
       console.log(`\nCapacidad y espacio:`);
       console.log(`- Estado capacidad: ${proposal.weekSummary.capacity.capacityStatus}`);
-      console.log(`- Espacio protegido: ${proposal.weekSummary.capacity.protectedSpaceStatus} (${proposal.weekSummary.capacity.protectedSpaceHours ?? "n/a"}h recomendadas)`);
-      console.log(`- Horas: planificables=${proposal.weekSummary.capacity.plannableHours ?? "n/a"}h, conocidas=${proposal.weekSummary.capacity.knownEstimatedHours ?? "n/a"}h, planificadas=${proposal.weekSummary.capacity.plannedHours ?? "n/a"}h`);
+      console.log(
+        `- Espacio protegido: ${proposal.weekSummary.capacity.protectedSpaceStatus} (${proposal.weekSummary.capacity.protectedSpaceHours ?? "n/a"}h recomendadas)`
+      );
+      console.log(
+        `- Horas: planificables=${proposal.weekSummary.capacity.plannableHours ?? "n/a"}h, conocidas=${proposal.weekSummary.capacity.knownEstimatedHours ?? "n/a"}h, planificadas=${proposal.weekSummary.capacity.plannedHours ?? "n/a"}h`
+      );
 
       if (auditResult.repaired) {
         console.log(`\n🔧 Reparaciones aplicadas (${auditResult.repairs.length}):`);
@@ -1218,7 +1236,8 @@ async function runSkill06Evaluation(
       }
 
       // Determine case status
-      let caseStatus: "success" | "repaired_success" | "semantic_failure" | "invalid_response" = "success";
+      let caseStatus: "success" | "repaired_success" | "semantic_failure" | "invalid_response" =
+        "success";
       if (!invariants.valid) {
         caseStatus = "invalid_response";
         countInvalidResponse++;
@@ -1234,7 +1253,9 @@ async function runSkill06Evaluation(
 
       console.log(`\n📌 Resultado caso: [${caseStatus.toUpperCase()}]`);
       if (tokens) {
-        console.log(`⏱ Tiempo: ${duration}ms | Tokens: prompt=${tokens.prompt ?? "n/a"}, comp=${tokens.completion ?? "n/a"}, total=${tokens.total ?? "n/a"}`);
+        console.log(
+          `⏱ Tiempo: ${duration}ms | Tokens: prompt=${tokens.prompt ?? "n/a"}, comp=${tokens.completion ?? "n/a"}, total=${tokens.total ?? "n/a"}`
+        );
       } else {
         console.log(`⏱ Tiempo: ${duration}ms (offline/0 tokens)`);
       }
@@ -1416,12 +1437,18 @@ async function runSkill06Evaluation(
 async function main() {
   const args = process.argv.slice(2);
   const skillArg =
-    [...args].reverse().find((a) => a.startsWith("--skill="))?.split("=")[1] ||
+    [...args]
+      .reverse()
+      .find((a) => a.startsWith("--skill="))
+      ?.split("=")[1] ||
     process.env.EVAL_SKILL ||
     "evaluate_context";
   const defaultProvider = skillArg === "build_week" ? "mock" : "groq";
 
-  const providerFromArgs = [...args].reverse().find((a) => a.startsWith("--provider="))?.split("=")[1] as ProviderType | undefined;
+  const providerFromArgs = [...args]
+    .reverse()
+    .find((a) => a.startsWith("--provider="))
+    ?.split("=")[1] as ProviderType | undefined;
   const providerArg =
     providerFromArgs ||
     (skillArg === "build_week" && process.env.BUILD_WEEK_PROVIDER
@@ -1430,7 +1457,10 @@ async function main() {
     (process.env.AI_PROVIDER as ProviderType) ||
     defaultProvider;
 
-  const caseArg = [...args].reverse().find((a) => a.startsWith("--case="))?.split("=")[1];
+  const caseArg = [...args]
+    .reverse()
+    .find((a) => a.startsWith("--case="))
+    ?.split("=")[1];
 
   if (providerArg === "groq") {
     console.log(`\n======================================================`);
@@ -1479,7 +1509,10 @@ async function main() {
     process.exit(1);
   }
 
-  const dateArg = [...args].reverse().find((a) => a.startsWith("--date="))?.split("=")[1];
+  const dateArg = [...args]
+    .reverse()
+    .find((a) => a.startsWith("--date="))
+    ?.split("=")[1];
   const currentDate = dateArg || process.env.EVAL_DATE || "2026-10-09";
 
   if (skillArg === "extract_items") {
@@ -1510,4 +1543,3 @@ if (isDirectRun) {
     process.exit(1);
   });
 }
-

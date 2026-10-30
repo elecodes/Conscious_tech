@@ -2,7 +2,14 @@ import { useState, useRef, useEffect } from "react";
 import { AIProvider } from "../../providers/ai-provider";
 import { MockProvider } from "../../providers/mock-provider";
 import { ExtractedItem, ExtractedItems } from "../../domain/items";
-import { ProposedWeek, resolveDefaultTargetWeek, TargetWeek, WeeklyFocus, WeeklyFlexibleOption, DeferredItem } from "../../domain/week";
+import {
+  ProposedWeek,
+  resolveDefaultTargetWeek,
+  TargetWeek,
+  WeeklyFocus,
+  WeeklyFlexibleOption,
+  DeferredItem,
+} from "../../domain/week";
 import { StoredWeeklyPlan, WeeklyPlanDraftContext } from "../../domain/repositories/types";
 import { WeeklySchedule } from "../../domain/schedule";
 import { extractItems } from "../../skills/extract-items";
@@ -12,9 +19,7 @@ import {
   PipelineDiagnostic,
 } from "../../application/planning-pipeline";
 import { useWeeklySession } from "../context/weekly-session-context";
-import {
-  formatHours,
-} from "./weekly-session-view";
+import { formatHours } from "./weekly-session-view";
 import { VoiceDictationButton } from "./voice-dictation-button";
 import { PlanningCapacityHud } from "./planning-capacity-hud";
 import { PlanningHeaderSection, type PendingCarryOverTask } from "./planning-header-section";
@@ -24,10 +29,7 @@ import { PlanningProposedItemsSection } from "./planning-proposed-items-section"
 import { PlanningDeferredItemsSection } from "./planning-deferred-items-section";
 import { PlanningProposalReviewFooter } from "./planning-proposal-review-footer";
 import { logger } from "../../utils/logger";
-import {
-  CalendarWeekSummary,
-} from "../../domain/calendar";
-
+import { CalendarWeekSummary } from "../../domain/calendar";
 
 export interface WeeklyPlanningFromNotesProps {
   provider?: AIProvider;
@@ -205,7 +207,12 @@ export function WeeklyPlanningFromNotes({
     let isCancelled = false;
     async function restoreDraft() {
       // Do not overwrite if explicit initial items are transferred from capture space
-      if (initialProposedWeek || (initialItems && initialItems.length > 0) || !service?.getDraftPlan) return;
+      if (
+        initialProposedWeek ||
+        (initialItems && initialItems.length > 0) ||
+        !service?.getDraftPlan
+      )
+        return;
       try {
         const currentTargetWeek: TargetWeek = {
           startDate: targetWeekStart,
@@ -234,7 +241,9 @@ export function WeeklyPlanningFromNotes({
             if (draft.draftContext.availableHoursInput !== undefined) {
               setAvailableHoursInput(draft.draftContext.availableHoursInput);
             } else if (draft.proposal.weekSummary.capacity.totalAvailableHours != null) {
-              setAvailableHoursInput(String(draft.proposal.weekSummary.capacity.totalAvailableHours));
+              setAvailableHoursInput(
+                String(draft.proposal.weekSummary.capacity.totalAvailableHours)
+              );
             }
             if (draft.draftContext.protectedSpacePercentInput !== undefined) {
               setProtectedSpacePercentInput(draft.draftContext.protectedSpacePercentInput);
@@ -391,7 +400,6 @@ export function WeeklyPlanningFromNotes({
     });
   };
 
-
   // --------------------------------------------------------------------------
   // --------------------------------------------------------------------------
   // Handlers: Step 1 - Extract Items
@@ -505,9 +513,7 @@ export function WeeklyPlanningFromNotes({
       ? extractedItems.filter((i) => acceptedItemIds.has(i.id))
       : [];
 
-    const selectedCarryOver = carryOverTasks.filter((t) =>
-      selectedCarryOverItemIds.has(t.itemId)
-    );
+    const selectedCarryOver = carryOverTasks.filter((t) => selectedCarryOverItemIds.has(t.itemId));
 
     // Guard: Prevent duplicates if an item ID is present in both sets
     const existingItemIds = new Set(acceptedExtracted.map((it) => it.id));
@@ -560,9 +566,7 @@ export function WeeklyPlanningFromNotes({
       const totalAvailableHours =
         availableHoursInput.trim() !== "" ? Number(availableHoursInput) : undefined;
       const minProtectedSpaceRatio =
-        protectedSpacePercentInput.trim() !== ""
-          ? Number(protectedSpacePercentInput) / 100
-          : 0.25;
+        protectedSpacePercentInput.trim() !== "" ? Number(protectedSpacePercentInput) / 100 : 0.25;
 
       const currentCapacityConfig =
         totalAvailableHours !== undefined &&
@@ -597,9 +601,13 @@ export function WeeklyPlanningFromNotes({
           const it = combinedItems.find((i) => i.id === itemId);
           if (it) {
             const originalDueDate = it.deadline?.resolved || "2026-10-15";
-            const updatedFoci = finalProposal.foci.filter((f) => !f.contributingItemIds.includes(itemId));
+            const updatedFoci = finalProposal.foci.filter(
+              (f) => !f.contributingItemIds.includes(itemId)
+            );
             const updatedDeferred = finalProposal.deferredItems.filter((d) => d.itemId !== itemId);
-            const updatedFlexible = finalProposal.flexibleOptions.filter((o) => o.itemId !== itemId);
+            const updatedFlexible = finalProposal.flexibleOptions.filter(
+              (o) => o.itemId !== itemId
+            );
             if (updatedFoci.length < 3) {
               updatedFoci.push({
                 id: `focus-recovery-${itemId}`,
@@ -645,8 +653,7 @@ export function WeeklyPlanningFromNotes({
     } catch (err) {
       if (reqId !== planningRequestIdRef.current) return;
       setPlanningError(
-        (err as Error).message ||
-          "Ocurrió un error al generar la propuesta semanal con la IA."
+        (err as Error).message || "Ocurrió un error al generar la propuesta semanal con la IA."
       );
     } finally {
       if (reqId === planningRequestIdRef.current) {
@@ -654,7 +661,6 @@ export function WeeklyPlanningFromNotes({
       }
     }
   };
-
 
   // --------------------------------------------------------------------------
   // Handlers: Step 4 - Explicit Human Confirmation to Persist
@@ -780,15 +786,9 @@ export function WeeklyPlanningFromNotes({
     };
     setOverdueDecisions(nextDecisions);
 
-    const updatedFoci = proposedWeek.foci.filter(
-      (f) => !f.contributingItemIds.includes(itemId)
-    );
-    const updatedDeferred = proposedWeek.deferredItems.filter(
-      (d) => d.itemId !== itemId
-    );
-    const updatedFlexible = proposedWeek.flexibleOptions.filter(
-      (o) => o.itemId !== itemId
-    );
+    const updatedFoci = proposedWeek.foci.filter((f) => !f.contributingItemIds.includes(itemId));
+    const updatedDeferred = proposedWeek.deferredItems.filter((d) => d.itemId !== itemId);
+    const updatedFlexible = proposedWeek.flexibleOptions.filter((o) => o.itemId !== itemId);
     const obligations = [...proposedWeek.obligations];
 
     if (decision === "include_recovery") {
@@ -845,9 +845,7 @@ export function WeeklyPlanningFromNotes({
         ? {
             totalAvailableHours: resolvedTotalHours,
             minProtectedSpaceRatio:
-              Number.isFinite(resolvedRatio) &&
-              resolvedRatio >= 0 &&
-              resolvedRatio <= 1
+              Number.isFinite(resolvedRatio) && resolvedRatio >= 0 && resolvedRatio <= 1
                 ? resolvedRatio
                 : 0.25,
           }
@@ -879,7 +877,8 @@ export function WeeklyPlanningFromNotes({
     setProposedWeek(updatedProposal);
     await persistDraft(updatedProposal, {
       overdueDecisions: nextDecisions,
-      availableHoursInput: resolvedTotalHours !== undefined ? String(resolvedTotalHours) : availableHoursInput,
+      availableHoursInput:
+        resolvedTotalHours !== undefined ? String(resolvedTotalHours) : availableHoursInput,
       protectedSpacePercentInput: String(Math.round(resolvedRatio * 100)),
     });
   };
@@ -902,8 +901,8 @@ export function WeeklyPlanningFromNotes({
         action === "postpone"
           ? "intentional_postponement"
           : action === "include_flexible"
-          ? "included"
-          : "pending_decision",
+            ? "included"
+            : "pending_decision",
     };
     setDeferredDecisions(nextDeferredDecisions);
 
@@ -921,7 +920,8 @@ export function WeeklyPlanningFromNotes({
             id: `focus-included-${itemId}`,
             title: itemTitle,
             desiredOutcome: `Avanzar en: ${itemTitle}`,
-            rationale: "Reconsiderado e incluido conscientemente en la semana por decisión de la persona.",
+            rationale:
+              "Reconsiderado e incluido conscientemente en la semana por decisión de la persona.",
             contributingItemIds: [itemId],
             estimatedHours,
           });
@@ -929,7 +929,8 @@ export function WeeklyPlanningFromNotes({
           updatedFlexible.push({
             itemId,
             title: itemTitle,
-            condition: "Reconsiderado e incluido conscientemente en la semana como opción flexible al alcanzarse el máximo de 3 focos.",
+            condition:
+              "Reconsiderado e incluido conscientemente en la semana como opción flexible al alcanzarse el máximo de 3 focos.",
             estimatedHours,
           });
         }
@@ -942,7 +943,8 @@ export function WeeklyPlanningFromNotes({
         itemId,
         title: itemTitle,
         reason: "intentional_postponement",
-        rationale: "Postergado conscientemente por decisión de la persona para evaluar en una semana posterior.",
+        rationale:
+          "Postergado conscientemente por decisión de la persona para evaluar en una semana posterior.",
       };
       if (existingIdx >= 0) {
         updatedDeferred[existingIdx] = entry;
@@ -985,9 +987,7 @@ export function WeeklyPlanningFromNotes({
         ? {
             totalAvailableHours: resolvedTotalHours,
             minProtectedSpaceRatio:
-              Number.isFinite(resolvedRatio) &&
-              resolvedRatio >= 0 &&
-              resolvedRatio <= 1
+              Number.isFinite(resolvedRatio) && resolvedRatio >= 0 && resolvedRatio <= 1
                 ? resolvedRatio
                 : 0.25,
           }
@@ -1018,7 +1018,8 @@ export function WeeklyPlanningFromNotes({
     setProposedWeek(updatedProposal);
     await persistDraft(updatedProposal, {
       deferredDecisions: nextDeferredDecisions,
-      availableHoursInput: resolvedTotalHours !== undefined ? String(resolvedTotalHours) : availableHoursInput,
+      availableHoursInput:
+        resolvedTotalHours !== undefined ? String(resolvedTotalHours) : availableHoursInput,
       protectedSpacePercentInput: String(Math.round(resolvedRatio * 100)),
     });
   };
@@ -1083,7 +1084,9 @@ export function WeeklyPlanningFromNotes({
   const handlePromoteFlexibleToFocus = async (itemId: string) => {
     if (!proposedWeek) return;
     if (proposedWeek.foci.length >= 3) {
-      alert("Para proteger tu foco y claridad mental, el límite es de 3 focos principales por semana.");
+      alert(
+        "Para proteger tu foco y claridad mental, el límite es de 3 focos principales por semana."
+      );
       return;
     }
     const opt = proposedWeek.flexibleOptions.find((o) => o.itemId === itemId);
@@ -1302,17 +1305,20 @@ export function WeeklyPlanningFromNotes({
       {/* -------------------------------------------------------------------- */}
       {(!extractedItems || extractedItems.length === 0) && (
         <div style={{ marginTop: "16px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", flexWrap: "wrap", gap: "8px" }}>
-            <label
-              htmlFor="planning-notes-input"
-              style={{ fontWeight: 600 }}
-            >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "6px",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
+            <label htmlFor="planning-notes-input" style={{ fontWeight: 600 }}>
               ¿Qué tienes en mente para planificar?
             </label>
-            <VoiceDictationButton
-              getText={() => noteText}
-              onTranscript={(t) => setNoteText(t)}
-            />
+            <VoiceDictationButton getText={() => noteText} onTranscript={(t) => setNoteText(t)} />
           </div>
           <textarea
             id="planning-notes-input"
@@ -1351,11 +1357,7 @@ export function WeeklyPlanningFromNotes({
       )}
 
       {extractError && (
-        <div
-          className="status-message status-error"
-          style={{ marginTop: "12px" }}
-          role="alert"
-        >
+        <div className="status-message status-error" style={{ marginTop: "12px" }} role="alert">
           <strong>Error de extracción:</strong> {extractError}
         </div>
       )}
@@ -1413,11 +1415,21 @@ export function WeeklyPlanningFromNotes({
             }}
           >
             <div>
-              <div className="calm-muted" style={{ fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
+              <div
+                className="calm-muted"
+                style={{
+                  fontSize: "0.8rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  fontWeight: 600,
+                }}
+              >
                 Propuesta semanal
               </div>
               <h2 style={{ margin: "2px 0 0 0" }}>
-                {proposedWeek.weekSummary.intent ? `«${proposedWeek.weekSummary.intent}»` : "Plan de la semana"}
+                {proposedWeek.weekSummary.intent
+                  ? `«${proposedWeek.weekSummary.intent}»`
+                  : "Plan de la semana"}
               </h2>
             </div>
             <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>

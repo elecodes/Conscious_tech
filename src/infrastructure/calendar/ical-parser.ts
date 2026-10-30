@@ -96,7 +96,12 @@ function expandWeeklyOccurrences(
   rangeStart?: string,
   rangeEnd?: string
 ): Array<{ day: string; startTime: string; endTime: string; durationHours: number }> {
-  const occurrences: Array<{ day: string; startTime: string; endTime: string; durationHours: number }> = [];
+  const occurrences: Array<{
+    day: string;
+    startTime: string;
+    endTime: string;
+    durationHours: number;
+  }> = [];
 
   const parts = rrule.split(";").reduce<Record<string, string>>((acc, part) => {
     const [k, v] = part.split("=");
@@ -123,14 +128,18 @@ function expandWeeklyOccurrences(
   };
 
   const startLimit = rangeStart ? new Date(`${rangeStart}T00:00:00Z`) : baseStart.date;
-  const endLimit = rangeEnd ? new Date(`${rangeEnd}T23:59:59Z`) : new Date(baseStart.date.getTime() + 60 * 86400000);
+  const endLimit = rangeEnd
+    ? new Date(`${rangeEnd}T23:59:59Z`)
+    : new Date(baseStart.date.getTime() + 60 * 86400000);
 
   // Iterate up to 12 weeks
   for (let w = 0; w < 12; w++) {
     const targetDays = byDay ? byDay.map((d) => dayMap[d]!) : [baseStart.date.getUTCDay()];
     for (const targetDayOfWeek of targetDays) {
       const curDate = new Date(baseStart.date);
-      curDate.setUTCDate(curDate.getUTCDate() + w * 7 + ((targetDayOfWeek - baseStart.date.getUTCDay() + 7) % 7));
+      curDate.setUTCDate(
+        curDate.getUTCDate() + w * 7 + ((targetDayOfWeek - baseStart.date.getUTCDay() + 7) % 7)
+      );
 
       if (until && curDate > until.date) continue;
       if (curDate < startLimit || curDate > endLimit) continue;
@@ -256,7 +265,9 @@ export function parseIcalContent(
               durationHours: exp.durationHours,
               allDay: parsedStart.isAllDay,
               location: currentEvent.location ? unescapeIcalText(currentEvent.location) : undefined,
-              description: currentEvent.description ? unescapeIcalText(currentEvent.description) : undefined,
+              description: currentEvent.description
+                ? unescapeIcalText(currentEvent.description)
+                : undefined,
             });
           }
           continue;
@@ -273,7 +284,9 @@ export function parseIcalContent(
         durationHours,
         allDay: parsedStart.isAllDay,
         location: currentEvent.location ? unescapeIcalText(currentEvent.location) : undefined,
-        description: currentEvent.description ? unescapeIcalText(currentEvent.description) : undefined,
+        description: currentEvent.description
+          ? unescapeIcalText(currentEvent.description)
+          : undefined,
       };
 
       // Filter by date range if provided
@@ -294,7 +307,9 @@ export function parseIcalContent(
     const propValue = trimmed.slice(colonIdx + 1);
 
     const semiIdx = propNameAndParams.indexOf(";");
-    const propName = (semiIdx === -1 ? propNameAndParams : propNameAndParams.slice(0, semiIdx)).toUpperCase();
+    const propName = (
+      semiIdx === -1 ? propNameAndParams : propNameAndParams.slice(0, semiIdx)
+    ).toUpperCase();
     const propParams = semiIdx === -1 ? "" : propNameAndParams.slice(semiIdx + 1);
 
     switch (propName) {

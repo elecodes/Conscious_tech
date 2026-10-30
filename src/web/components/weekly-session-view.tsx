@@ -4,20 +4,11 @@ import { MockProvider } from "../../providers/mock-provider";
 import { useWeeklySession } from "../context/weekly-session-context";
 import { StoredWeeklyPlan } from "../../domain/repositories/types";
 import { ExtractedItem } from "../../domain/items";
-import {
-  WeeklySchedule,
-  DailyWorkAllocation,
-} from "../../domain/schedule";
-import {
-  EstimationCompleteness,
-  resolveDefaultTargetWeek,
-} from "../../domain/week";
+import { WeeklySchedule, DailyWorkAllocation } from "../../domain/schedule";
+import { EstimationCompleteness, resolveDefaultTargetWeek } from "../../domain/week";
 import { calculateWeeklyCapacity, resolveTargetWeek } from "../../skills/build-week/deterministic";
 import { WeeklyPlanningFromNotes } from "./weekly-planning-from-notes";
-import {
-  evaluateRadarInput,
-  RadarEvaluationResult,
-} from "../../application/radar-pipeline";
+import { evaluateRadarInput, RadarEvaluationResult } from "../../application/radar-pipeline";
 import { AdjustmentProposal } from "../../domain/adjustment";
 
 export {
@@ -42,9 +33,7 @@ export {
 export { ConfirmedActiveMemoriesSection } from "./confirmed-active-memories-section";
 export { CapacityProtectedSpaceSection } from "./capacity-protected-space-section";
 
-import {
-  extractPlanItems,
-} from "./weekly-session-formatters";
+import { extractPlanItems } from "./weekly-session-formatters";
 import { ConfirmedActiveMemoriesSection } from "./confirmed-active-memories-section";
 import { CapacityProtectedSpaceSection } from "./capacity-protected-space-section";
 import { ClosedWeekReviewCard } from "./closed-week-review-card";
@@ -55,14 +44,8 @@ import { ScheduleAdjustmentHistorySection } from "./schedule-adjustment-history-
 import { ConfirmedCloseReportSection } from "./confirmed-close-report-section";
 import { MemoryCandidatesSection } from "./memory-candidates-section";
 
-
 export type ItemDispositionChoice =
-  | "unreviewed"
-  | "completed"
-  | "in_progress"
-  | "not_started"
-  | "consciously_postponed"
-  | "dropped";
+  "unreviewed" | "completed" | "in_progress" | "not_started" | "consciously_postponed" | "dropped";
 
 export interface ItemDispositionForm {
   status: ItemDispositionChoice;
@@ -112,7 +95,8 @@ export function WeeklySessionView({
   const [selectedAdjustmentItemId, setSelectedAdjustmentItemId] = useState<string>("");
   const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false);
   const [lastSavedAdjustment, setLastSavedAdjustment] = useState<string | null>(null);
-  const defaultTargetWeek = state.activePlan?.targetWeek ?? resolveDefaultTargetWeek(new Date().toISOString().slice(0, 10));
+  const defaultTargetWeek =
+    state.activePlan?.targetWeek ?? resolveDefaultTargetWeek(new Date().toISOString().slice(0, 10));
   const [targetWeekStart, setTargetWeekStart] = useState(defaultTargetWeek.startDate);
   const [targetWeekEnd, setTargetWeekEnd] = useState(defaultTargetWeek.endDate);
   const [deadlineInput, setDeadlineInput] = useState("");
@@ -128,7 +112,9 @@ export function WeeklySessionView({
 
   useEffect(() => {
     if (selectedItem) {
-      setTaskHoursInput(selectedItem.estimatedHours != null ? String(selectedItem.estimatedHours) : "");
+      setTaskHoursInput(
+        selectedItem.estimatedHours != null ? String(selectedItem.estimatedHours) : ""
+      );
       const alloc = schedule?.dailyAllocations.find((a) => a.itemId === selectedItem.itemId);
       setTaskDayInput(alloc?.day || "");
     }
@@ -364,7 +350,8 @@ export function WeeklySessionView({
     }
 
     // 2. Resolve day
-    const dayToApply = options?.overrideDay !== undefined ? options.overrideDay : taskDayInput.trim();
+    const dayToApply =
+      options?.overrideDay !== undefined ? options.overrideDay : taskDayInput.trim();
 
     // 3. Update proposal collections
     const updatedObligations = plan.proposal.obligations.map((o) =>
@@ -383,7 +370,10 @@ export function WeeklySessionView({
     );
 
     // If deferred item is given hours or day, promote it to flexibleOptions
-    if (plan.proposal.deferredItems.some((d) => d.itemId === itemId) && (hoursToApply !== null || dayToApply)) {
+    if (
+      plan.proposal.deferredItems.some((d) => d.itemId === itemId) &&
+      (hoursToApply !== null || dayToApply)
+    ) {
       const deferredItem = plan.proposal.deferredItems.find((d) => d.itemId === itemId)!;
       updatedDeferred = plan.proposal.deferredItems.filter((d) => d.itemId !== itemId);
       if (!updatedFlexible.some((f) => f.itemId === itemId)) {
@@ -414,8 +404,8 @@ export function WeeklySessionView({
       nonNullCount === allPlannedEntries.length && allPlannedEntries.length > 0
         ? "complete"
         : nonNullCount > 0
-        ? "partial"
-        : "none";
+          ? "partial"
+          : "none";
     const explicitKnownEstimatedHours = nonNullCount > 0 ? Math.round(sum * 100) / 100 : null;
 
     const updatedCapacity = calculateWeeklyCapacity({
@@ -507,7 +497,9 @@ export function WeeklySessionView({
       }
       const res = await reopenWeek(planId);
       if (res.status === "success") {
-        setFeedbackMessage("Semana reabierta exitosamente. Ahora podés continuar planificando o modificando tus tareas.");
+        setFeedbackMessage(
+          "Semana reabierta exitosamente. Ahora podés continuar planificando o modificando tus tareas."
+        );
       } else if (res.status === "conflict_active_plan_exists") {
         setReopenFeedback(
           `No es posible reabrir esta semana porque ya existe otra semana activa (${res.existingActivePlanId}). Cerrá o purgá la semana activa antes de reabrir esta.`
@@ -518,7 +510,9 @@ export function WeeklySessionView({
         );
       }
     } catch (err) {
-      setReopenFeedback((err as Error).message || "Ocurrió un error inesperado al reabrir la semana.");
+      setReopenFeedback(
+        (err as Error).message || "Ocurrió un error inesperado al reabrir la semana."
+      );
     } finally {
       setIsReopening(false);
     }
@@ -609,8 +603,8 @@ export function WeeklySessionView({
       <div className="session-container calm-box warning-box" role="alert">
         <h3>Múltiples planes activos detectados</h3>
         <p className="calm-text">
-          Existen varios planes marcados simultáneamente como activos. Tú decides
-          cuál conservar como el plan de esta semana:
+          Existen varios planes marcados simultáneamente como activos. Tú decides cuál conservar
+          como el plan de esta semana:
         </p>
         <ul className="items-list" aria-label="Lista de planes activos ambiguos">
           {state.ambiguousPlanIds.map((id) => (
@@ -813,11 +807,20 @@ export function WeeklySessionView({
           </div>
         )}
         <section className="plan-summary-card" aria-label="Espacio de preparación de semana">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
             <h2>2. Preparar semana</h2>
             {state.status === "session_resumed" && state.activePlan && (
               <span className="badge badge-task">
-                Semana activa: {state.activePlan.targetWeek.startDate} al {state.activePlan.targetWeek.endDate}
+                Semana activa: {state.activePlan.targetWeek.startDate} al{" "}
+                {state.activePlan.targetWeek.endDate}
               </span>
             )}
           </div>
@@ -867,12 +870,17 @@ export function WeeklySessionView({
 
         {state.latestClosedWeek && (
           <details className="calm-details" style={{ marginTop: "24px" }}>
-            <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--accent-color, #2b6cb0)", userSelect: "none" }}>
+            <summary
+              style={{
+                cursor: "pointer",
+                fontWeight: 600,
+                color: "var(--accent-color, #2b6cb0)",
+                userSelect: "none",
+              }}
+            >
               Ver aprendizajes y tareas de la última semana cerrada
             </summary>
-            <div style={{ marginTop: "12px" }}>
-              {renderLatestClosedWeekSection()}
-            </div>
+            <div style={{ marginTop: "12px" }}>{renderLatestClosedWeekSection()}</div>
           </details>
         )}
 
@@ -909,7 +917,10 @@ export function WeeklySessionView({
           <p className="calm-text" style={{ marginTop: "8px" }}>
             Tu cuaderno está despejado. No hay ninguna semana activa en este momento.
           </p>
-          <div className="actions" style={{ marginTop: "16px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <div
+            className="actions"
+            style={{ marginTop: "16px", display: "flex", gap: "10px", flexWrap: "wrap" }}
+          >
             <button
               className="primary"
               data-testid="nav-to-prepare-from-active-button"
@@ -939,9 +950,12 @@ export function WeeklySessionView({
             }}
             data-testid="active-space-drafts-notice"
           >
-            <h4 style={{ margin: "0 0 8px 0" }}>📂 Borradores de semana guardados ({state.draftPlans.length})</h4>
+            <h4 style={{ margin: "0 0 8px 0" }}>
+              📂 Borradores de semana guardados ({state.draftPlans.length})
+            </h4>
             <p className="calm-muted" style={{ fontSize: "0.88rem", marginBottom: "12px" }}>
-              Tienes planificación guardada en tu cuaderno local. Puedes abrir el borrador para revisarlo o activarlo:
+              Tienes planificación guardada en tu cuaderno local. Puedes abrir el borrador para
+              revisarlo o activarlo:
             </p>
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
               {state.draftPlans.map((draft) => (
@@ -951,7 +965,9 @@ export function WeeklySessionView({
                   style={{ display: "flex", alignItems: "center", gap: "6px" }}
                   onClick={() => onNavigateSpace?.("prepare")}
                 >
-                  <span>🗓️ Semana {draft.targetWeek.startDate} al {draft.targetWeek.endDate}</span>
+                  <span>
+                    🗓️ Semana {draft.targetWeek.startDate} al {draft.targetWeek.endDate}
+                  </span>
                   <span className="badge badge-muted">Continuar borrador →</span>
                 </button>
               ))}
@@ -960,9 +976,7 @@ export function WeeklySessionView({
         )}
 
         {state.latestClosedWeek && (
-          <div style={{ marginTop: "24px" }}>
-            {renderLatestClosedWeekSection()}
-          </div>
+          <div style={{ marginTop: "24px" }}>{renderLatestClosedWeekSection()}</div>
         )}
 
         <ConfirmedActiveMemoriesSection
@@ -1002,7 +1016,8 @@ export function WeeklySessionView({
         <section className="plan-summary-card" aria-label="Espacio de revisión y aprendizaje">
           <h2>4. Revisar y aprender</h2>
           <p className="calm-muted" style={{ marginTop: "6px" }}>
-            Cierre de ciclo, evaluación honesta de tareas y aprendizaje para las próximas semanas. Nada se guarda en memoria sin tu confirmación explícita.
+            Cierre de ciclo, evaluación honesta de tareas y aprendizaje para las próximas semanas.
+            Nada se guarda en memoria sin tu confirmación explícita.
           </p>
         </section>
 
@@ -1012,7 +1027,9 @@ export function WeeklySessionView({
 
         {!state.latestClosedWeek && !state.latestCloseReport && (
           <div className="calm-box" style={{ marginTop: "20px" }}>
-            <p className="calm-muted">No hay semanas cerradas ni activas para revisar en este momento.</p>
+            <p className="calm-muted">
+              No hay semanas cerradas ni activas para revisar en este momento.
+            </p>
             <button
               className="primary"
               style={{ marginTop: "12px" }}
@@ -1054,7 +1071,13 @@ export function WeeklySessionView({
           }}
         />
 
-        <div style={{ marginTop: "24px", paddingTop: "12px", borderTop: "1px dashed var(--border-color, #ddd)" }}>
+        <div
+          style={{
+            marginTop: "24px",
+            paddingTop: "12px",
+            borderTop: "1px dashed var(--border-color, #ddd)",
+          }}
+        >
           <details>
             <summary style={{ cursor: "pointer", fontSize: "0.85rem", color: "#666" }}>
               Opciones de desarrollo: Iniciar semana de ejemplo prefijada
@@ -1193,9 +1216,9 @@ export function WeeklySessionView({
         >
           <div>
             <strong>Conflicto de versión detectado:</strong> La versión esperada era v
-            {state.concurrencyConflict.expectedVersion}, pero la agenda se encuentra en
-            v{state.concurrencyConflict.currentVersion} (posible cambio en otra pestaña o
-            sesión). El ajuste <strong>no se ha aplicado</strong>.
+            {state.concurrencyConflict.expectedVersion}, pero la agenda se encuentra en v
+            {state.concurrencyConflict.currentVersion} (posible cambio en otra pestaña o sesión). El
+            ajuste <strong>no se ha aplicado</strong>.
           </div>
           <div>
             <button
@@ -1225,10 +1248,10 @@ export function WeeklySessionView({
             {activeSpace === "active"
               ? "3. Mi semana"
               : activeSpace === "review"
-              ? "4. Revisar y aprender"
-              : plan?.status === "closed"
-              ? "Semana cerrada"
-              : "Semana en curso"}
+                ? "4. Revisar y aprender"
+                : plan?.status === "closed"
+                  ? "Semana cerrada"
+                  : "Semana en curso"}
           </h2>
           <span className="badge badge-task">
             {plan?.targetWeek.startDate} al {plan?.targetWeek.endDate}
@@ -1238,10 +1261,11 @@ export function WeeklySessionView({
           {plan?.proposal.weekSummary.intent || "Plan semanal activo."}
         </p>
 
-        <div className="config-row" style={{ marginTop: "12px", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
-          <span className="badge badge-muted">
-            Versión de agenda: v{schedule?.version ?? 0}
-          </span>
+        <div
+          className="config-row"
+          style={{ marginTop: "12px", flexWrap: "wrap", gap: "8px", alignItems: "center" }}
+        >
+          <span className="badge badge-muted">Versión de agenda: v{schedule?.version ?? 0}</span>
           {onNavigateSpace ? (
             <div style={{ marginLeft: "auto", display: "flex", gap: "8px", flexWrap: "wrap" }}>
               <button
@@ -1347,71 +1371,71 @@ export function WeeklySessionView({
             setFeedbackMessage={setFeedbackMessage}
           />
 
-      {/* Confirmed Close Report Section (shown only after persistence) */}
-      {state.latestCloseReport && (
-        <ConfirmedCloseReportSection closeReport={state.latestCloseReport} />
-      )}
+          {/* Confirmed Close Report Section (shown only after persistence) */}
+          {state.latestCloseReport && (
+            <ConfirmedCloseReportSection closeReport={state.latestCloseReport} />
+          )}
 
-      {/* Memory Candidates Review Section (Sovereignty Invariant) */}
-      {renderMemoryCandidatesSection()}
+          {/* Memory Candidates Review Section (Sovereignty Invariant) */}
+          {renderMemoryCandidatesSection()}
 
-      {/* Purge Week Option (Accessible in Review space or Legacy Unified View) */}
-      <div
-        style={{
-          marginTop: "40px",
-          borderTop: "1px solid var(--border-color)",
-          paddingTop: "16px",
-        }}
-      >
-        {isPurgeConfirming ? (
+          {/* Purge Week Option (Accessible in Review space or Legacy Unified View) */}
           <div
-            className="status-message status-error"
-            role="alert"
-            aria-label="Confirmación para purgar semana"
-            style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            style={{
+              marginTop: "40px",
+              borderTop: "1px solid var(--border-color)",
+              paddingTop: "16px",
+            }}
           >
-            <p>
-              ¿Deseas purgar completamente esta semana y sus datos asociados? Esta
-              acción eliminará el plan, la agenda y reportes de la base de datos local y
-              no se puede deshacer.
-            </p>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <button
-                className="primary"
-                style={{ backgroundColor: "#8c2a2a", borderColor: "#8c2a2a" }}
-                aria-label="Confirmar purga definitiva"
-                onClick={async () => {
-                  if (plan) {
-                    await purgeSession(plan.planId);
-                    setIsPurgeConfirming(false);
-                    setFeedbackMessage("Semana purgada.");
-                  }
-                }}
+            {isPurgeConfirming ? (
+              <div
+                className="status-message status-error"
+                role="alert"
+                aria-label="Confirmación para purgar semana"
+                style={{ display: "flex", flexDirection: "column", gap: "8px" }}
               >
-                Confirmar purga
-              </button>
+                <p>
+                  ¿Deseas purgar completamente esta semana y sus datos asociados? Esta acción
+                  eliminará el plan, la agenda y reportes de la base de datos local y no se puede
+                  deshacer.
+                </p>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    className="primary"
+                    style={{ backgroundColor: "#8c2a2a", borderColor: "#8c2a2a" }}
+                    aria-label="Confirmar purga definitiva"
+                    onClick={async () => {
+                      if (plan) {
+                        await purgeSession(plan.planId);
+                        setIsPurgeConfirming(false);
+                        setFeedbackMessage("Semana purgada.");
+                      }
+                    }}
+                  >
+                    Confirmar purga
+                  </button>
+                  <button
+                    className="secondary"
+                    aria-label="Cancelar purga"
+                    onClick={() => setIsPurgeConfirming(false)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
               <button
                 className="secondary"
-                aria-label="Cancelar purga"
-                onClick={() => setIsPurgeConfirming(false)}
+                style={{ color: "#8c2a2a", borderColor: "#f0d0d0" }}
+                aria-label="Purgar semana actual"
+                onClick={() => setIsPurgeConfirming(true)}
               >
-                Cancelar
+                Purgar semana actual
               </button>
-            </div>
+            )}
           </div>
-        ) : (
-          <button
-            className="secondary"
-            style={{ color: "#8c2a2a", borderColor: "#f0d0d0" }}
-            aria-label="Purgar semana actual"
-            onClick={() => setIsPurgeConfirming(true)}
-          >
-            Purgar semana actual
-          </button>
-        )}
-      </div>
-      </>
-    )}
+        </>
+      )}
 
       {/* Confirmed Active Memories (Visible in Active Week, Review, and Unified Spaces) */}
       {(activeSpace === "active" || activeSpace === "review" || activeSpace === undefined) && (

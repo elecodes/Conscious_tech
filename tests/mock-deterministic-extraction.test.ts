@@ -38,12 +38,8 @@ describe("MockProvider — Extracción determinista de notas arbitrarias", () =>
     const [item1, item2, item3] = result.items;
 
     // Ítem 1: Preparar informe trimestral
-    expect(item1?.rawText).toBe(
-      "Preparar el informe trimestral antes del jueves (6 horas)."
-    );
-    expect(item1?.title).toBe(
-      "Preparar el informe trimestral antes del jueves"
-    );
+    expect(item1?.rawText).toBe("Preparar el informe trimestral antes del jueves (6 horas).");
+    expect(item1?.title).toBe("Preparar el informe trimestral antes del jueves");
     expect(item1?.type).toBe("task");
     expect(item1?.estimatedEffort).toEqual({
       value: 6,
@@ -58,9 +54,7 @@ describe("MockProvider — Extracción determinista de notas arbitrarias", () =>
     expect(item2?.rawText).toBe(
       "Reunión de alineación con el equipo el martes a las 10 (2 horas)."
     );
-    expect(item2?.title).toBe(
-      "Reunión de alineación con el equipo el martes a las 10"
-    );
+    expect(item2?.title).toBe("Reunión de alineación con el equipo el martes a las 10");
     expect(item2?.type).toBe("commitment");
     expect(item2?.commitment).toBe("external"); // involucra al equipo
     expect(item2?.estimatedEffort).toEqual({
@@ -84,8 +78,7 @@ describe("MockProvider — Extracción determinista de notas arbitrarias", () =>
   // 2. Nota con una sola idea
   // --------------------------------------------------------------------------
   it("debe extraer correctamente una nota con una sola idea conservando esfuerzo y fecha", async () => {
-    const singleNote =
-      "Revisar la configuración de seguridad del servidor mañana (3 horas).";
+    const singleNote = "Revisar la configuración de seguridad del servidor mañana (3 horas).";
 
     const provider = new MockProvider();
     const result = await extractItems(provider, {
@@ -191,8 +184,9 @@ describe("MockProvider — Extracción determinista de notas arbitrarias", () =>
 
     expect(proposal).toBeDefined();
     // La reunión con el equipo debe quedar preservada como obligación
-    const hasObligation = proposal.obligations.some((o) =>
-      o.title.toLowerCase().includes("reunión") || o.title.toLowerCase().includes("alineación")
+    const hasObligation = proposal.obligations.some(
+      (o) =>
+        o.title.toLowerCase().includes("reunión") || o.title.toLowerCase().includes("alineación")
     );
     expect(hasObligation).toBe(true);
   });
@@ -302,8 +296,7 @@ describe("MockProvider — Extracción determinista de notas arbitrarias", () =>
   });
 
   it("debe extraer 3 elementos independientes cuando se ingresan tareas en inglés separadas por coma", async () => {
-    const rawNote =
-      "Aws certification, do mouredev masterclasses, look for job expand";
+    const rawNote = "Aws certification, do mouredev masterclasses, look for job expand";
 
     const provider = new MockProvider();
     const result = await extractItems(provider, {

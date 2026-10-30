@@ -2,7 +2,10 @@ import { describe, it, expect, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { WeeklySessionService } from "../src/application/weekly-session-service";
 import { WeeklyPlanningFromNotes } from "../src/web/components/weekly-planning-from-notes";
-import { WeeklySessionReactContext, WeeklySessionContextValue } from "../src/web/context/weekly-session-context";
+import {
+  WeeklySessionReactContext,
+  WeeklySessionContextValue,
+} from "../src/web/context/weekly-session-context";
 import { MockProvider } from "../src/providers/mock-provider";
 import {
   StoredWeeklyPlan,
@@ -91,7 +94,8 @@ describe("Fase P5.6 — Conectar tareas postergadas con la planificación de la 
           currentCategory: "obligations",
           targetReason: "intentional_postponement",
           hoursFreed: 6,
-          rationale: "Reprogramación intencional de 'Preparar el informe trimestral' hacia la semana 2026-10-26 al 2026-11-01.",
+          rationale:
+            "Reprogramación intencional de 'Preparar el informe trimestral' hacia la semana 2026-10-26 al 2026-11-01.",
           targetWeek: {
             startDate: "2026-10-26",
             endDate: "2026-11-01",
@@ -140,7 +144,8 @@ describe("Fase P5.6 — Conectar tareas postergadas con la planificación de la 
           estimatedHours: 6,
           actualHours: null,
           isReported: true,
-          postponementReason: "Reprogramación intencional de 'Preparar el informe trimestral' hacia la semana 2026-10-26 al 2026-11-01.",
+          postponementReason:
+            "Reprogramación intencional de 'Preparar el informe trimestral' hacia la semana 2026-10-26 al 2026-11-01.",
         },
       ],
       itemDispositions: {
@@ -151,7 +156,8 @@ describe("Fase P5.6 — Conectar tareas postergadas con la planificación de la 
             title: "Preparar el informe trimestral",
             originCategory: "obligation",
             reason: "consciously_postponed",
-            details: "Reprogramación intencional de 'Preparar el informe trimestral' hacia la semana 2026-10-26 al 2026-11-01.",
+            details:
+              "Reprogramación intencional de 'Preparar el informe trimestral' hacia la semana 2026-10-26 al 2026-11-01.",
           },
         ],
         dropped: [],
@@ -184,7 +190,9 @@ describe("Fase P5.6 — Conectar tareas postergadas con la planificación de la 
   function createMockRepositories() {
     const plans: WeeklyPlanRepository = {
       save: vi.fn(),
-      getById: vi.fn().mockImplementation(async (id) => (id === closedPlan.planId ? closedPlan : null)),
+      getById: vi
+        .fn()
+        .mockImplementation(async (id) => (id === closedPlan.planId ? closedPlan : null)),
       getActivePlan: vi.fn().mockResolvedValue(null),
       getActivePlans: vi.fn().mockResolvedValue([]),
       getDraftPlans: vi.fn().mockResolvedValue([]),
@@ -197,16 +205,26 @@ describe("Fase P5.6 — Conectar tareas postergadas con la planificación de la 
 
     const schedules: WeeklyScheduleRepository = {
       save: vi.fn(),
-      getById: vi.fn().mockImplementation(async (id) => (id === closedSchedule.scheduleId ? closedSchedule : null)),
-      getByPlanId: vi.fn().mockImplementation(async (id) => (id === closedPlan.planId ? closedSchedule : null)),
+      getById: vi
+        .fn()
+        .mockImplementation(async (id) =>
+          id === closedSchedule.scheduleId ? closedSchedule : null
+        ),
+      getByPlanId: vi
+        .fn()
+        .mockImplementation(async (id) => (id === closedPlan.planId ? closedSchedule : null)),
       getAll: vi.fn().mockResolvedValue([closedSchedule]),
       delete: vi.fn(),
     };
 
     const closeReports: WeeklyCloseRepository = {
       save: vi.fn(),
-      getById: vi.fn().mockImplementation(async (id) => (id === closeReport.reportId ? closeReport : null)),
-      getByPlanId: vi.fn().mockImplementation(async (id) => (id === closedPlan.planId ? closeReport : null)),
+      getById: vi
+        .fn()
+        .mockImplementation(async (id) => (id === closeReport.reportId ? closeReport : null)),
+      getByPlanId: vi
+        .fn()
+        .mockImplementation(async (id) => (id === closedPlan.planId ? closeReport : null)),
       getAll: vi.fn().mockResolvedValue([closeReport]),
       delete: vi.fn(),
     };
@@ -316,10 +334,7 @@ describe("Fase P5.6 — Conectar tareas postergadas con la planificación de la 
 
       const html = renderToStaticMarkup(
         <WeeklySessionReactContext.Provider value={mockContextValue}>
-          <WeeklyPlanningFromNotes
-            provider={new MockProvider()}
-            currentDate="2026-10-20"
-          />
+          <WeeklyPlanningFromNotes provider={new MockProvider()} currentDate="2026-10-20" />
         </WeeklySessionReactContext.Provider>
       );
 
@@ -381,7 +396,9 @@ describe("Fase P5.6 — Conectar tareas postergadas con la planificación de la 
       const foundInFoci = proposal.foci.some((f) => f.contributingItemIds.includes(cot.itemId));
       const foundInFlexible = proposal.flexibleOptions.find((f) => f.itemId === cot.itemId);
 
-      const itemPresent = Boolean(foundInObligations || foundInDeferred || foundInFoci || foundInFlexible);
+      const itemPresent = Boolean(
+        foundInObligations || foundInDeferred || foundInFoci || foundInFlexible
+      );
       expect(itemPresent).toBe(true);
 
       // Si fue clasificada como obligación o diferida por deadline anterior, el dueDate debe ser 2026-10-15
@@ -486,7 +503,9 @@ describe("Fase P5.6 — Conectar tareas postergadas con la planificación de la 
     function createActiveRepositories() {
       const plans: WeeklyPlanRepository = {
         save: vi.fn(),
-        getById: vi.fn().mockImplementation(async (id) => (id === activePlan.planId ? activePlan : null)),
+        getById: vi
+          .fn()
+          .mockImplementation(async (id) => (id === activePlan.planId ? activePlan : null)),
         getActivePlan: vi.fn().mockResolvedValue(activePlan),
         getActivePlans: vi.fn().mockResolvedValue([activePlan]),
         getDraftPlans: vi.fn().mockResolvedValue([]),
@@ -499,8 +518,14 @@ describe("Fase P5.6 — Conectar tareas postergadas con la planificación de la 
 
       const schedules: WeeklyScheduleRepository = {
         save: vi.fn(),
-        getById: vi.fn().mockImplementation(async (id) => (id === activeSchedule.scheduleId ? activeSchedule : null)),
-        getByPlanId: vi.fn().mockImplementation(async (id) => (id === activePlan.planId ? activeSchedule : null)),
+        getById: vi
+          .fn()
+          .mockImplementation(async (id) =>
+            id === activeSchedule.scheduleId ? activeSchedule : null
+          ),
+        getByPlanId: vi
+          .fn()
+          .mockImplementation(async (id) => (id === activePlan.planId ? activeSchedule : null)),
         getAll: vi.fn().mockResolvedValue([activeSchedule]),
         delete: vi.fn(),
       };
@@ -741,4 +766,3 @@ describe("Fase P5.6 — Conectar tareas postergadas con la planificación de la 
     });
   });
 });
-

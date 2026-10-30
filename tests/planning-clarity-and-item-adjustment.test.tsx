@@ -84,9 +84,7 @@ describe("Claridad de Navegación y Ajuste de Elementos en Preparación", () => 
     planId: "plan-active-1019",
     weekRange: activeTargetWeek,
     timeBlocks: [],
-    dailyAllocations: [
-      { day: "2026-10-19", allocatedHours: 4, itemId: "item-1" },
-    ],
+    dailyAllocations: [{ day: "2026-10-19", allocatedHours: 4, itemId: "item-1" }],
     dayConstraints: [],
     appliedAdjustments: [],
     version: 4,
@@ -136,20 +134,16 @@ describe("Claridad de Navegación y Ajuste de Elementos en Preparación", () => 
   it("WeeklySessionView en espacio 'active' NO renderiza el formulario embebido de planificación de próxima semana", () => {
     const html = renderToStaticMarkup(
       <WeeklySessionReactContext.Provider value={dummyContext}>
-        <WeeklySessionView
-          provider={mockProvider}
-          activeSpace="active"
-          onNavigateSpace={vi.fn()}
-        />
+        <WeeklySessionView provider={mockProvider} activeSpace="active" onNavigateSpace={vi.fn()} />
       </WeeklySessionReactContext.Provider>
     );
 
     // Debe contener el botón de navegación limpia a la preparación
-    expect(html).toContain("data-testid=\"nav-to-prepare-button\"");
+    expect(html).toContain('data-testid="nav-to-prepare-button"');
     expect(html).toContain("🗓️ Preparar próxima semana");
 
     // NO debe contener el formulario embebido de planificación en el medio de la vista activa
-    expect(html).not.toContain("data-testid=\"visible-future-planning-section\"");
+    expect(html).not.toContain('data-testid="visible-future-planning-section"');
     expect(html).not.toContain("Planificación futura y tareas postergadas");
   });
 
@@ -161,8 +155,8 @@ describe("Claridad de Navegación y Ajuste de Elementos en Preparación", () => 
     );
 
     // Habiendo activa la semana 2026-10-19 al 2026-10-25, la semana propuesta por defecto debe ser 2026-10-26 al 2026-11-01
-    expect(html).toContain("value=\"2026-10-26\"");
-    expect(html).toContain("value=\"2026-11-01\"");
+    expect(html).toContain('value="2026-10-26"');
+    expect(html).toContain('value="2026-11-01"');
   });
 
   it("WeeklyPlanningFromNotes incluye inputs para editar horas estimadas y fecha límite en cada tarjeta de elemento identificado", () => {
@@ -183,20 +177,17 @@ describe("Claridad de Navegación y Ajuste de Elementos en Preparación", () => 
 
     const html = renderToStaticMarkup(
       <WeeklySessionReactContext.Provider value={dummyContext}>
-        <WeeklyPlanningFromNotes
-          provider={mockProvider}
-          initialItems={sampleItems}
-        />
+        <WeeklyPlanningFromNotes provider={mockProvider} initialItems={sampleItems} />
       </WeeklySessionReactContext.Provider>
     );
 
     // Debe mostrar inputs de horas estimadas para los elementos
-    expect(html).toContain("aria-label=\"Horas estimadas para Evaluar Postgres vs SQLite\"");
-    expect(html).toContain("aria-label=\"Horas estimadas para Leer paper de Google sobre agentes\"");
+    expect(html).toContain('aria-label="Horas estimadas para Evaluar Postgres vs SQLite"');
+    expect(html).toContain('aria-label="Horas estimadas para Leer paper de Google sobre agentes"');
 
     // Debe mostrar inputs de fecha límite para los elementos
-    expect(html).toContain("aria-label=\"Fecha límite para Evaluar Postgres vs SQLite\"");
-    expect(html).toContain("aria-label=\"Fecha límite para Leer paper de Google sobre agentes\"");
+    expect(html).toContain('aria-label="Fecha límite para Evaluar Postgres vs SQLite"');
+    expect(html).toContain('aria-label="Fecha límite para Leer paper de Google sobre agentes"');
   });
 
   it("WeeklyPlanningFromNotes muestra badge de 'Borrador en cuaderno local' al visualizar la propuesta", () => {
@@ -209,7 +200,7 @@ describe("Claridad de Navegación y Ajuste de Elementos en Preparación", () => 
       </WeeklySessionReactContext.Provider>
     );
 
-    expect(html).toContain("data-testid=\"draft-notebook-status-badge\"");
+    expect(html).toContain('data-testid="draft-notebook-status-badge"');
     expect(html).toContain("📒 Borrador en cuaderno local");
   });
 
@@ -223,7 +214,7 @@ describe("Claridad de Navegación y Ajuste de Elementos en Preparación", () => 
       </WeeklySessionReactContext.Provider>
     );
 
-    expect(html).toContain("data-testid=\"planning-capacity-details\"");
+    expect(html).toContain('data-testid="planning-capacity-details"');
     expect(html).toContain("Ver desglose completo de cálculos y viabilidad");
   });
 
@@ -293,9 +284,9 @@ describe("Claridad de Navegación y Ajuste de Elementos en Preparación", () => 
     );
 
     // Debe contener los botones de acción en opciones flexibles
-    expect(html).toContain("data-testid=\"promote-flexible-to-focus-item-pg\"");
+    expect(html).toContain('data-testid="promote-flexible-to-focus-item-pg"');
     expect(html).toContain("⭐ Elegir como foco");
-    expect(html).toContain("data-testid=\"adjust-flexible-hours-item-pg\"");
+    expect(html).toContain('data-testid="adjust-flexible-hours-item-pg"');
     expect(html).toContain("⏱️ Ajustar horas");
 
     // En carga planificada debe desglosar las horas flexibles en lugar de mostrar 'Sin estimar' confuso
@@ -304,4 +295,3 @@ describe("Claridad de Navegación y Ajuste de Elementos en Preparación", () => 
     expect(html).toContain("Capacidad disponible (4h flexibles)");
   });
 });
-

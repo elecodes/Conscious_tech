@@ -12,10 +12,7 @@ import {
   CloseWeekInputSchema,
 } from "../../domain/close-week";
 import type { StoreCandidate } from "../../domain/memory";
-import type {
-  ScheduleAdjustmentRecord,
-  PostponeItemAction,
-} from "../../domain/schedule";
+import type { ScheduleAdjustmentRecord, PostponeItemAction } from "../../domain/schedule";
 
 interface RawPlanItem {
   itemId: string;
@@ -32,9 +29,7 @@ interface RawPlanItem {
  * performs honest capacity balance, item conservation, non-punitive reflective synthesis,
  * and formulates unconfirmed memory candidates for human sovereignty.
  */
-export function executeCloseWeekDeterministic(
-  input: CloseWeekInput
-): CloseWeekOutput {
+export function executeCloseWeekDeterministic(input: CloseWeekInput): CloseWeekOutput {
   // 1. Validate Schema
   const parseResult = CloseWeekInputSchema.safeParse(input);
   if (!parseResult.success) {
@@ -308,8 +303,8 @@ export function executeCloseWeekDeterministic(
       const userNotes = scheduleContradictionItemIds.has(itemId)
         ? "Contradicción entre la postergación registrada en la agenda y el resultado reportado; requiere aclaración."
         : isConflicting
-        ? "Reportes contradictorios recibidos; requiere aclaración."
-        : undefined;
+          ? "Reportes contradictorios recibidos; requiere aclaración."
+          : undefined;
 
       classifiedItems.push({
         itemId: raw.itemId,
@@ -434,7 +429,8 @@ export function executeCloseWeekDeterministic(
           title: item.title,
           originCategory: item.originCategory,
           reason: "in_progress",
-          details: item.userNotes || "Trabajo en curso que conserva impulso para el siguiente ciclo.",
+          details:
+            item.userNotes || "Trabajo en curso que conserva impulso para el siguiente ciclo.",
         });
         break;
 
@@ -444,7 +440,8 @@ export function executeCloseWeekDeterministic(
           title: item.title,
           originCategory: item.originCategory,
           reason: "not_started",
-          details: "Elemento planificado sin comenzar; candidato a reconsiderar sin reactivación automática.",
+          details:
+            "Elemento planificado sin comenzar; candidato a reconsiderar sin reactivación automática.",
         });
         break;
 
@@ -518,7 +515,8 @@ export function executeCloseWeekDeterministic(
   } else if (itemsWithActualHoursCount === 0) {
     capacityStatus = "no_actual_data";
     spaceRespected = null;
-    explanation = "No se registraron horas reales dedicadas; no es posible evaluar el balance de capacidad.";
+    explanation =
+      "No se registraron horas reales dedicadas; no es posible evaluar el balance de capacidad.";
   } else if (itemsWithActualHoursCount < totalPlanCount) {
     capacityStatus = "partial";
     spaceRespected = null;
@@ -528,16 +526,13 @@ export function executeCloseWeekDeterministic(
     capacityStatus = "complete";
     if (plannableHours !== null) {
       spaceRespected = reportedHoursSum <= plannableHours;
-      const spaceLabel = protectedSpaceHours !== null ? ` (${protectedSpaceHours.toFixed(1)} h)` : "";
+      const spaceLabel =
+        protectedSpaceHours !== null ? ` (${protectedSpaceHours.toFixed(1)} h)` : "";
       explanation = spaceRespected
         ? `Horas reales reportadas (${reportedHoursSum.toFixed(1)} h) dentro del límite planificable (${plannableHours.toFixed(1)} h), respetando el espacio protegido${spaceLabel}.`
         : `Horas reales reportadas (${reportedHoursSum.toFixed(1)} h) superaron el límite de trabajo planificable (${plannableHours.toFixed(1)} h), reduciendo el margen de espacio protegido${spaceLabel}.`;
-    } else if (
-      planSummary.capacity.totalAvailableHours !== null &&
-      protectedSpaceHours !== null
-    ) {
-      const maxAllowedWorkHours =
-        planSummary.capacity.totalAvailableHours - protectedSpaceHours;
+    } else if (planSummary.capacity.totalAvailableHours !== null && protectedSpaceHours !== null) {
+      const maxAllowedWorkHours = planSummary.capacity.totalAvailableHours - protectedSpaceHours;
       spaceRespected = reportedHoursSum <= maxAllowedWorkHours;
       explanation = spaceRespected
         ? `Horas reales reportadas (${reportedHoursSum.toFixed(1)} h) dentro del límite planificable, respetando el espacio protegido (${protectedSpaceHours.toFixed(1)} h).`
@@ -637,10 +632,7 @@ export function executeCloseWeekDeterministic(
 
   const consciousPostponements: string[] = classifiedItems
     .filter((c) => c.finalDisposition === "consciously_postponed")
-    .map(
-      (c) =>
-        `${c.title}${c.postponementReason ? ` — Motivo: ${c.postponementReason}` : ""}`
-    );
+    .map((c) => `${c.title}${c.postponementReason ? ` — Motivo: ${c.postponementReason}` : ""}`);
 
   const droppedItemsText: string[] = classifiedItems
     .filter((c) => c.finalDisposition === "dropped")
@@ -668,7 +660,11 @@ export function executeCloseWeekDeterministic(
   }
 
   let headline = "Cierre de semana completado.";
-  if (accomplishments.length > 0 && inProgressWork.length === 0 && consciousPostponements.length === 0) {
+  if (
+    accomplishments.length > 0 &&
+    inProgressWork.length === 0 &&
+    consciousPostponements.length === 0
+  ) {
     headline = "Semana completada con los focos previstos.";
   } else if (consciousPostponements.length > 0) {
     headline = "Semana con foco y decisiones conscientes de postergación.";

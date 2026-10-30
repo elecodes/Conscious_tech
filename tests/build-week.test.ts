@@ -6,9 +6,7 @@ import {
   buildWeekWithAudit,
   evaluateProposedWeekSemanticQuality,
 } from "../src/skills/build-week";
-import {
-  WeekValidationError,
-} from "../src/skills/build-week/deterministic";
+import { WeekValidationError } from "../src/skills/build-week/deterministic";
 import { BuildWeekInput, TargetWeek, ProposedWeek } from "../src/domain/week";
 
 describe("Skill 06: build_week - End-to-End Integration", () => {
@@ -222,7 +220,9 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
     expect(auditResult.proposal.weekSummary.capacity.protectedSpaceStatus).toBe("compromised");
     // Tradeoffs explicitly alert the user
     expect(
-      auditResult.proposal.confirmationPrompt.keyTradeoffs.some((t) => t.includes("superan la capacidad"))
+      auditResult.proposal.confirmationPrompt.keyTradeoffs.some((t) =>
+        t.includes("superan la capacidad")
+      )
     ).toBe(true);
   });
 
@@ -333,7 +333,9 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
     expect(rescued?.reason).not.toBe("low_attention");
 
     expect(
-      auditResult.repairs.some((r) => r.type === "rescued_omitted_to_not_scheduled" && r.itemId === "item-2")
+      auditResult.repairs.some(
+        (r) => r.type === "rescued_omitted_to_not_scheduled" && r.itemId === "item-2"
+      )
     ).toBe(true);
   });
 
@@ -371,7 +373,11 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
           { itemId: "item-4", title: "Discord", reason: "archived", rationale: "Archivado" },
         ],
         unplannedSpace: { rationale: "Espacio libre", recommendedHours: 6.25 },
-        confirmationPrompt: { question: "¿Semana de contención?", keyTradeoffs: [], pendingQuestions: [] },
+        confirmationPrompt: {
+          question: "¿Semana de contención?",
+          keyTradeoffs: [],
+          pendingQuestions: [],
+        },
       };
     });
 
@@ -474,7 +480,7 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
 
   it("Scenario 12: rejects ambiguous responses with multiple code blocks", async () => {
     mockProvider.setBuildWeekHandler(() => {
-      return "```json\n{\"foci\": []}\n```\n\n```json\n{\"foci\": []}\n```";
+      return '```json\n{"foci": []}\n```\n\n```json\n{"foci": []}\n```';
     });
 
     await expect(buildWeek(mockProvider, sampleInput)).rejects.toThrow(WeekValidationError);
@@ -684,11 +690,15 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
         },
         foci: [],
         obligations: [
-          { itemId: "item-1", title: "Demo", commitmentType: "external", rationale: "r", estimatedHours: null },
+          {
+            itemId: "item-1",
+            title: "Demo",
+            commitmentType: "external",
+            rationale: "r",
+            estimatedHours: null,
+          },
         ],
-        flexibleOptions: [
-          { itemId: "item-3", title: "Cuerdas", estimatedHours: null },
-        ],
+        flexibleOptions: [{ itemId: "item-3", title: "Cuerdas", estimatedHours: null }],
         deferredItems: [
           {
             itemId: "item-2", // has NO depends_on in sampleInput
@@ -725,7 +735,13 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
         },
         foci: [],
         obligations: [
-          { itemId: "item-1", title: "Demo", commitmentType: "external", rationale: "r", estimatedHours: null },
+          {
+            itemId: "item-1",
+            title: "Demo",
+            commitmentType: "external",
+            rationale: "r",
+            estimatedHours: null,
+          },
         ],
         flexibleOptions: [
           { itemId: "item-4", title: "Discord bot", estimatedHours: null }, // item-4 has archived status!
@@ -761,7 +777,13 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
         },
         foci: [],
         obligations: [
-          { itemId: "item-1", title: "Demo", commitmentType: "external", rationale: "r", estimatedHours: 6 },
+          {
+            itemId: "item-1",
+            title: "Demo",
+            commitmentType: "external",
+            rationale: "r",
+            estimatedHours: 6,
+          },
         ],
         flexibleOptions: [{ itemId: "item-3", title: "Cuerdas", estimatedHours: 1 }],
         deferredItems: [
@@ -1030,8 +1052,18 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
             reason: "waiting_dependency",
             rationale: "Bloqueado por backend",
           },
-          { itemId: "item-2", title: "Refactor backend", reason: "not_scheduled", rationale: "No planificado" },
-          { itemId: "item-3", title: "Cambiar cuerdas", reason: "not_scheduled", rationale: "No planificado" },
+          {
+            itemId: "item-2",
+            title: "Refactor backend",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
+          {
+            itemId: "item-3",
+            title: "Cambiar cuerdas",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
           { itemId: "item-4", title: "Discord bot", reason: "archived", rationale: "Archivado" },
         ],
         unplannedSpace: { rationale: "Protegido", recommendedHours: 10 },
@@ -1042,7 +1074,10 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
         },
       };
 
-      const audit = evaluateProposedWeekSemanticQuality(proposalWithUnilateralDeferred, inputWithBlockedCommitment);
+      const audit = evaluateProposedWeekSemanticQuality(
+        proposalWithUnilateralDeferred,
+        inputWithBlockedCommitment
+      );
       expect(audit.valid).toBe(false);
       expect(audit.checks.explicitCommitmentsPreserved).toBe(false);
       expect(audit.errors.some((e) => e.includes("item-ext-blocked"))).toBe(true);
@@ -1082,8 +1117,8 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
 
       // keyTradeoffs must alert about the blocked external commitment
       expect(
-        result.confirmationPrompt.keyTradeoffs.some((t) =>
-          t.includes("Reporte a cliente") && t.includes("bloqueado por dependencias")
+        result.confirmationPrompt.keyTradeoffs.some(
+          (t) => t.includes("Reporte a cliente") && t.includes("bloqueado por dependencias")
         )
       ).toBe(true);
 
@@ -1129,7 +1164,12 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
           },
         ],
         deferredItems: [
-          { itemId: "item-2", title: "Refactor backend", reason: "not_scheduled", rationale: "No planificado" },
+          {
+            itemId: "item-2",
+            title: "Refactor backend",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
           { itemId: "item-4", title: "Discord bot", reason: "archived", rationale: "Archivado" },
         ],
         unplannedSpace: { rationale: "Protegido", recommendedHours: 10 },
@@ -1143,7 +1183,9 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
       const audit = evaluateProposedWeekSemanticQuality(proposalWithInventedHours, sampleInput);
       expect(audit.valid).toBe(false);
       expect(audit.checks.noInventedEstimates).toBe(false);
-      expect(audit.errors.some((e) => e.includes("item-3") && e.includes("contradicts"))).toBe(true);
+      expect(audit.errors.some((e) => e.includes("item-3") && e.includes("contradicts"))).toBe(
+        true
+      );
     });
 
     it("fails semantic evaluation when proposal claims complete plannedHours despite partial estimations", () => {
@@ -1188,8 +1230,18 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
         ],
         flexibleOptions: [],
         deferredItems: [
-          { itemId: "item-2", title: "Refactor backend", reason: "not_scheduled", rationale: "No planificado" },
-          { itemId: "item-3", title: "Cambiar cuerdas", reason: "not_scheduled", rationale: "No planificado" },
+          {
+            itemId: "item-2",
+            title: "Refactor backend",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
+          {
+            itemId: "item-3",
+            title: "Cambiar cuerdas",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
           { itemId: "item-4", title: "Discord bot", reason: "archived", rationale: "Archivado" },
         ],
         unplannedSpace: { rationale: "Protegido", recommendedHours: 10 },
@@ -1200,7 +1252,10 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
         },
       };
 
-      const audit = evaluateProposedWeekSemanticQuality(proposalDishonestCapacity, inputMissingSomeHours);
+      const audit = evaluateProposedWeekSemanticQuality(
+        proposalDishonestCapacity,
+        inputMissingSomeHours
+      );
       expect(audit.valid).toBe(false);
       expect(audit.checks.honestCapacityStatus).toBe(false);
       expect(audit.errors.some((e) => e.includes("plannedHours must be null"))).toBe(true);
@@ -1256,8 +1311,18 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
           },
         ],
         deferredItems: [
-          { itemId: "item-2", title: "Refactor backend", reason: "not_scheduled", rationale: "No planificado" },
-          { itemId: "item-3", title: "Cambiar cuerdas", reason: "not_scheduled", rationale: "No planificado" },
+          {
+            itemId: "item-2",
+            title: "Refactor backend",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
+          {
+            itemId: "item-3",
+            title: "Cambiar cuerdas",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
           { itemId: "item-4", title: "Discord bot", reason: "archived", rationale: "Archivado" },
         ],
         unplannedSpace: { rationale: "Protegido", recommendedHours: 10 },
@@ -1270,7 +1335,9 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
       );
       expect(auditFlex.valid).toBe(false);
       expect(auditFlex.checks.highImportanceNotFlexible).toBe(false);
-      expect(auditFlex.errors.some((e) => e.includes("c18-2") && e.includes("flexible option"))).toBe(true);
+      expect(
+        auditFlex.errors.some((e) => e.includes("c18-2") && e.includes("flexible option"))
+      ).toBe(true);
 
       // 2. Erroneously placing high importance task as an obligation without deadline or external commitment
       const proposalWithFakeObligation: ProposedWeek = {
@@ -1302,7 +1369,9 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
       expect(auditOb.checks.highImportanceNotFlexible).toBe(false);
       expect(
         auditOb.errors.some(
-          (e) => e.includes("c18-2") && e.includes("converted into an obligation without external commitment")
+          (e) =>
+            e.includes("c18-2") &&
+            e.includes("converted into an obligation without external commitment")
         )
       ).toBe(true);
     });
@@ -1358,11 +1427,14 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
             estimatedHours: 6,
           },
         ],
-        flexibleOptions: [
-          { itemId: "item-3", title: "Cambiar cuerdas", estimatedHours: 1 },
-        ],
+        flexibleOptions: [{ itemId: "item-3", title: "Cambiar cuerdas", estimatedHours: 1 }],
         deferredItems: [
-          { itemId: "item-2", title: "Refactor backend", reason: "not_scheduled", rationale: "No planificado" },
+          {
+            itemId: "item-2",
+            title: "Refactor backend",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
           { itemId: "item-4", title: "Discord bot", reason: "archived", rationale: "Archivado" },
         ],
         unplannedSpace: { rationale: "Protegido", recommendedHours: 6.25 },
@@ -1395,8 +1467,18 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
         },
         foci: [],
         deferredItems: [
-          { itemId: "c18-2", title: "Bug login Google", reason: "not_scheduled", rationale: "Pospuesto por capacidad" },
-          { itemId: "item-2", title: "Refactor backend", reason: "not_scheduled", rationale: "No planificado" },
+          {
+            itemId: "c18-2",
+            title: "Bug login Google",
+            reason: "not_scheduled",
+            rationale: "Pospuesto por capacidad",
+          },
+          {
+            itemId: "item-2",
+            title: "Refactor backend",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
           { itemId: "item-4", title: "Discord bot", reason: "archived", rationale: "Archivado" },
         ],
       };
@@ -1438,11 +1520,14 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
             estimatedHours: 6,
           },
         ],
-        flexibleOptions: [
-          { itemId: "item-3", title: "Cambiar cuerdas", estimatedHours: 1 },
-        ],
+        flexibleOptions: [{ itemId: "item-3", title: "Cambiar cuerdas", estimatedHours: 1 }],
         deferredItems: [
-          { itemId: "item-2", title: "Refactor backend", reason: "not_scheduled", rationale: "No planificado" },
+          {
+            itemId: "item-2",
+            title: "Refactor backend",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
           { itemId: "item-4", title: "Discord bot", reason: "archived", rationale: "Archivado" },
         ],
         unplannedSpace: { rationale: "Protegido", recommendedHours: 6.25 },
@@ -1551,7 +1636,12 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
             reason: "not_scheduled",
             rationale: "El usuario decidió posponerlo para la próxima semana.", // Dishonest claim!
           },
-          { itemId: "item-2", title: "Refactor backend", reason: "not_scheduled", rationale: "No planificado" },
+          {
+            itemId: "item-2",
+            title: "Refactor backend",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
           { itemId: "item-4", title: "Discord bot", reason: "archived", rationale: "Archivado" },
         ],
         unplannedSpace: { rationale: "Protegido", recommendedHours: 6.25 },
@@ -1579,7 +1669,12 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
             reason: "not_scheduled",
             rationale: "Elemento sin programar por capacidad.",
           },
-          { itemId: "item-2", title: "Refactor backend", reason: "not_scheduled", rationale: "No planificado" },
+          {
+            itemId: "item-2",
+            title: "Refactor backend",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
           { itemId: "item-4", title: "Discord bot", reason: "archived", rationale: "Archivado" },
         ],
         confirmationPrompt: {
@@ -1596,10 +1691,11 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
       expect(auditWarn.valid).toBe(true); // Warnings do not fail valid
       expect(
         auditWarn.warnings.some(
-          (w) => w.includes("c18-2") && w.includes("neither confirmationPrompt.keyTradeoffs nor question alert")
+          (w) =>
+            w.includes("c18-2") &&
+            w.includes("neither confirmationPrompt.keyTradeoffs nor question alert")
         )
       ).toBe(true);
     });
   });
 });
-

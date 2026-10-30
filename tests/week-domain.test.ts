@@ -135,9 +135,7 @@ describe("Domain Schema & Invariants: Skill 06 build_week", () => {
     capacity: {
       totalAvailableHours: 25,
       minProtectedSpaceRatio: 0.25,
-      daysWithConstraints: [
-        { day: "martes", availableHours: 3, note: "Clase presencial" },
-      ],
+      daysWithConstraints: [{ day: "martes", availableHours: 3, note: "Clase presencial" }],
     },
   };
 
@@ -246,21 +244,13 @@ describe("Domain Schema & Invariants: Skill 06 build_week", () => {
     });
 
     it("rejects negative, non-finite or out-of-range numbers", () => {
-      expect(() =>
-        WeeklyCapacityConfigSchema.parse({ totalAvailableHours: -5 })
-      ).toThrow();
+      expect(() => WeeklyCapacityConfigSchema.parse({ totalAvailableHours: -5 })).toThrow();
 
-      expect(() =>
-        WeeklyCapacityConfigSchema.parse({ minProtectedSpaceRatio: 1.5 })
-      ).toThrow();
+      expect(() => WeeklyCapacityConfigSchema.parse({ minProtectedSpaceRatio: 1.5 })).toThrow();
 
-      expect(() =>
-        WeeklyCapacityConfigSchema.parse({ minProtectedSpaceRatio: -0.1 })
-      ).toThrow();
+      expect(() => WeeklyCapacityConfigSchema.parse({ minProtectedSpaceRatio: -0.1 })).toThrow();
 
-      expect(() =>
-        DayConstraintSchema.parse({ day: "lunes", availableHours: -1 })
-      ).toThrow();
+      expect(() => DayConstraintSchema.parse({ day: "lunes", availableHours: -1 })).toThrow();
     });
   });
 
@@ -335,10 +325,18 @@ describe("Domain Schema & Invariants: Skill 06 build_week", () => {
       expect(ProposedWeekSchema.parse(validProposal)).toEqual(validProposal);
       expect(BuildWeekInputSchema.parse(sampleInput)).toEqual(sampleInput);
       expect(WeeklyFocusSchema.parse(validProposal.foci[0])).toEqual(validProposal.foci[0]);
-      expect(WeeklyObligationSchema.parse(validProposal.obligations[0])).toEqual(validProposal.obligations[0]);
-      expect(WeeklyFlexibleOptionSchema.parse(validProposal.flexibleOptions[0])).toEqual(validProposal.flexibleOptions[0]);
-      expect(UnplannedSpaceSchema.parse(validProposal.unplannedSpace)).toEqual(validProposal.unplannedSpace);
-      expect(ConfirmationPromptSchema.parse(validProposal.confirmationPrompt)).toEqual(validProposal.confirmationPrompt);
+      expect(WeeklyObligationSchema.parse(validProposal.obligations[0])).toEqual(
+        validProposal.obligations[0]
+      );
+      expect(WeeklyFlexibleOptionSchema.parse(validProposal.flexibleOptions[0])).toEqual(
+        validProposal.flexibleOptions[0]
+      );
+      expect(UnplannedSpaceSchema.parse(validProposal.unplannedSpace)).toEqual(
+        validProposal.unplannedSpace
+      );
+      expect(ConfirmationPromptSchema.parse(validProposal.confirmationPrompt)).toEqual(
+        validProposal.confirmationPrompt
+      );
     });
 
     it("enforces maximum 3 foci constraint in schema", () => {
@@ -532,16 +530,20 @@ describe("Domain Schema & Invariants: Skill 06 build_week", () => {
         },
         foci: [],
         obligations: [
-          { itemId: "item-1", title: "1", commitmentType: "external", rationale: "r", estimatedHours: null },
+          {
+            itemId: "item-1",
+            title: "1",
+            commitmentType: "external",
+            rationale: "r",
+            estimatedHours: null,
+          },
         ],
         flexibleOptions: [
           { itemId: "item-2", title: "2", estimatedHours: null },
           { itemId: "item-3", title: "3", estimatedHours: null },
           { itemId: "phantom-999", title: "Phantom task", estimatedHours: null }, // Phantom!
         ],
-        deferredItems: [
-          { itemId: "item-4", title: "4", reason: "archived", rationale: "r" },
-        ],
+        deferredItems: [{ itemId: "item-4", title: "4", reason: "archived", rationale: "r" }],
         unplannedSpace: { rationale: "p", recommendedHours: null },
         confirmationPrompt: { question: "q", keyTradeoffs: [], pendingQuestions: [] },
       };
@@ -549,7 +551,7 @@ describe("Domain Schema & Invariants: Skill 06 build_week", () => {
       const inputWithoutCap = { ...sampleInput, capacity: undefined };
       const result = validateProposedWeekInvariants(proposalWithPhantom, inputWithoutCap);
       expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.includes("Phantom itemId \"phantom-999\""))).toBe(true);
+      expect(result.errors.some((e) => e.includes('Phantom itemId "phantom-999"'))).toBe(true);
     });
 
     it("Scenario D: detects item assigned to multiple categories", () => {
@@ -578,15 +580,19 @@ describe("Domain Schema & Invariants: Skill 06 build_week", () => {
           },
         ],
         obligations: [
-          { itemId: "item-1", title: "1", commitmentType: "external", rationale: "r", estimatedHours: null },
+          {
+            itemId: "item-1",
+            title: "1",
+            commitmentType: "external",
+            rationale: "r",
+            estimatedHours: null,
+          },
         ],
         flexibleOptions: [
           { itemId: "item-3", title: "3", estimatedHours: null },
           { itemId: "item-2", title: "2", estimatedHours: null }, // item-2 is already in focus-1!
         ],
-        deferredItems: [
-          { itemId: "item-4", title: "4", reason: "archived", rationale: "r" },
-        ],
+        deferredItems: [{ itemId: "item-4", title: "4", reason: "archived", rationale: "r" }],
         unplannedSpace: { rationale: "p", recommendedHours: null },
         confirmationPrompt: { question: "q", keyTradeoffs: [], pendingQuestions: [] },
       };
@@ -594,7 +600,9 @@ describe("Domain Schema & Invariants: Skill 06 build_week", () => {
       const inputWithoutCap = { ...sampleInput, capacity: undefined };
       const result = validateProposedWeekInvariants(proposalWithDuplicate, inputWithoutCap);
       expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.includes("Item \"item-2\" is assigned to multiple categories"))).toBe(true);
+      expect(
+        result.errors.some((e) => e.includes('Item "item-2" is assigned to multiple categories'))
+      ).toBe(true);
     });
 
     it("Scenario E: detects nonexistent groupId reference in focus", () => {
@@ -648,14 +656,27 @@ describe("Domain Schema & Invariants: Skill 06 build_week", () => {
             estimationCompleteness: "complete",
             protectedSpaceHours: 5,
             capacityStatus: "within_capacity", // Contradiction!
-            protectedSpaceStatus: "respected",  // Contradiction!
+            protectedSpaceStatus: "respected", // Contradiction!
           },
         },
         foci: [
-          { id: "f1", title: "F", desiredOutcome: "O", rationale: "R", contributingItemIds: ["item-2"], estimatedHours: 10 },
+          {
+            id: "f1",
+            title: "F",
+            desiredOutcome: "O",
+            rationale: "R",
+            contributingItemIds: ["item-2"],
+            estimatedHours: 10,
+          },
         ],
         obligations: [
-          { itemId: "item-1", title: "1", commitmentType: "external", rationale: "r", estimatedHours: 9 },
+          {
+            itemId: "item-1",
+            title: "1",
+            commitmentType: "external",
+            rationale: "r",
+            estimatedHours: 9,
+          },
         ],
         flexibleOptions: [{ itemId: "item-3", title: "3", estimatedHours: null }],
         deferredItems: [{ itemId: "item-4", title: "4", reason: "archived", rationale: "r" }],
@@ -669,9 +690,9 @@ describe("Domain Schema & Invariants: Skill 06 build_week", () => {
       };
       const result = validateProposedWeekInvariants(proposalOverCapacityLie, inputWith20h);
       expect(result.valid).toBe(false);
-      expect(
-        result.errors.some((e) => e.includes('capacityStatus must be "over_capacity"'))
-      ).toBe(true);
+      expect(result.errors.some((e) => e.includes('capacityStatus must be "over_capacity"'))).toBe(
+        true
+      );
       expect(
         result.errors.some((e) => e.includes('protectedSpaceStatus must be "compromised"'))
       ).toBe(true);
@@ -693,9 +714,24 @@ describe("Domain Schema & Invariants: Skill 06 build_week", () => {
           },
         },
         foci: [
-          { id: "f1", title: "F", desiredOutcome: "O", rationale: "R", contributingItemIds: ["item-2"], estimatedHours: null },
+          {
+            id: "f1",
+            title: "F",
+            desiredOutcome: "O",
+            rationale: "R",
+            contributingItemIds: ["item-2"],
+            estimatedHours: null,
+          },
         ],
-        obligations: [{ itemId: "item-1", title: "1", commitmentType: "external", rationale: "r", estimatedHours: null }],
+        obligations: [
+          {
+            itemId: "item-1",
+            title: "1",
+            commitmentType: "external",
+            rationale: "r",
+            estimatedHours: null,
+          },
+        ],
         flexibleOptions: [{ itemId: "item-3", title: "3", estimatedHours: null }],
         deferredItems: [{ itemId: "item-4", title: "4", reason: "archived", rationale: "r" }],
         unplannedSpace: { rationale: "p", recommendedHours: null },
@@ -808,7 +844,11 @@ describe("Domain Schema & Invariants: Skill 06 build_week", () => {
       };
       const lieStatusRes = validateProposedWeekInvariants(lieStatus, sampleInput);
       expect(lieStatusRes.valid).toBe(false);
-      expect(lieStatusRes.errors.some((e) => e.includes("Cannot declare capacityStatus \"within_capacity\""))).toBe(true);
+      expect(
+        lieStatusRes.errors.some((e) =>
+          e.includes('Cannot declare capacityStatus "within_capacity"')
+        )
+      ).toBe(true);
 
       // Pretending plannedHours is known with partial estimates is rejected
       const liePlannedHours: ProposedWeek = {
@@ -838,7 +878,11 @@ describe("Domain Schema & Invariants: Skill 06 build_week", () => {
       };
       const lieSpaceRes = validateProposedWeekInvariants(lieSpace, sampleInput);
       expect(lieSpaceRes.valid).toBe(false);
-      expect(lieSpaceRes.errors.some((e) => e.includes("Cannot declare protectedSpaceStatus \"respected\""))).toBe(true);
+      expect(
+        lieSpaceRes.errors.some((e) =>
+          e.includes('Cannot declare protectedSpaceStatus "respected"')
+        )
+      ).toBe(true);
     });
 
     it("Scenario J: partial estimations where known hours exceed plannable capacity must be over_capacity", () => {
@@ -920,8 +964,12 @@ describe("Domain Schema & Invariants: Skill 06 build_week", () => {
       };
       const failRes = validateProposedWeekInvariants(claimUnknown, sampleInput);
       expect(failRes.valid).toBe(false);
-      expect(failRes.errors.some((e) => e.includes("capacityStatus must be \"over_capacity\""))).toBe(true);
-      expect(failRes.errors.some((e) => e.includes("protectedSpaceStatus must be \"compromised\""))).toBe(true);
+      expect(failRes.errors.some((e) => e.includes('capacityStatus must be "over_capacity"'))).toBe(
+        true
+      );
+      expect(
+        failRes.errors.some((e) => e.includes('protectedSpaceStatus must be "compromised"'))
+      ).toBe(true);
     });
 
     it("Scenario K: obligation overload forces over_capacity status", () => {
@@ -953,9 +1001,7 @@ describe("Domain Schema & Invariants: Skill 06 build_week", () => {
           { itemId: "item-2", title: "Task 2", estimatedHours: 0 },
           { itemId: "item-3", title: "Task 3", estimatedHours: 0 },
         ],
-        deferredItems: [
-          { itemId: "item-4", title: "Task 4", reason: "archived", rationale: "r" },
-        ],
+        deferredItems: [{ itemId: "item-4", title: "Task 4", reason: "archived", rationale: "r" }],
         unplannedSpace: {
           rationale: "Espacio comprometido por obligaciones",
           recommendedHours: 6.25,
@@ -1006,19 +1052,17 @@ describe("Domain Schema & Invariants: Skill 06 build_week", () => {
             estimatedHours: 6,
           },
         ],
-        flexibleOptions: [
-          { itemId: "item-3", title: "Flex", estimatedHours: 0 },
-        ],
-        deferredItems: [
-          { itemId: "item-4", title: "Def", reason: "archived", rationale: "r" },
-        ],
+        flexibleOptions: [{ itemId: "item-3", title: "Flex", estimatedHours: 0 }],
+        deferredItems: [{ itemId: "item-4", title: "Def", reason: "archived", rationale: "r" }],
         unplannedSpace: { rationale: "r", recommendedHours: 6.25 },
         confirmationPrompt: { question: "q", keyTradeoffs: [], pendingQuestions: [] },
       };
 
       const res = validateProposedWeekInvariants(mismatchProposal, sampleInput);
       expect(res.valid).toBe(false);
-      expect(res.errors.some((e) => e.includes("plannedHours (14) must match knownEstimatedHours (12)"))).toBe(true);
+      expect(
+        res.errors.some((e) => e.includes("plannedHours (14) must match knownEstimatedHours (12)"))
+      ).toBe(true);
     });
 
     it("Scenario M: createEmptyProposedWeek resolves default natural week when omitted", () => {

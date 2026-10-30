@@ -77,7 +77,8 @@ describe("Fase 1: Estabilización de Transacciones, Concurrencia y Aislamiento d
   };
 
   beforeEach(async () => {
-    const testDbName = "test-phase1-db-" + Math.random().toString(36).substring(7) + "-" + Date.now();
+    const testDbName =
+      "test-phase1-db-" + Math.random().toString(36).substring(7) + "-" + Date.now();
     storage = await createIndexedDbStorage({
       dbName: testDbName,
       customFactory: fakeIDB,
@@ -124,7 +125,9 @@ describe("Fase 1: Estabilización de Transacciones, Concurrencia y Aislamiento d
 
       // Forzamos fallo en el repositorio de schedules
       const originalSave = storage.schedules.save.bind(storage.schedules);
-      storage.schedules.save = vi.fn().mockRejectedValue(new Error("Simulated schedule disk failure"));
+      storage.schedules.save = vi
+        .fn()
+        .mockRejectedValue(new Error("Simulated schedule disk failure"));
 
       await expect(service.createOrSavePlanAndSchedule(plan, schedule)).rejects.toThrow(
         "Simulated schedule disk failure"
@@ -170,7 +173,9 @@ describe("Fase 1: Estabilización de Transacciones, Concurrencia y Aislamiento d
       };
 
       const originalSave = storage.schedules.save.bind(storage.schedules);
-      storage.schedules.save = vi.fn().mockRejectedValue(new Error("Disk IO error while saving schedule"));
+      storage.schedules.save = vi
+        .fn()
+        .mockRejectedValue(new Error("Disk IO error while saving schedule"));
 
       await expect(service.createOrSavePlanAndSchedule(updatedPlan, schedule)).rejects.toThrow(
         "Disk IO error while saving schedule"
@@ -218,7 +223,9 @@ describe("Fase 1: Estabilización de Transacciones, Concurrencia y Aislamiento d
       };
 
       const originalSave = storage.schedules.save.bind(storage.schedules);
-      storage.schedules.save = vi.fn().mockRejectedValue(new Error("Schedule failure on activation"));
+      storage.schedules.save = vi
+        .fn()
+        .mockRejectedValue(new Error("Schedule failure on activation"));
 
       await expect(service.createOrSavePlanAndSchedule(activatingPlan, schedule)).rejects.toThrow(
         "Schedule failure on activation"
@@ -335,9 +342,9 @@ describe("Fase 1: Estabilización de Transacciones, Concurrencia y Aislamiento d
         version: 1,
       };
 
-      await expect(
-        service.createOrSavePlanAndSchedule(plan, staleSchedule, 1)
-      ).rejects.toThrow(StaleVersionConflictError);
+      await expect(service.createOrSavePlanAndSchedule(plan, staleSchedule, 1)).rejects.toThrow(
+        StaleVersionConflictError
+      );
 
       // Comprobar que la agenda en BD sigue en versión 2 intacta sin sobrescribirse
       const currentInDb = await storage.schedules.getById("sched-concurrency-test");

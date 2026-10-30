@@ -214,7 +214,8 @@ describe("Radar de Imprevistos — Integración en WeeklySessionView (Sección 2
 
     // 2h task that fits in available margin (8h margin)
     const radarResult = await evaluateRadarInput(provider, {
-      changeDescription: "Aws certification, apps update, job search open possibilities, think Manne substack",
+      changeDescription:
+        "Aws certification, apps update, job search open possibilities, think Manne substack",
       currentDate: "2026-10-14",
       activePlan: samplePlan.proposal,
       dailyAllocations: sampleSchedule.dailyAllocations,

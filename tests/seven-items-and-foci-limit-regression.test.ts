@@ -1,7 +1,13 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { indexedDB as fakeIDB, IDBKeyRange as fakeKeyRange } from "fake-indexeddb";
 import { MockProvider } from "../src/providers/mock-provider";
-import { TargetWeek, ProposedWeek, ProposedWeekSchema, ExtractedItem, BuildWeekInput } from "../src/domain/week";
+import {
+  TargetWeek,
+  ProposedWeek,
+  ProposedWeekSchema,
+  ExtractedItem,
+  BuildWeekInput,
+} from "../src/domain/week";
 import { generateWeeklyProposalFromItemsDetailed } from "../src/application/planning-pipeline";
 import { createIndexedDbStorage, deleteDatabase } from "../src/infrastructure/storage/indexeddb";
 import { WeeklySessionService } from "../src/application/weekly-session-service";
@@ -157,7 +163,9 @@ describe("Regresión: Planificación y activación de semanas con 7 elementos y 
     for (const it of sevenItems) {
       const isAccounted =
         accountedItemIds.has(it.id) ||
-        proposal.obligations.some((o) => o.title.includes("Cibervoluntarios") && it.id === "item-ciber");
+        proposal.obligations.some(
+          (o) => o.title.includes("Cibervoluntarios") && it.id === "item-ciber"
+        );
       expect(isAccounted).toBe(true);
     }
 
@@ -360,7 +368,15 @@ describe("Regresión: Planificación y activación de semanas con 7 elementos y 
       ...result.proposal.foci.flatMap((f) => f.contributingItemIds),
       ...result.proposal.deferredItems.map((d) => d.itemId),
     ];
-    expect(allIds.sort()).toEqual(["item-1", "item-2", "item-3", "item-4", "item-5", "item-6", "item-7"]);
+    expect(allIds.sort()).toEqual([
+      "item-1",
+      "item-2",
+      "item-3",
+      "item-4",
+      "item-5",
+      "item-6",
+      "item-7",
+    ]);
 
     // 5. Debe ser perfectamente válido según ProposedWeekSchema
     const parseResult = ProposedWeekSchema.safeParse(result.proposal);
@@ -446,7 +462,8 @@ describe("Regresión: Planificación y activación de semanas con 7 elementos y 
       updatedFlexible.push({
         itemId: "item-4",
         title: "Tarea postergada 4",
-        condition: "Reconsiderado e incluido conscientemente en la semana como opción flexible al alcanzarse el máximo de 3 focos.",
+        condition:
+          "Reconsiderado e incluido conscientemente en la semana como opción flexible al alcanzarse el máximo de 3 focos.",
         estimatedHours: 2,
       });
     }

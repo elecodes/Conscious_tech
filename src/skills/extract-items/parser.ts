@@ -1,7 +1,11 @@
 import { ExtractedItems, ExtractedItemsSchema } from "../../domain/items";
 
 export class ExtractionValidationError extends Error {
-  constructor(message: string, public readonly issues?: unknown, public readonly rawContent?: string) {
+  constructor(
+    message: string,
+    public readonly issues?: unknown,
+    public readonly rawContent?: string
+  ) {
     super(message);
     this.name = "ExtractionValidationError";
   }

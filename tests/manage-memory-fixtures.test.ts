@@ -604,10 +604,14 @@ describe("Skill 10: manage_memory canonical fixtures (28 cases)", () => {
 
     // 2. Forget request on mem-01 is fully preserved and executed
     expect(output.suppressedContextMemoryIds).toContain("mem-01");
-    expect(output.proposedOperations.some((op) => op.type === "forget" && op.targetMemoryId === "mem-01")).toBe(true);
+    expect(
+      output.proposedOperations.some((op) => op.type === "forget" && op.targetMemoryId === "mem-01")
+    ).toBe(true);
 
     // 3. Valid candidate is NOT dropped
-    expect(output.proposedOperations.some((op) => op.type === "add" && op.candidateId === "cand-valid")).toBe(true);
+    expect(
+      output.proposedOperations.some((op) => op.type === "add" && op.candidateId === "cand-valid")
+    ).toBe(true);
   });
 
   it("mem-30: normalization preserves technical symbols (+, #, @, /, -, _, ., :) to avoid collapsing distinct technical terms", async () => {
@@ -829,7 +833,9 @@ describe("Skill 10: manage_memory canonical fixtures (28 cases)", () => {
     const input: ManageMemoryInput = {
       referenceDate: "2026-10-19",
       existingMemories: [],
-      verifiedAcceptedDecisionRefs: ["Propuesta de ajuste prop-postpone-flex aceptada por el usuario"],
+      verifiedAcceptedDecisionRefs: [
+        "Propuesta de ajuste prop-postpone-flex aceptada por el usuario",
+      ],
       candidates: [
         {
           candidateId: "cand-decision-accepted",
@@ -1238,5 +1244,3 @@ describe("Skill 10: manage_memory canonical fixtures (28 cases)", () => {
     }
   });
 });
-
-

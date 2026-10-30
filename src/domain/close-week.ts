@@ -97,12 +97,8 @@ export const CloseWeekInputSchema = z
       }
 
       // 2. Cross-validate planId coherence when planId is provided
-      const expectedPlanId =
-        val.planId ?? (val.activePlan as Record<string, unknown>).planId;
-      if (
-        typeof expectedPlanId === "string" &&
-        val.schedule.planId !== expectedPlanId
-      ) {
+      const expectedPlanId = val.planId ?? (val.activePlan as Record<string, unknown>).planId;
+      if (typeof expectedPlanId === "string" && val.schedule.planId !== expectedPlanId) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: `Schedule planId (${val.schedule.planId}) does not match expected planId (${expectedPlanId})`,
@@ -238,11 +234,7 @@ export const ReflectiveSummarySchema = z
   .strict();
 export type ReflectiveSummary = z.infer<typeof ReflectiveSummarySchema>;
 
-export const CloseWeekStatusSchema = z.enum([
-  "success",
-  "partial_data",
-  "invalid_request",
-]);
+export const CloseWeekStatusSchema = z.enum(["success", "partial_data", "invalid_request"]);
 export type CloseWeekStatus = z.infer<typeof CloseWeekStatusSchema>;
 
 export const CloseWeekOutputSchema = z

@@ -5,11 +5,11 @@ Estado: Aceptado
 
 ## Contexto
 
-El análisis de dependencias de seguridad identificó el aviso de severidad alta **GHSA-mrhx-c7xc-m3w5** afectando a versiones de `zod` inferiores a 4.6.6 («*Zod can exhaust memory while validating oversized constrained collections*»).
+El análisis de dependencias de seguridad identificó el aviso de severidad alta **GHSA-mrhx-c7xc-m3w5** afectando a versiones de `zod` inferiores a 4.6.6 («_Zod can exhaust memory while validating oversized constrained collections_»).
 
 Dado que Conscious Tech utiliza esquemas Zod en todas las capas del dominio para validar salidas de LLMs (Groq, Gemini, RemoteAI) y registros persistidos en IndexedDB, una colección sobredimensionada transmitida por un proveedor o un tercero podría inducir sobrecarga de memoria si no existen límites defensivos de entrada.
 
-La actualización sugerida por los gestores de paquetes instala `zod@4.6.7`, la cual introduce cambios de ruptura mayores (*breaking changes*) respecto a la API de `zod@3.24.2` en definiciones de esquemas, inferencias de tipos y métodos de transformación.
+La actualización sugerida por los gestores de paquetes instala `zod@4.6.7`, la cual introduce cambios de ruptura mayores (_breaking changes_) respecto a la API de `zod@3.24.2` en definiciones de esquemas, inferencias de tipos y métodos de transformación.
 
 ## Decisión
 

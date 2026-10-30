@@ -7,7 +7,10 @@ import {
 } from "../../domain/relationships";
 import { RelationshipValidationError, parseAndValidateRelationships } from "./parser";
 import { cleanAndValidateRelationships, CleanRelationshipsOptions } from "./deterministic";
-import { SYSTEM_PROMPT as REL_SYSTEM_PROMPT, buildUserPrompt as buildRelUserPrompt } from "./prompt";
+import {
+  SYSTEM_PROMPT as REL_SYSTEM_PROMPT,
+  buildUserPrompt as buildRelUserPrompt,
+} from "./prompt";
 
 export interface DetectRelationshipsOptions extends CleanRelationshipsOptions {
   maxRetries?: number;
@@ -42,22 +45,18 @@ export class DetectRelationshipsService {
       try {
         if (useCompleteJson && this.provider.completeJson) {
           const userPrompt = buildRelUserPrompt(validatedInput);
-          const { rawText } = await this.provider.completeJson(
-            REL_SYSTEM_PROMPT,
-            userPrompt
-          );
+          const { rawText } = await this.provider.completeJson(REL_SYSTEM_PROMPT, userPrompt);
           rawResult = parseAndValidateRelationships(rawText);
         } else if (this.provider.detectRelationships) {
           rawResult = await this.provider.detectRelationships(validatedInput);
         } else if (this.provider.completeJson) {
           const userPrompt = buildRelUserPrompt(validatedInput);
-          const { rawText } = await this.provider.completeJson(
-            REL_SYSTEM_PROMPT,
-            userPrompt
-          );
+          const { rawText } = await this.provider.completeJson(REL_SYSTEM_PROMPT, userPrompt);
           rawResult = parseAndValidateRelationships(rawText);
         } else {
-          throw new Error(`Provider "${this.provider.id}" does not support completeJson or detectRelationships.`);
+          throw new Error(
+            `Provider "${this.provider.id}" does not support completeJson or detectRelationships.`
+          );
         }
 
         const parseCheck = DetectedRelationshipsSchema.safeParse(rawResult);
@@ -82,7 +81,11 @@ export class DetectRelationshipsService {
     }
 
     // Apply deterministic cleaning, validation, deduplication and canonicalization
-    return cleanAndValidateRelationships(rawResult.relationships, validatedInput.items, this.options);
+    return cleanAndValidateRelationships(
+      rawResult.relationships,
+      validatedInput.items,
+      this.options
+    );
   }
 }
 

@@ -221,7 +221,7 @@ describe("Prioridad: Continuidad de la propuesta semanal (Borradores, recarga y 
     expect(html).toContain("5h");
     expect(html).toContain("8h");
     expect(html).toContain("7h");
-    expect(html).toContain("data-testid=\"planning-remaining-plannable-hours\"");
+    expect(html).toContain('data-testid="planning-remaining-plannable-hours"');
 
     // Tarea vencida en recuperación
     expect(html).toContain("Recuperación: Preparar el informe trimestral");
@@ -235,7 +235,7 @@ describe("Prioridad: Continuidad de la propuesta semanal (Borradores, recarga y 
     expect(html).toContain("Comprar café");
 
     // Botones de acción y estado
-    expect(html).toContain("data-testid=\"modify-capacity-button\"");
+    expect(html).toContain('data-testid="modify-capacity-button"');
     expect(html).toContain("Modificar capacidad");
     expect(html).toContain("Confirmar y activar semana");
   });
@@ -325,7 +325,11 @@ describe("Prioridad: Continuidad de la propuesta semanal (Borradores, recarga y 
         flexibleOptions: [],
         deferredItems: [],
         unplannedSpace: { recommendedHours: 5, rationale: "margen" },
-        confirmationPrompt: { question: "¿Aceptas esta propuesta?", keyTradeoffs: [], pendingQuestions: [] },
+        confirmationPrompt: {
+          question: "¿Aceptas esta propuesta?",
+          keyTradeoffs: [],
+          pendingQuestions: [],
+        },
       },
       createdAt: "2026-10-12T00:00:00.000Z",
       updatedAt: "2026-10-12T00:00:00.000Z",

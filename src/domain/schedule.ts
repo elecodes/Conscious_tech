@@ -74,14 +74,8 @@ export type ApplicationOutcome = z.infer<typeof ApplicationOutcomeSchema>;
  * Distinguishes the active adjustment from one superseded by a subsequent change
  * or reverted by an explicit undo action, preserving historical auditability.
  */
-export const ScheduleLifecycleStatusSchema = z.enum([
-  "active",
-  "superseded",
-  "reverted",
-]);
-export type ScheduleLifecycleStatus = z.infer<
-  typeof ScheduleLifecycleStatusSchema
->;
+export const ScheduleLifecycleStatusSchema = z.enum(["active", "superseded", "reverted"]);
+export type ScheduleLifecycleStatus = z.infer<typeof ScheduleLifecycleStatusSchema>;
 
 // ============================================================================
 // 2. Schedule Adjustment Record Schema
@@ -155,24 +149,21 @@ export const ScheduleAdjustmentRecordSchema = z
     if (val.applicationOutcome === "failed" && val.lifecycleStatus !== "active") {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "An adjustment that failed to apply cannot have lifecycleStatus 'superseded' or 'reverted'",
+        message:
+          "An adjustment that failed to apply cannot have lifecycleStatus 'superseded' or 'reverted'",
         path: ["lifecycleStatus"],
       });
     }
   });
 
-export type ScheduleAdjustmentRecord = z.infer<
-  typeof ScheduleAdjustmentRecordSchema
->;
+export type ScheduleAdjustmentRecord = z.infer<typeof ScheduleAdjustmentRecordSchema>;
 
 /**
  * Canonical selector to obtain all adjustments that are currently applied and active on the schedule (H-05).
  * Excludes rejected, failed, superseded, and reverted adjustment records.
  * Returns a new array without mutating the schedule's historical record.
  */
-export function getActiveAppliedAdjustments(
-  schedule: WeeklySchedule
-): ScheduleAdjustmentRecord[] {
+export function getActiveAppliedAdjustments(schedule: WeeklySchedule): ScheduleAdjustmentRecord[] {
   return schedule.appliedAdjustments.filter(
     (adj) =>
       adj.humanDecision === "accepted" &&
@@ -313,9 +304,7 @@ export function validateWeeklyScheduleInvariants(
   for (const alloc of schedule.dailyAllocations) {
     const key = `${alloc.itemId}::${alloc.day}`;
     if (seenAllocKeys.has(key)) {
-      errors.push(
-        `Duplicate DailyWorkAllocation for item '${alloc.itemId}' on day '${alloc.day}'`
-      );
+      errors.push(`Duplicate DailyWorkAllocation for item '${alloc.itemId}' on day '${alloc.day}'`);
     }
     seenAllocKeys.add(key);
 
@@ -346,9 +335,7 @@ export function validateWeeklyScheduleInvariants(
     if (availableHours === 0) {
       for (const tb of schedule.timeBlocks) {
         if (tb.day === day) {
-          errors.push(
-            `TimeBlock '${tb.itemId}' scheduled on declared zero-capacity day '${day}'`
-          );
+          errors.push(`TimeBlock '${tb.itemId}' scheduled on declared zero-capacity day '${day}'`);
         }
       }
       for (const alloc of schedule.dailyAllocations) {
@@ -403,9 +390,7 @@ export const ApplyAdjustmentErrorCodeSchema = z.enum([
   "duration_mismatch",
   "invariant_violation",
 ]);
-export type ApplyAdjustmentErrorCode = z.infer<
-  typeof ApplyAdjustmentErrorCodeSchema
->;
+export type ApplyAdjustmentErrorCode = z.infer<typeof ApplyAdjustmentErrorCodeSchema>;
 
 export const ApplyAdjustmentInputSchema = z
   .object({
@@ -445,9 +430,7 @@ export interface ApplyAdjustmentFailure {
   failureReason: string;
 }
 
-export type ApplyAdjustmentResult =
-  | ApplyAdjustmentSuccess
-  | ApplyAdjustmentFailure;
+export type ApplyAdjustmentResult = ApplyAdjustmentSuccess | ApplyAdjustmentFailure;
 
 /**
  * Helper to parse time string "HH:MM" to total minutes from start of day.
@@ -537,17 +520,14 @@ export function isAdjustmentSupersededBy(
     // Checks if the reallocation touches the same day relationship:
     // a) Exact same source and target day pair
     const samePair =
-      newAction.sourceDay === prevAdj.sourceDay &&
-      newAction.targetDay === prevAdj.targetDay;
+      newAction.sourceDay === prevAdj.sourceDay && newAction.targetDay === prevAdj.targetDay;
 
     // b) Reverse pair (reversing / moving back)
     const reversePair =
-      newAction.sourceDay === prevAdj.targetDay &&
-      newAction.targetDay === prevAdj.sourceDay;
+      newAction.sourceDay === prevAdj.targetDay && newAction.targetDay === prevAdj.sourceDay;
 
     // c) Chaining from the previous target day
-    const chainFromTarget =
-      newAction.sourceDay === prevAdj.targetDay;
+    const chainFromTarget = newAction.sourceDay === prevAdj.targetDay;
 
     return samePair || reversePair || chainFromTarget;
   }
@@ -649,8 +629,7 @@ export function applyAdjustmentToSchedule(
     activePlan,
   } = input;
 
-  const resolvedAdjustmentId =
-    input.adjustmentId ?? `adj-${proposalId}-${action.type}`;
+  const resolvedAdjustmentId = input.adjustmentId ?? `adj-${proposalId}-${action.type}`;
 
   // Helper to create an immutable failure result with a valid diagnostic record
   function makeFailure(
@@ -731,7 +710,6 @@ export function applyAdjustmentToSchedule(
 
   switch (action.type) {
     case "reassign_time_block": {
-
       // R-01: Ensure item identity matches across action and proposedBlock/currentBlock
       if (action.proposedBlock.itemId !== action.itemId) {
         return makeFailure(
@@ -864,9 +842,7 @@ export function applyAdjustmentToSchedule(
       }
 
       // Check target day zero capacity
-      const targetConstraint = schedule.dayConstraints?.find(
-        (dc) => dc.day === action.targetDay
-      );
+      const targetConstraint = schedule.dayConstraints?.find((dc) => dc.day === action.targetDay);
       if (targetConstraint && targetConstraint.availableHours === 0) {
         return makeFailure(
           "constraint_violation",
@@ -1017,4 +993,3 @@ export function applyAdjustmentToSchedule(
     appliedRecord,
   };
 }
-

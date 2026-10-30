@@ -101,7 +101,8 @@ export const TEST_CASES: Record<string, TestCase> = {
   multipleItems: {
     id: "06-multiple-items",
     description: "Varios elementos en un mismo texto",
-    input: "Tengo que preparar la clase para el martes. También quiero terminar la definición del MVP, estudiar SOLID y seguir con ArchitectAI. Además quería mirar Zapsac, pero eso no corre prisa.",
+    input:
+      "Tengo que preparar la clase para el martes. También quiero terminar la definición del MVP, estudiar SOLID y seguir con ArchitectAI. Además quería mirar Zapsac, pero eso no corre prisa.",
     expected: {
       items: [
         {
@@ -287,7 +288,8 @@ export const TEST_CASES: Record<string, TestCase> = {
   multipleRelated: {
     id: "17-multiple-related",
     description: "Varios elementos relacionados a un mismo proyecto",
-    input: "Para Conscious Tech: redactar los principios, escribir el prompt de extracción y testearlo.",
+    input:
+      "Para Conscious Tech: redactar los principios, escribir el prompt de extracción y testearlo.",
     expected: {
       items: [
         {
@@ -317,7 +319,8 @@ export const TEST_CASES: Record<string, TestCase> = {
   longText: {
     id: "18-long-text",
     description: "Texto largo con mezcla de tareas, ideas y preocupaciones",
-    input: "Llevo días dándole vueltas a varias cosas. Por un lado, tengo que pagar los impuestos trimestrales el viernes sin falta, eso ya me está estresando. Por otro lado, empecé a maquetar la web de Conscious Tech y quiero dejar lista la home. También me preguntaba si deberíamos integrar notas de voz con Whisper, aunque ahora mismo sería complicarnos la vida. Y tengo que llamar a Carlos para coordinar el taller.",
+    input:
+      "Llevo días dándole vueltas a varias cosas. Por un lado, tengo que pagar los impuestos trimestrales el viernes sin falta, eso ya me está estresando. Por otro lado, empecé a maquetar la web de Conscious Tech y quiero dejar lista la home. También me preguntaba si deberíamos integrar notas de voz con Whisper, aunque ahora mismo sería complicarnos la vida. Y tengo que llamar a Carlos para coordinar el taller.",
     expected: {
       items: [
         {

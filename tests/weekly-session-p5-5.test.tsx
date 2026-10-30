@@ -277,23 +277,20 @@ describe("Fase P5.5 — Auditoría de seguridad y preparación para pruebas con 
         new Error("Provider rate limit error on detect_relationships")
       );
 
-      const { input, diagnostics } = await prepareBuildWeekInputDetailed(
-        faultTolerantProvider,
-        {
-          items: [
-            sampleItems[0]!,
-            {
-              id: "item-2",
-              title: "Tarea secundaria",
-              rawText: "Tarea secundaria",
-              type: "task",
-              status: "pending",
-              commitment: "personal",
-            },
-          ],
-          currentDate: "2026-10-12",
-        }
-      );
+      const { input, diagnostics } = await prepareBuildWeekInputDetailed(faultTolerantProvider, {
+        items: [
+          sampleItems[0]!,
+          {
+            id: "item-2",
+            title: "Tarea secundaria",
+            rawText: "Tarea secundaria",
+            type: "task",
+            status: "pending",
+            commitment: "personal",
+          },
+        ],
+        currentDate: "2026-10-12",
+      });
 
       expect(input).toBeDefined();
       expect(diagnostics.length).toBeGreaterThan(0);
@@ -440,10 +437,7 @@ describe("Fase P5.5 — Auditoría de seguridad y preparación para pruebas con 
     });
 
     it("auditoría estática confirma que no se almacenan secretos en localStorage en el código fuente", () => {
-      const appSource = fs.readFileSync(
-        path.resolve(process.cwd(), "src/web/App.tsx"),
-        "utf-8"
-      );
+      const appSource = fs.readFileSync(path.resolve(process.cwd(), "src/web/App.tsx"), "utf-8");
       const remoteProviderSource = fs.readFileSync(
         path.resolve(process.cwd(), "src/providers/remote-ai-provider.ts"),
         "utf-8"
@@ -451,8 +445,8 @@ describe("Fase P5.5 — Auditoría de seguridad y preparación para pruebas con 
 
       expect(appSource).not.toContain("CT_GROQ_KEY");
       expect(appSource).not.toContain("CT_GEMINI_KEY");
-      expect(appSource).not.toContain("localStorage.getItem(\"CT_");
-      expect(appSource).not.toContain("localStorage.setItem(\"CT_");
+      expect(appSource).not.toContain('localStorage.getItem("CT_');
+      expect(appSource).not.toContain('localStorage.setItem("CT_');
       expect(remoteProviderSource).not.toContain("apiKey");
       expect(remoteProviderSource).not.toContain("process.env");
     });

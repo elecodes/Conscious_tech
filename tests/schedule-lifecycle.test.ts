@@ -92,7 +92,9 @@ describe("WeeklySchedule Lifecycle & applyAdjustmentToSchedule Engine (Phase 2)"
       expect(result.status).toBe("failed");
       if (result.status === "failed") {
         expect(result.errorCode).toBe("stale_schedule_version");
-        expect(result.failureReason).toContain("Expected schedule version (1) does not match current schedule version (2)");
+        expect(result.failureReason).toContain(
+          "Expected schedule version (1) does not match current schedule version (2)"
+        );
         // Schedule remains completely untouched and unmutated
         expect(result.schedule).toBe(schedule);
         expect(result.schedule.version).toBe(2);
@@ -180,7 +182,9 @@ describe("WeeklySchedule Lifecycle & applyAdjustmentToSchedule Engine (Phase 2)"
         expect(result.schedule.updatedAt).toBe("2026-10-12T11:00:00Z");
 
         // Verify block updated
-        const targetBlock = result.schedule.timeBlocks.find((tb) => tb.itemId === "item-meeting-01");
+        const targetBlock = result.schedule.timeBlocks.find(
+          (tb) => tb.itemId === "item-meeting-01"
+        );
         expect(targetBlock).toBeDefined();
         expect(targetBlock?.day).toBe("2026-10-16");
         expect(targetBlock?.startTime).toBe("15:00");
@@ -234,7 +238,9 @@ describe("WeeklySchedule Lifecycle & applyAdjustmentToSchedule Engine (Phase 2)"
       expect(result.status).toBe("failed");
       if (result.status === "failed") {
         expect(result.errorCode).toBe("duration_mismatch");
-        expect(result.failureReason).toContain("Proposed block duration (90m) does not match current block duration (60m)");
+        expect(result.failureReason).toContain(
+          "Proposed block duration (90m) does not match current block duration (60m)"
+        );
         expect(result.schedule).toBe(schedule);
       }
     });
@@ -391,7 +397,10 @@ describe("WeeklySchedule Lifecycle & applyAdjustmentToSchedule Engine (Phase 2)"
         expect(targetAlloc?.allocatedHours).toBe(1.5);
 
         // Strict conservation of hours: 1.5 + 2 + 2 + 1.5 = 7.0h
-        const totalNewHours = result.schedule.dailyAllocations.reduce((sum, a) => sum + a.allocatedHours, 0);
+        const totalNewHours = result.schedule.dailyAllocations.reduce(
+          (sum, a) => sum + a.allocatedHours,
+          0
+        );
         expect(totalNewHours).toBe(7.0);
 
         // Original schedule untouched
@@ -437,7 +446,10 @@ describe("WeeklySchedule Lifecycle & applyAdjustmentToSchedule Engine (Phase 2)"
         expect(wedAlloc?.allocatedHours).toBe(5);
 
         // Total hours preserved exactly: 5 + 2 = 7h
-        const totalNewHours = result.schedule.dailyAllocations.reduce((sum, a) => sum + a.allocatedHours, 0);
+        const totalNewHours = result.schedule.dailyAllocations.reduce(
+          (sum, a) => sum + a.allocatedHours,
+          0
+        );
         expect(totalNewHours).toBe(7.0);
       }
     });
@@ -464,7 +476,9 @@ describe("WeeklySchedule Lifecycle & applyAdjustmentToSchedule Engine (Phase 2)"
       expect(result.status).toBe("failed");
       if (result.status === "failed") {
         expect(result.errorCode).toBe("insufficient_source_hours");
-        expect(result.failureReason).toContain("has 3h allocated, insufficient for requested move of 5h");
+        expect(result.failureReason).toContain(
+          "has 3h allocated, insufficient for requested move of 5h"
+        );
         expect(result.schedule).toBe(schedule);
       }
     });
@@ -472,9 +486,7 @@ describe("WeeklySchedule Lifecycle & applyAdjustmentToSchedule Engine (Phase 2)"
     it("fails with constraint_violation if moving hours would exceed explicit DayConstraint availableHours", () => {
       // Create schedule where Monday has 6h, and we try to move 5h to Thursday (limit 4h)
       const scheduleWithMoreHours = createTestSchedule({
-        dailyAllocations: [
-          { itemId: "item-dev-01", day: "2026-10-12", allocatedHours: 6 },
-        ],
+        dailyAllocations: [{ itemId: "item-dev-01", day: "2026-10-12", allocatedHours: 6 }],
       });
 
       const overLimitAction: ReallocateDayWorkAction = {
@@ -497,7 +509,9 @@ describe("WeeklySchedule Lifecycle & applyAdjustmentToSchedule Engine (Phase 2)"
       expect(result.status).toBe("failed");
       if (result.status === "failed") {
         expect(result.errorCode).toBe("constraint_violation");
-        expect(result.failureReason).toContain("would bring total allocated hours (5h) above availableHours (4h)");
+        expect(result.failureReason).toContain(
+          "would bring total allocated hours (5h) above availableHours (4h)"
+        );
         expect(result.schedule).toBe(scheduleWithMoreHours);
       }
     });
@@ -532,7 +546,9 @@ describe("WeeklySchedule Lifecycle & applyAdjustmentToSchedule Engine (Phase 2)"
         expect(result.schedule.version).toBe(2);
 
         // Daily allocations for item-dev-01 must be completely removed
-        const devAllocations = result.schedule.dailyAllocations.filter((a) => a.itemId === "item-dev-01");
+        const devAllocations = result.schedule.dailyAllocations.filter(
+          (a) => a.itemId === "item-dev-01"
+        );
         expect(devAllocations).toHaveLength(0);
 
         // Other allocations remain intact
@@ -569,7 +585,9 @@ describe("WeeklySchedule Lifecycle & applyAdjustmentToSchedule Engine (Phase 2)"
       expect(result.status).toBe("failed");
       if (result.status === "failed") {
         expect(result.errorCode).toBe("item_not_found");
-        expect(result.failureReason).toContain("not found in schedule time blocks or daily allocations");
+        expect(result.failureReason).toContain(
+          "not found in schedule time blocks or daily allocations"
+        );
       }
     });
   });
@@ -599,7 +617,9 @@ describe("WeeklySchedule Lifecycle & applyAdjustmentToSchedule Engine (Phase 2)"
       expect(result.status).toBe("failed");
       if (result.status === "failed") {
         expect(result.errorCode).toBe("unsupported_action");
-        expect(result.failureReason).toContain("does not specify a concrete, verifiable temporal transformation on WeeklySchedule");
+        expect(result.failureReason).toContain(
+          "does not specify a concrete, verifiable temporal transformation on WeeklySchedule"
+        );
         expect(result.schedule).toBe(schedule);
         expect(result.failedRecord.applicationOutcome).toBe("failed");
       }
@@ -731,14 +751,18 @@ describe("WeeklySchedule Lifecycle & applyAdjustmentToSchedule Engine (Phase 2)"
       expect(res2.schedule.appliedAdjustments).toHaveLength(2);
 
       // Previous record (adj-step-1) must now be superseded, but its humanDecision: accepted and outcome: applied are intact!
-      const pastRecord = res2.schedule.appliedAdjustments.find((a) => a.adjustmentId === "adj-step-1");
+      const pastRecord = res2.schedule.appliedAdjustments.find(
+        (a) => a.adjustmentId === "adj-step-1"
+      );
       expect(pastRecord?.lifecycleStatus).toBe("superseded");
       expect(pastRecord?.humanDecision).toBe("accepted");
       expect(pastRecord?.applicationOutcome).toBe("applied");
       expect(pastRecord?.appliedAt).toBe("2026-10-12T10:00:00Z");
 
       // New record (adj-step-2) is active
-      const currentRecord = res2.schedule.appliedAdjustments.find((a) => a.adjustmentId === "adj-step-2");
+      const currentRecord = res2.schedule.appliedAdjustments.find(
+        (a) => a.adjustmentId === "adj-step-2"
+      );
       expect(currentRecord?.lifecycleStatus).toBe("active");
       expect(currentRecord?.expectedScheduleVersion).toBe(2);
       expect(currentRecord?.applicationOutcome).toBe("applied");
@@ -1175,9 +1199,7 @@ describe("WeeklySchedule Lifecycle & applyAdjustmentToSchedule Engine (Phase 2)"
             endTime: "10:00",
           },
         ],
-        dailyAllocations: [
-          { itemId: "item-dev-01", day: "2026-10-12", allocatedHours: 3 },
-        ],
+        dailyAllocations: [{ itemId: "item-dev-01", day: "2026-10-12", allocatedHours: 3 }],
       });
 
       // First reallocate day work on item-dev-01

@@ -34,13 +34,17 @@ export class GroqProvider implements AIProvider {
     if (options.client) {
       this.client = options.client;
     } else {
-      const apiKey = options.apiKey || (typeof process !== "undefined" ? process.env?.GROQ_API_KEY : undefined);
+      const apiKey =
+        options.apiKey || (typeof process !== "undefined" ? process.env?.GROQ_API_KEY : undefined);
       if (!apiKey) {
         throw new Error("GROQ_API_KEY is required for GroqProvider");
       }
       this.client = new Groq({ apiKey });
     }
-    this.model = options.model || (typeof process !== "undefined" ? process.env?.GROQ_MODEL : undefined) || "qwen/qwen3.8-27b";
+    this.model =
+      options.model ||
+      (typeof process !== "undefined" ? process.env?.GROQ_MODEL : undefined) ||
+      "qwen/qwen3.8-27b";
   }
 
   getLastExecutionMeta(): ProviderExecutionMeta | undefined {

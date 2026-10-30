@@ -80,7 +80,12 @@ describe("Cross-Skill Lifecycle Integration: build_week -> analyze_change -> det
     context: {
       itemAssessments: [
         { itemId: "item-aws", attention: "high", signals: ["already_started"], rationale: "Foco" },
-        { itemId: "item-clase", attention: "high", signals: ["external_commitment"], rationale: "Obligación" },
+        {
+          itemId: "item-clase",
+          attention: "high",
+          signals: ["external_commitment"],
+          rationale: "Obligación",
+        },
         { itemId: "item-zapsac", attention: "low", signals: [], rationale: "Flexible" },
         { itemId: "item-podcast", attention: "low", signals: [], rationale: "Diferido" },
       ],
@@ -636,7 +641,9 @@ describe("Cross-Skill Lifecycle Integration: build_week -> analyze_change -> det
       expect(updatedSchedule.appliedAdjustments).toHaveLength(1);
       expect(updatedSchedule.appliedAdjustments[0]?.lifecycleStatus).toBe("active");
       // Asignaciones de item-zapsac eliminadas de la agenda
-      expect(updatedSchedule.dailyAllocations.filter((a) => a.itemId === "item-zapsac")).toHaveLength(0);
+      expect(
+        updatedSchedule.dailyAllocations.filter((a) => a.itemId === "item-zapsac")
+      ).toHaveLength(0);
 
       // 5. close_week: Cierre de semana recibiendo la agenda actualizada
       // La persona reporta item-aws y item-clase como completados; no necesita volver a justificar item-zapsac

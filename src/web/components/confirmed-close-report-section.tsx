@@ -4,9 +4,7 @@ export interface ConfirmedCloseReportSectionProps {
   closeReport: StoredCloseWeekReport;
 }
 
-export function ConfirmedCloseReportSection({
-  closeReport,
-}: ConfirmedCloseReportSectionProps) {
+export function ConfirmedCloseReportSection({ closeReport }: ConfirmedCloseReportSectionProps) {
   return (
     <section
       className="results-section calm-box"
@@ -23,14 +21,11 @@ export function ConfirmedCloseReportSection({
         }}
       >
         <h3>Informe confirmado de cierre</h3>
-        <span className="badge badge-task">
-          Cerrada el {closeReport.closedAt}
-        </span>
+        <span className="badge badge-task">Cerrada el {closeReport.closedAt}</span>
       </div>
       <div className="config-row" style={{ marginTop: "12px", flexWrap: "wrap", gap: "8px" }}>
         <span className="badge badge-muted">
-          Completadas:{" "}
-          {closeReport.output.itemDispositions.completed.length}
+          Completadas: {closeReport.output.itemDispositions.completed.length}
         </span>
         {closeReport.output.reflectiveSummary.consciousPostponements.length > 0 && (
           <span className="badge badge-idea">

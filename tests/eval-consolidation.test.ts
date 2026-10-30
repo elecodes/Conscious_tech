@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  mergeConsolidatedWeekResults,
-  BuildWeekCaseEvaluationRecord,
-} from "../scripts/eval-cases";
+import { mergeConsolidatedWeekResults, BuildWeekCaseEvaluationRecord } from "../scripts/eval-cases";
 
 function makeFakeRecord(
   caseId: string,
