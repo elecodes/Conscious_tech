@@ -14,6 +14,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "eval": "tsx scripts/eval-cases.ts",
     "eval:items": "tsx scripts/eval-cases.ts --skill=extract_items",
     "eval:relationships": "tsx scripts/eval-cases.ts --skill=detect_relationships",
@@ -31,13 +34,17 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.13.9",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^10.14.0",
     "fake-indexeddb": "^6.2.5",
+    "prettier": "^3.9.10",
     "tsx": "^4.23.15",
     "typescript": "^5.7.3",
+    "typescript-eslint": "^8.72.1",
     "vite": "^6.2.0",
     "vitest": "^3.0.7"
   }

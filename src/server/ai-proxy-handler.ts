@@ -210,7 +210,7 @@ export async function handleAIProxyRequest(
       }
       rawBody += buffer.toString("utf8");
     }
-  } catch (readErr) {
+  } catch {
     res.statusCode = 400;
     res.end(JSON.stringify({ error: "Error leyendo el cuerpo de la petición.", code: "BAD_REQUEST" }));
     return;

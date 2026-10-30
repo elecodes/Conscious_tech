@@ -367,13 +367,13 @@ export function WeeklySessionView({
     const dayToApply = options?.overrideDay !== undefined ? options.overrideDay : taskDayInput.trim();
 
     // 3. Update proposal collections
-    let updatedObligations = plan.proposal.obligations.map((o) =>
+    const updatedObligations = plan.proposal.obligations.map((o) =>
       o.itemId === itemId ? { ...o, estimatedHours: hoursToApply } : o
     );
-    let updatedFlexible = plan.proposal.flexibleOptions.map((f) =>
+    const updatedFlexible = plan.proposal.flexibleOptions.map((f) =>
       f.itemId === itemId ? { ...f, estimatedHours: hoursToApply } : f
     );
-    let updatedFoci = plan.proposal.foci.map((focus) =>
+    const updatedFoci = plan.proposal.foci.map((focus) =>
       focus.contributingItemIds.includes(itemId)
         ? { ...focus, estimatedHours: hoursToApply }
         : focus
