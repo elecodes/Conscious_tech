@@ -4,7 +4,8 @@ import {
   ExtractItemsInputSchema,
   ExtractedItems,
 } from "../../domain/items";
-import { ExtractionValidationError } from "./parser";
+import { ExtractionValidationError, parseAndValidateExtractedItems } from "./parser";
+import { SYSTEM_PROMPT as EXTRACT_SYSTEM_PROMPT, buildUserPrompt as buildExtractUserPrompt } from "./prompt";
 
 export interface ExtractItemsOptions {
   maxRetries?: number;
@@ -22,11 +23,34 @@ export class ExtractItemsService {
     const maxAttempts = (this.options.maxRetries ?? 1) + 1;
     let lastError: unknown;
 
+    const useCompleteJson =
+      Boolean(this.provider.completeJson) &&
+      this.provider.id !== "mock" &&
+      !("callProxy" in this.provider);
+
     while (attempts < maxAttempts) {
       attempts++;
       try {
-        const result = await this.provider.extractItems(validatedInput);
-        return result;
+        if (useCompleteJson && this.provider.completeJson) {
+          const userPrompt = buildExtractUserPrompt(validatedInput);
+          const { rawText } = await this.provider.completeJson(
+            EXTRACT_SYSTEM_PROMPT,
+            userPrompt
+          );
+          return parseAndValidateExtractedItems(rawText);
+        }
+        if (this.provider.extractItems) {
+          return await this.provider.extractItems(validatedInput);
+        }
+        if (this.provider.completeJson) {
+          const userPrompt = buildExtractUserPrompt(validatedInput);
+          const { rawText } = await this.provider.completeJson(
+            EXTRACT_SYSTEM_PROMPT,
+            userPrompt
+          );
+          return parseAndValidateExtractedItems(rawText);
+        }
+        throw new Error(`Provider "${this.provider.id}" does not support completeJson or extractItems.`);
       } catch (error) {
         lastError = error;
         if (error instanceof ExtractionValidationError && attempts < maxAttempts) {

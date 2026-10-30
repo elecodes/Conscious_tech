@@ -7,41 +7,16 @@ import {
 } from "./ai-provider";
 import { ExtractItemsInput, ExtractedItems } from "../domain/items";
 import { DetectRelationshipsInput, DetectedRelationships } from "../domain/relationships";
-import {
-  SYSTEM_PROMPT as EXTRACT_SYSTEM_PROMPT,
-  buildUserPrompt as buildExtractUserPrompt,
-} from "../skills/extract-items/prompt";
-import { parseAndValidateExtractedItems } from "../skills/extract-items/parser";
-import {
-  SYSTEM_PROMPT as REL_SYSTEM_PROMPT,
-  buildUserPrompt as buildRelUserPrompt,
-} from "../skills/detect-relationships/prompt";
-import { parseAndValidateRelationships } from "../skills/detect-relationships/parser";
 import { GroupWorkInput, GroupedWork } from "../domain/work-groups";
-import {
-  SYSTEM_PROMPT as GROUP_SYSTEM_PROMPT,
-  buildUserPrompt as buildGroupUserPrompt,
-} from "../skills/group-work/prompt";
-import { parseAndValidateGroupedWork } from "../skills/group-work/parser";
 import { DetectDeadlinesInput, DetectedDeadlines } from "../domain/deadlines";
-import {
-  SYSTEM_PROMPT as DEADLINES_SYSTEM_PROMPT,
-  buildUserPrompt as buildDeadlinesUserPrompt,
-} from "../skills/detect-deadlines/prompt";
-import { parseAndValidateDeadlines } from "../skills/detect-deadlines/parser";
 import { EvaluateContextInput, EvaluateContextOutput } from "../domain/context";
-import {
-  SYSTEM_PROMPT as CONTEXT_SYSTEM_PROMPT,
-  buildUserPrompt as buildContextUserPrompt,
-} from "../skills/evaluate-context/prompt";
-import { parseAndValidateContextOutput } from "../skills/evaluate-context/parser";
-import { BuildWeekInput, ProposedWeek, createEmptyProposedWeek } from "../domain/week";
-import {
-  buildDeterministicPlanningContext,
-  WeekValidationError,
-} from "../skills/build-week/deterministic";
-import { buildWeekPrompt } from "../skills/build-week/prompt";
-import { parseProposedWeek, WeekParseResult } from "../skills/build-week/parser";
+import { BuildWeekInput } from "../domain/week";
+import { extractItems } from "../skills/extract-items";
+import { detectRelationships } from "../skills/detect-relationships";
+import { groupWork } from "../skills/group-work";
+import { detectDeadlines } from "../skills/detect-deadlines";
+import { evaluateContext } from "../skills/evaluate-context";
+import { buildWeek, BuildWeekResult } from "../skills/build-week";
 
 export interface GroqProviderOptions {
   apiKey?: string;
@@ -54,7 +29,6 @@ export class GroqProvider implements AIProvider {
   readonly model: string;
   private client: Groq;
   private lastExecutionMeta?: ProviderExecutionMeta;
-  private lastParseResult?: WeekParseResult;
 
   constructor(options: GroqProviderOptions = {}) {
     if (options.client) {
@@ -71,10 +45,6 @@ export class GroqProvider implements AIProvider {
 
   getLastExecutionMeta(): ProviderExecutionMeta | undefined {
     return this.lastExecutionMeta;
-  }
-
-  getLastParseResult(): WeekParseResult | undefined {
-    return this.lastParseResult;
   }
 
   async completeJson(
@@ -118,71 +88,30 @@ export class GroqProvider implements AIProvider {
   }
 
   async extractItems(input: ExtractItemsInput): Promise<ExtractedItems> {
-    const { rawText } = await this.completeJson(
-      EXTRACT_SYSTEM_PROMPT,
-      buildExtractUserPrompt(input)
-    );
-    return parseAndValidateExtractedItems(rawText);
+    return extractItems(this, input);
   }
 
   async detectRelationships(input: DetectRelationshipsInput): Promise<DetectedRelationships> {
-    const { rawText } = await this.completeJson(
-      REL_SYSTEM_PROMPT,
-      buildRelUserPrompt(input)
-    );
-    return parseAndValidateRelationships(rawText);
+    return detectRelationships(this, input);
   }
 
   async groupWork(input: GroupWorkInput): Promise<GroupedWork> {
-    const { rawText } = await this.completeJson(
-      GROUP_SYSTEM_PROMPT,
-      buildGroupUserPrompt(input)
-    );
-    return parseAndValidateGroupedWork(rawText);
+    return groupWork(this, input);
   }
 
   async detectDeadlines(input: DetectDeadlinesInput): Promise<DetectedDeadlines> {
-    const { rawText } = await this.completeJson(
-      DEADLINES_SYSTEM_PROMPT,
-      buildDeadlinesUserPrompt(input)
-    );
-    return parseAndValidateDeadlines(rawText);
+    return detectDeadlines(this, input);
   }
 
   async evaluateContext(input: EvaluateContextInput): Promise<EvaluateContextOutput> {
-    const { rawText } = await this.completeJson(
-      CONTEXT_SYSTEM_PROMPT,
-      buildContextUserPrompt(input)
-    );
-    return parseAndValidateContextOutput(rawText);
+    return evaluateContext(this, input);
   }
 
-  async buildWeek(input: BuildWeekInput): Promise<ProposedWeek> {
-    const startTime = Date.now();
-    if (input.items.length === 0) {
-      this.lastExecutionMeta = {
-        provider: this.id,
-        model: this.model,
-        durationMs: Date.now() - startTime,
-      };
-      return createEmptyProposedWeek(input.currentDate, input.targetWeek);
+  async buildWeek(input: BuildWeekInput): Promise<BuildWeekResult> {
+    const result = await buildWeek(this, input);
+    if (result.meta) {
+      this.lastExecutionMeta = result.meta;
     }
-
-    const planningContext = buildDeterministicPlanningContext(input);
-    const { systemPrompt, userPrompt } = buildWeekPrompt(planningContext);
-
-    const { rawText } = await this.completeJson(systemPrompt, userPrompt, {
-      temperature: 0.1,
-      maxTokens: 3500,
-    });
-
-    const parseOutcome = parseProposedWeek(rawText, input);
-    this.lastParseResult = parseOutcome;
-    if (!parseOutcome.success) {
-      const issues = "issues" in parseOutcome ? parseOutcome.issues : [];
-      throw new WeekValidationError(parseOutcome.error, issues);
-    }
-
-    return parseOutcome.data;
+    return result;
   }
 }

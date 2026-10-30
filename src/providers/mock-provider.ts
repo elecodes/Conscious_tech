@@ -33,6 +33,8 @@ import mockGroupingsData from "../../cases/mock-groupings.json";
 import mockDeadlinesData from "../../cases/mock-deadlines.json";
 import sampleDumpsData from "../../cases/sample-dumps.json";
 import { extractItemsDeterministically } from "./mock-deterministic-extractor";
+import { analyzeChangeDeterministically } from "../skills/analyze-change/deterministic";
+import { detectConflictsDeterministically } from "../skills/detect-conflict/deterministic";
 
 export type MockHandler = (input: ExtractItemsInput) => Promise<ExtractedItems> | ExtractedItems;
 export type MockRelationshipsHandler = (
@@ -657,9 +659,6 @@ export class MockProvider implements AIProvider {
       return res;
     }
 
-    const { analyzeChangeDeterministically } = await import(
-      "../skills/analyze-change/deterministic"
-    );
     const result = analyzeChangeDeterministically(input);
     this.lastExecutionMeta = {
       provider: this.id,
@@ -683,9 +682,6 @@ export class MockProvider implements AIProvider {
       return res;
     }
 
-    const { detectConflictsDeterministically } = await import(
-      "../skills/detect-conflict/deterministic"
-    );
     const result = detectConflictsDeterministically(input);
     this.lastExecutionMeta = {
       provider: this.id,

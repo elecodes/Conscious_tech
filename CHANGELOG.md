@@ -7,13 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Provider Layering & Hidden State
+- **Decoupled Prompting & Parsing from Providers**:
+  - Moved prompt-building and JSON parsing logic out of `GroqProvider` and `GeminiProvider` into the domain skills (`01` through `06`), keeping providers focused strictly on `completeJson`.
+  - Removed hidden instance state (`lastParseResult` and `getLastParseResult()`) from `GroqProvider`.
+  - Updated `BuildWeekService` and `buildWeek` to return `{ data, meta, parseResult }` directly with the proposed week.
+  - Made deterministic engine imports in `mock-provider.ts` static, eliminating Vite circular/dynamic import build warnings.
+
 ## [0.20.1] - 2026-10-29
 
 ### Provider Parity & Architecture Refactoring
 - **Provider Parity & Concurrency Hygiene**:
   - Implemented `buildWeek` for `GeminiProvider` using Gemini 2.5 Flash structured output, achieving parity across all skills (01-06).
   - Added generic `completeJson` method across all providers (`AIProvider`, `GroqProvider`, `GeminiProvider`, `MockProvider`, `RemoteAIProvider`).
-  - Removed instance state leaks (`lastRawResponse` / `lastParseResult`) from `GroqProvider` to eliminate concurrency hazards across concurrent calls.
+  - Removed instance state leak (`lastRawResponse`) from `GroqProvider` to eliminate concurrency hazards across concurrent calls.
   - Eliminated `any` casts across provider consumers and parsers (`build-week/index.ts`, `evaluate-context/parser.ts`).
   - Suppressed noisy `versionchange` console warnings in `IndexedDbDatabase` during test runs (`NODE_ENV === "test"`).
   - Added provider parity unit test suite (`tests/ai-provider-parity.test.ts`, 6 tests).

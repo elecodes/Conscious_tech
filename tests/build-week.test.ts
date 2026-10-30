@@ -895,8 +895,10 @@ describe("Skill 06: build_week - End-to-End Integration", () => {
       expect(meta?.tokensUsed?.completion).toBe(210);
       expect(meta?.tokensUsed?.total).toBe(660);
 
-      const parseResult = groqProvider.getLastParseResult();
+      const parseResult = proposal.parseResult;
       expect(parseResult?.success).toBe(true);
+      expect("getLastParseResult" in groqProvider).toBe(false);
+      expect("lastParseResult" in groqProvider).toBe(false);
     });
 
     it("parses real-world Groq LLM response containing groupId: null in focus", async () => {

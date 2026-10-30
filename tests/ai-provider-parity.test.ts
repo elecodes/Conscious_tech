@@ -141,8 +141,10 @@ describe("AI Provider Parity and completeJson Refactoring", () => {
       const provider = new GroqProvider({ apiKey: "fake-key" });
       expect(typeof provider.completeJson).toBe("function");
       expect(typeof provider.buildWeek).toBe("function");
-      // Must not carry lastRawResponse property
+      // Must not carry lastRawResponse or lastParseResult properties
       expect("lastRawResponse" in provider).toBe(false);
+      expect("lastParseResult" in provider).toBe(false);
+      expect("getLastParseResult" in provider).toBe(false);
     });
   });
 
