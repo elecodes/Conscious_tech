@@ -99,6 +99,7 @@ export const WeeklyPlanDraftContextSchema = z
     selectedCarryOverItemIds: z.array(z.string()).optional(),
     overdueDecisions: z
       .record(
+        z.string(),
         z.object({
           decision: z.enum(["keep_unscheduled", "include_recovery", "reschedule_future"]),
           rescheduleTargetWeek: TargetWeekSchema.optional(),
@@ -106,7 +107,7 @@ export const WeeklyPlanDraftContextSchema = z
       )
       .optional(),
     deferredDecisions: z
-      .record(z.enum(["pending_decision", "intentional_postponement", "included"]))
+      .record(z.string(), z.enum(["pending_decision", "intentional_postponement", "included"]))
       .optional(),
     availableHoursInput: z.string().optional(),
     protectedSpacePercentInput: z.string().optional(),

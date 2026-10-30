@@ -1,7 +1,7 @@
 # 21. Estrategia de Mitigación de Vulnerabilidad Zod y Migración a Zod 4
 
-Fecha: 29 de octubre de 2026  
-Estado: Aceptado
+Fecha: 29 de octubre de 2026 (Actualizado: 30 de octubre de 2026)  
+Estado: Implementado (zod@4.6.7)
 
 ## Contexto
 
@@ -23,7 +23,8 @@ La actualización sugerida por los gestores de paquetes instala `zod@4.6.7`, la 
 ## Consecuencias
 
 - **Positivas:**
-  - El sistema mantiene estabilidad y 100% de cobertura en tests sin introducir roturas accidentales de tipos en los 19 archivos de dominio.
-  - La superficie de ataque queda acotada mediante guardas perimetrales a nivel de proxy y límites de carga útil.
+  - El aviso de seguridad GHSA-mrhx-c7xc-m3w5 queda completamente resuelto; `npm audit --omit=dev` reporta 0 vulnerabilidades.
+  - Se mantiene la compatibilidad regresiva completa para registros existentes en IndexedDB (planes, agendas, memorias) y salidas de modelos de lenguaje.
+  - La suite de pruebas completa permanece 100% verde sin relajar aserciones de negocio.
 - **Negativas / Compromisos:**
-  - `npm audit` mantendrá el aviso hasta que se concrete la migración programada a Zod 4.
+  - `zod.record` ahora requiere obligatoriamente tipo de clave y tipo de valor explícitos (`z.record(z.string(), valueSchema)`).

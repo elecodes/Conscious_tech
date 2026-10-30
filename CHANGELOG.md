@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.21.0] - 2026-10-30
+
+### Security & Dependency Upgrade (Zod 4 Migration)
+
+- **Resolved GHSA-mrhx-c7xc-m3w5**: Upgraded `zod` from `^3.24.2` to `^4.6.7`, resolving the high-severity advisory on memory exhaustion in constrained collections (`npm audit --omit=dev` reports 0 vulnerabilities).
+- **Zod 4 API Standardization**:
+  - Updated `WeeklyPlanDraftContextSchema` to supply explicit key types (`z.record(z.string(), ...)`) matching Zod 4's 2-argument signature.
+  - Direct `ZodError` classification in `ai-proxy-handler.ts` mapping validation errors to HTTP 400 `INVALID_INPUT_OR_OUTPUT` without relying on string matching.
+- **Test Expectations & Parity Verification**:
+  - **Existing test expectation changes**: **0**. All 878 baseline tests passed completely unmodified without weakening or altering any assertion.
+  - **New tests added (+19 tests, 897 total across 64 suites)**:
+    - `tests/zod-4-migration.test.ts` (17 tests): strict unknown-key rejection, default value semantics on missing/undefined/null, record schema parsing, backward-compatibility of stored IndexedDB records written under Zod 3, LLM-output parsers parity across all skills, and security regression verification for oversized collections (5,000,000 items rejected in <15ms).
+    - `tests/logger.test.ts` (+1 test): verification that real Zod 4 `ZodError` instances have user-provided values redacted while retaining only `code` and `path`.
+    - `tests/server-proxies-hardening.test.ts` (+1 test): verification that real `ZodError` instances map to HTTP 400 `INVALID_INPUT_OR_OUTPUT`.
+
+## [0.20.1] - 2026-10-30
 
 ### Security & Server Proxies Hardening
 

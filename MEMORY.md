@@ -328,7 +328,7 @@ Implemented and calibrated skills:
 - **Contrato Unificado `completeJson`**: Abstracción genérica que desacopla el transporte de los parsers específicos de cada skill.
 - **Higiene de Concurrencia**: Eliminación del estado de instancia (`lastRawResponse` / `lastParseResult`) en `GroqProvider` para evitar colisiones en llamadas paralelas.
 - **Modularización de UI y Code-Splitting**: Extracción de componentes y formateadores (`weekly-session-formatters.tsx`, `confirmed-active-memories-section.tsx`, `capacity-protected-space-section.tsx`, `carry-over-tasks-section.tsx`) y configuración de `manualChunks` en Rollup/Vite, reduciendo todos los bundles de producción por debajo de 500 kB.
-- **ADR 0021**: Documentación de mitigaciones de seguridad contra la vulnerabilidad de Zod y aislamiento programado para la migración a Zod 4.
+- **ADR 0021**: Migración a Zod 4 implementada (zod@4.6.7), resolviendo el aviso de seguridad GHSA-mrhx-c7xc-m3w5 con paridad total de esquemas, compatibilidad regresiva en IndexedDB y 0 vulnerabilidades en audit.
 
 Detailed specifications for individual skills live separately from this file.
 
