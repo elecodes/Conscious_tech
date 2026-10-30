@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security & Server Proxies Hardening
+
+- **SSRF and DNS Rebinding Defenses**:
+  - Expanded SSRF IP validator to block IPv4-compatible IPv6 (`::/96`), Teredo (`2001::/32`), and NAT64 (`64:ff9b:1::/48`).
+  - Added DNS rebinding protection in `calendar-proxy-handler.ts` using custom `undici.Agent` with pinned IP `lookup` preserving original `Host` and SNI headers.
+  - Hardened `isOriginAllowed` to reject requests without `Origin` header for browser endpoints, allowing only `localhost` origins or explicit `ALLOWED_ORIGINS` env var without Host mirroring.
+  - Added optional shared secret authentication (`AI_PROXY_TOKEN`) for `ai-proxy-handler.ts` transmitted by `RemoteAIProvider`.
+  - Added automatic expired key pruning to `SimpleRateLimiter` preventing memory growth under sustained load.
+  - Documented in `README.md` that development proxies are dev-only and must never be exposed via `vite --host`.
+
+### Privacy Wording & UI Transparency
+
+- **Sample Dumps Harmonization**:
+  - Renamed `cases/real-dumps.json` to `cases/sample-dumps.json` and harmonized claims across documentation (`README.md`, `CHANGELOG.md`, `PROJECT_CONTEXT.md`, `MEMORY.md`), scripts, and tests.
+- **Calendar & Dictation Privacy Notices**:
+  - Clarified in `calendar-sync-card.tsx` that calendar URLs are persisted in browser `localStorage`.
+  - Added visible "Olvidar enlace" action to immediately clear stored calendar URLs from `localStorage`.
+  - Added explicit notice next to voice dictation button informing that browser speech-to-text may be processed remotely by the browser vendor.
+  - Dynamically compute sample week dates relative to the current date instead of fixed historical anchors.
+
 ### Provider Layering & Hidden State
 
 - **Decoupled Prompting & Parsing from Providers**:
@@ -16,6 +36,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed hidden instance state (`lastParseResult` and `getLastParseResult()`) from `GroqProvider`.
   - Updated `BuildWeekService` and `buildWeek` to return `{ data, meta, parseResult }` directly with the proposed week.
   - Made deterministic engine imports in `mock-provider.ts` static, eliminating Vite circular/dynamic import build warnings.
+
+### Code Quality & Architectural Maintainability
+
+- **UI & Domain Engine Modularization**:
+  - Split `weekly-planning-from-notes.tsx` (1,493 lines) and `weekly-session-view.tsx` (1,457 lines) into 13 dedicated subcomponents, satisfying the < 1,500 lines threshold.
+  - Split `src/skills/build-week/deterministic.ts` into 4 cohesive submodules under `deterministic/` (`capacity-math.ts`, `planning-context.ts`, `validation.ts`, `repair.ts`) with a clean re-export facade.
+- **Privacy-Preserving Logging & Tooling**:
+  - Centralized debug logging through `src/utils/logger.ts`, routing all 15 `console.*` calls while sanitizing metadata and stripping free-form user text.
+  - Added minimal ESLint (`eslint.config.js`) and Prettier (`.prettierrc`) configuration with npm scripts (`lint`, `format`, `format:check`).
+  - Applied repository-wide code formatting via Prettier in a dedicated commit.
+  - Clarified historical Skill 05 test count context in `README.md`.
+- **CI Workflow Concurrency**:
+  - Added `concurrency` configuration to `.github/workflows/ci.yml` with `cancel-in-progress: true` to prevent duplicate CI runs on PR branch updates.
 
 ## [0.20.1] - 2026-10-29
 

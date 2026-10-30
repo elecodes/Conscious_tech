@@ -41,7 +41,8 @@ docs/
     ├── 0019-native-voice-dictation-and-mcp-integration-architecture.md
     ├── 0020-google-calendar-ical-integration.md
     ├── 0021-zod-advisory-mitigation-and-v4-migration-strategy.md
-    └── 0022-spanish-first-language-and-deferred-i18n.md
+    ├── 0022-spanish-first-language-and-deferred-i18n.md
+    └── 0023-proxy-hardening-and-provider-decoupling.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
 │   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
@@ -96,7 +97,8 @@ src/
 │   ├── build-week/          # Skill 06: Human-centered weekly focus proposal
 │   │   ├── prompt.ts        # Semantic proposal prompt (AI proposes, person decides)
 │   │   ├── parser.ts        # Markdown stripping & Zod schema validation
-│   │   ├── deterministic.ts # Invariant engine: 1:1 conservation, capacity math
+│   │   ├── deterministic/   # Submodules: capacity-math, planning-context, validation, repair
+│   │   ├── deterministic.ts # Re-export facade
 │   │   └── index.ts         # BuildWeekService
 │   ├── analyze-change/      # Skill 07: Impact and change analysis
 │   │   ├── prompt.ts        # Read-only analytical prompt (Explain, don't re-plan)
@@ -306,10 +308,13 @@ npm run eval -- --provider=groq
 npm run eval -- --provider=groq --case=case-01
 ```
 
-### 7. Typecheck & Build
+### 7. Typecheck, Lint & Build
 
 ```bash
 npm run typecheck
+npm run lint
+npm run format:check
+npm test
 npm run build
 ```
 
