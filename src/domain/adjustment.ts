@@ -25,17 +25,8 @@ export const PostponeItemActionSchema = z
   .object({
     type: z.literal("postpone_item"),
     itemId: z.string().min(1),
-    currentCategory: z.enum([
-      "foci",
-      "obligations",
-      "flexible_options",
-      "deferred_items",
-    ]),
-    targetReason: z.enum([
-      "out_of_capacity",
-      "waiting_dependency",
-      "intentional_postponement",
-    ]),
+    currentCategory: z.enum(["foci", "obligations", "flexible_options", "deferred_items"]),
+    targetReason: z.enum(["out_of_capacity", "waiting_dependency", "intentional_postponement"]),
     hoursFreed: z.number().finite().positive().nullable(),
     rationale: z.string().min(1),
     targetWeek: TargetWeekSchema.optional(),
@@ -216,9 +207,7 @@ export type AdjustmentProposal = z.infer<typeof AdjustmentProposalSchema>;
 export const ProposeAdjustmentUserPreferencesSchema = z
   .object({
     maxProposals: z.number().int().min(1).max(3).default(3),
-    preferredStrategy: z
-      .enum(["postpone", "reallocate", "unblock", "minimize_changes"])
-      .optional(),
+    preferredStrategy: z.enum(["postpone", "reallocate", "unblock", "minimize_changes"]).optional(),
   })
   .strict();
 export type ProposeAdjustmentUserPreferences = z.infer<
@@ -367,10 +356,14 @@ export function validateProposalInvariants(
     }
     if (action.type === "unblock_dependency") {
       if (!planItemIds.has(action.dependentItemId)) {
-        errors.push(`unblock_dependency references nonexistent dependentItemId "${action.dependentItemId}"`);
+        errors.push(
+          `unblock_dependency references nonexistent dependentItemId "${action.dependentItemId}"`
+        );
       }
       if (!planItemIds.has(action.prerequisiteItemId)) {
-        errors.push(`unblock_dependency references nonexistent prerequisiteItemId "${action.prerequisiteItemId}"`);
+        errors.push(
+          `unblock_dependency references nonexistent prerequisiteItemId "${action.prerequisiteItemId}"`
+        );
       }
     }
     if ("conflictId" in action && action.conflictId && !conflictMap.has(action.conflictId)) {

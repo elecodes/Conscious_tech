@@ -104,7 +104,9 @@ describe("Change Domain Schemas", () => {
 
     expect(ImpactCertaintySchema.parse("confirmed")).toBe("confirmed");
     expect(ImpactCertaintySchema.parse("potential")).toBe("potential");
-    expect(ImpactCertaintySchema.parse("insufficient_information")).toBe("insufficient_information");
+    expect(ImpactCertaintySchema.parse("insufficient_information")).toBe(
+      "insufficient_information"
+    );
   });
 
   it("validates DependencyState, TemporalScope, CommitmentNature, ArithmeticBalance", () => {

@@ -43,7 +43,11 @@ export class IndexedDbWeeklyCloseRepository implements WeeklyCloseRepository {
     const parseResult = StoredCloseWeekReportSchema.safeParse(raw);
     if (!parseResult.success) {
       const id = (raw as Record<string, unknown>)?.reportId;
-      throw new InvalidRecordDataError(STORES.CLOSE_REPORTS, typeof id === "string" ? id : "unknown", parseResult.error.issues);
+      throw new InvalidRecordDataError(
+        STORES.CLOSE_REPORTS,
+        typeof id === "string" ? id : "unknown",
+        parseResult.error.issues
+      );
     }
     return parseResult.data;
   }

@@ -9,6 +9,7 @@
 ## 1. Context and Problem Statement
 
 Following the incremental pipeline of **Conscious Tech**:
+
 1. **Skill 01 (`extract_items`)**: Faithfully extracts structured items from unstructured natural language brain dumps.
 2. **Skill 02 (`detect_relationships`)**: Detects pairwise semantic links (`same_project`, `same_objective`, `part_of`, `depends_on`, `related_to`, `duplicate`).
 3. **Skill 03 (`group_work`)**: Synthesizes items into coherent lines of attention (`WorkGroup[]` and `ungroupedItemIds`).
@@ -20,6 +21,7 @@ Following the incremental pipeline of **Conscious Tech**:
 ### The Core Risk: AI Overreach, Premature Calendaring, and Toxic Productivity
 
 When systems attempt weekly planning, they frequently succumb to classic anti-patterns:
+
 - **Dictating an agenda**: Assuming the AI knows best, assigning tasks to rigid hourly calendar slots, and creating an overwhelming to-do list.
 - **Equating situational attention to priority**: Treating an item marked `HIGH` in `evaluate_context` (e.g. an urgent 15-minute administrative deadline) as if it were a major creative focus structuring the whole week.
 - **Full capacity illusion (100% planning)**: Planning every single available hour, leaving zero space for reality, interruptions, creative thinking, or rest.
@@ -28,6 +30,7 @@ When systems attempt weekly planning, they frequently succumb to classic anti-pa
 - **Unilateral sacrifice**: Deciding on behalf of the user which external promise or project to abandon when there is an overload.
 
 In strict alignment with our North Star:
+
 > **AI proposes. The person decides.**
 > **Space is part of the plan.**
 
@@ -70,28 +73,29 @@ Skill 06 must **propose a realistic, balanced perspective of the week**, leaving
 
 ```typescript
 export interface WeeklyCapacityConfig {
-  totalAvailableHours?: number;       // Finite number >= 0. Never invented if absent.
-  minProtectedSpaceRatio?: number;    // Float in [0, 1]. Default conceptual threshold: 0.25.
+  totalAvailableHours?: number; // Finite number >= 0. Never invented if absent.
+  minProtectedSpaceRatio?: number; // Float in [0, 1]. Default conceptual threshold: 0.25.
   daysWithConstraints?: Array<{
-    day: string;                      // Non-empty string (e.g. "martes")
-    availableHours: number;           // Finite number >= 0
+    day: string; // Non-empty string (e.g. "martes")
+    availableHours: number; // Finite number >= 0
     note?: string;
   }>;
 }
 
 export interface BuildWeekInput {
-  currentDate: string;                // Valid real ISO YYYY-MM-DD
-  targetWeek?: {                      // Valid real ISO dates where startDate <= endDate
+  currentDate: string; // Valid real ISO YYYY-MM-DD
+  targetWeek?: {
+    // Valid real ISO dates where startDate <= endDate
     startDate: string;
     endDate: string;
   };
-  userIntent?: string;                // Stated intention (e.g. "Cerrar lo empezado")
-  items: ExtractedItem[];             // From Skill 01
-  relationships: Relationship[];      // From Skill 02
-  groupedWork: GroupedWork;           // From Skill 03
-  deadlines: DetectedDeadlines;       // From Skill 04
-  context: EvaluateContextOutput;     // From Skill 05
-  capacity?: WeeklyCapacityConfig;    // User-declared capacity parameters
+  userIntent?: string; // Stated intention (e.g. "Cerrar lo empezado")
+  items: ExtractedItem[]; // From Skill 01
+  relationships: Relationship[]; // From Skill 02
+  groupedWork: GroupedWork; // From Skill 03
+  deadlines: DetectedDeadlines; // From Skill 04
+  context: EvaluateContextOutput; // From Skill 05
+  capacity?: WeeklyCapacityConfig; // User-declared capacity parameters
 }
 ```
 
@@ -104,11 +108,11 @@ export type EstimationCompleteness = "complete" | "partial" | "none";
 
 export interface WeeklyCapacitySummary {
   totalAvailableHours: number | null;
-  plannableHours: number | null;       // totalAvailableHours * (1 - minProtectedSpaceRatio)
-  plannedHours: number | null;         // Total workload planned; null if estimationCompleteness !== "complete"
-  knownEstimatedHours: number | null;  // Sum of known estimates in foci + obligations
+  plannableHours: number | null; // totalAvailableHours * (1 - minProtectedSpaceRatio)
+  plannedHours: number | null; // Total workload planned; null if estimationCompleteness !== "complete"
+  knownEstimatedHours: number | null; // Sum of known estimates in foci + obligations
   estimationCompleteness: EstimationCompleteness;
-  protectedSpaceHours: number | null;  // Recommended uncommitted space
+  protectedSpaceHours: number | null; // Recommended uncommitted space
   capacityStatus: CapacityStatus;
   protectedSpaceStatus: ProtectedSpaceStatus;
 }
@@ -116,10 +120,10 @@ export interface WeeklyCapacitySummary {
 export interface WeeklyFocus {
   id: string;
   title: string;
-  groupId?: string;                    // Backed by Skill 03 WorkGroup if applicable
-  desiredOutcome: string;              // Concrete qualitative horizon
-  rationale: string;                   // Why this structures the week
-  contributingItemIds: string[];       // Concrete input item IDs that feed this focus
+  groupId?: string; // Backed by Skill 03 WorkGroup if applicable
+  desiredOutcome: string; // Concrete qualitative horizon
+  rationale: string; // Why this structures the week
+  contributingItemIds: string[]; // Concrete input item IDs that feed this focus
   estimatedHours: number | null;
 }
 
@@ -135,7 +139,7 @@ export interface WeeklyObligation {
 export interface WeeklyFlexibleOption {
   itemId: string;
   title: string;
-  condition?: string;                  // e.g. "Si queda tiempo el fin de semana"
+  condition?: string; // e.g. "Si queda tiempo el fin de semana"
   estimatedHours: number | null;
 }
 
@@ -161,8 +165,8 @@ export interface UnplannedSpace {
 
 export interface ConfirmationPrompt {
   question: string;
-  keyTradeoffs: string[];              // Transparent review of what is left out
-  pendingQuestions: string[];          // At most 2 non-blocking questions
+  keyTradeoffs: string[]; // Transparent review of what is left out
+  pendingQuestions: string[]; // At most 2 non-blocking questions
 }
 
 export interface ProposedWeek {
@@ -171,7 +175,7 @@ export interface ProposedWeek {
     intent?: string;
     capacity: WeeklyCapacitySummary;
   };
-  foci: WeeklyFocus[];                 // 0 <= length <= 3
+  foci: WeeklyFocus[]; // 0 <= length <= 3
   obligations: WeeklyObligation[];
   flexibleOptions: WeeklyFlexibleOption[];
   deferredItems: DeferredItem[];
@@ -185,6 +189,7 @@ export interface ProposedWeek {
 ## 4. Conceptual Taxonomy and Clarity
 
 ### 4.1 Contextual Assessment vs. Weekly Priority
+
 - **Contextual Assessment (`evaluate_context`)** is an **objective description of situational gravity**:
   - `HIGH` means acute situational tension (an imminent deadline, an explicit client commitment).
   - It does **not** automatically dictate that the item is a primary weekly focus. A 30-minute urgent task belongs in `obligations`, freeing the user's primary mental focus for substantial project lines.
@@ -193,6 +198,7 @@ export interface ProposedWeek {
   - Represent what the person wants to nurture or advance, not just a reactive list of fire-fighting items.
 
 ### 4.2 Available Capacity vs. Plannable Hours vs. Protected Space
+
 - $\text{Total Available Hours}$: declared ceiling of available time.
 - $\text{Protected Space}$: intentional buffer $\ge 25\%$ (default) reserved for life, unforeseen delays, context switching, and rest.
 - $\text{Plannable Capacity}$: $\text{Total} \times (1 - \text{Ratio})$.
@@ -202,7 +208,7 @@ export interface ProposedWeek {
 
 ## 5. Deterministic Invariant Engine Rules
 
-To uphold the *Code before AI* principle, the following invariants are enforced deterministically and validated via `validateProposedWeekInvariants(proposal, input)`:
+To uphold the _Code before AI_ principle, the following invariants are enforced deterministically and validated via `validateProposedWeekInvariants(proposal, input)`:
 
 1. **Exact 1:1 Item Conservation**:
    - Every input `item.id` must appear **exactly once** in one of these four exclusive categories:
@@ -210,7 +216,7 @@ To uphold the *Code before AI* principle, the following invariants are enforced 
      - `obligations[].itemId`
      - `flexibleOptions[].itemId`
      - `deferredItems[].itemId`
-   - *Invariants:* 0 lost items, 0 duplicate assignments (within or across categories), 0 phantom item IDs.
+   - _Invariants:_ 0 lost items, 0 duplicate assignments (within or across categories), 0 phantom item IDs.
 2. **Focus Limits**:
    - $0 \le \text{foci.length} \le 3$.
    - Any `groupId` referenced by a focus must exist in `input.groupedWork.groups`.
@@ -287,7 +293,7 @@ To uphold the *Code before AI* principle, the following invariants are enforced 
 4. **Handling of Omitted Tasks & The `not_scheduled` Deferral Reason**:
    - **Resolution:** Addition of `"not_scheduled"` to `DeferredReason`:
      - **Definition:** An item conserved outside the active weekly plan whose exclusion has no demonstrable reason in the available ground-truth data. It does **not** imply that the user made a conscious decision to postpone, nor that there is an objective overload or lack of capacity.
-     - **Deterministic Preservation:** When a regular task or commitment is omitted by the planner and lacks sufficient ground-truth evidence to justify another specific reason (such as `archived` or `waiting_dependency`), the deterministic normalizer preserves it in `deferredItems` with `reason: "not_scheduled"`. This avoids rejecting valid proposals while adhering strictly to *Code before AI*.
+     - **Deterministic Preservation:** When a regular task or commitment is omitted by the planner and lacks sufficient ground-truth evidence to justify another specific reason (such as `archived` or `waiting_dependency`), the deterministic normalizer preserves it in `deferredItems` with `reason: "not_scheduled"`. This avoids rejecting valid proposals while adhering strictly to _Code before AI_.
      - **Auditability:** Every such preservation is tracked in `ProposalNormalizationResult.repairs` with `type: "rescued_omitted_to_not_scheduled"`.
      - **Non-Invention Guarantee:** The system never converts `not_scheduled` into `out_of_capacity` (even under high capacity), `low_attention`, or `intentional_postponement` without factual backing.
      - **Strict Invariant Guard:** Phantom item IDs, nonexistent group IDs, and contradictory cross-category assignments remain strictly rejected via `WeekValidationError`.

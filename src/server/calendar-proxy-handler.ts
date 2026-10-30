@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import dns from "node:dns";
 import net from "node:net";
+import { Agent } from "undici";
 import { SimpleRateLimiter } from "./rate-limiter";
 
 export const MAX_ICS_BYTES = 5 * 1024 * 1024; // 5 MB limit for calendar export
@@ -113,6 +114,9 @@ export function isPrivateOrReservedIp(ip: string): boolean {
     const words = expandIpv6(ip);
     if (!words) return true; // Malformed IPv6 treated as unsafe
 
+    // ::/96 (IPv4-compatible IPv6 addresses: first 96 bits are all zero)
+    // This includes :: (unspecified), ::1 (loopback), and ::<ipv4>
+    if (words.slice(0, 6).every((w) => w === 0)) return true;
     // :: (Unspecified)
     if (words.every((w) => w === 0)) return true;
     // ::1 (Loopback)
@@ -132,12 +136,24 @@ export function isPrivateOrReservedIp(ip: string): boolean {
     if (((words[0] ?? 0) & 0xff00) === 0xff00) return true;
     // 100::/64 (Discard-only)
     if (words[0] === 0x0100 && words[1] === 0 && words[2] === 0 && words[3] === 0) return true;
+    // 2001::/32 (Teredo tunneling prefix RFC 4380)
+    if (words[0] === 0x2001 && words[1] === 0x0000) return true;
     // 2001:db8::/32 (Documentation)
     if (words[0] === 0x2001 && words[1] === 0x0db8) return true;
     // 2002::/16 (6to4 relay)
     if (words[0] === 0x2002) return true;
     // 64:ff9b::/96 (IPv4/IPv6 translation)
-    if (words[0] === 0x0064 && words[1] === 0xff9b && words[2] === 0 && words[3] === 0 && words[4] === 0 && words[5] === 0) return true;
+    if (
+      words[0] === 0x0064 &&
+      words[1] === 0xff9b &&
+      words[2] === 0 &&
+      words[3] === 0 &&
+      words[4] === 0 &&
+      words[5] === 0
+    )
+      return true;
+    // 64:ff9b:1::/48 (Local-Use IPv4/IPv6 Translation RFC 8215)
+    if (words[0] === 0x0064 && words[1] === 0xff9b && words[2] === 0x0001) return true;
 
     return false;
   }
@@ -200,6 +216,8 @@ export interface UrlValidationResult {
   safe: boolean;
   reason?: string;
   normalizedUrl?: URL;
+  validatedIp?: string;
+  validatedFamily?: number;
 }
 
 /**
@@ -237,7 +255,12 @@ export async function validateSafeCalendarUrl(
     if (isPrivateOrReservedIp(host)) {
       return { safe: false, reason: `Dirección IP privada o reservada bloqueada (${host}).` };
     }
-    return { safe: true, normalizedUrl: parsed };
+    return {
+      safe: true,
+      normalizedUrl: parsed,
+      validatedIp: host,
+      validatedFamily: net.isIP(host),
+    };
   }
 
   try {
@@ -255,7 +278,13 @@ export async function validateSafeCalendarUrl(
       }
     }
 
-    return { safe: true, normalizedUrl: parsed };
+    const primaryRecord = addresses[0];
+    return {
+      safe: true,
+      normalizedUrl: parsed,
+      validatedIp: primaryRecord.address,
+      validatedFamily: primaryRecord.family,
+    };
   } catch (dnsErr) {
     return {
       safe: false,
@@ -265,19 +294,49 @@ export async function validateSafeCalendarUrl(
 }
 
 /**
- * Validates whether the origin header comes from the local dev environment or matching host.
+ * Validates whether the origin header comes from the local dev environment or an explicit ALLOWED_ORIGINS allowlist.
+ * Returns false when there is no Origin header. Does NOT accept origins merely matching Host header.
  */
-export function isOriginAllowed(originHeader?: string, hostHeader?: string): boolean {
-  if (!originHeader) return true;
+export function isOriginAllowed(
+  originHeader?: string,
+  envOrHost?: Record<string, string | undefined> | string
+): boolean {
+  if (!originHeader || typeof originHeader !== "string" || !originHeader.trim()) {
+    return false;
+  }
+
+  let env: Record<string, string | undefined> = process.env;
+  if (envOrHost && typeof envOrHost === "object") {
+    env = envOrHost;
+  }
+
   try {
     const originUrl = new URL(originHeader);
     const host = originUrl.hostname.toLowerCase();
+
+    // 1. Localhost development origins
     if (host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "[::1]") {
       return true;
     }
-    if (hostHeader && (originUrl.host === hostHeader || host === hostHeader)) {
-      return true;
+
+    // 2. Explicit allowlist from ALLOWED_ORIGINS env var
+    const allowedEnv = env.ALLOWED_ORIGINS;
+    if (allowedEnv) {
+      const allowedList = allowedEnv
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+      const originLower = originHeader.trim().toLowerCase();
+      const originUrlOrigin = originUrl.origin.toLowerCase();
+      if (
+        allowedList.includes(originLower) ||
+        allowedList.includes(originUrlOrigin) ||
+        allowedList.includes(host)
+      ) {
+        return true;
+      }
     }
+
     return false;
   } catch {
     return false;
@@ -292,16 +351,18 @@ export function isOriginAllowed(originHeader?: string, hostHeader?: string): boo
 export async function handleCalendarProxyRequest(
   req: IncomingMessage,
   res: ServerResponse,
-  options: { dnsLookup?: DnsLookupFunction } = {}
+  options: {
+    dnsLookup?: DnsLookupFunction;
+    fetchFn?: typeof fetch;
+  } = {}
 ): Promise<void> {
   const originHeader = req.headers?.origin;
-  const hostHeader = req.headers?.host;
 
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Vary", "Origin");
 
-  if (isOriginAllowed(originHeader, hostHeader) && originHeader) {
-    res.setHeader("Access-Control-Allow-Origin", originHeader);
+  if (isOriginAllowed(originHeader)) {
+    res.setHeader("Access-Control-Allow-Origin", originHeader!);
   }
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -317,7 +378,8 @@ export async function handleCalendarProxyRequest(
     res.statusCode = 405;
     res.end(
       JSON.stringify({
-        error: "El método GET no está permitido por seguridad para evitar registrar la URL privada en logs. Use POST con { url } en el cuerpo.",
+        error:
+          "El método GET no está permitido por seguridad para evitar registrar la URL privada en logs. Use POST con { url } en el cuerpo.",
         code: "METHOD_NOT_ALLOWED",
       })
     );
@@ -326,7 +388,9 @@ export async function handleCalendarProxyRequest(
 
   if (req.method !== "POST") {
     res.statusCode = 405;
-    res.end(JSON.stringify({ error: "Método no permitido. Use POST.", code: "METHOD_NOT_ALLOWED" }));
+    res.end(
+      JSON.stringify({ error: "Método no permitido. Use POST.", code: "METHOD_NOT_ALLOWED" })
+    );
     return;
   }
 
@@ -352,7 +416,12 @@ export async function handleCalendarProxyRequest(
       bodyText += chunk;
       if (bodyText.length > 10 * 1024) {
         res.statusCode = 413;
-        res.end(JSON.stringify({ error: "Carga útil de la petición demasiado grande.", code: "PAYLOAD_TOO_LARGE" }));
+        res.end(
+          JSON.stringify({
+            error: "Carga útil de la petición demasiado grande.",
+            code: "PAYLOAD_TOO_LARGE",
+          })
+        );
         return;
       }
     }
@@ -374,7 +443,9 @@ export async function handleCalendarProxyRequest(
 
   if (!targetUrl || typeof targetUrl !== "string" || !targetUrl.trim()) {
     res.statusCode = 400;
-    res.end(JSON.stringify({ error: "Falta el parámetro 'url' en el cuerpo JSON.", code: "MISSING_URL" }));
+    res.end(
+      JSON.stringify({ error: "Falta el parámetro 'url' en el cuerpo JSON.", code: "MISSING_URL" })
+    );
     return;
   }
 
@@ -402,9 +473,28 @@ export async function handleCalendarProxyRequest(
         }
 
         const fetchUrl = validation.normalizedUrl.toString();
-        const response = await fetch(fetchUrl, {
+
+        let dispatcher: Agent | undefined;
+        if (validation.validatedIp) {
+          dispatcher = new Agent({
+            connect: {
+              lookup: (_hostname, _opts, callback) => {
+                callback(null, [
+                  {
+                    address: validation.validatedIp!,
+                    family: validation.validatedFamily ?? 4,
+                  },
+                ]);
+              },
+            },
+          });
+        }
+
+        const fetchFn = options.fetchFn ?? fetch;
+        const response = await fetchFn(fetchUrl, {
           signal: controller.signal,
           redirect: "manual",
+          ...(dispatcher ? { dispatcher } : {}),
           headers: {
             "User-Agent": "ConsciousTech-CalendarSync/1.0",
             Accept: "text/calendar, application/octet-stream, */*",
@@ -452,7 +542,12 @@ export async function handleCalendarProxyRequest(
 
     if (!finalResponse) {
       res.statusCode = 502;
-      res.end(JSON.stringify({ error: "No se recibió respuesta del servidor de calendario.", code: "CALENDAR_FETCH_FAILED" }));
+      res.end(
+        JSON.stringify({
+          error: "No se recibió respuesta del servidor de calendario.",
+          code: "CALENDAR_FETCH_FAILED",
+        })
+      );
       return;
     }
 
@@ -470,7 +565,12 @@ export async function handleCalendarProxyRequest(
     // Stream the body with a strict 5 MB byte cap to prevent memory exhaustion
     if (!finalResponse.body) {
       res.statusCode = 502;
-      res.end(JSON.stringify({ error: "Cuerpo de respuesta vacío del servidor de calendario.", code: "EMPTY_CALENDAR_BODY" }));
+      res.end(
+        JSON.stringify({
+          error: "Cuerpo de respuesta vacío del servidor de calendario.",
+          code: "EMPTY_CALENDAR_BODY",
+        })
+      );
       return;
     }
 
@@ -519,7 +619,9 @@ export async function handleCalendarProxyRequest(
     res.statusCode = isTimeout ? 504 : 502;
     res.end(
       JSON.stringify({
-        error: isTimeout ? "Tiempo de espera agotado al conectar con el calendario." : "No se pudo conectar con el servidor de calendario.",
+        error: isTimeout
+          ? "Tiempo de espera agotado al conectar con el calendario."
+          : "No se pudo conectar con el servidor de calendario.",
         code: isTimeout ? "CALENDAR_TIMEOUT" : "CALENDAR_NETWORK_ERROR",
       })
     );

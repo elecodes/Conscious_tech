@@ -68,7 +68,9 @@ describe("Fase P5.4 — Conectar la entrada de ideas con la planificación seman
     },
   ];
 
-  function createMockContextValue(overrides?: Partial<WeeklySessionContextValue>): WeeklySessionContextValue {
+  function createMockContextValue(
+    overrides?: Partial<WeeklySessionContextValue>
+  ): WeeklySessionContextValue {
     return {
       state: controller.getSnapshot(),
       service,
@@ -229,10 +231,7 @@ describe("Fase P5.4 — Conectar la entrada de ideas con la planificación seman
       const contextVal = createMockContextValue();
       const html = renderToStaticMarkup(
         <WeeklySessionReactContext.Provider value={contextVal}>
-          <WeeklyPlanningFromNotes
-            provider={mockProvider}
-            hasActivePlan={true}
-          />
+          <WeeklyPlanningFromNotes provider={mockProvider} hasActivePlan={true} />
         </WeeklySessionReactContext.Provider>
       );
 
@@ -251,7 +250,8 @@ describe("Fase P5.4 — Conectar la entrada de ideas con la planificación seman
 
       // 2. Extracción de ideas a través del proveedor
       mockProvider.setHandler(async () => ({ items: sampleItems }));
-      const rawNotes = "Preparar informe trimestral y coordinar reunión el martes. Además pensar en arquitectura si da el tiempo.";
+      const rawNotes =
+        "Preparar informe trimestral y coordinar reunión el martes. Además pensar en arquitectura si da el tiempo.";
       const extracted = await mockProvider.extractItems({
         text: rawNotes,
         currentDate: "2026-10-09",

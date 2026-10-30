@@ -17,9 +17,32 @@ export class SimpleRateLimiter {
     this.maxRequests = options.maxRequests;
   }
 
-  public check(key: string): { allowed: boolean; remaining: number; resetMs: number } {
-    const now = Date.now();
+  public size(): number {
+    return this.records.size;
+  }
+
+  public prune(now: number = Date.now()): number {
     const windowStart = now - this.windowMs;
+    let pruned = 0;
+    for (const [key, record] of this.records.entries()) {
+      record.timestamps = record.timestamps.filter((ts) => ts > windowStart);
+      if (record.timestamps.length === 0) {
+        this.records.delete(key);
+        pruned++;
+      }
+    }
+    return pruned;
+  }
+
+  public check(
+    key: string,
+    currentTime?: number
+  ): { allowed: boolean; remaining: number; resetMs: number } {
+    const now = currentTime ?? Date.now();
+    const windowStart = now - this.windowMs;
+
+    // Prune stale records so the map does not grow without bound
+    this.prune(now);
 
     let record = this.records.get(key);
     if (!record) {

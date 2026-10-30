@@ -5,6 +5,7 @@ import {
 } from "../../../domain/repositories/types";
 import { MemoryItem, MemoryItemSchema } from "../../../domain/memory";
 import { STORES, wrapRequest, waitForTransaction } from "./database";
+import { logger } from "../../../utils/logger";
 
 export class IndexedDbMemoryRepository implements MemoryRepository {
   constructor(private readonly getDb: () => IDBDatabase) {}
@@ -42,12 +43,10 @@ export class IndexedDbMemoryRepository implements MemoryRepository {
         // Defensive reading: A corrupted record does NOT block reading other independent records.
         if (!parseResult.success) {
           const rawId = (raw as Record<string, unknown>)?.id;
-          if (process.env.NODE_ENV !== "test") {
-            console.warn(
-              `[IndexedDbMemoryRepository] Skipping corrupted memory record ID "${rawId}":`,
-              parseResult.error.issues
-            );
-          }
+          logger.warn(
+            `[IndexedDbMemoryRepository] Skipping corrupted memory record ID "${rawId}":`,
+            parseResult.error.issues
+          );
           cursor.continue();
           return;
         }

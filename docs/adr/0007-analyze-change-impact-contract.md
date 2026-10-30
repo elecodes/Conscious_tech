@@ -1,12 +1,15 @@
 # ADR 0007: Contrato de Impacto y Análisis de Cambio (`analyze_change`)
 
 ## Estado
+
 Aceptado
 
 ## Contexto
+
 Tras completar Skill 06 (`build_week`), el usuario cuenta con un plan semanal estructurado (`ProposedWeek`). En la operativa real surgen imprevistos, tareas adicionales, cambios de disponibilidad, cancelaciones o renegociaciones de plazos.
 
 El principio fundacional de Conscious Tech dicta:
+
 > **La IA propone. La persona decide.**
 > **Código antes que IA.**
 
@@ -55,5 +58,6 @@ No se debe mutar el plan activo de forma silenciosa ni saltar directamente a rep
    - Cualquier operación que intente modificar o eliminar un identificador no existente en el plan activo ni en el delta genera un `ValidationError` (`fatal: true`) y concluye con `status: "invalid_references"` sin corromper el modelo.
 
 ## Consecuencias
+
 - Skill 07 queda implementada y verificada mediante 348 tests automatizados sin consumo de tokens ni llamadas de red.
 - Sienta las bases para Skill 08 (`detect_conflicts`) y Skill 09 (`propose_adjustments`) manteniendo la separación de responsabilidades.

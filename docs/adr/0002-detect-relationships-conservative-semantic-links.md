@@ -8,10 +8,11 @@ Accepted
 
 Following the stabilization of Skill 01 (`extract_items`), the system produces structured `ExtractedItem[]` entities representing user intentions, commitments, ideas, and concerns.
 
-Before work can be grouped or organized into a weekly focus (Skill 03 `group_work` and Skill 06 `build_week`), the system must determine how individual items relate to one another. 
+Before work can be grouped or organized into a weekly focus (Skill 03 `group_work` and Skill 06 `build_week`), the system must determine how individual items relate to one another.
 
 In keeping with Conscious Tech principles:
-- **Detect relationships, don't group**: Skill 02 must answer *"What relationship exists between the mentioned elements?"* without forming final project groups, prioritizing items, resolving transitive dependencies, or deciding what belongs in the week.
+
+- **Detect relationships, don't group**: Skill 02 must answer _"What relationship exists between the mentioned elements?"_ without forming final project groups, prioritizing items, resolving transitive dependencies, or deciding what belongs in the week.
 - **Code over AI when deterministic**: Structural validation (self-relations, dangling IDs, edge direction canonicalization, and metadata-based links like `same_project`) must be resolved deterministically in code.
 - **Conservative semantic detection**: Only explicit or direct semantic ties should be recognized. Independent tasks must produce an empty relationship set.
 
@@ -20,6 +21,7 @@ In keeping with Conscious Tech principles:
 ### 1. Domain Modeling (`src/domain/relationships.ts`)
 
 Defined clear, explicit relation types:
+
 - `same_project`: Items sharing the same explicit project container.
 - `same_objective`: Items contributing to the exact same concrete goal.
 - `related_to`: Generic topical or conceptual connection.
@@ -55,6 +57,7 @@ Relationships include `confidence` (`high | medium | low`), an explicit `reason`
 ### 5. Semantic Calibration & Boundary Hardening
 
 Through evaluation of 25 real brain dumps, three edge-case failure modes were identified and hardened:
+
 - **Rule 1 (`related_to`)**: Prohibit `related_to` purely because two items share context, a sprint/project, or because one serves as a workaround while another is blocked (e.g. "mientras tanto..."). An intrinsic semantic connection is required.
 - **Rule 2 (`part_of` vs `depends_on`)**: Clarified that a prerequisite/precondition is not automatically a constituent part. If item B must occur before A but does not form part of A's deliverable, use `depends_on`, not `part_of`.
 - **Mutual Exclusion Rule**: Prohibit emitting both `A depends_on B` and `B part_of A` unless the source text explicitly and unambiguously establishes both meanings.

@@ -35,7 +35,9 @@ describe("Mejoras de capacidad: Separación visual, eliminación de redundancia,
     await deleteDatabase(TEST_DB_NAME, fakeIDB);
   });
 
-  function createMockSessionContext(overrides?: Partial<WeeklySessionContextValue>): WeeklySessionContextValue {
+  function createMockSessionContext(
+    overrides?: Partial<WeeklySessionContextValue>
+  ): WeeklySessionContextValue {
     return {
       state: {
         status: "no_active_session",

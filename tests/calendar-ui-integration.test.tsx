@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { CalendarSyncCard } from "../src/web/components/calendar-sync-card";
+import { CalendarSyncCard, STORAGE_KEY_ICAL_URL } from "../src/web/components/calendar-sync-card";
 import { TargetWeek } from "../src/domain/week";
 import { isSafeCalendarUrl } from "../src/server/calendar-proxy-handler";
 
@@ -13,17 +13,64 @@ describe("CalendarSyncCard UI Component & Server Proxy Handler", () => {
   describe("CalendarSyncCard Component Rendering", () => {
     it("renders card in initial calm collapsed state", () => {
       const html = renderToStaticMarkup(
-        <CalendarSyncCard
-          targetWeek={targetWeek}
-          onCalendarApplied={vi.fn()}
-        />
+        <CalendarSyncCard targetWeek={targetWeek} onCalendarApplied={vi.fn()} />
       );
 
-      expect(html).toContain("data-testid=\"calendar-sync-card\"");
+      expect(html).toContain('data-testid="calendar-sync-card"');
       expect(html).toContain("Google Calendar (Compromisos fijos)");
       expect(html).toContain("Conectar / Sincronizar");
       // Initially collapsed, input should not be in the DOM
-      expect(html).not.toContain("data-testid=\"ical-url-input\"");
+      expect(html).not.toContain('data-testid="ical-url-input"');
+    });
+
+    it("displays honest local-storage privacy disclosure and forget button when open", () => {
+      const html = renderToStaticMarkup(
+        <CalendarSyncCard targetWeek={targetWeek} onCalendarApplied={vi.fn()} initialOpen={true} />
+      );
+
+      expect(html).toContain('data-testid="calendar-privacy-notice"');
+      expect(html).toContain("El enlace privado se guarda en este navegador hasta ser olvidado");
+      expect(html).toContain(
+        "puedes eliminarlo en cualquier momento con &quot;Olvidar enlace&quot;"
+      );
+      expect(html).toContain('data-testid="ical-url-input"');
+      expect(html).toContain('data-testid="forget-ical-url-btn"');
+      expect(html).toContain("Olvidar enlace");
+    });
+
+    it("initializes with stored iCal URL from localStorage and renders enabled forget button", () => {
+      const savedUrl = "https://calendar.google.com/calendar/ical/user/private-test/basic.ics";
+      const origStorage = globalThis.localStorage;
+      const fakeStore: Record<string, string> = {
+        [STORAGE_KEY_ICAL_URL]: savedUrl,
+      };
+      globalThis.localStorage = {
+        getItem: vi.fn((key: string) => fakeStore[key] ?? null),
+        setItem: vi.fn((key: string, val: string) => {
+          fakeStore[key] = val;
+        }),
+        removeItem: vi.fn((key: string) => {
+          delete fakeStore[key];
+        }),
+        clear: vi.fn(),
+        length: 1,
+        key: vi.fn(),
+      } as unknown as Storage;
+
+      try {
+        const html = renderToStaticMarkup(
+          <CalendarSyncCard
+            targetWeek={targetWeek}
+            onCalendarApplied={vi.fn()}
+            initialOpen={true}
+          />
+        );
+        expect(html).toContain(savedUrl);
+        expect(html).toContain('data-testid="forget-ical-url-btn"');
+        expect(html).not.toMatch(/data-testid="forget-ical-url-btn"[^>]*disabled=""/);
+      } finally {
+        globalThis.localStorage = origStorage;
+      }
     });
   });
 

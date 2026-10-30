@@ -1,31 +1,39 @@
 import { useState, useEffect } from "react";
 import { TargetWeek } from "../../domain/week";
-import {
-  CalendarWeekSummary,
-  calculateCalendarWeekSummary,
-} from "../../domain/calendar";
+import { CalendarWeekSummary, calculateCalendarWeekSummary } from "../../domain/calendar";
 import { parseIcalContent } from "../../infrastructure/calendar/ical-parser";
 
 export interface CalendarSyncCardProps {
   targetWeek: TargetWeek;
   onCalendarApplied: (summary: CalendarWeekSummary) => void;
   baseDailyHours?: number;
+  initialOpen?: boolean;
 }
 
-const STORAGE_KEY_ICAL_URL = "conscious_tech_google_ical_url";
+export const STORAGE_KEY_ICAL_URL = "conscious_tech_google_ical_url";
 
 export function CalendarSyncCard({
   targetWeek,
   onCalendarApplied,
   baseDailyHours = 8,
+  initialOpen = false,
 }: CalendarSyncCardProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [icalUrl, setIcalUrl] = useState("");
+  const [isOpen, setIsOpen] = useState(initialOpen);
+  const [icalUrl, setIcalUrl] = useState(() => {
+    try {
+      if (typeof localStorage !== "undefined") {
+        return localStorage.getItem(STORAGE_KEY_ICAL_URL) || "";
+      }
+    } catch {
+      // Ignore
+    }
+    return "";
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastSummary, setLastSummary] = useState<CalendarWeekSummary | null>(null);
 
-  // Load saved iCal URL
+  // Load saved iCal URL if updated externally
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_ICAL_URL);
@@ -35,9 +43,18 @@ export function CalendarSyncCard({
     }
   }, []);
 
+  const handleForgetUrl = () => {
+    setIcalUrl("");
+    try {
+      localStorage.removeItem(STORAGE_KEY_ICAL_URL);
+    } catch {
+      // Ignore
+    }
+  };
+
   const handleSyncFromUrl = async () => {
     if (!icalUrl.trim()) {
-      setErrorMessage("Por favor ingresá la URL secreta de iCal de tu Google Calendar.");
+      setErrorMessage("Por favor introduce la URL secreta de iCal de tu Google Calendar.");
       return;
     }
 
@@ -160,8 +177,19 @@ export function CalendarSyncCard({
 
       {isOpen && (
         <div style={{ marginTop: "14px", borderTop: "1px solid #e2e8f0", paddingTop: "12px" }}>
-          <p style={{ fontSize: "0.82rem", color: "var(--text-muted, #475569)", marginBottom: "10px" }}>
-            Pegá la <strong>Dirección secreta en formato iCal</strong> de tu Google Calendar (la encontrás en <em>Google Calendar &gt; Configuración &gt; Tu calendario &gt; Integrar el calendario</em>) o subí tu archivo <code>.ics</code>:
+          <p
+            style={{
+              fontSize: "0.82rem",
+              color: "var(--text-muted, #475569)",
+              marginBottom: "10px",
+            }}
+          >
+            Pega la <strong>Dirección secreta en formato iCal</strong> de tu Google Calendar (la
+            encuentras en{" "}
+            <em>
+              Google Calendar &gt; Configuración &gt; Tu calendario &gt; Integrar el calendario
+            </em>
+            ) o sube tu archivo <code>.ics</code>:
           </p>
 
           <div style={{ display: "flex", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
@@ -191,6 +219,16 @@ export function CalendarSyncCard({
             >
               {isLoading ? "Sincronizando..." : "Sincronizar"}
             </button>
+            <button
+              type="button"
+              data-testid="forget-ical-url-btn"
+              className="secondary small"
+              onClick={handleForgetUrl}
+              disabled={isLoading || !icalUrl.trim()}
+              style={{ padding: "7px 12px", fontSize: "0.85rem" }}
+            >
+              Olvidar enlace
+            </button>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
@@ -216,8 +254,11 @@ export function CalendarSyncCard({
             }}
           >
             <span>🔒</span>
-            <span>
-              <strong>Privacidad:</strong> La URL privada se procesa localmente en tu máquina (POST seguro) para sincronizar reuniones sin almacenarse en servidores de terceros ni en registros de URL.
+            <span data-testid="calendar-privacy-notice">
+              <strong>Privacidad:</strong> El enlace privado se guarda en este navegador hasta ser
+              olvidado (puedes eliminarlo en cualquier momento con "Olvidar enlace") y se consulta
+              vía POST local seguro sin enviarse a servidores de terceros ni guardarse en registros
+              de acceso.
             </span>
           </div>
 
@@ -248,7 +289,9 @@ export function CalendarSyncCard({
                 fontSize: "0.82rem",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+              <div
+                style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}
+              >
                 <strong style={{ color: "#1e293b" }}>
                   Semana {lastSummary.targetWeek.startDate} al {lastSummary.targetWeek.endDate}
                 </strong>
@@ -259,13 +302,18 @@ export function CalendarSyncCard({
 
               {lastSummary.events.length === 0 ? (
                 <div style={{ color: "#64748b", fontStyle: "italic" }}>
-                  No se encontraron eventos con horario para esta semana. Tenés tu capacidad 100% libre.
+                  No se encontraron eventos con horario para esta semana. Tenés tu capacidad 100%
+                  libre.
                 </div>
               ) : (
                 <ul style={{ margin: 0, paddingLeft: "18px", color: "#334155" }}>
                   {lastSummary.events.slice(0, 5).map((ev) => (
                     <li key={ev.id} style={{ marginBottom: "3px" }}>
-                      <strong>{ev.day}</strong> {ev.startTime !== "00:00" ? `(${ev.startTime} - ${ev.endTime})` : "(Todo el día)"}: {ev.title} {ev.durationHours > 0 ? `· ${ev.durationHours}h` : ""}
+                      <strong>{ev.day}</strong>{" "}
+                      {ev.startTime !== "00:00"
+                        ? `(${ev.startTime} - ${ev.endTime})`
+                        : "(Todo el día)"}
+                      : {ev.title} {ev.durationHours > 0 ? `· ${ev.durationHours}h` : ""}
                     </li>
                   ))}
                   {lastSummary.events.length > 5 && (

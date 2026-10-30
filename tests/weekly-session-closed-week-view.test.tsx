@@ -75,7 +75,11 @@ describe("WeeklySessionView — Inspección y Reapertura de Semana Cerrada", () 
       ],
       deferredItems: [],
       unplannedSpace: { recommendedHours: 7.5, rationale: "Espacio protegido" },
-      confirmationPrompt: { question: "¿Representa tu plan?", keyTradeoffs: [], pendingQuestions: [] },
+      confirmationPrompt: {
+        question: "¿Representa tu plan?",
+        keyTradeoffs: [],
+        pendingQuestions: [],
+      },
     },
     createdAt: "2026-10-12T00:00:00.000Z",
     updatedAt: "2026-10-18T23:59:59.000Z",
@@ -191,9 +195,16 @@ describe("WeeklySessionView — Inspección y Reapertura de Semana Cerrada", () 
       service,
       controller,
       reloadSession: () => Promise.resolve(),
-      createOrSavePlan: () => Promise.resolve({ status: "success", plan: closedPlan, schedule: null }),
-      applyAdjustment: () => Promise.resolve({ status: "rejected", schedule: null as any, reason: "none" }),
-      closeWeek: () => Promise.resolve({ status: "success", closeReport: storedCloseReport, memoryCandidates: [] }),
+      createOrSavePlan: () =>
+        Promise.resolve({ status: "success", plan: closedPlan, schedule: null }),
+      applyAdjustment: () =>
+        Promise.resolve({ status: "rejected", schedule: null as any, reason: "none" }),
+      closeWeek: () =>
+        Promise.resolve({
+          status: "success",
+          closeReport: storedCloseReport,
+          memoryCandidates: [],
+        }),
       reopenWeek: (id) => controller.reopenWeek(id),
       confirmMemoryCandidate: () => Promise.resolve({ status: "rejected", reason: "none" }),
       confirmMemoryOperation: () => Promise.resolve({ status: "rejected", reason: "none" }),
@@ -213,9 +224,9 @@ describe("WeeklySessionView — Inspección y Reapertura de Semana Cerrada", () 
     expect(html).toContain("2026-10-12 al 2026-10-18");
     expect(html).toContain("Semana de arquitectura sólida");
     expect(html).toContain("Excelente cierre de semana");
-    expect(html).toContain("data-testid=\"toggle-closed-week-details\"");
+    expect(html).toContain('data-testid="toggle-closed-week-details"');
     expect(html).toContain("Ver detalle de la semana");
-    expect(html).toContain("data-testid=\"reopen-closed-week-button\"");
+    expect(html).toContain('data-testid="reopen-closed-week-button"');
     expect(html).toContain("Reabrir semana para modificar");
   });
 
@@ -306,9 +317,16 @@ describe("WeeklySessionView — Inspección y Reapertura de Semana Cerrada", () 
       service,
       controller,
       reloadSession: () => Promise.resolve(),
-      createOrSavePlan: () => Promise.resolve({ status: "success", plan: closedPlan, schedule: null }),
-      applyAdjustment: () => Promise.resolve({ status: "rejected", schedule: null as any, reason: "none" }),
-      closeWeek: () => Promise.resolve({ status: "success", closeReport: storedCloseReport, memoryCandidates: [] }),
+      createOrSavePlan: () =>
+        Promise.resolve({ status: "success", plan: closedPlan, schedule: null }),
+      applyAdjustment: () =>
+        Promise.resolve({ status: "rejected", schedule: null as any, reason: "none" }),
+      closeWeek: () =>
+        Promise.resolve({
+          status: "success",
+          closeReport: storedCloseReport,
+          memoryCandidates: [],
+        }),
       reopenWeek: (id) => controller.reopenWeek(id),
       confirmMemoryCandidate: () => Promise.resolve({ status: "rejected", reason: "none" }),
       confirmMemoryOperation: () => Promise.resolve({ status: "rejected", reason: "none" }),
@@ -319,7 +337,12 @@ describe("WeeklySessionView — Inspección y Reapertura de Semana Cerrada", () 
       archiveMemory: () => Promise.resolve(),
       deleteMemory: () => Promise.resolve(),
       exportBackup: () => Promise.resolve({} as any),
-      importBackup: () => Promise.resolve({ status: "success", importedCounts: { plans: 0, schedules: 0, closeReports: 0, memories: 0 }, exportedAt: "2026-10-18T00:00:00.000Z" }),
+      importBackup: () =>
+        Promise.resolve({
+          status: "success",
+          importedCounts: { plans: 0, schedules: 0, closeReports: 0, memories: 0 },
+          exportedAt: "2026-10-18T00:00:00.000Z",
+        }),
     };
 
     const html = renderToStaticMarkup(
@@ -338,4 +361,3 @@ describe("WeeklySessionView — Inspección y Reapertura de Semana Cerrada", () 
     expect(html).toContain("Descartar");
   });
 });
-

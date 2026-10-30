@@ -54,7 +54,10 @@ export function CarryOverTasksSection({
 
       <p className="calm-muted" style={{ fontSize: "0.88rem", marginTop: "4px" }}>
         Tareas reprogramadas para esta semana o pendientes de ciclos previos.
-        <strong> Ninguna se incorpora automáticamente; tú decides cuáles incluir en el borrador.</strong>
+        <strong>
+          {" "}
+          Ninguna se incorpora automáticamente; tú decides cuáles incluir en el borrador.
+        </strong>
       </p>
 
       <ul
@@ -77,9 +80,7 @@ export function CarryOverTasksSection({
                 padding: "10px 12px",
                 marginBottom: "8px",
                 background: isSelected ? "#ffffff" : "#fdfdfd",
-                border: isSelected
-                  ? "1px solid var(--accent-color, #4a6da7)"
-                  : "1px solid #e0e0e0",
+                border: isSelected ? "1px solid var(--accent-color, #4a6da7)" : "1px solid #e0e0e0",
                 borderRadius: "6px",
               }}
             >
@@ -103,13 +104,9 @@ export function CarryOverTasksSection({
                 >
                   <strong style={{ fontSize: "0.95rem" }}>{task.title}</strong>
                   <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                    <span className="badge badge-task">
-                      Origen: {task.originCategory}
-                    </span>
+                    <span className="badge badge-task">Origen: {task.originCategory}</span>
                     {task.estimatedHours != null && (
-                      <span className="badge badge-muted">
-                        ⏱ {task.estimatedHours}h
-                      </span>
+                      <span className="badge badge-muted">⏱ {task.estimatedHours}h</span>
                     )}
                     {task.dueDate && (
                       <span

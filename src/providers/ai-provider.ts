@@ -46,8 +46,12 @@ export interface AIProvider {
   buildWeek(input: BuildWeekInput): Promise<ProposedWeek>;
 
   // Optional deprecated deterministic hook stubs
-  analyzeChange?(input: import("../domain/change").AnalyzeChangeInput): Promise<import("../domain/change").AnalyzeChangeOutput>;
-  detectConflict?(input: import("../domain/conflict").DetectConflictInput): Promise<import("../domain/conflict").DetectConflictOutput>;
+  analyzeChange?(
+    input: import("../domain/change").AnalyzeChangeInput
+  ): Promise<import("../domain/change").AnalyzeChangeOutput>;
+  detectConflict?(
+    input: import("../domain/conflict").DetectConflictInput
+  ): Promise<import("../domain/conflict").DetectConflictOutput>;
 
   getLastExecutionMeta?(): ProviderExecutionMeta | undefined;
 }

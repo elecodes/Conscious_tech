@@ -212,7 +212,12 @@ describe("Fase P5.1 — Continuidad del cierre y disposiciones honestas", () => 
           fociOutcomes: [],
           obligationsOutcomes: [],
           classifiedItems: [],
-          itemDispositions: { completed: ["task-1"], carryOverCandidates: [], dropped: [], unreported: [] },
+          itemDispositions: {
+            completed: ["task-1"],
+            carryOverCandidates: [],
+            dropped: [],
+            unreported: [],
+          },
           capacityAnalysis: {
             status: "complete",
             totalPlannedHours: 10,
@@ -400,7 +405,12 @@ describe("Fase P5.1 — Continuidad del cierre y disposiciones honestas", () => 
           fociOutcomes: [],
           obligationsOutcomes: [],
           classifiedItems: [],
-          itemDispositions: { completed: ["task-w1"], carryOverCandidates: [], dropped: [], unreported: [] },
+          itemDispositions: {
+            completed: ["task-w1"],
+            carryOverCandidates: [],
+            dropped: [],
+            unreported: [],
+          },
           capacityAnalysis: {
             status: "complete",
             totalPlannedHours: 10,
@@ -563,8 +573,12 @@ describe("Fase P5.1 — Continuidad del cierre y disposiciones honestas", () => 
 
       expect(res.status).toBe("success");
       if (res.status === "success") {
-        const classified = res.closeReport.output.classifiedItems.find((i) => i.itemId === "task-code");
-        expect(classified?.postponementReason).toBe("Priorización consciente por sobrecarga de reuniones");
+        const classified = res.closeReport.output.classifiedItems.find(
+          (i) => i.itemId === "task-code"
+        );
+        expect(classified?.postponementReason).toBe(
+          "Priorización consciente por sobrecarga de reuniones"
+        );
 
         const carryOver = res.closeReport.output.itemDispositions.carryOverCandidates.find(
           (c) => c.itemId === "task-code"

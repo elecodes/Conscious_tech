@@ -22,53 +22,53 @@ Do not build future features, abstractions, agents, infrastructure, or integrati
 
 Prefer:
 
-* simple architecture
-* small functions
-* explicit types
-* clear boundaries
-* incremental changes
-* real tests and real user feedback
+- simple architecture
+- small functions
+- explicit types
+- clear boundaries
+- incremental changes
+- real tests and real user feedback
 
 Avoid:
 
-* premature abstractions
-* unnecessary dependencies
-* over-engineering
-* microservices
-* complex agent frameworks
-* infrastructure that is not needed yet
+- premature abstractions
+- unnecessary dependencies
+- over-engineering
+- microservices
+- complex agent frameworks
+- infrastructure that is not needed yet
 
 ### 2. Code before AI
 
 Use deterministic code whenever possible.
 
-* If a problem can be solved reliably with code → use code.
-* If semantic understanding is required → use an LLM.
-* If a small/cheap model is enough → do not use a larger model.
-* Do not call an LLM just because it is available.
+- If a problem can be solved reliably with code → use code.
+- If semantic understanding is required → use an LLM.
+- If a small/cheap model is enough → do not use a larger model.
+- Do not call an LLM just because it is available.
 
 AI should mainly handle things such as:
 
-* understanding natural language
-* extracting meaning
-* detecting semantic relationships
-* interpreting context
-* generating explanations
-* proposing options
+- understanding natural language
+- extracting meaning
+- detecting semantic relationships
+- interpreting context
+- generating explanations
+- proposing options
 
 Code should handle things such as:
 
-* business rules
-* calculations
-* capacity
-* conflicts
-* dates when deterministic
-* state transitions
-* persistence
-* validation
-* IDs
-* memory lifecycle
-* deletion
+- business rules
+- calculations
+- capacity
+- conflicts
+- dates when deterministic
+- state transitions
+- persistence
+- validation
+- IDs
+- memory lifecycle
+- deletion
 
 ### 3. Keep AI replaceable
 
@@ -78,10 +78,10 @@ Use a provider abstraction so the application can work with different providers 
 
 The project should remain able to change:
 
-* model
-* provider
-* prompt
-* AI implementation
+- model
+- provider
+- prompt
+- AI implementation
 
 without rewriting the domain.
 
@@ -91,12 +91,12 @@ Never trust raw LLM output.
 
 Use:
 
-* structured outputs
-* schemas
-* validation
-* clear prompts
-* retries when appropriate
-* provider-independent domain types
+- structured outputs
+- schemas
+- validation
+- clear prompts
+- retries when appropriate
+- provider-independent domain types
 
 Prefer Zod for runtime validation where appropriate.
 
@@ -106,11 +106,11 @@ This project should be developed with a **free-tier-first / low-cost mindset**.
 
 Avoid:
 
-* unnecessary LLM calls
-* large models when smaller ones work
-* repeated calls for deterministic work
-* unnecessary context
-* expensive infrastructure
+- unnecessary LLM calls
+- large models when smaller ones work
+- repeated calls for deterministic work
+- unnecessary context
+- expensive infrastructure
 
 The goal is to learn what actually requires AI before spending money on infrastructure or models.
 
@@ -120,12 +120,12 @@ The product deals with personal thoughts, plans, priorities, and potentially sen
 
 Therefore:
 
-* minimize data sent to external AI providers
-* do not store information unnecessarily
-* do not log full personal brain dumps by default
-* make deletion possible
-* avoid secrets in code or logs
-* treat user memory as belonging to the user
+- minimize data sent to external AI providers
+- do not store information unnecessarily
+- do not log full personal brain dumps by default
+- make deletion possible
+- avoid secrets in code or logs
+- treat user memory as belonging to the user
 
 ### 7. Product principles
 
@@ -135,21 +135,21 @@ The product should feel like:
 
 It should not feel like:
 
-* a productivity game
-* a task-management system that constantly pushes the user
-* an AI that tells the user what they must do
-* a dashboard full of metrics
-* a source of additional cognitive noise
+- a productivity game
+- a task-management system that constantly pushes the user
+- an AI that tells the user what they must do
+- a dashboard full of metrics
+- a source of additional cognitive noise
 
 Important principles:
 
-* concentration over fragmentation
-* space is part of the plan
-* not doing something can be a conscious decision
-* the person remains in control
-* the system should explain important decisions
-* no silent changes
-* users can correct, undo, postpone, or delete
+- concentration over fragmentation
+- space is part of the plan
+- not doing something can be a conscious decision
+- the person remains in control
+- the system should explain important decisions
+- no silent changes
+- users can correct, undo, postpone, or delete
 
 ### 8. Architecture
 
@@ -175,11 +175,11 @@ Tests should focus on behavior and business rules.
 
 Prefer:
 
-* deterministic unit tests
-* fixtures
-* mocked AI providers
-* integration tests for provider connections
-* real LLM testing only where it provides value
+- deterministic unit tests
+- fixtures
+- mocked AI providers
+- integration tests for provider connections
+- real LLM testing only where it provides value
 
 Do not make the entire test suite depend on external LLM APIs.
 
@@ -199,13 +199,13 @@ Do not assume the repository is empty or matches an imagined architecture.
 
 Always verify:
 
-* types
-* tests
-* validation
-* error handling
-* provider independence
-* cost implications
-* consistency with the product principles
+- types
+- tests
+- validation
+- error handling
+- provider independence
+- cost implications
+- consistency with the product principles
 
 Explain important architectural decisions briefly.
 
@@ -239,9 +239,9 @@ Detailed implementation documentation should live close to the feature or skill 
 
 Before making significant architectural or product decisions, consult:
 
-* `PROJECT_CONTEXT.md` — product vision, conceptual model, architecture direction, and roadmap.
-* `MEMORY.md` — important project decisions and context accumulated during development.
-* `README.md` — repository setup, current implementation status, and developer commands.
+- `PROJECT_CONTEXT.md` — product vision, conceptual model, architecture direction, and roadmap.
+- `MEMORY.md` — important project decisions and context accumulated during development.
+- `README.md` — repository setup, current implementation status, and developer commands.
 
 Keep these documents consistent when a significant decision changes the project.
 

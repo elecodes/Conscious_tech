@@ -22,13 +22,10 @@ export const RelationshipSchema = z
     confidence: RelationshipConfidenceSchema,
     reason: z.string().min(1),
   })
-  .refine(
-    (relationship) => relationship.sourceItemId !== relationship.targetItemId,
-    {
-      message: "sourceItemId and targetItemId must be different",
-      path: ["targetItemId"],
-    }
-  );
+  .refine((relationship) => relationship.sourceItemId !== relationship.targetItemId, {
+    message: "sourceItemId and targetItemId must be different",
+    path: ["targetItemId"],
+  });
 export type Relationship = z.infer<typeof RelationshipSchema>;
 
 export const DetectedRelationshipsSchema = z.object({

@@ -127,9 +127,7 @@ describe("Fase P5.3 — Visualización honesta de capacidad y espacio protegido"
       expect(html).toContain("12h");
       expect(html).toContain("Estimación parcial");
       expect(html).toContain("Por definir");
-      expect(html).toContain(
-        "Hay 12h estimadas, pero aún faltan tareas por definir."
-      );
+      expect(html).toContain("Hay 12h estimadas, pero aún faltan tareas por definir.");
     });
 
     it("3. Sin estimaciones: no representa la semana como vacía ni como carga cero", () => {
@@ -150,9 +148,7 @@ describe("Fase P5.3 — Visualización honesta de capacidad y espacio protegido"
 
       expect(html).toContain("Sin estimar");
       expect(html).toContain("Por definir");
-      expect(html).toContain(
-        "Tienes tareas previstas, pero aún no les has asignado horas."
-      );
+      expect(html).toContain("Tienes tareas previstas, pero aún no les has asignado horas.");
       // No debe contener "0h" inventado en carga planificada
       expect(html).not.toMatch(/<strong[^>]*data-testid="planned-hours"[^>]*>0h<\/strong>/);
     });
@@ -212,7 +208,9 @@ describe("Fase P5.3 — Visualización honesta de capacidad y espacio protegido"
         React.createElement(CapacityProtectedSpaceSection, { capacity })
       );
 
-      expect(html).toMatch(/<strong[^>]*data-testid="protected-space-hours"[^>]*>Desconocido<\/strong>/);
+      expect(html).toMatch(
+        /<strong[^>]*data-testid="protected-space-hours"[^>]*>Desconocido<\/strong>/
+      );
     });
 
     it("7. protectedSpaceStatus === 'compromised'", () => {

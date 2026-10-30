@@ -73,7 +73,9 @@ describe("Conflict Domain Schemas", () => {
   it("validates ConflictCertainty enum strictly", () => {
     expect(ConflictCertaintySchema.parse("confirmed")).toBe("confirmed");
     expect(ConflictCertaintySchema.parse("potential")).toBe("potential");
-    expect(ConflictCertaintySchema.parse("insufficient_information")).toBe("insufficient_information");
+    expect(ConflictCertaintySchema.parse("insufficient_information")).toBe(
+      "insufficient_information"
+    );
   });
 
   it("validates ConflictScope and Evidence schemas", () => {

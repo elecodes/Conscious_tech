@@ -8,7 +8,10 @@ import {
   prepareBuildWeekInputDetailed,
 } from "../src/application/planning-pipeline";
 import { WeeklyPlanningFromNotes } from "../src/web/components/weekly-planning-from-notes";
-import { WeeklySessionReactContext, WeeklySessionContextValue } from "../src/web/context/weekly-session-context";
+import {
+  WeeklySessionReactContext,
+  WeeklySessionContextValue,
+} from "../src/web/context/weekly-session-context";
 import { App } from "../src/web/App";
 
 describe("Conectar Extracción y volcado con la planificación semanal", () => {
@@ -113,11 +116,7 @@ describe("Conectar Extracción y volcado con la planificación semanal", () => {
 
     // Invariante: Preservación de identidad de los elementos
     expect(input.items).toHaveLength(3);
-    expect(input.items.map((i) => i.id)).toEqual([
-      "item-mock-1",
-      "item-mock-2",
-      "item-mock-3",
-    ]);
+    expect(input.items.map((i) => i.id)).toEqual(["item-mock-1", "item-mock-2", "item-mock-3"]);
 
     // Invariante: Preservación de estimaciones originales
     const reportItem = input.items.find((i) => i.id === "item-mock-1");
@@ -158,9 +157,7 @@ describe("Conectar Extracción y volcado con la planificación semanal", () => {
     expect(proposal.weekSummary.targetWeek).toEqual(targetWeek);
 
     // El informe (item-mock-1, vencido respecto a la semana 19..25) DEBE estar en deferredItems
-    const deferredReport = proposal.deferredItems.find(
-      (d) => d.itemId === "item-mock-1"
-    );
+    const deferredReport = proposal.deferredItems.find((d) => d.itemId === "item-mock-1");
 
     expect(deferredReport).toBeDefined();
     expect(deferredReport?.title).toContain("informe trimestral");

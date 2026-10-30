@@ -142,9 +142,7 @@ describe("Skill 11: close_week deterministic engine & behavioral fixtures", () =
 
     // Memory candidates generated
     expect(result.memoryCandidates.length).toBeGreaterThan(0);
-    const factCandidate = result.memoryCandidates.find(
-      (m) => m.suggestedCategory === "fact"
-    );
+    const factCandidate = result.memoryCandidates.find((m) => m.suggestedCategory === "fact");
     expect(factCandidate).toBeDefined();
     expect(factCandidate?.rawText).toContain("Preparar certificación AWS");
   });
@@ -225,9 +223,9 @@ describe("Skill 11: close_week deterministic engine & behavioral fixtures", () =
 
     // Dropped appears in dropped array and is NOT in carryOverCandidates
     expect(result.itemDispositions.dropped).toContain("item-aws-2");
-    expect(
-      result.itemDispositions.carryOverCandidates.some((c) => c.itemId === "item-aws-2")
-    ).toBe(false);
+    expect(result.itemDispositions.carryOverCandidates.some((c) => c.itemId === "item-aws-2")).toBe(
+      false
+    );
 
     // Consciously postponed appears in carryOverCandidates and generates a memory candidate
     const postponedCandidate = result.itemDispositions.carryOverCandidates.find(
@@ -236,9 +234,7 @@ describe("Skill 11: close_week deterministic engine & behavioral fixtures", () =
     expect(postponedCandidate).toBeDefined();
     expect(postponedCandidate?.reason).toBe("consciously_postponed");
 
-    const decisionMem = result.memoryCandidates.find(
-      (m) => m.suggestedCategory === "decision"
-    );
+    const decisionMem = result.memoryCandidates.find((m) => m.suggestedCategory === "decision");
     expect(decisionMem).toBeDefined();
     expect(decisionMem?.rawText).toContain("Decisión de postergación consciente");
   });
@@ -332,7 +328,9 @@ describe("Skill 11: close_week deterministic engine & behavioral fixtures", () =
 
     expect(result.capacityAnalysis.totalActualHours).toBe(26);
     expect(result.capacityAnalysis.spaceRespected).toBe(false);
-    expect(result.capacityAnalysis.explanation).toContain("superaron el límite de trabajo planificable");
+    expect(result.capacityAnalysis.explanation).toContain(
+      "superaron el límite de trabajo planificable"
+    );
   });
 
   // 9. Foreign or duplicate item IDs in outcomes
@@ -379,9 +377,7 @@ describe("Skill 11: close_week deterministic engine & behavioral fixtures", () =
     });
 
     expect(
-      result.warnings.some((w) =>
-        w.includes('Conflicto en reportes para el elemento "item-aws-1"')
-      )
+      result.warnings.some((w) => w.includes('Conflicto en reportes para el elemento "item-aws-1"'))
     ).toBe(true);
 
     const aws1 = result.classifiedItems.find((c) => c.itemId === "item-aws-1");
@@ -415,7 +411,9 @@ describe("Skill 11: close_week deterministic engine & behavioral fixtures", () =
     }
     expect(result.memoryCandidates.some((c) => c.suggestedCategory === "fact")).toBe(true);
     expect(result.memoryCandidates.some((c) => c.suggestedCategory === "decision")).toBe(true);
-    expect(result.memoryCandidates.some((c) => c.suggestedCategory === "project_context")).toBe(true);
+    expect(result.memoryCandidates.some((c) => c.suggestedCategory === "project_context")).toBe(
+      true
+    );
   });
 
   // 11. Idempotency and canonical order
@@ -640,9 +638,7 @@ describe("Skill 11: close_week deterministic engine & behavioral fixtures", () =
         closedAt: "2026-10-18T19:00:00Z",
         activePlan: basePlan,
         schedule,
-        itemOutcomes: [
-          { itemId: "item-aws-1", status: "completed" },
-        ],
+        itemOutcomes: [{ itemId: "item-aws-1", status: "completed" }],
       });
 
       const aws2 = result.classifiedItems.find((i) => i.itemId === "item-aws-2");
@@ -874,9 +870,7 @@ describe("Skill 11: close_week deterministic engine & behavioral fixtures", () =
         closedAt: "2026-10-18T19:00:00Z",
         activePlan: basePlan,
         schedule,
-        itemOutcomes: [
-          { itemId: "ob-clase", status: "completed", actualHours: 4 },
-        ],
+        itemOutcomes: [{ itemId: "ob-clase", status: "completed", actualHours: 4 }],
       });
 
       const clase = result.classifiedItems.find((i) => i.itemId === "ob-clase");
@@ -888,7 +882,7 @@ describe("Skill 11: close_week deterministic engine & behavioral fixtures", () =
 
       // Warning contains contradiction explanation
       const contradictionWarning = result.warnings.find((w) =>
-        w.includes("Contradicción para el elemento \"ob-clase\"")
+        w.includes('Contradicción para el elemento "ob-clase"')
       );
       expect(contradictionWarning).toBeDefined();
 
@@ -929,7 +923,11 @@ describe("Skill 11: close_week deterministic engine & behavioral fixtures", () =
         // schedule undefined
         itemOutcomes: [
           { itemId: "item-aws-1", status: "completed" },
-          { itemId: "item-aws-2", status: "consciously_postponed", postponementReason: "Manual report" },
+          {
+            itemId: "item-aws-2",
+            status: "consciously_postponed",
+            postponementReason: "Manual report",
+          },
           { itemId: "ob-clase", status: "completed" },
           { itemId: "flex-zapsac", status: "completed" },
           { itemId: "def-podcast", status: "not_started" },
@@ -937,7 +935,9 @@ describe("Skill 11: close_week deterministic engine & behavioral fixtures", () =
       });
 
       expect(resultWithoutSchedule.status).toBe("success");
-      const postponed = resultWithoutSchedule.classifiedItems.find((i) => i.itemId === "item-aws-2");
+      const postponed = resultWithoutSchedule.classifiedItems.find(
+        (i) => i.itemId === "item-aws-2"
+      );
       expect(postponed?.finalDisposition).toBe("consciously_postponed");
       expect(postponed?.postponementReason).toBe("Manual report");
     });

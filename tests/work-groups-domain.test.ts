@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  WorkGroupSchema,
-  GroupedWorkSchema,
-} from "../src/domain/work-groups";
+import { WorkGroupSchema, GroupedWorkSchema } from "../src/domain/work-groups";
 import {
   cleanAndValidateGroupedWork,
   validateGroupWorkInvariants,
@@ -132,9 +129,7 @@ describe("Domain: Work Groups & Invariants Validation", () => {
     const singleItem: ExtractedItem[] = [
       { id: "item-single", rawText: "t", title: "T", type: "task" },
     ];
-    expect(
-      cleanAndValidateGroupedWork({ groups: [], ungroupedItemIds: [] }, singleItem)
-    ).toEqual({
+    expect(cleanAndValidateGroupedWork({ groups: [], ungroupedItemIds: [] }, singleItem)).toEqual({
       groups: [],
       ungroupedItemIds: ["item-single"],
     });

@@ -52,11 +52,9 @@ export function isValidIsoUtcTimestamp(timestamp: string): boolean {
   );
 }
 
-export const IsoUtcTimestampSchema = z
-  .string()
-  .refine(isValidIsoUtcTimestamp, {
-    message: "Must be a valid real Gregorian ISO-8601 UTC timestamp (YYYY-MM-DDTHH:mm:ssZ)",
-  });
+export const IsoUtcTimestampSchema = z.string().refine(isValidIsoUtcTimestamp, {
+  message: "Must be a valid real Gregorian ISO-8601 UTC timestamp (YYYY-MM-DDTHH:mm:ssZ)",
+});
 
 // ============================================================================
 // 2. Core Enums & Schemas
@@ -72,19 +70,10 @@ export const MemoryCategorySchema = z.enum([
 ]);
 export type MemoryCategory = z.infer<typeof MemoryCategorySchema>;
 
-export const ConfirmationStatusSchema = z.enum([
-  "confirmed",
-  "inferred",
-  "unconfirmed",
-]);
+export const ConfirmationStatusSchema = z.enum(["confirmed", "inferred", "unconfirmed"]);
 export type ConfirmationStatus = z.infer<typeof ConfirmationStatusSchema>;
 
-export const TemporalStatusSchema = z.enum([
-  "active",
-  "expired",
-  "outdated",
-  "unknown",
-]);
+export const TemporalStatusSchema = z.enum(["active", "expired", "outdated", "unknown"]);
 export type TemporalStatus = z.infer<typeof TemporalStatusSchema>;
 
 export const MemoryProvenanceSourceSchema = z.enum([
@@ -113,13 +102,15 @@ export type MemoryProvenance = z.infer<typeof MemoryProvenanceSchema>;
  * When present in an explicit user statement without assertiveness,
  * they prevent raising epistemic status to 'confirmed'.
  */
-const HESITATION_REGEX = /\b(quiz[aá]s?|tal vez|a lo mejor|puede ser|no estoy seguro|no s[eé]|creo que|me parece que|posiblemente|veremos|quiz[aá])\b/i;
+const HESITATION_REGEX =
+  /\b(quiz[aá]s?|tal vez|a lo mejor|puede ser|no estoy seguro|no s[eé]|creo que|me parece que|posiblemente|veremos|quiz[aá])\b/i;
 
 export function containsHesitationMarkers(text: string): boolean {
   return HESITATION_REGEX.test(text);
 }
 
-const NEGATIVE_OR_PENDING_REGEX = /\b(no\b|sin\b|nunca\b|jam[aá]s\b|pendiente\b|draft(ed)?\b|borrador\b|en\s+tr[aá]mite\b|si\b|en\s+caso\s+de\b|hipot[eé]tic[oa]\b|futur[oa]\b|posible\b|rechazad[oa]\b)/i;
+const NEGATIVE_OR_PENDING_REGEX =
+  /\b(no\b|sin\b|nunca\b|jam[aá]s\b|pendiente\b|draft(ed)?\b|borrador\b|en\s+tr[aá]mite\b|si\b|en\s+caso\s+de\b|hipot[eé]tic[oa]\b|futur[oa]\b|posible\b|rechazad[oa]\b)/i;
 
 export function containsNegativeOrPendingMarkers(text: string): boolean {
   return NEGATIVE_OR_PENDING_REGEX.test(text);
@@ -151,18 +142,25 @@ export function isValidEpistemicState(
         reason: "Category 'working_hypothesis' cannot have confirmationStatus 'confirmed'",
       };
     }
-    if (provenance.source === "user_explicit" && containsHesitationMarkers(provenance.referenceText)) {
+    if (
+      provenance.source === "user_explicit" &&
+      containsHesitationMarkers(provenance.referenceText)
+    ) {
       return {
         valid: false,
-        reason: "Explicit user statements containing doubt/speculation markers cannot be 'confirmed'",
+        reason:
+          "Explicit user statements containing doubt/speculation markers cannot be 'confirmed'",
       };
     }
     if (provenance.source === "plan_decision") {
-      const hasAcceptanceEvidence = /\b(accepted|aceptad[oa]|confirmad[oa]|aprobad[oa])\b/i.test(provenance.referenceText);
+      const hasAcceptanceEvidence = /\b(accepted|aceptad[oa]|confirmad[oa]|aprobad[oa])\b/i.test(
+        provenance.referenceText
+      );
       if (!hasAcceptanceEvidence) {
         return {
           valid: false,
-          reason: "Decisions from plans require explicit acceptance evidence in referenceText to be 'confirmed'",
+          reason:
+            "Decisions from plans require explicit acceptance evidence in referenceText to be 'confirmed'",
         };
       }
       if (
@@ -171,7 +169,8 @@ export function isValidEpistemicState(
       ) {
         return {
           valid: false,
-          reason: "Decisions from plans containing doubt, negation, pending, or draft markers cannot be 'confirmed'",
+          reason:
+            "Decisions from plans containing doubt, negation, pending, or draft markers cannot be 'confirmed'",
         };
       }
     }
@@ -331,7 +330,8 @@ export const MergeMemoriesOpSchema = BaseMergeMemoriesOpSchema.refine(
       // the merged memory CANNOT be confirmed.
       const hasUnconfirmedSource = data.sourceProvenances.some((sp) => {
         if (sp.confirmationStatus !== "confirmed") return true;
-        if (sp.provenance.source === "conversation_inference" || sp.provenance.source === "system") return true;
+        if (sp.provenance.source === "conversation_inference" || sp.provenance.source === "system")
+          return true;
         if (sp.provenance.source === "plan_decision") {
           if (
             !sp.provenance.referenceText ||
@@ -361,7 +361,8 @@ export const MergeMemoriesOpSchema = BaseMergeMemoriesOpSchema.refine(
     return true;
   },
   {
-    message: "Merged memory cannot elevate unconfirmed, inferred, non-accepted, or fully expired sources to active/confirmed status",
+    message:
+      "Merged memory cannot elevate unconfirmed, inferred, non-accepted, or fully expired sources to active/confirmed status",
     path: ["mergedMemory", "confirmationStatus"],
   }
 );

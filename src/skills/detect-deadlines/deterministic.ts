@@ -1,9 +1,5 @@
 import { ExtractedItem } from "../../domain/items";
-import {
-  DetectedDeadline,
-  DetectedDeadlines,
-  DeadlineKind,
-} from "../../domain/deadlines";
+import { DetectedDeadline, DetectedDeadlines, DeadlineKind } from "../../domain/deadlines";
 
 export interface DeadlinesValidationResult {
   valid: boolean;
@@ -27,11 +23,7 @@ export function isValidIsoDate(str: string): boolean {
   }
 
   const d = new Date(Date.UTC(year, month - 1, day));
-  return (
-    d.getUTCFullYear() === year &&
-    d.getUTCMonth() === month - 1 &&
-    d.getUTCDate() === day
-  );
+  return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day;
 }
 
 /**
@@ -250,7 +242,11 @@ export function resolveDateDeterministically(
     };
   }
 
-  if (norm.includes("mes que viene") || norm.includes("el mes próximo") || norm.includes("mes proximo")) {
+  if (
+    norm.includes("mes que viene") ||
+    norm.includes("el mes próximo") ||
+    norm.includes("mes proximo")
+  ) {
     const nextMonthAnchor = new Date(Date.UTC(anchorYear, anchorMonth + 1, 1));
     const nextY = nextMonthAnchor.getUTCFullYear();
     const nextM = nextMonthAnchor.getUTCMonth();
@@ -512,7 +508,8 @@ export function cleanAndValidateDeadlines(
     if (!resolvedStart && !resolvedEnd && isValidIsoDate(currentDate)) {
       const deterministicRes = resolveDateDeterministically(raw, currentDate);
       if (deterministicRes) {
-        if (deterministicRes.resolvedStart !== undefined) resolvedStart = deterministicRes.resolvedStart;
+        if (deterministicRes.resolvedStart !== undefined)
+          resolvedStart = deterministicRes.resolvedStart;
         if (deterministicRes.resolvedEnd !== undefined) resolvedEnd = deterministicRes.resolvedEnd;
         if (deterministicRes.kind) kind = deterministicRes.kind;
         if (deterministicRes.confidence) confidence = deterministicRes.confidence;

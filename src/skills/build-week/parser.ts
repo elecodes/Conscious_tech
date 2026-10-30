@@ -144,10 +144,7 @@ export function sanitizeOptionalNullFields(raw: unknown): unknown {
  * 7. Invariant cross-validation against BuildWeekInput without using silent .filter() drops.
  * 8. Zero external network calls or AI provider imports.
  */
-export function parseProposedWeek(
-  rawJson: string,
-  input: BuildWeekInput
-): WeekParseResult {
+export function parseProposedWeek(rawJson: string, input: BuildWeekInput): WeekParseResult {
   // Empty input zero-token fast-path
   if (input.items.length === 0 && rawJson.trim() === "") {
     return {
@@ -270,10 +267,7 @@ export function parseProposedWeek(
 /**
  * Convenience unwrapper that throws WeekValidationError when parsing or invariants fail.
  */
-export function parseAndValidateProposedWeek(
-  rawJson: string,
-  input: BuildWeekInput
-): ProposedWeek {
+export function parseAndValidateProposedWeek(rawJson: string, input: BuildWeekInput): ProposedWeek {
   const result = parseProposedWeek(rawJson, input);
   if (!result.success) {
     if ("issues" in result && Array.isArray(result.issues)) {

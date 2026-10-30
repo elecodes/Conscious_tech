@@ -11,8 +11,20 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
   // 1. Dos items same_project → un grupo
   it("1. Dos items same_project → un grupo", async () => {
     const items: ExtractedItem[] = [
-      { id: "arch-1", rawText: "Revisar auth", title: "Revisar autenticación", type: "task", project: "ArchitectAI" },
-      { id: "arch-2", rawText: "Docs", title: "Preparar documentación", type: "task", project: "ArchitectAI" },
+      {
+        id: "arch-1",
+        rawText: "Revisar auth",
+        title: "Revisar autenticación",
+        type: "task",
+        project: "ArchitectAI",
+      },
+      {
+        id: "arch-2",
+        rawText: "Docs",
+        title: "Preparar documentación",
+        type: "task",
+        project: "ArchitectAI",
+      },
     ];
     const relationships: Relationship[] = [
       {
@@ -125,8 +137,18 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
   // 4. depends_on por sí sola no obliga a agrupar
   it("4. depends_on por sí sola no obliga a agrupar", async () => {
     const items: ExtractedItem[] = [
-      { id: "budget-1", rawText: "Enviar presupuesto", title: "Enviar presupuesto a Lucía", type: "task" },
-      { id: "call-1", rawText: "Hablar con Pablo", title: "Hablar con Pablo sobre estrategia", type: "task" },
+      {
+        id: "budget-1",
+        rawText: "Enviar presupuesto",
+        title: "Enviar presupuesto a Lucía",
+        type: "task",
+      },
+      {
+        id: "call-1",
+        rawText: "Hablar con Pablo",
+        title: "Hablar con Pablo sobre estrategia",
+        type: "task",
+      },
     ];
     const relationships: Relationship[] = [
       {
@@ -160,8 +182,20 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
       { id: "ai-3", rawText: "Prototipo", title: "Probar prototipo en local", type: "idea" },
     ];
     const relationships: Relationship[] = [
-      { sourceItemId: "ai-1", targetItemId: "ai-2", type: "related_to", confidence: "high", reason: "Exploraciones técnicas conectadas" },
-      { sourceItemId: "ai-2", targetItemId: "ai-3", type: "related_to", confidence: "high", reason: "El prototipo surge de la evaluación" },
+      {
+        sourceItemId: "ai-1",
+        targetItemId: "ai-2",
+        type: "related_to",
+        confidence: "high",
+        reason: "Exploraciones técnicas conectadas",
+      },
+      {
+        sourceItemId: "ai-2",
+        targetItemId: "ai-3",
+        type: "related_to",
+        confidence: "high",
+        reason: "El prototipo surge de la evaluación",
+      },
     ];
 
     const provider = new MockProvider();
@@ -171,7 +205,8 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
           id: "g-ai",
           title: "Exploración de IA local",
           itemIds: ["ai-1", "ai-2", "ai-3"],
-          rationale: "Constituyen un hilo coherente de exploración de modelos locales en el cliente",
+          rationale:
+            "Constituyen un hilo coherente de exploración de modelos locales en el cliente",
         },
       ],
       ungroupedItemIds: [],
@@ -186,8 +221,18 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
   // 6. related_to débil → puede permanecer separado
   it("6. related_to débil → puede permanecer separado", async () => {
     const items: ExtractedItem[] = [
-      { id: "task-a", rawText: "Revisar diseño de pantalla", title: "Diseño pantalla registro", type: "task" },
-      { id: "task-b", rawText: "Actualizar tipografías del blog", title: "Tipografías del blog", type: "task" },
+      {
+        id: "task-a",
+        rawText: "Revisar diseño de pantalla",
+        title: "Diseño pantalla registro",
+        type: "task",
+      },
+      {
+        id: "task-b",
+        rawText: "Actualizar tipografías del blog",
+        title: "Tipografías del blog",
+        type: "task",
+      },
     ];
     const relationships: Relationship[] = [
       {
@@ -215,7 +260,12 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
   // 7. Items independientes → ungroupedItemIds
   it("7. Items independientes → ungroupedItemIds (deterministic short-circuit)", async () => {
     const items: ExtractedItem[] = [
-      { id: "item-1", rawText: "Cambiar cuerdas guitarra", title: "Cambiar cuerdas guitarra", type: "task" },
+      {
+        id: "item-1",
+        rawText: "Cambiar cuerdas guitarra",
+        title: "Cambiar cuerdas guitarra",
+        type: "task",
+      },
       { id: "item-2", rawText: "Renovar dominio", title: "Renovar dominio web", type: "task" },
     ];
     const relationships: Relationship[] = [];
@@ -236,8 +286,20 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
       { id: "c-3", rawText: "Paso 3", title: "Escribir tests de integración", type: "task" },
     ];
     const relationships: Relationship[] = [
-      { sourceItemId: "c-1", targetItemId: "c-2", type: "same_project", confidence: "high", reason: "Mismo proyecto" },
-      { sourceItemId: "c-2", targetItemId: "c-3", type: "same_project", confidence: "high", reason: "Mismo proyecto" },
+      {
+        sourceItemId: "c-1",
+        targetItemId: "c-2",
+        type: "same_project",
+        confidence: "high",
+        reason: "Mismo proyecto",
+      },
+      {
+        sourceItemId: "c-2",
+        targetItemId: "c-3",
+        type: "same_project",
+        confidence: "high",
+        reason: "Mismo proyecto",
+      },
     ];
 
     const provider = new MockProvider();
@@ -268,15 +330,37 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
       { id: "p2-b", rawText: "d", title: "Declaración impuestos", type: "task" },
     ];
     const relationships: Relationship[] = [
-      { sourceItemId: "p1-a", targetItemId: "p1-b", type: "same_project", confidence: "high", reason: "Beta" },
-      { sourceItemId: "p2-a", targetItemId: "p2-b", type: "same_objective", confidence: "high", reason: "Fiscal" },
+      {
+        sourceItemId: "p1-a",
+        targetItemId: "p1-b",
+        type: "same_project",
+        confidence: "high",
+        reason: "Beta",
+      },
+      {
+        sourceItemId: "p2-a",
+        targetItemId: "p2-b",
+        type: "same_objective",
+        confidence: "high",
+        reason: "Fiscal",
+      },
     ];
 
     const provider = new MockProvider();
     provider.setGroupWorkHandler(async () => ({
       groups: [
-        { id: "g-1", title: "Lanzamiento beta", itemIds: ["p1-a", "p1-b"], rationale: "Tareas de la beta" },
-        { id: "g-2", title: "Cierre fiscal", itemIds: ["p2-a", "p2-b"], rationale: "Tareas fiscales" },
+        {
+          id: "g-1",
+          title: "Lanzamiento beta",
+          itemIds: ["p1-a", "p1-b"],
+          rationale: "Tareas de la beta",
+        },
+        {
+          id: "g-2",
+          title: "Cierre fiscal",
+          itemIds: ["p2-a", "p2-b"],
+          rationale: "Tareas fiscales",
+        },
       ],
       ungroupedItemIds: [],
     }));
@@ -296,8 +380,20 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
       { id: "t-3", rawText: "t3", title: "Checkout UI", type: "task", project: "Tienda" },
     ];
     const relationships: Relationship[] = [
-      { sourceItemId: "t-1", targetItemId: "t-2", type: "same_project", confidence: "high", reason: "Tienda" },
-      { sourceItemId: "t-2", targetItemId: "t-3", type: "same_project", confidence: "high", reason: "Tienda" },
+      {
+        sourceItemId: "t-1",
+        targetItemId: "t-2",
+        type: "same_project",
+        confidence: "high",
+        reason: "Tienda",
+      },
+      {
+        sourceItemId: "t-2",
+        targetItemId: "t-3",
+        type: "same_project",
+        confidence: "high",
+        reason: "Tienda",
+      },
     ];
 
     const provider = new MockProvider();
@@ -322,12 +418,23 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
   // 11. concern aislado → no contamina otros grupos
   it("11. concern aislado → no contamina otros grupos", async () => {
     const items: ExtractedItem[] = [
-      { id: "c-concern", rawText: "Agobio por plazos", title: "Sensación de agobio", type: "concern" },
+      {
+        id: "c-concern",
+        rawText: "Agobio por plazos",
+        title: "Sensación de agobio",
+        type: "concern",
+      },
       { id: "t-1", rawText: "Hacer informe", title: "Informe trimestral", type: "task" },
       { id: "t-2", rawText: "Enviar informe", title: "Enviar informe", type: "task" },
     ];
     const relationships: Relationship[] = [
-      { sourceItemId: "t-1", targetItemId: "t-2", type: "same_objective", confidence: "high", reason: "Informe" },
+      {
+        sourceItemId: "t-1",
+        targetItemId: "t-2",
+        type: "same_objective",
+        confidence: "high",
+        reason: "Informe",
+      },
     ];
 
     const provider = new MockProvider();
@@ -354,7 +461,12 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
   it("12. Ideas exploratorias → no agrupar salvo coherencia clara", async () => {
     const items: ExtractedItem[] = [
       { id: "idea-1", rawText: "Aprender Rust", title: "Mirar tutoriales de Rust", type: "idea" },
-      { id: "idea-2", rawText: "Comprar sintetizador", title: "Evaluar sintetizadores analógicos", type: "idea" },
+      {
+        id: "idea-2",
+        rawText: "Comprar sintetizador",
+        title: "Evaluar sintetizadores analógicos",
+        type: "idea",
+      },
     ];
     const relationships: Relationship[] = [];
 
@@ -372,7 +484,13 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
       { id: "valid-2", rawText: "v2", title: "Tarea 2", type: "task" },
     ];
     const relationships: Relationship[] = [
-      { sourceItemId: "valid-1", targetItemId: "valid-2", type: "same_project", confidence: "high", reason: "test" },
+      {
+        sourceItemId: "valid-1",
+        targetItemId: "valid-2",
+        type: "same_project",
+        confidence: "high",
+        reason: "test",
+      },
     ];
 
     const provider = new MockProvider();
@@ -403,15 +521,19 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
       { id: "i-4", rawText: "4", title: "T4", type: "task" },
     ];
     const relationships: Relationship[] = [
-      { sourceItemId: "i-1", targetItemId: "i-2", type: "same_project", confidence: "high", reason: "test" },
+      {
+        sourceItemId: "i-1",
+        targetItemId: "i-2",
+        type: "same_project",
+        confidence: "high",
+        reason: "test",
+      },
     ];
 
     const provider = new MockProvider();
     // LLM forgot i-3 and i-4 completely
     provider.setGroupWorkHandler(async () => ({
-      groups: [
-        { id: "g-1", title: "Grupo 1", itemIds: ["i-1", "i-2"], rationale: "Motivo" },
-      ],
+      groups: [{ id: "g-1", title: "Grupo 1", itemIds: ["i-1", "i-2"], rationale: "Motivo" }],
       ungroupedItemIds: [],
     }));
 
@@ -430,8 +552,20 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
       { id: "item-4", rawText: "4", title: "T4", type: "task" },
     ];
     const relationships: Relationship[] = [
-      { sourceItemId: "item-1", targetItemId: "item-2", type: "same_project", confidence: "high", reason: "r1" },
-      { sourceItemId: "item-3", targetItemId: "item-4", type: "same_project", confidence: "high", reason: "r2" },
+      {
+        sourceItemId: "item-1",
+        targetItemId: "item-2",
+        type: "same_project",
+        confidence: "high",
+        reason: "r1",
+      },
+      {
+        sourceItemId: "item-3",
+        targetItemId: "item-4",
+        type: "same_project",
+        confidence: "high",
+        reason: "r2",
+      },
     ];
 
     const provider = new MockProvider();
@@ -439,7 +573,12 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
     provider.setGroupWorkHandler(async () => ({
       groups: [
         { id: "g-1", title: "Grupo A", itemIds: ["item-1", "item-2"], rationale: "Motivo A" },
-        { id: "g-2", title: "Grupo B", itemIds: ["item-2", "item-3", "item-4"], rationale: "Motivo B" },
+        {
+          id: "g-2",
+          title: "Grupo B",
+          itemIds: ["item-2", "item-3", "item-4"],
+          rationale: "Motivo B",
+        },
       ],
       ungroupedItemIds: [],
     }));
@@ -459,7 +598,13 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
       { id: "t-2", rawText: "t2", title: "T2", type: "task" },
     ];
     const relationships: Relationship[] = [
-      { sourceItemId: "t-1", targetItemId: "t-2", type: "same_project", confidence: "high", reason: "test" },
+      {
+        sourceItemId: "t-1",
+        targetItemId: "t-2",
+        type: "same_project",
+        confidence: "high",
+        reason: "test",
+      },
     ];
 
     let callCount = 0;
@@ -469,9 +614,7 @@ describe("Skill 03: group_work - Unit & Behavioral Test Suite", () => {
       if (callCount === 1) {
         // Violates schema (empty title)
         return {
-          groups: [
-            { id: "g-1", title: "", itemIds: ["t-1", "t-2"], rationale: "r" },
-          ],
+          groups: [{ id: "g-1", title: "", itemIds: ["t-1", "t-2"], rationale: "r" }],
           ungroupedItemIds: [],
         };
       }

@@ -22,28 +22,99 @@ export function normalizeFusedWords(text: string): string {
   // Handle "tengo que" fused: "tengoquehacer" -> "tengo que hacer"
   res = res.replace(/\btengo\s*que([a-záéíóúñ]+(?:ar|er|ir)\b)/gi, "tengo que $1");
   // Handle modals fused directly with infinitive: "quieroavanzar" -> "quiero avanzar"
-  res = res.replace(
-    /\b(quiero|puedo|debo|vamos|hayque)([a-záéíóúñ]+(?:ar|er|ir)\b)/gi,
-    "$1 $2"
-  );
+  res = res.replace(/\b(quiero|puedo|debo|vamos|hayque)([a-záéíóúñ]+(?:ar|er|ir)\b)/gi, "$1 $2");
   return res;
 }
 
 const NON_VERB_EXCEPTIONS = new Set([
-  "lugar", "mujer", "placer", "militar", "titular", "celular", "particular",
-  "familiar", "regular", "similar", "popular", "solar", "polar", "bar", "par",
-  "mar", "ayer", "primer", "tercer", "dólar", "dolar", "hogar", "radar",
-  "collar", "pulgar", "azúcar", "azucar", "líder", "lider", "chofer", "taller",
-  "cáncer", "cancer", "carácter", "caracter", "suéter", "sueter", "elixir",
-  "mártir", "martir", "solid", "solid.", "solid,", "react", "vue"
+  "lugar",
+  "mujer",
+  "placer",
+  "militar",
+  "titular",
+  "celular",
+  "particular",
+  "familiar",
+  "regular",
+  "similar",
+  "popular",
+  "solar",
+  "polar",
+  "bar",
+  "par",
+  "mar",
+  "ayer",
+  "primer",
+  "tercer",
+  "dólar",
+  "dolar",
+  "hogar",
+  "radar",
+  "collar",
+  "pulgar",
+  "azúcar",
+  "azucar",
+  "líder",
+  "lider",
+  "chofer",
+  "taller",
+  "cáncer",
+  "cancer",
+  "carácter",
+  "caracter",
+  "suéter",
+  "sueter",
+  "elixir",
+  "mártir",
+  "martir",
+  "solid",
+  "solid.",
+  "solid,",
+  "react",
+  "vue",
 ]);
 
 const COMMON_ENGLISH_ACTION_VERBS = new Set([
-  "do", "look", "make", "get", "prepare", "study", "learn", "review",
-  "build", "apply", "send", "call", "write", "finish", "complete", "read",
-  "update", "check", "test", "fix", "deploy", "design", "create", "practice",
-  "search", "find", "watch", "start", "continue", "organize", "plan", "clean",
-  "think", "open", "close", "set", "setup", "configure", "audit", "draft"
+  "do",
+  "look",
+  "make",
+  "get",
+  "prepare",
+  "study",
+  "learn",
+  "review",
+  "build",
+  "apply",
+  "send",
+  "call",
+  "write",
+  "finish",
+  "complete",
+  "read",
+  "update",
+  "check",
+  "test",
+  "fix",
+  "deploy",
+  "design",
+  "create",
+  "practice",
+  "search",
+  "find",
+  "watch",
+  "start",
+  "continue",
+  "organize",
+  "plan",
+  "clean",
+  "think",
+  "open",
+  "close",
+  "set",
+  "setup",
+  "configure",
+  "audit",
+  "draft",
 ]);
 
 export function isActionVerb(word: string): boolean {
@@ -142,11 +213,7 @@ export function splitCoordinatedActions(segment: string): string[] {
 
   // Guard against splitting emotional or concern expressions into fragmented items
   // (e.g. "Me preocupa no llegar a tiempo con la entrega, siento mucho estrés").
-  if (
-    /\b(preocupa|agobia|miedo|estr[eé]s|angustia|duermo\s+mal|cansad[ao])\b/i.test(
-      normalized
-    )
-  ) {
+  if (/\b(preocupa|agobia|miedo|estr[eé]s|angustia|duermo\s+mal|cansad[ao])\b/i.test(normalized)) {
     return [normalized];
   }
 
@@ -285,7 +352,8 @@ export function extractDeadline(text: string, currentDate: string): DateReferenc
   }
 
   // 2. Relative "antes del [dia]", "para el [dia]", "hasta el [dia]", "el [dia] a las [hora]"
-  const dayPattern = /\b(?:antes del|para el|hasta el|el)?\s*(lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)(?:\s+a las\s+\d{1,2}(?::\d{2})?)?\b/i;
+  const dayPattern =
+    /\b(?:antes del|para el|hasta el|el)?\s*(lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)(?:\s+a las\s+\d{1,2}(?::\d{2})?)?\b/i;
   const dayMatch = text.match(dayPattern);
   if (dayMatch) {
     const raw = dayMatch[0].trim();
@@ -361,7 +429,10 @@ export function extractEffort(text: string): Effort | undefined {
  */
 export function cleanTitle(rawSegment: string): string {
   let title = rawSegment.trim();
-  title = title.replace(/^[-*•]\s+/, "").replace(/^\d+[.)]\s+/, "").trim();
+  title = title
+    .replace(/^[-*•]\s+/, "")
+    .replace(/^\d+[.)]\s+/, "")
+    .trim();
   title = title
     .replace(
       /\s*\(\s*\d+(?:[.,]\d+)?\s*(?:horas?|hs?|h|minutos?|mins?|m|d[ií]as?|d|hours?|hrs?|minutes?|days?)\s*\)/i,
@@ -444,11 +515,7 @@ export function classifyItem(segment: string): {
     };
   }
 
-  if (
-    /\b(preocupa|agobia|miedo|estr[eé]s|angustia|duermo\s+mal|cansad[ao])\b/i.test(
-      lower
-    )
-  ) {
+  if (/\b(preocupa|agobia|miedo|estr[eé]s|angustia|duermo\s+mal|cansad[ao])\b/i.test(lower)) {
     return {
       type: "concern",
       status: "pending",
@@ -490,10 +557,7 @@ export function classifyItem(segment: string): {
 /**
  * Deterministically parses arbitrary user text into ExtractedItems.
  */
-export function extractItemsDeterministically(
-  text: string,
-  currentDate: string
-): ExtractedItems {
+export function extractItemsDeterministically(text: string, currentDate: string): ExtractedItems {
   const segments = splitNotesIntoSegments(text);
 
   const items: ExtractedItem[] = segments.map((seg, idx) => {

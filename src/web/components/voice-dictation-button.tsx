@@ -13,18 +13,12 @@ export function VoiceDictationButton({
   defaultLang = "es-ES",
   disabled = false,
 }: VoiceDictationButtonProps) {
-  const {
-    isSupported,
-    isListening,
-    lang,
-    setLang,
-    toggleListening,
-    errorMessage,
-  } = useSpeechRecognition({
-    initialLang: defaultLang,
-    onTranscript,
-    getText,
-  });
+  const { isSupported, isListening, lang, setLang, toggleListening, errorMessage } =
+    useSpeechRecognition({
+      initialLang: defaultLang,
+      onTranscript,
+      getText,
+    });
 
   if (!isSupported) {
     return (
@@ -100,6 +94,17 @@ export function VoiceDictationButton({
         <option value="es-ES">ES</option>
         <option value="en-US">EN</option>
       </select>
+
+      <span
+        data-testid="voice-dictation-privacy-notice"
+        style={{
+          fontSize: "0.72rem",
+          color: "var(--text-muted, #64748b)",
+          marginLeft: "2px",
+        }}
+      >
+        (El audio puede ser procesado por el proveedor de tu navegador)
+      </span>
 
       {errorMessage && (
         <span

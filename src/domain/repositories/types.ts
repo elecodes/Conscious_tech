@@ -23,7 +23,10 @@ export class StorageError extends Error {
 }
 
 export class StaleVersionConflictError extends StorageError {
-  constructor(public readonly currentVersion: number, public readonly expectedVersion: number) {
+  constructor(
+    public readonly currentVersion: number,
+    public readonly expectedVersion: number
+  ) {
     super(
       `Stale schedule version conflict: database has version ${currentVersion}, but expected ${expectedVersion}. Re-evaluation required.`
     );
@@ -32,7 +35,11 @@ export class StaleVersionConflictError extends StorageError {
 }
 
 export class InvalidRecordDataError extends StorageError {
-  constructor(public readonly storeName: string, public readonly recordId: string, public readonly issues: z.ZodIssue[]) {
+  constructor(
+    public readonly storeName: string,
+    public readonly recordId: string,
+    public readonly issues: z.ZodIssue[]
+  ) {
     super(
       `Invalid record data in store "${storeName}" with ID "${recordId}": ${issues.map((i) => i.message).join(", ")}`
     );
@@ -50,7 +57,10 @@ export class AmbiguousActivePlanError extends StorageError {
 }
 
 export class AmbiguousDraftPlanError extends StorageError {
-  constructor(public readonly draftPlanIds: string[], public readonly targetWeek?: TargetWeek) {
+  constructor(
+    public readonly draftPlanIds: string[],
+    public readonly targetWeek?: TargetWeek
+  ) {
     super(
       `Multiple draft weekly plans detected${
         targetWeek ? ` for week ${targetWeek.startDate}..${targetWeek.endDate}` : ""
@@ -61,7 +71,10 @@ export class AmbiguousDraftPlanError extends StorageError {
 }
 
 export class StorageConnectionError extends StorageError {
-  constructor(message: string, public readonly cause?: unknown) {
+  constructor(
+    message: string,
+    public readonly cause?: unknown
+  ) {
     super(message);
     this.name = "StorageConnectionError";
   }
@@ -93,9 +106,7 @@ export const WeeklyPlanDraftContextSchema = z
       )
       .optional(),
     deferredDecisions: z
-      .record(
-        z.enum(["pending_decision", "intentional_postponement", "included"])
-      )
+      .record(z.enum(["pending_decision", "intentional_postponement", "included"]))
       .optional(),
     availableHoursInput: z.string().optional(),
     protectedSpacePercentInput: z.string().optional(),
@@ -176,7 +187,11 @@ export interface WeeklyScheduleRepository {
    * 4. Writes schedule with version incremented by 1 only if matched.
    * If options.force is true, allows restoring/overwriting an existing record without version collision.
    */
-  save(schedule: WeeklySchedule, expectedVersion?: number, options?: { force?: boolean }): Promise<void>;
+  save(
+    schedule: WeeklySchedule,
+    expectedVersion?: number,
+    options?: { force?: boolean }
+  ): Promise<void>;
   getById(scheduleId: string): Promise<WeeklySchedule | null>;
   getByPlanId(planId: string): Promise<WeeklySchedule | null>;
   getAll(): Promise<WeeklySchedule[]>;
@@ -243,4 +258,3 @@ export type SessionResumeResult =
     }
   | { status: "ambiguous_active_plans"; activePlanIds: string[] }
   | { status: "inconsistent_references"; reason: string };
-

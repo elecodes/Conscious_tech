@@ -16,9 +16,7 @@ export interface ProviderFactoryOptions {
 export function createAIProvider(options: ProviderFactoryOptions = {}): AIProvider {
   const provider =
     options.provider ||
-    (typeof process !== "undefined"
-      ? (process.env?.AI_PROVIDER as ProviderType)
-      : undefined) ||
+    (typeof process !== "undefined" ? (process.env?.AI_PROVIDER as ProviderType) : undefined) ||
     "groq";
 
   switch (provider) {

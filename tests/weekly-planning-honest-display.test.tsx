@@ -64,7 +64,8 @@ describe("Honestidad en la visualización semanal y flujo de planificación", ()
               itemId: "item-quarterly-report",
               title: "Preparar el informe trimestral antes del jueves",
               reason: "not_scheduled",
-              rationale: "Elemento no programado en la propuesta; conservado para decisión de la persona.",
+              rationale:
+                "Elemento no programado en la propuesta; conservado para decisión de la persona.",
             },
           ],
           unplannedSpace: {
@@ -139,7 +140,9 @@ describe("Honestidad en la visualización semanal y flujo de planificación", ()
       );
 
       // No debe mostrar la nota de capacidad no configurada
-      expect(html).not.toContain("Capacidad no configurada: la entrada no aportó horas disponibles");
+      expect(html).not.toContain(
+        "Capacidad no configurada: la entrada no aportó horas disponibles"
+      );
       // Debe indicar que faltan estimaciones
       expect(html).toContain("Capacidad desconocida (faltan estimaciones)");
       expect(html).toContain("Desconocido");

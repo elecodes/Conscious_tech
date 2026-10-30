@@ -28,10 +28,7 @@ export interface GenerateWeeklyPlanFromItemsParams {
 }
 
 export type PipelineStage =
-  | "detect_relationships"
-  | "group_work"
-  | "detect_deadlines"
-  | "evaluate_context";
+  "detect_relationships" | "group_work" | "detect_deadlines" | "evaluate_context";
 
 export interface PipelineDiagnostic {
   stage: PipelineStage;
@@ -91,10 +88,13 @@ export async function prepareBuildWeekInputDetailed(
         groupedWork: { groups: [], ungroupedItemIds: [] },
         deadlines: { deadlines: [] },
         context: { itemAssessments: [], groupAssessments: [], openQuestions: [] },
-        capacity: totalAvailableHours !== undefined ? {
-          totalAvailableHours,
-          minProtectedSpaceRatio: minProtectedSpaceRatio ?? 0.25,
-        } : undefined,
+        capacity:
+          totalAvailableHours !== undefined
+            ? {
+                totalAvailableHours,
+                minProtectedSpaceRatio: minProtectedSpaceRatio ?? 0.25,
+              }
+            : undefined,
       },
       diagnostics: [],
       hasWarnings: false,
@@ -133,7 +133,8 @@ export async function prepareBuildWeekInputDetailed(
     diagnostics.push({
       stage: "group_work",
       status: "fallback_used",
-      fallbackRationale: "Sin agrupamiento temático (todos los elementos asignados individualmente)",
+      fallbackRationale:
+        "Sin agrupamiento temático (todos los elementos asignados individualmente)",
       sanitizedError: sanitizePipelineError(err),
     });
   }
@@ -199,10 +200,13 @@ export async function prepareBuildWeekInputDetailed(
       groupedWork,
       deadlines,
       context,
-      capacity: totalAvailableHours !== undefined ? {
-        totalAvailableHours,
-        minProtectedSpaceRatio: minProtectedSpaceRatio ?? 0.25,
-      } : undefined,
+      capacity:
+        totalAvailableHours !== undefined
+          ? {
+              totalAvailableHours,
+              minProtectedSpaceRatio: minProtectedSpaceRatio ?? 0.25,
+            }
+          : undefined,
     },
     diagnostics,
     hasWarnings,

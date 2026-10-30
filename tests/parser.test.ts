@@ -32,9 +32,7 @@ describe("Parser & Validator", () => {
 
   it("throws ExtractionValidationError on malformed JSON", () => {
     const malformed = '{"items": [ incomplete';
-    expect(() => parseAndValidateExtractedItems(malformed)).toThrow(
-      ExtractionValidationError
-    );
+    expect(() => parseAndValidateExtractedItems(malformed)).toThrow(ExtractionValidationError);
   });
 
   it("throws ExtractionValidationError when schema fields are missing or invalid", () => {
@@ -47,8 +45,6 @@ describe("Parser & Validator", () => {
         },
       ],
     });
-    expect(() => parseAndValidateExtractedItems(invalidSchema)).toThrow(
-      ExtractionValidationError
-    );
+    expect(() => parseAndValidateExtractedItems(invalidSchema)).toThrow(ExtractionValidationError);
   });
 });

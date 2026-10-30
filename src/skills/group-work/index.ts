@@ -5,8 +5,12 @@ import {
   GroupedWork,
   GroupedWorkSchema,
 } from "../../domain/work-groups";
-import { GroupWorkValidationError } from "./parser";
+import { GroupWorkValidationError, parseAndValidateGroupedWork } from "./parser";
 import { cleanAndValidateGroupedWork } from "./deterministic";
+import {
+  SYSTEM_PROMPT as GROUP_SYSTEM_PROMPT,
+  buildUserPrompt as buildGroupUserPrompt,
+} from "./prompt";
 
 export interface GroupWorkOptions {
   maxRetries?: number;
@@ -44,10 +48,30 @@ export class GroupWorkService {
     let lastError: unknown;
     let rawResult: GroupedWork | null = null;
 
+    const useCompleteJson =
+      Boolean(this.provider.completeJson) &&
+      this.provider.id !== "mock" &&
+      !("callProxy" in this.provider);
+
     while (attempts < maxAttempts) {
       attempts++;
       try {
-        rawResult = await this.provider.groupWork(validatedInput);
+        if (useCompleteJson && this.provider.completeJson) {
+          const userPrompt = buildGroupUserPrompt(validatedInput);
+          const { rawText } = await this.provider.completeJson(GROUP_SYSTEM_PROMPT, userPrompt);
+          rawResult = parseAndValidateGroupedWork(rawText);
+        } else if (this.provider.groupWork) {
+          rawResult = await this.provider.groupWork(validatedInput);
+        } else if (this.provider.completeJson) {
+          const userPrompt = buildGroupUserPrompt(validatedInput);
+          const { rawText } = await this.provider.completeJson(GROUP_SYSTEM_PROMPT, userPrompt);
+          rawResult = parseAndValidateGroupedWork(rawText);
+        } else {
+          throw new Error(
+            `Provider "${this.provider.id}" does not support completeJson or groupWork.`
+          );
+        }
+
         const parseCheck = GroupedWorkSchema.safeParse(rawResult);
         if (!parseCheck.success) {
           throw new GroupWorkValidationError(

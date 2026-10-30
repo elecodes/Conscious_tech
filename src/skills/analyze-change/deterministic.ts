@@ -127,7 +127,9 @@ export function classifyChangeType(delta: IncomingChangeDelta | undefined): Chan
   if (!delta) return "none_detected";
 
   const hasItemOps = Boolean(delta.itemOperations && delta.itemOperations.length > 0);
-  const hasRelOps = Boolean(delta.relationshipOperations && delta.relationshipOperations.length > 0);
+  const hasRelOps = Boolean(
+    delta.relationshipOperations && delta.relationshipOperations.length > 0
+  );
   const hasDeadlineOps = Boolean(delta.deadlineOperations && delta.deadlineOperations.length > 0);
   const hasCapacityOps = Boolean(delta.capacityOperations && delta.capacityOperations.length > 0);
 
@@ -235,7 +237,7 @@ export function calculateCapacityImpact(
         if (op.patch.estimatedHours !== undefined) {
           const oldEst = findExistingItemEstimate(plan, op.itemId);
           if (oldEst != null && op.patch.estimatedHours != null) {
-            itemEstimateDelta += (op.patch.estimatedHours - oldEst);
+            itemEstimateDelta += op.patch.estimatedHours - oldEst;
           } else {
             anyUnestimatedItemAddedOrModified = true;
           }
@@ -345,7 +347,8 @@ export function analyzeChangeDeterministically(input: AnalyzeChangeInput): Analy
       unaffectedAreas: [],
       validationErrors,
       requiresUserIntervention: true,
-      interventionReason: "One or more modified or deleted elements refer to IDs that do not exist in the active plan.",
+      interventionReason:
+        "One or more modified or deleted elements refer to IDs that do not exist in the active plan.",
     };
   }
 
@@ -356,7 +359,10 @@ export function analyzeChangeDeterministically(input: AnalyzeChangeInput): Analy
   const capacityImpact = calculateCapacityImpact(activePlan, incomingDelta);
 
   // If no delta operations and description indicates empty/chit-chat
-  if (changeType === "none_detected" && (!incomingDelta || Object.keys(incomingDelta).length === 0)) {
+  if (
+    changeType === "none_detected" &&
+    (!incomingDelta || Object.keys(incomingDelta).length === 0)
+  ) {
     return {
       status: "no_impact",
       changeType: "none_detected",
@@ -505,7 +511,9 @@ export function analyzeChangeDeterministically(input: AnalyzeChangeInput): Analy
           activePlan.obligations.some((o) => o.itemId === relOp.targetItemId) ||
           activePlan.flexibleOptions.some((fl) => fl.itemId === relOp.targetItemId);
 
-        const targetDeferred = activePlan.deferredItems.some((d) => d.itemId === relOp.targetItemId);
+        const targetDeferred = activePlan.deferredItems.some(
+          (d) => d.itemId === relOp.targetItemId
+        );
 
         let depState: "satisfied" | "pending" | "unknown" = "unknown";
         if (relOp.op === "remove") {
@@ -546,27 +554,33 @@ export function analyzeChangeDeterministically(input: AnalyzeChangeInput): Analy
 
   // Check foci isolation
   const untouchedFoci = activePlan.foci.filter((f) => {
-    return !f.contributingItemIds.some((id) => directlyTouchedItemIds.has(id)) &&
-           !affectedElements.some((ae) => ae.elementId === f.id);
+    return (
+      !f.contributingItemIds.some((id) => directlyTouchedItemIds.has(id)) &&
+      !affectedElements.some((ae) => ae.elementId === f.id)
+    );
   });
   if (untouchedFoci.length > 0) {
     unaffectedAreas.push({
       areaName: "foci",
       elementIds: untouchedFoci.map((f) => f.id),
-      isolationReason: "No items or dependencies within these foci were modified by the change delta.",
+      isolationReason:
+        "No items or dependencies within these foci were modified by the change delta.",
     });
   }
 
   // Check obligations isolation
   const untouchedObligations = activePlan.obligations.filter((o) => {
-    return !directlyTouchedItemIds.has(o.itemId) &&
-           !affectedElements.some((ae) => ae.elementId === o.itemId);
+    return (
+      !directlyTouchedItemIds.has(o.itemId) &&
+      !affectedElements.some((ae) => ae.elementId === o.itemId)
+    );
   });
   if (untouchedObligations.length > 0) {
     unaffectedAreas.push({
       areaName: "obligations",
       elementIds: untouchedObligations.map((o) => o.itemId),
-      isolationReason: "No external commitments or obligations in this group were modified or affected by dependency changes.",
+      isolationReason:
+        "No external commitments or obligations in this group were modified or affected by dependency changes.",
     });
   }
 
@@ -594,9 +608,7 @@ export function analyzeChangeDeterministically(input: AnalyzeChangeInput): Analy
     requiresUserIntervention = true;
     interventionReason = "An active work item is blocked by a pending causal dependency.";
   } else if (
-    affectedElements.some(
-      (ae) => ae.category === "deadline_risk" && ae.temporalScope === "past"
-    )
+    affectedElements.some((ae) => ae.category === "deadline_risk" && ae.temporalScope === "past")
   ) {
     requiresUserIntervention = true;
     interventionReason = "A deadline was moved to a date prior to the target week.";

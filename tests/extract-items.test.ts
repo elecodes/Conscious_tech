@@ -194,7 +194,11 @@ describe("ExtractItems Skill - Behavioral Tests", () => {
   it("19. Español natural (conservadurismo y fidelidad)", async () => {
     const fixture = TEST_CASES.multipleItems!;
     const provider = new MockProvider(async () => fixture.expected);
-    const result = await extractItems(provider, { text: fixture.input, currentDate, locale: "es-ES" });
+    const result = await extractItems(provider, {
+      text: fixture.input,
+      currentDate,
+      locale: "es-ES",
+    });
 
     expect(result.items[4]?.rawText).toContain("quería mirar Zapsac");
     expect(result.items[4]?.type).toBe("idea");
@@ -204,9 +208,7 @@ describe("ExtractItems Skill - Behavioral Tests", () => {
     const provider = new MockProvider();
     const service = new ExtractItemsService(provider);
 
-    await expect(
-      service.execute({ text: "", currentDate })
-    ).rejects.toThrow();
+    await expect(service.execute({ text: "", currentDate })).rejects.toThrow();
   });
 
   it("21. Elemento conscientemente archivado conserva status archived", async () => {

@@ -2,7 +2,11 @@ import { DetectedRelationships, DetectedRelationshipsSchema } from "../../domain
 import { cleanJsonString } from "../extract-items/parser";
 
 export class RelationshipValidationError extends Error {
-  constructor(message: string, public readonly issues?: unknown, public readonly rawContent?: string) {
+  constructor(
+    message: string,
+    public readonly issues?: unknown,
+    public readonly rawContent?: string
+  ) {
     super(message);
     this.name = "RelationshipValidationError";
   }
@@ -22,7 +26,11 @@ function normalizeRawRelationships(data: unknown): unknown {
     if (!rel || typeof rel !== "object") return rel;
     const r = rel as Record<string, unknown>;
 
-    if (r.type === "blocks" && typeof r.sourceItemId === "string" && typeof r.targetItemId === "string") {
+    if (
+      r.type === "blocks" &&
+      typeof r.sourceItemId === "string" &&
+      typeof r.targetItemId === "string"
+    ) {
       return {
         ...r,
         sourceItemId: r.targetItemId,

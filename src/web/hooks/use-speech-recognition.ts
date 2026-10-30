@@ -140,7 +140,8 @@ export function useSpeechRecognition({
           const res = event.results[i]!;
           const transcriptPiece = res[0]?.transcript || "";
           if (res.isFinal) {
-            accumulatedFinalRef.current += (accumulatedFinalRef.current ? " " : "") + transcriptPiece.trim();
+            accumulatedFinalRef.current +=
+              (accumulatedFinalRef.current ? " " : "") + transcriptPiece.trim();
           } else {
             interimText += (interimText ? " " : "") + transcriptPiece.trim();
           }

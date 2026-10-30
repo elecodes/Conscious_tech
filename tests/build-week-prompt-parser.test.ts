@@ -246,28 +246,42 @@ describe("Skill 06: build_week - Prompt and Parser", () => {
       expect(prompt).toContain("ESPACIO PROTEGIDO");
 
       // 3. Ideas never become obligations because of approaching deadline
-      expect(prompt).toContain("Las ideas exploratorias NUNCA se convierten en obligaciones por tener una fecha límite");
+      expect(prompt).toContain(
+        "Las ideas exploratorias NUNCA se convierten en obligaciones por tener una fecha límite"
+      );
 
       // 4. Do not invent availability, estimates, dependencies
-      expect(prompt).toContain("NO inventes horas disponibles, estimaciones de esfuerzo, dependencias");
+      expect(prompt).toContain(
+        "NO inventes horas disponibles, estimaciones de esfuerzo, dependencias"
+      );
 
       // 5. Do not present not_scheduled as user decision
-      expect(prompt).toContain("NUNCA presentes \"not_scheduled\" ni una omisión como una decisión deliberada de la persona");
+      expect(prompt).toContain(
+        'NUNCA presentes "not_scheduled" ni una omisión como una decisión deliberada de la persona'
+      );
 
       // 6. Thematic relationships are not blockers
-      expect(prompt).toContain("Una relación temática (\"related_to\", \"part_of\", \"same_project\") NUNCA es un bloqueo");
+      expect(prompt).toContain(
+        'Una relación temática ("related_to", "part_of", "same_project") NUNCA es un bloqueo'
+      );
 
       // 7. Do not discard commitments due to capacity overload
-      expect(prompt).toContain("NUNCA descartes ni omitas un compromiso externo porque la capacidad sea insuficiente");
+      expect(prompt).toContain(
+        "NUNCA descartes ni omitas un compromiso externo porque la capacidad sea insuficiente"
+      );
 
       // 8. No daily agenda or calendar hours
-      expect(prompt).toContain("NO asignes días concretos (lunes, martes, etc.) ni bloques horarios");
+      expect(prompt).toContain(
+        "NO asignes días concretos (lunes, martes, etc.) ni bloques horarios"
+      );
 
       // 9. Capacity calculation is deterministic code responsibility
       expect(prompt).toContain("los cómputos de capacidad corresponden al código determinista");
 
       // 10. Strictly use received IDs
-      expect(prompt).toContain("Usa ÚNICAMENTE IDs de items y grupos presentes en los datos estructurados");
+      expect(prompt).toContain(
+        "Usa ÚNICAMENTE IDs de items y grupos presentes en los datos estructurados"
+      );
 
       // 11. Maximum 2 open questions
       expect(prompt).toContain("como MÁXIMO 2 preguntas abiertas");
@@ -462,9 +476,9 @@ describe("Skill 06: build_week - Prompt and Parser", () => {
         const rescued = result.data.deferredItems.find((d) => d.itemId === "item-2");
         expect(rescued).toBeDefined();
         expect(rescued?.reason).toBe("not_scheduled");
-        expect(
-          result.repairs.some((r) => r.type === "rescued_omitted_to_not_scheduled")
-        ).toBe(true);
+        expect(result.repairs.some((r) => r.type === "rescued_omitted_to_not_scheduled")).toBe(
+          true
+        );
       }
     });
 
@@ -609,17 +623,17 @@ describe("Skill 06: build_week - Prompt and Parser", () => {
       });
 
       it("throws WeekValidationError on invalid JSON or invariant violation", () => {
-        expect(() =>
-          parseAndValidateProposedWeek("invalid json", sampleInput)
-        ).toThrow(WeekValidationError);
+        expect(() => parseAndValidateProposedWeek("invalid json", sampleInput)).toThrow(
+          WeekValidationError
+        );
 
         const phantom = {
           ...sampleValidProposal,
           foci: [{ ...sampleValidProposal.foci[0], contributingItemIds: ["phantom-123"] }],
         };
-        expect(() =>
-          parseAndValidateProposedWeek(JSON.stringify(phantom), sampleInput)
-        ).toThrow(WeekValidationError);
+        expect(() => parseAndValidateProposedWeek(JSON.stringify(phantom), sampleInput)).toThrow(
+          WeekValidationError
+        );
       });
     });
 
@@ -672,7 +686,10 @@ describe("Skill 06: build_week - Prompt and Parser", () => {
           ],
         };
 
-        const result = parseProposedWeek(JSON.stringify(proposalWithNonexistentGroupId), sampleInput);
+        const result = parseProposedWeek(
+          JSON.stringify(proposalWithNonexistentGroupId),
+          sampleInput
+        );
         expect(result.success).toBe(false);
         if (!result.success) {
           expect(result.errorType).toBe("invariant_violation");
@@ -701,7 +718,10 @@ describe("Skill 06: build_week - Prompt and Parser", () => {
           ],
         };
 
-        const result = parseProposedWeek(JSON.stringify(proposalWithVariousOptionalNulls), sampleInput);
+        const result = parseProposedWeek(
+          JSON.stringify(proposalWithVariousOptionalNulls),
+          sampleInput
+        );
         expect(result.success).toBe(true);
         if (result.success) {
           expect(result.data.weekSummary.intent).toBeUndefined();
@@ -776,7 +796,10 @@ describe("Skill 06: build_week - Prompt and Parser", () => {
           deferredItems: [sampleValidProposal.deferredItems[0]], // item-4
         };
 
-        const result = parseProposedWeek(JSON.stringify(proposalWithNullGroupAndOmittedTask), sampleInput);
+        const result = parseProposedWeek(
+          JSON.stringify(proposalWithNullGroupAndOmittedTask),
+          sampleInput
+        );
         expect(result.success).toBe(true);
         if (result.success) {
           expect(result.data.foci[0].groupId).toBeUndefined();
@@ -784,13 +807,18 @@ describe("Skill 06: build_week - Prompt and Parser", () => {
           const rescued = result.data.deferredItems.find((d) => d.itemId === "item-2");
           expect(rescued).toBeDefined();
           expect(rescued?.reason).toBe("not_scheduled");
-          expect(result.repairs.some((r) => r.type === "rescued_omitted_to_not_scheduled")).toBe(true);
+          expect(result.repairs.some((r) => r.type === "rescued_omitted_to_not_scheduled")).toBe(
+            true
+          );
         }
       });
 
       it("pure sanitizeOptionalNullFields directly mutates and deletes only optional null keys", () => {
         const raw = {
-          weekSummary: { intent: null, targetWeek: { startDate: "2026-10-12", endDate: "2026-10-18" } },
+          weekSummary: {
+            intent: null,
+            targetWeek: { startDate: "2026-10-12", endDate: "2026-10-18" },
+          },
           foci: [{ id: "f1", title: "F1", groupId: null, estimatedHours: null }],
           obligations: [{ itemId: "i1", title: "O1", dueDate: null, rationale: "r" }],
           flexibleOptions: [{ itemId: "i2", title: "F2", condition: null }],

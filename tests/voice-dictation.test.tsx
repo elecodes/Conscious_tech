@@ -61,14 +61,11 @@ describe("VoiceDictationButton & useSpeechRecognition (Web Speech API)", () => {
       (globalThis as any).window = {};
 
       const html = renderToStaticMarkup(
-        <VoiceDictationButton
-          getText={() => "existing notes"}
-          onTranscript={() => {}}
-        />
+        <VoiceDictationButton getText={() => "existing notes"} onTranscript={() => {}} />
       );
 
       expect(html).toContain("Voz no soportada");
-      expect(html).not.toContain("data-testid=\"voice-dictation-btn\"");
+      expect(html).not.toContain('data-testid="voice-dictation-btn"');
     });
 
     it("renders dictation button and language selector when SpeechRecognition is supported", () => {
@@ -77,17 +74,16 @@ describe("VoiceDictationButton & useSpeechRecognition (Web Speech API)", () => {
       };
 
       const html = renderToStaticMarkup(
-        <VoiceDictationButton
-          getText={() => "existing notes"}
-          onTranscript={() => {}}
-        />
+        <VoiceDictationButton getText={() => "existing notes"} onTranscript={() => {}} />
       );
 
-      expect(html).toContain("data-testid=\"voice-dictation-btn\"");
+      expect(html).toContain('data-testid="voice-dictation-btn"');
       expect(html).toContain("Dictar por voz");
-      expect(html).toContain("data-testid=\"voice-lang-select\"");
+      expect(html).toContain('data-testid="voice-lang-select"');
       expect(html).toContain("es-ES");
       expect(html).toContain("en-US");
+      expect(html).toContain('data-testid="voice-dictation-privacy-notice"');
+      expect(html).toContain("El audio puede ser procesado por el proveedor de tu navegador");
     });
 
     it("renders in disabled state when disabled prop is true", () => {
@@ -103,7 +99,7 @@ describe("VoiceDictationButton & useSpeechRecognition (Web Speech API)", () => {
         />
       );
 
-      expect(html).toContain("disabled=\"\"");
+      expect(html).toContain('disabled=""');
       expect(html).toContain("cursor:not-allowed");
     });
   });
@@ -112,7 +108,9 @@ describe("VoiceDictationButton & useSpeechRecognition (Web Speech API)", () => {
     it("combines existing notes with new voice speech correctly", () => {
       const baseText = "Hacer compras el martes";
       const newSpeech = "y llamar al contador a las 4";
-      const combined = baseText.trim() ? `${baseText.trim()} ${newSpeech.trim()}` : newSpeech.trim();
+      const combined = baseText.trim()
+        ? `${baseText.trim()} ${newSpeech.trim()}`
+        : newSpeech.trim();
 
       expect(combined).toBe("Hacer compras el martes y llamar al contador a las 4");
     });
@@ -120,7 +118,9 @@ describe("VoiceDictationButton & useSpeechRecognition (Web Speech API)", () => {
     it("handles empty initial baseText cleanly without leading space", () => {
       const baseText = "";
       const newSpeech = "Revisar certificación AWS";
-      const combined = baseText.trim() ? `${baseText.trim()} ${newSpeech.trim()}` : newSpeech.trim();
+      const combined = baseText.trim()
+        ? `${baseText.trim()} ${newSpeech.trim()}`
+        : newSpeech.trim();
 
       expect(combined).toBe("Revisar certificación AWS");
     });

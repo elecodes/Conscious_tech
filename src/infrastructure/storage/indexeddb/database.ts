@@ -1,4 +1,5 @@
 import { StorageConnectionError } from "../../../domain/repositories/types";
+import { logger } from "../../../utils/logger";
 
 export const DEFAULT_DB_NAME = "conscious_tech_db";
 export const DB_VERSION = 1;
@@ -22,7 +23,10 @@ export function getIDBFactory(customFactory?: IDBFactory): IDBFactory {
   if (typeof window !== "undefined" && window.indexedDB) {
     return window.indexedDB;
   }
-  if (typeof globalThis !== "undefined" && (globalThis as unknown as { indexedDB: IDBFactory }).indexedDB) {
+  if (
+    typeof globalThis !== "undefined" &&
+    (globalThis as unknown as { indexedDB: IDBFactory }).indexedDB
+  ) {
     return (globalThis as unknown as { indexedDB: IDBFactory }).indexedDB;
   }
   throw new StorageConnectionError("IndexedDB environment not found. IDBFactory is unavailable.");
@@ -44,12 +48,17 @@ export function openDatabase(
     try {
       request = factory.open(dbName, version);
     } catch (err) {
-      return reject(new StorageConnectionError(`Failed to initiate opening of database "${dbName}"`, err));
+      return reject(
+        new StorageConnectionError(`Failed to initiate opening of database "${dbName}"`, err)
+      );
     }
 
     request.onblocked = (event) => {
       // Emitted when an upgrade is blocked because an older version is still open in another tab/connection
-      console.warn(`[IndexedDB] Database "${dbName}" upgrade is blocked by another open connection.`, event);
+      logger.warn(
+        `[IndexedDB] Database "${dbName}" upgrade is blocked by another open connection.`,
+        event
+      );
     };
 
     request.onupgradeneeded = (event) => {
@@ -69,7 +78,9 @@ export function openDatabase(
         if (!db.objectStoreNames.contains(STORES.SCHEDULES)) {
           const schedulesStore = db.createObjectStore(STORES.SCHEDULES, { keyPath: "scheduleId" });
           schedulesStore.createIndex("by_plan_id", "planId", { unique: true });
-          schedulesStore.createIndex("by_week_range_start", "weekRange.startDate", { unique: false });
+          schedulesStore.createIndex("by_week_range_start", "weekRange.startDate", {
+            unique: false,
+          });
         }
 
         // 3. Store: close_reports (StoredCloseWeekReport)
@@ -83,7 +94,9 @@ export function openDatabase(
         if (!db.objectStoreNames.contains(STORES.MEMORIES)) {
           const memoriesStore = db.createObjectStore(STORES.MEMORIES, { keyPath: "id" });
           memoriesStore.createIndex("by_category", "category", { unique: false });
-          memoriesStore.createIndex("by_confirmation_status", "confirmationStatus", { unique: false });
+          memoriesStore.createIndex("by_confirmation_status", "confirmationStatus", {
+            unique: false,
+          });
           memoriesStore.createIndex("by_temporal_status", "temporalStatus", { unique: false });
           memoriesStore.createIndex("by_created_at", "createdAt", { unique: false });
         }
@@ -95,14 +108,14 @@ export function openDatabase(
 
       // Handle version change requested by another tab/connection
       db.onversionchange = () => {
-        if (typeof process === "undefined" || process.env?.NODE_ENV !== "test") {
-          console.warn(`[IndexedDB] Database "${dbName}" received a versionchange request. Closing connection.`);
-        }
+        logger.warn(
+          `[IndexedDB] Database "${dbName}" received a versionchange request. Closing connection.`
+        );
         db.close();
       };
 
       db.onerror = (event) => {
-        console.error(`[IndexedDB] Database "${dbName}" encountered an unhandled error:`, event);
+        logger.error(`[IndexedDB] Database "${dbName}" encountered an unhandled error:`, event);
       };
 
       resolve(db);
@@ -110,7 +123,12 @@ export function openDatabase(
 
     request.onerror = () => {
       const error = request.error;
-      reject(new StorageConnectionError(`Failed to open database "${dbName}": ${error?.message || "Unknown error"}`, error));
+      reject(
+        new StorageConnectionError(
+          `Failed to open database "${dbName}": ${error?.message || "Unknown error"}`,
+          error
+        )
+      );
     };
   });
 }
@@ -123,7 +141,7 @@ export function closeDatabase(db: IDBDatabase | null | undefined): void {
     try {
       db.close();
     } catch (err) {
-      console.warn("[IndexedDB] Error closing database:", err);
+      logger.warn("[IndexedDB] Error closing database:", err);
     }
   }
 }
@@ -131,7 +149,10 @@ export function closeDatabase(db: IDBDatabase | null | undefined): void {
 /**
  * Deletes an entire database (for sovereign data reset / tests).
  */
-export function deleteDatabase(dbName = DEFAULT_DB_NAME, customFactory?: IDBFactory): Promise<void> {
+export function deleteDatabase(
+  dbName = DEFAULT_DB_NAME,
+  customFactory?: IDBFactory
+): Promise<void> {
   const factory = getIDBFactory(customFactory);
 
   return new Promise((resolve, reject) => {
@@ -139,15 +160,21 @@ export function deleteDatabase(dbName = DEFAULT_DB_NAME, customFactory?: IDBFact
     try {
       req = factory.deleteDatabase(dbName);
     } catch (err) {
-      return reject(new StorageConnectionError(`Failed to request deletion of database "${dbName}"`, err));
+      return reject(
+        new StorageConnectionError(`Failed to request deletion of database "${dbName}"`, err)
+      );
     }
 
     req.onsuccess = () => resolve();
     req.onerror = () => {
-      reject(new StorageConnectionError(`Failed to delete database "${dbName}": ${req.error?.message || "Unknown error"}`));
+      reject(
+        new StorageConnectionError(
+          `Failed to delete database "${dbName}": ${req.error?.message || "Unknown error"}`
+        )
+      );
     };
     req.onblocked = () => {
-      console.warn(`[IndexedDB] Deletion of "${dbName}" is blocked by an active open connection.`);
+      logger.warn(`[IndexedDB] Deletion of "${dbName}" is blocked by an active open connection.`);
     };
   });
 }

@@ -34,9 +34,7 @@ export function validateGroupWorkInvariants(
       errors.push(`Group "${group.id}" has an empty rationale`);
     }
     if (group.itemIds.length < 2) {
-      errors.push(
-        `Group "${group.id}" contains fewer than 2 items (${group.itemIds.length})`
-      );
+      errors.push(`Group "${group.id}" contains fewer than 2 items (${group.itemIds.length})`);
     }
     for (const id of group.itemIds) {
       if (!validIds.has(id)) {
@@ -86,10 +84,7 @@ export function validateGroupWorkInvariants(
  * - Removes overlap between groups and ungrouped.
  * - Stably preserves item ordering.
  */
-export function cleanAndValidateGroupedWork(
-  raw: GroupedWork,
-  items: ExtractedItem[]
-): GroupedWork {
+export function cleanAndValidateGroupedWork(raw: GroupedWork, items: ExtractedItem[]): GroupedWork {
   if (items.length === 0) {
     return { groups: [], ungroupedItemIds: [] };
   }

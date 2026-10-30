@@ -49,9 +49,7 @@ export interface ImportBackupResult {
   exportedAt: string;
 }
 
-export async function exportUserData(
-  repositories: BackupRepositories
-): Promise<UserDataBackup> {
+export async function exportUserData(repositories: BackupRepositories): Promise<UserDataBackup> {
   const [plans, schedules, closeReports, memories] = await Promise.all([
     repositories.plans.getAll(),
     repositories.schedules.getAll(),
@@ -97,13 +95,14 @@ export async function importUserData(
   const backup = parseResult.data;
 
   if (options.mode === "replace") {
-    const [existingPlans, existingSchedules, existingReports, existingMemories] =
-      await Promise.all([
+    const [existingPlans, existingSchedules, existingReports, existingMemories] = await Promise.all(
+      [
         repositories.plans.getAll(),
         repositories.schedules.getAll(),
         repositories.closeReports.getAll(),
         repositories.memories.getAll(),
-      ]);
+      ]
+    );
 
     for (const p of existingPlans) {
       await repositories.plans.delete(p.planId);

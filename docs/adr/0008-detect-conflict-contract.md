@@ -1,12 +1,15 @@
 # ADR 0008: Contrato de Detección de Conflictos (`detect_conflict`)
 
 ## Estado
+
 Aceptado
 
 ## Contexto
+
 En Conscious Tech, tras construir una propuesta semanal (`build_week`) y analizar el impacto de cambios sobrevenidos (`analyze_change`), es imprescindible disponer de una capacidad analítica que verifique si el plan contiene incompatibilidades materiales, estructurales o temporales antes de proponer ajustes.
 
 El principio fundacional dicta:
+
 > **La IA propone. La persona decide.**
 > **Código antes que IA.**
 
@@ -45,5 +48,6 @@ Un conflicto no es una diferencia de opiniones ni una lista de deseos o priorida
    - Todo el motor opera mediante reglas de código puro, sin llamadas a LLM ni consumo de tokens.
 
 ## Consecuencias
+
 - 10 fixtures canónicos verificados cubren desde conflictos confirmados hasta tensiones potenciales, incertidumbres y planes limpios.
 - Sienta una base sólida y objetiva para la Skill 09 (`propose_adjustments`).

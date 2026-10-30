@@ -32,7 +32,7 @@ export function normalizeMemoryContent(text: string): string {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // remove accents
     .replace(/[¿?¡!()[\]{}"'“”‘’«»,;]/g, " ") // remove purely ornamental punctuation
-    .replace(/\s+/g, " ")          // collapse whitespace
+    .replace(/\s+/g, " ") // collapse whitespace
     .trim();
 }
 
@@ -154,7 +154,9 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
           ? String((rawCand as Record<string, unknown>).candidateId)
           : "unknown_candidate";
       candidateValidationErrorsSet.add(candId);
-      const errDetail = parseResult.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+      const errDetail = parseResult.error.issues
+        .map((i) => `${i.path.join(".")}: ${i.message}`)
+        .join("; ");
       warningsSet.add(`Candidato descartado por validación de esquema (${candId}): ${errDetail}`);
       continue;
     }
@@ -219,7 +221,9 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
   for (const [targetMemoryId, candList] of updateCandidatesByTarget.entries()) {
     // If target has an explicit forget, forget strictly supersedes update
     if (forgetTargetIds.has(targetMemoryId)) {
-      warningsSet.add(`Operación 'update' suprimida para ${targetMemoryId} debido a solicitud prioritaria de olvido`);
+      warningsSet.add(
+        `Operación 'update' suprimida para ${targetMemoryId} debido a solicitud prioritaria de olvido`
+      );
       continue;
     }
 
@@ -263,18 +267,21 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
       (primaryCand.isExplicitUserStatement
         ? "user_explicit"
         : newCategory === "decision"
-        ? "plan_decision"
-        : existingMem.provenance.source);
+          ? "plan_decision"
+          : existingMem.provenance.source);
     const updReferenceText = primaryCand.evidenceReference ?? primaryCand.rawText;
-    const isHesitant = containsHesitationMarkers(updReferenceText) || containsHesitationMarkers(primaryCand.rawText);
+    const isHesitant =
+      containsHesitationMarkers(updReferenceText) || containsHesitationMarkers(primaryCand.rawText);
     const hasNegativeOrPendingMarkers =
       containsNegativeOrPendingMarkers(updReferenceText) ||
       containsNegativeOrPendingMarkers(primaryCand.rawText);
 
-    let newConfirmationStatus: "confirmed" | "inferred" | "unconfirmed" = existingMem.confirmationStatus;
+    let newConfirmationStatus: "confirmed" | "inferred" | "unconfirmed" =
+      existingMem.confirmationStatus;
 
     if (updSource === "user_explicit") {
-      newConfirmationStatus = isHesitant || newCategory === "working_hypothesis" ? "unconfirmed" : "confirmed";
+      newConfirmationStatus =
+        isHesitant || newCategory === "working_hypothesis" ? "unconfirmed" : "confirmed";
     } else if (updSource === "plan_decision") {
       // Regla de verificación autoritativa:
       // 1. rawText NUNCA constituye evidencia de su propia aceptación.
@@ -305,7 +312,10 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
       referenceText: updReferenceText,
     });
     if (!check.valid) {
-      newConfirmationStatus = updSource === "conversation_inference" || updSource === "system" ? "inferred" : "unconfirmed";
+      newConfirmationStatus =
+        updSource === "conversation_inference" || updSource === "system"
+          ? "inferred"
+          : "unconfirmed";
     }
 
     rawProposedOps.push({
@@ -316,7 +326,8 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
         content: primaryCand.rawText,
         category: newCategory,
         confirmationStatus: newConfirmationStatus,
-        temporalStatus: primaryCand.validUntil && primaryCand.validUntil < referenceDate ? "expired" : "active",
+        temporalStatus:
+          primaryCand.validUntil && primaryCand.validUntil < referenceDate ? "expired" : "active",
         validUntil: primaryCand.validUntil ?? existingMem.validUntil,
       },
       rationale: `Actualización solicitada por candidato ${primaryCand.candidateId}`,
@@ -352,7 +363,9 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
       if (mem.temporalStatus === "active" || mem.temporalStatus === "unknown") {
         if (mem.category === category && normalizeMemoryContent(mem.content) === normCand) {
           isExactDuplicate = true;
-          warningsSet.add(`Candidato ${cand.candidateId} es un duplicado exacto del recuerdo activo ${mem.id}`);
+          warningsSet.add(
+            `Candidato ${cand.candidateId} es un duplicado exacto del recuerdo activo ${mem.id}`
+          );
           break;
         }
       }
@@ -403,11 +416,12 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
       (cand.isExplicitUserStatement
         ? "user_explicit"
         : category === "decision"
-        ? "plan_decision"
-        : "conversation_inference");
+          ? "plan_decision"
+          : "conversation_inference");
 
     const referenceText = cand.evidenceReference ?? cand.rawText;
-    const isHesitant = containsHesitationMarkers(referenceText) || containsHesitationMarkers(cand.rawText);
+    const isHesitant =
+      containsHesitationMarkers(referenceText) || containsHesitationMarkers(cand.rawText);
     const hasNegativeOrPendingMarkers =
       containsNegativeOrPendingMarkers(referenceText) ||
       containsNegativeOrPendingMarkers(cand.rawText);
@@ -415,7 +429,8 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
     let confirmationStatus: "confirmed" | "inferred" | "unconfirmed" = "unconfirmed";
 
     if (source === "user_explicit") {
-      confirmationStatus = isHesitant || category === "working_hypothesis" ? "unconfirmed" : "confirmed";
+      confirmationStatus =
+        isHesitant || category === "working_hypothesis" ? "unconfirmed" : "confirmed";
     } else if (source === "plan_decision") {
       // Regla de verificación autoritativa:
       // 1. rawText NUNCA constituye evidencia de su propia aceptación.
@@ -423,8 +438,7 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
       // 3. Solo es verificada si coincide con una referencia auténtica registrada en verifiedAcceptedDecisionRefs.
       // 4. Si contiene vacilación, negación o condiciones pendientes, permanece unconfirmed.
       const isAuthoritativelyVerified =
-        cand.evidenceReference !== undefined &&
-        verifiedDecisionRefsSet.has(cand.evidenceReference);
+        cand.evidenceReference !== undefined && verifiedDecisionRefsSet.has(cand.evidenceReference);
 
       if (
         isAuthoritativelyVerified &&
@@ -448,7 +462,8 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
     // Epistemic safety guard
     const epistemicCheck = isValidEpistemicState(category, confirmationStatus, proposedProvenance);
     if (!epistemicCheck.valid) {
-      confirmationStatus = source === "conversation_inference" || source === "system" ? "inferred" : "unconfirmed";
+      confirmationStatus =
+        source === "conversation_inference" || source === "system" ? "inferred" : "unconfirmed";
     }
 
     const proposedMemory: MemoryItem = {
@@ -485,7 +500,9 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
     } else if (op.type === "update" || op.type === "archive" || op.type === "keep") {
       if (forgetTargetIds.has(op.targetMemoryId)) {
         // Suppress due to forget precedence
-        warningsSet.add(`Operación '${op.type}' suprimida para ${op.targetMemoryId} debido a solicitud prioritaria de olvido`);
+        warningsSet.add(
+          `Operación '${op.type}' suprimida para ${op.targetMemoryId} debido a solicitud prioritaria de olvido`
+        );
       } else {
         nonConflictingOps.push(op);
       }
@@ -520,7 +537,8 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
   // Step 5: Determine Global Status with Strict Precedence
   // ==========================================================================
   // Precedence: invalid_request > clarification_required > proposals_generated > no_action_needed
-  let status: "invalid_request" | "clarification_required" | "proposals_generated" | "no_action_needed";
+  let status:
+    "invalid_request" | "clarification_required" | "proposals_generated" | "no_action_needed";
 
   if (invalidReferencesSet.size > 0 || candidateValidationErrorsSet.size > 0) {
     status = "invalid_request";
@@ -538,7 +556,9 @@ export function manageMemoryDeterministically(input: ManageMemoryInput): ManageM
     status,
     proposedOperations: deduplicatedOps,
     suppressedContextMemoryIds: Array.from(suppressedContextMemoryIds).sort(),
-    contradictions: [...contradictions].sort((a, b) => a.existingMemoryId.localeCompare(b.existingMemoryId)),
+    contradictions: [...contradictions].sort((a, b) =>
+      a.existingMemoryId.localeCompare(b.existingMemoryId)
+    ),
     clarificationQuestions: Array.from(clarificationQuestionsSet).sort(),
     invalidReferences: Array.from(invalidReferencesSet).sort(),
     warnings: Array.from(warningsSet).sort(),

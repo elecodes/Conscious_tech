@@ -46,7 +46,9 @@ describe("Relationships Domain & Deterministic Cleaning", () => {
     const result = RelationshipSchema.safeParse(selfRel);
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0]?.message).toBe("sourceItemId and targetItemId must be different");
+      expect(result.error.issues[0]?.message).toBe(
+        "sourceItemId and targetItemId must be different"
+      );
       expect(result.error.issues[0]?.path).toEqual(["targetItemId"]);
     }
   });

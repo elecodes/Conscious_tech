@@ -103,7 +103,8 @@ describe("Radar de Imprevistos — Application Pipeline (Sección 21-25 PROJECT_
   it("3. 🟢 Cabe en el espacio disponible: compromiso que cabe en el margen sin tocar focos", async () => {
     // Plan has 18h plannable, 10h planned -> 8h remaining margin
     const params: EvaluateRadarParams = {
-      changeDescription: "Tengo que preparar la presentación para el cliente el jueves, me llevará 2 horas",
+      changeDescription:
+        "Tengo que preparar la presentación para el cliente el jueves, me llevará 2 horas",
       currentDate: "2026-10-14",
       activePlan: sampleActivePlan,
     };
@@ -120,7 +121,8 @@ describe("Radar de Imprevistos — Application Pipeline (Sección 21-25 PROJECT_
   it("4. 🔴 Cambia el equilibrio: tarea con horas que excede la capacidad plannable propone alternativas", async () => {
     // 18h plannable, 10h planned -> 8h remaining. New task takes 15h -> 25h total > 18h plannable!
     const params: EvaluateRadarParams = {
-      changeDescription: "Surgió una urgencia de migración de base de datos que llevará 15 horas para el viernes",
+      changeDescription:
+        "Surgió una urgencia de migración de base de datos que llevará 15 horas para el viernes",
       currentDate: "2026-10-14",
       activePlan: sampleActivePlan,
     };

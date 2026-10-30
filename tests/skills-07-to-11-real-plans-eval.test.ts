@@ -60,7 +60,8 @@ describe("Skills 07–11 Real-Input Evaluation Pipeline", () => {
       });
 
       it("Skill 07 (analyze_change): evaluates mid-week scope additions deterministically", () => {
-        const targetItemId = proposal.obligations[0]?.itemId || proposal.flexibleOptions[0]?.itemId || "test-item";
+        const targetItemId =
+          proposal.obligations[0]?.itemId || proposal.flexibleOptions[0]?.itemId || "test-item";
         const result = analyzeChangeDeterministically({
           currentDate: targetWeek.startDate,
           activePlan: proposal,

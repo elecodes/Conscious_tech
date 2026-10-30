@@ -165,23 +165,18 @@ describe("Skill 04 — Microcalibración Semántica Determinista", () => {
       },
     ];
 
-    const provider = new MockProvider(
-      undefined,
-      undefined,
-      undefined,
-      async () => ({
-        deadlines: [
-          {
-            itemId: "item-personal",
-            raw: "hoy",
-            kind: "relative_date",
-            resolvedStart: null,
-            resolvedEnd: null,
-            confidence: "high",
-          },
-        ],
-      })
-    );
+    const provider = new MockProvider(undefined, undefined, undefined, async () => ({
+      deadlines: [
+        {
+          itemId: "item-personal",
+          raw: "hoy",
+          kind: "relative_date",
+          resolvedStart: null,
+          resolvedEnd: null,
+          confidence: "high",
+        },
+      ],
+    }));
 
     const result = await detectDeadlines(provider, {
       items,
@@ -210,23 +205,18 @@ describe("Skill 04 — Microcalibración Semántica Determinista", () => {
       },
     ];
 
-    const provider = new MockProvider(
-      undefined,
-      undefined,
-      undefined,
-      async () => ({
-        deadlines: [
-          {
-            itemId: "item-event",
-            raw: "el mes que viene",
-            kind: "relative_date",
-            resolvedStart: null,
-            resolvedEnd: null,
-            confidence: "medium",
-          },
-        ],
-      })
-    );
+    const provider = new MockProvider(undefined, undefined, undefined, async () => ({
+      deadlines: [
+        {
+          itemId: "item-event",
+          raw: "el mes que viene",
+          kind: "relative_date",
+          resolvedStart: null,
+          resolvedEnd: null,
+          confidence: "medium",
+        },
+      ],
+    }));
 
     const result = await detectDeadlines(provider, {
       items,

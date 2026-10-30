@@ -137,9 +137,7 @@ export function formatHours(
   return fallback;
 }
 
-export function formatAdjustmentActionType(
-  type: SuggestedAdjustmentAction["type"]
-): string {
+export function formatAdjustmentActionType(type: SuggestedAdjustmentAction["type"]): string {
   switch (type) {
     case "reassign_time_block":
       return "Reasignación de bloque horario";
@@ -190,8 +188,8 @@ export function renderAdjustmentDetails(action: SuggestedAdjustmentAction) {
       return (
         <div style={{ fontSize: "0.9rem", marginTop: "4px" }}>
           <div>
-            <strong>Redistribución:</strong> {action.hoursToMove}h desde{" "}
-            {action.sourceDay} hacia {action.targetDay}
+            <strong>Redistribución:</strong> {action.hoursToMove}h desde {action.sourceDay} hacia{" "}
+            {action.targetDay}
           </div>
           {action.rationale && (
             <div className="calm-muted" style={{ marginTop: "2px" }}>
@@ -239,8 +237,8 @@ export function renderAdjustmentDetails(action: SuggestedAdjustmentAction) {
       return (
         <div style={{ fontSize: "0.9rem", marginTop: "4px" }}>
           <div>
-            <strong>Aceptación de riesgo:</strong> Conflicto{" "}
-            <code>{action.conflictId}</code> ({action.toleratedRisk})
+            <strong>Aceptación de riesgo:</strong> Conflicto <code>{action.conflictId}</code> (
+            {action.toleratedRisk})
           </div>
           {action.rationale && (
             <div className="calm-muted" style={{ marginTop: "2px" }}>

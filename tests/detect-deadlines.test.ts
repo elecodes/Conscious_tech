@@ -33,17 +33,11 @@ describe("Skill 04: detect_deadlines", () => {
       },
     ];
 
-    const provider = new MockProvider(
-      undefined,
-      undefined,
-      undefined,
-      async () => ({ deadlines: [] })
-    );
+    const provider = new MockProvider(undefined, undefined, undefined, async () => ({
+      deadlines: [],
+    }));
 
-    const result = await detectDeadlines(
-      provider,
-      { items, currentDate }
-    );
+    const result = await detectDeadlines(provider, { items, currentDate });
 
     expect(result.deadlines).toHaveLength(0);
   });
@@ -58,28 +52,20 @@ describe("Skill 04: detect_deadlines", () => {
       },
     ];
 
-    const provider = new MockProvider(
-      undefined,
-      undefined,
-      undefined,
-      async () => ({
-        deadlines: [
-          {
-            itemId: "item-exam",
-            raw: "el 15 de noviembre",
-            kind: "exact_date",
-            resolvedStart: "2026-11-15",
-            resolvedEnd: null,
-            confidence: "high",
-          },
-        ],
-      })
-    );
+    const provider = new MockProvider(undefined, undefined, undefined, async () => ({
+      deadlines: [
+        {
+          itemId: "item-exam",
+          raw: "el 15 de noviembre",
+          kind: "exact_date",
+          resolvedStart: "2026-11-15",
+          resolvedEnd: null,
+          confidence: "high",
+        },
+      ],
+    }));
 
-    const result = await detectDeadlines(
-      provider,
-      { items, currentDate }
-    );
+    const result = await detectDeadlines(provider, { items, currentDate });
 
     expect(result.deadlines).toHaveLength(1);
     expect(result.deadlines[0]).toMatchObject({
@@ -100,26 +86,18 @@ describe("Skill 04: detect_deadlines", () => {
       },
     ];
 
-    const provider = new MockProvider(
-      undefined,
-      undefined,
-      undefined,
-      async () => ({
-        deadlines: [
-          {
-            itemId: "item-deploy",
-            raw: "mañana",
-            kind: "relative_date",
-            confidence: "high",
-          },
-        ],
-      })
-    );
+    const provider = new MockProvider(undefined, undefined, undefined, async () => ({
+      deadlines: [
+        {
+          itemId: "item-deploy",
+          raw: "mañana",
+          kind: "relative_date",
+          confidence: "high",
+        },
+      ],
+    }));
 
-    const result = await detectDeadlines(
-      provider,
-      { items, currentDate: "2026-10-08" }
-    );
+    const result = await detectDeadlines(provider, { items, currentDate: "2026-10-08" });
 
     expect(result.deadlines).toHaveLength(1);
     expect(result.deadlines[0]?.resolvedStart).toBe("2026-10-09");
@@ -135,28 +113,20 @@ describe("Skill 04: detect_deadlines", () => {
       },
     ];
 
-    const provider = new MockProvider(
-      undefined,
-      undefined,
-      undefined,
-      async () => ({
-        deadlines: [
-          {
-            itemId: "item-workshop",
-            raw: "del 10 al 12 de noviembre",
-            kind: "date_range",
-            resolvedStart: "2026-11-10",
-            resolvedEnd: "2026-11-12",
-            confidence: "high",
-          },
-        ],
-      })
-    );
+    const provider = new MockProvider(undefined, undefined, undefined, async () => ({
+      deadlines: [
+        {
+          itemId: "item-workshop",
+          raw: "del 10 al 12 de noviembre",
+          kind: "date_range",
+          resolvedStart: "2026-11-10",
+          resolvedEnd: "2026-11-12",
+          confidence: "high",
+        },
+      ],
+    }));
 
-    const result = await detectDeadlines(
-      provider,
-      { items, currentDate }
-    );
+    const result = await detectDeadlines(provider, { items, currentDate });
 
     expect(result.deadlines).toHaveLength(1);
     const d = result.deadlines[0]!;
@@ -177,26 +147,18 @@ describe("Skill 04: detect_deadlines", () => {
 
     // Even if an AI provider mistakenly emitted a deadline for a vague desire,
     // the deterministic validator must filter it out.
-    const provider = new MockProvider(
-      undefined,
-      undefined,
-      undefined,
-      async () => ({
-        deadlines: [
-          {
-            itemId: "item-vague",
-            raw: "cuando estemos más tranquilos",
-            kind: "unspecified",
-            confidence: "low",
-          },
-        ],
-      })
-    );
+    const provider = new MockProvider(undefined, undefined, undefined, async () => ({
+      deadlines: [
+        {
+          itemId: "item-vague",
+          raw: "cuando estemos más tranquilos",
+          kind: "unspecified",
+          confidence: "low",
+        },
+      ],
+    }));
 
-    const result = await detectDeadlines(
-      provider,
-      { items, currentDate }
-    );
+    const result = await detectDeadlines(provider, { items, currentDate });
 
     expect(result.deadlines).toHaveLength(0);
   });
@@ -211,28 +173,20 @@ describe("Skill 04: detect_deadlines", () => {
       },
     ];
 
-    const provider = new MockProvider(
-      undefined,
-      undefined,
-      undefined,
-      async () => ({
-        deadlines: [
-          {
-            itemId: "item-horizon",
-            raw: "antes de diciembre",
-            kind: "relative_date",
-            resolvedStart: null,
-            resolvedEnd: null,
-            confidence: "medium",
-          },
-        ],
-      })
-    );
+    const provider = new MockProvider(undefined, undefined, undefined, async () => ({
+      deadlines: [
+        {
+          itemId: "item-horizon",
+          raw: "antes de diciembre",
+          kind: "relative_date",
+          resolvedStart: null,
+          resolvedEnd: null,
+          confidence: "medium",
+        },
+      ],
+    }));
 
-    const result = await detectDeadlines(
-      provider,
-      { items, currentDate }
-    );
+    const result = await detectDeadlines(provider, { items, currentDate });
 
     expect(result.deadlines).toHaveLength(1);
     expect(result.deadlines[0]?.raw).toBe("antes de diciembre");
@@ -251,19 +205,11 @@ describe("Skill 04: detect_deadlines", () => {
       },
     ];
 
-    const provider = new MockProvider(
-      undefined,
-      undefined,
-      undefined,
-      async () => ({
-        deadlines: [],
-      })
-    );
+    const provider = new MockProvider(undefined, undefined, undefined, async () => ({
+      deadlines: [],
+    }));
 
-    const result = await detectDeadlines(
-      provider,
-      { items, currentDate }
-    );
+    const result = await detectDeadlines(provider, { items, currentDate });
 
     expect(result.deadlines).toHaveLength(0);
   });
@@ -278,32 +224,24 @@ describe("Skill 04: detect_deadlines", () => {
       },
     ];
 
-    const provider = new MockProvider(
-      undefined,
-      undefined,
-      undefined,
-      async () => ({
-        deadlines: [
-          {
-            itemId: "phantom-999",
-            raw: "este viernes",
-            kind: "relative_date",
-            confidence: "high",
-          },
-          {
-            itemId: "item-valid",
-            raw: "este viernes",
-            kind: "relative_date",
-            confidence: "high",
-          },
-        ],
-      })
-    );
+    const provider = new MockProvider(undefined, undefined, undefined, async () => ({
+      deadlines: [
+        {
+          itemId: "phantom-999",
+          raw: "este viernes",
+          kind: "relative_date",
+          confidence: "high",
+        },
+        {
+          itemId: "item-valid",
+          raw: "este viernes",
+          kind: "relative_date",
+          confidence: "high",
+        },
+      ],
+    }));
 
-    const result = await detectDeadlines(
-      provider,
-      { items, currentDate }
-    );
+    const result = await detectDeadlines(provider, { items, currentDate });
 
     expect(result.deadlines).toHaveLength(1);
     expect(result.deadlines[0]?.itemId).toBe("item-valid");
@@ -311,7 +249,9 @@ describe("Skill 04: detect_deadlines", () => {
 
   describe("Integration with MockProvider Cases", () => {
     it("returns expected deadlines for mock case-01", async () => {
-      const case01Extraction = (mockExtractionsData as Record<string, { items: ExtractedItem[] }>)["case-01"];
+      const case01Extraction = (mockExtractionsData as Record<string, { items: ExtractedItem[] }>)[
+        "case-01"
+      ];
       expect(case01Extraction).toBeDefined();
 
       const provider = new MockProvider();
@@ -325,7 +265,9 @@ describe("Skill 04: detect_deadlines", () => {
     });
 
     it("returns empty deadlines for mock case-03 (items without dates)", async () => {
-      const case03Extraction = (mockExtractionsData as Record<string, { items: ExtractedItem[] }>)["case-03"];
+      const case03Extraction = (mockExtractionsData as Record<string, { items: ExtractedItem[] }>)[
+        "case-03"
+      ];
       expect(case03Extraction).toBeDefined();
 
       const provider = new MockProvider();

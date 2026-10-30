@@ -49,7 +49,9 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     controller = new WeeklySessionController(service);
   });
 
-  function createMockContextValue(overrides?: Partial<WeeklySessionContextValue>): WeeklySessionContextValue {
+  function createMockContextValue(
+    overrides?: Partial<WeeklySessionContextValue>
+  ): WeeklySessionContextValue {
     return {
       state: controller.getSnapshot(),
       service,
@@ -94,7 +96,9 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
       </WeeklySessionReactContext.Provider>
     );
 
-    expect(html).toContain("Tu cuaderno está despejado. No hay ninguna semana activa en este momento.");
+    expect(html).toContain(
+      "Tu cuaderno está despejado. No hay ninguna semana activa en este momento."
+    );
     expect(html).toContain("nav-to-prepare-from-active-button");
     expect(html).toContain("🗓️ Preparar una semana");
   });
@@ -134,7 +138,11 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
         flexibleOptions: [],
         deferredItems: [],
         unplannedSpace: { recommendedHours: 7.5, rationale: "Espacio protegido" },
-        confirmationPrompt: { question: "¿Representa tu plan?", keyTradeoffs: [], pendingQuestions: [] },
+        confirmationPrompt: {
+          question: "¿Representa tu plan?",
+          keyTradeoffs: [],
+          pendingQuestions: [],
+        },
       },
       createdAt: "2026-10-12T00:00:00.000Z",
       updatedAt: "2026-10-12T00:00:00.000Z",

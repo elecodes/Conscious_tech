@@ -20,9 +20,7 @@ function isTimeIntervalOverlapping(
 // ============================================================================
 // Deterministic Conflict Detection Engine
 // ============================================================================
-export function detectConflictsDeterministically(
-  input: DetectConflictInput
-): DetectConflictOutput {
+export function detectConflictsDeterministically(input: DetectConflictInput): DetectConflictOutput {
   const {
     activePlan,
     changeAnalysis,
@@ -161,7 +159,10 @@ export function detectConflictsDeterministically(
       const b1 = timeBlocks[i];
       const b2 = timeBlocks[j];
 
-      if (b1.day === b2.day && isTimeIntervalOverlapping(b1.startTime, b1.endTime, b2.startTime, b2.endTime)) {
+      if (
+        b1.day === b2.day &&
+        isTimeIntervalOverlapping(b1.startTime, b1.endTime, b2.startTime, b2.endTime)
+      ) {
         conflicts.push({
           id: `conflict-schedule-overlap-${b1.itemId}-${b2.itemId}`,
           type: "schedule_overlap",
@@ -238,7 +239,8 @@ export function detectConflictsDeterministically(
         // If both have strict external commitment dates -> confirmed
         // If internal or movable dates -> potential
         const isStrictIncompatibility =
-          sourceObligation.commitmentType === "external" && targetObligation.commitmentType === "external";
+          sourceObligation.commitmentType === "external" &&
+          targetObligation.commitmentType === "external";
 
         conflicts.push({
           id: `conflict-deadline-incompatibility-${sourceId}-${targetId}`,
@@ -274,14 +276,15 @@ export function detectConflictsDeterministically(
   const validFoci = activePlan.foci.filter((f) => {
     const hasConflictingItem = f.contributingItemIds.some((id) => conflictingElementIds.has(id));
     const allItemsEstimated = f.estimatedHours !== null;
-    return !hasConflictingItem && (isCapacityKnown && areEstimatesFullyKnown && allItemsEstimated);
+    return !hasConflictingItem && isCapacityKnown && areEstimatesFullyKnown && allItemsEstimated;
   });
 
   if (validFoci.length > 0) {
     unconflictedAreas.push({
       areaName: "foci",
       elementIds: validFoci.map((f) => f.id),
-      verificationReason: "Focos verificados positivamente: sin dependencias bloqueantes, estimaciones completas y margen asegurado.",
+      verificationReason:
+        "Focos verificados positivamente: sin dependencias bloqueantes, estimaciones completas y margen asegurado.",
     });
   }
 
@@ -294,7 +297,8 @@ export function detectConflictsDeterministically(
     unconflictedAreas.push({
       areaName: "obligations",
       elementIds: validObligations.map((o) => o.itemId),
-      verificationReason: "Obligaciones verificadas positivamente: sin solapamientos horarios ni dependencias bloqueantes.",
+      verificationReason:
+        "Obligaciones verificadas positivamente: sin solapamientos horarios ni dependencias bloqueantes.",
     });
   }
 

@@ -240,7 +240,9 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
 
       // item-1 is external commitment
       expect(constraints.externalCommitments.some((c) => c.itemId === "item-1")).toBe(true);
-      expect(constraints.externalCommitments.find((c) => c.itemId === "item-1")?.estimatedHours).toBe(6);
+      expect(
+        constraints.externalCommitments.find((c) => c.itemId === "item-1")?.estimatedHours
+      ).toBe(6);
 
       // item-1 has deadline in week (2026-10-16 is Friday inside week 10-12..10-18)
       expect(constraints.strictDeadlinesInWeek.some((d) => d.itemId === "item-1")).toBe(true);
@@ -275,9 +277,9 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
     it("documents domain limitation for unblocking actions", () => {
       const constraints = prepareWeekConstraints(sampleInput, sampleTargetWeek);
       expect(constraints.unblockingActionLimitations.length).toBeGreaterThan(0);
-      expect(
-        constraints.unblockingActionLimitations.some((l) => l.includes("desbloqueo"))
-      ).toBe(true);
+      expect(constraints.unblockingActionLimitations.some((l) => l.includes("desbloqueo"))).toBe(
+        true
+      );
     });
   });
 
@@ -427,9 +429,7 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
       const invalidInput: BuildWeekInput = {
         ...sampleInput,
         groupedWork: {
-          groups: [
-            { id: "g1", title: "g", itemIds: ["ghost-item"], rationale: "r" },
-          ],
+          groups: [{ id: "g1", title: "g", itemIds: ["ghost-item"], rationale: "r" }],
           ungroupedItemIds: [],
         },
       };
@@ -450,7 +450,9 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
       };
       const res = validateBuildWeekInput(invalidInput);
       expect(res.valid).toBe(false);
-      expect(res.errors.some((e) => e.includes("Context itemAssessment references nonexistent itemId"))).toBe(true);
+      expect(
+        res.errors.some((e) => e.includes("Context itemAssessment references nonexistent itemId"))
+      ).toBe(true);
     });
 
     it("catches negative or non-finite item estimates", () => {
@@ -492,9 +494,7 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
       expect(
         ctx.unresolvedUncertainties.some((u) => u.includes("Capacidad total no declarada"))
       ).toBe(true);
-      expect(
-        ctx.unresolvedUncertainties.some((u) => u.includes("desbloqueo"))
-      ).toBe(true);
+      expect(ctx.unresolvedUncertainties.some((u) => u.includes("desbloqueo"))).toBe(true);
     });
   });
 
@@ -574,9 +574,9 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
         ],
       };
 
-      expect(() =>
-        normalizeAndConserveProposedWeek(proposalWithPhantom, sampleInput)
-      ).toThrow(WeekValidationError);
+      expect(() => normalizeAndConserveProposedWeek(proposalWithPhantom, sampleInput)).toThrow(
+        WeekValidationError
+      );
 
       try {
         normalizeAndConserveProposedWeek(proposalWithPhantom, sampleInput);
@@ -596,9 +596,9 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
         ],
       };
 
-      expect(() =>
-        normalizeAndConserveProposedWeek(proposalWithBadGroup, sampleInput)
-      ).toThrow(WeekValidationError);
+      expect(() => normalizeAndConserveProposedWeek(proposalWithBadGroup, sampleInput)).toThrow(
+        WeekValidationError
+      );
 
       try {
         normalizeAndConserveProposedWeek(proposalWithBadGroup, sampleInput);
@@ -713,11 +713,16 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
       expect(result.proposal.obligations.some((o) => o.itemId === "item-1")).toBe(true);
 
       // Item-2 was omitted since focus was removed, so it gets rescued to not_scheduled
-      expect(result.proposal.deferredItems.some((d) => d.itemId === "item-2" && d.reason === "not_scheduled")).toBe(true);
+      expect(
+        result.proposal.deferredItems.some(
+          (d) => d.itemId === "item-2" && d.reason === "not_scheduled"
+        )
+      ).toBe(true);
 
       expect(
         result.repairs.some(
-          (r) => r.type === "resolved_obligation_focus_conflict" && r.description.includes("empty focus")
+          (r) =>
+            r.type === "resolved_obligation_focus_conflict" && r.description.includes("empty focus")
         )
       ).toBe(true);
     });
@@ -778,7 +783,12 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
         ...sampleInput,
         items: sampleItems.map((it) =>
           it.id === "item-3"
-            ? { ...it, type: "commitment", commitment: "external", estimatedEffort: { value: 4, unit: "hours", source: "user" } }
+            ? {
+                ...it,
+                type: "commitment",
+                commitment: "external",
+                estimatedEffort: { value: 4, unit: "hours", source: "user" },
+              }
             : it
         ),
         capacity: {
@@ -858,7 +868,7 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
       const proposalOmittingIdeaAndArchived: ProposedWeek = {
         ...validBaseProposal,
         flexibleOptions: [], // item-3 omitted
-        deferredItems: [],   // item-4 omitted
+        deferredItems: [], // item-4 omitted
       };
 
       const result = normalizeAndConserveProposedWeek(proposalOmittingIdeaAndArchived, sampleInput);
@@ -870,13 +880,13 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
       ).toBe(true);
 
       // item-3 rescued to flexibleOptions
-      expect(
-        result.proposal.flexibleOptions.some((o) => o.itemId === "item-3")
-      ).toBe(true);
+      expect(result.proposal.flexibleOptions.some((o) => o.itemId === "item-3")).toBe(true);
 
       // Audit trail must record both rescues
       expect(
-        result.repairs.some((r) => r.type === "rescued_archived_to_deferred" && r.itemId === "item-4")
+        result.repairs.some(
+          (r) => r.type === "rescued_archived_to_deferred" && r.itemId === "item-4"
+        )
       ).toBe(true);
       expect(
         result.repairs.some((r) => r.type === "rescued_idea_to_flexible" && r.itemId === "item-3")
@@ -899,7 +909,9 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
       expect(result.repaired).toBe(true);
       expect(result.proposal.foci[0].contributingItemIds).toEqual(["item-2"]);
       expect(
-        result.repairs.some((r) => r.type === "deduplicated_intra_category" && r.itemId === "item-2")
+        result.repairs.some(
+          (r) => r.type === "deduplicated_intra_category" && r.itemId === "item-2"
+        )
       ).toBe(true);
     });
 
@@ -927,9 +939,7 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
       expect(result.repaired).toBe(true);
       expect(result.proposal.weekSummary.capacity.capacityStatus).toBe("over_capacity");
       expect(result.proposal.weekSummary.capacity.protectedSpaceStatus).toBe("compromised");
-      expect(
-        result.repairs.some((r) => r.type === "recalculated_capacity_summary")
-      ).toBe(true);
+      expect(result.repairs.some((r) => r.type === "recalculated_capacity_summary")).toBe(true);
     });
   });
 
@@ -1139,7 +1149,9 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
         semanticResult.errors.some(
           (e) =>
             e.includes("urgent-task") &&
-            e.includes("converted into an obligation without external commitment or strict deadline")
+            e.includes(
+              "converted into an obligation without external commitment or strict deadline"
+            )
         )
       ).toBe(true);
 
@@ -1270,15 +1282,33 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
             reason: "not_scheduled",
             rationale: "Omitido por capacidad",
           },
-          { itemId: "urgent-task", title: "Hotfix", reason: "not_scheduled", rationale: "No planificado" },
-          { itemId: "blocked-task", title: "API", reason: "waiting_dependency", rationale: "Bloqueada" },
-          { itemId: "dependency-task", title: "BD", reason: "not_scheduled", rationale: "No planificado" },
+          {
+            itemId: "urgent-task",
+            title: "Hotfix",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
+          {
+            itemId: "blocked-task",
+            title: "API",
+            reason: "waiting_dependency",
+            rationale: "Bloqueada",
+          },
+          {
+            itemId: "dependency-task",
+            title: "BD",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
         ],
         unplannedSpace: { rationale: "Protegido", recommendedHours: 6.25 },
         confirmationPrompt: { question: "¿Avanzamos?", keyTradeoffs: [], pendingQuestions: [] },
       };
 
-      const semantic = evaluateProposedWeekSemanticQuality(proposalOmittingExternal, inputWithUrgentTask);
+      const semantic = evaluateProposedWeekSemanticQuality(
+        proposalOmittingExternal,
+        inputWithUrgentTask
+      );
       expect(semantic.valid).toBe(false);
       expect(
         semantic.errors.some(
@@ -1333,20 +1363,32 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
           },
         ],
         deferredItems: [
-          { itemId: "blocked-task", title: "API", reason: "waiting_dependency", rationale: "Bloqueada" },
-          { itemId: "dependency-task", title: "BD", reason: "not_scheduled", rationale: "No planificado" },
+          {
+            itemId: "blocked-task",
+            title: "API",
+            reason: "waiting_dependency",
+            rationale: "Bloqueada",
+          },
+          {
+            itemId: "dependency-task",
+            title: "BD",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
         ],
         unplannedSpace: { rationale: "Protegido", recommendedHours: 6.25 },
         confirmationPrompt: { question: "¿Avanzamos?", keyTradeoffs: [], pendingQuestions: [] },
       };
 
-      const semantic = evaluateProposedWeekSemanticQuality(proposalWithFlexibleHighImp, inputWithUrgentTask);
+      const semantic = evaluateProposedWeekSemanticQuality(
+        proposalWithFlexibleHighImp,
+        inputWithUrgentTask
+      );
       expect(semantic.valid).toBe(false);
       expect(
         semantic.errors.some(
           (e) =>
-            e.includes("urgent-task") &&
-            e.includes("cannot be classified as a flexible option")
+            e.includes("urgent-task") && e.includes("cannot be classified as a flexible option")
         )
       ).toBe(true);
 
@@ -1366,7 +1408,10 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
         flexibleOptions: [],
       };
 
-      const semanticFocus = evaluateProposedWeekSemanticQuality(proposalWithFocusHighImp, inputWithUrgentTask);
+      const semanticFocus = evaluateProposedWeekSemanticQuality(
+        proposalWithFocusHighImp,
+        inputWithUrgentTask
+      );
       expect(semanticFocus.valid).toBe(true);
     });
 
@@ -1414,8 +1459,18 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
         ],
         flexibleOptions: [],
         deferredItems: [
-          { itemId: "urgent-task", title: "Hotfix", reason: "not_scheduled", rationale: "No planificado" },
-          { itemId: "dependency-task", title: "BD", reason: "not_scheduled", rationale: "No planificado" },
+          {
+            itemId: "urgent-task",
+            title: "Hotfix",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
+          {
+            itemId: "dependency-task",
+            title: "BD",
+            reason: "not_scheduled",
+            rationale: "No planificado",
+          },
         ],
         unplannedSpace: { rationale: "Protegido", recommendedHours: 6.25 },
         confirmationPrompt: { question: "¿Avanzamos?", keyTradeoffs: [], pendingQuestions: [] },
@@ -1431,7 +1486,9 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
         semantic.errors.some(
           (e) =>
             e.includes("blocked-task") &&
-            e.includes("converted into an obligation without external commitment or strict deadline")
+            e.includes(
+              "converted into an obligation without external commitment or strict deadline"
+            )
         )
       ).toBe(true);
 
@@ -1442,9 +1499,7 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
       );
       expect(normResult.repaired).toBe(true);
       expect(normResult.proposal.obligations.some((o) => o.itemId === "blocked-task")).toBe(false);
-      expect(
-        normResult.proposal.deferredItems.some((d) => d.itemId === "blocked-task")
-      ).toBe(true);
+      expect(normResult.proposal.deferredItems.some((d) => d.itemId === "blocked-task")).toBe(true);
     });
 
     it("preserves external commitments with due dates prior to target week without silent omission and maintains discrepancy visible for user reconciliation (case-08 regression)", () => {
@@ -1518,7 +1573,9 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
       // Invariant check on constraints preparation:
       // Constraints MUST register meeting-prior in externalCommitments so it is not dropped
       const constraints = prepareWeekConstraints(priorDateInput, priorDateInput.targetWeek!);
-      expect(constraints.externalCommitments.some((ec) => ec.itemId === "meeting-prior")).toBe(true);
+      expect(constraints.externalCommitments.some((ec) => ec.itemId === "meeting-prior")).toBe(
+        true
+      );
 
       // Proposal from model: includes the external commitment, retains its real prior date,
       // and explicitly questions the temporal discrepancy in confirmationPrompt
@@ -1598,4 +1655,3 @@ describe("Skill 06: build_week - Deterministic Layer", () => {
     });
   });
 });
-

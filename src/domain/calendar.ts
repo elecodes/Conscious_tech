@@ -2,17 +2,19 @@ import { z } from "zod";
 import { TargetWeek, CalendarDateSchema, DayConstraint } from "./week";
 import { TimeBlock } from "./conflict";
 
-export const CalendarEventSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1),
-  day: CalendarDateSchema,
-  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Must be HH:MM format"),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Must be HH:MM format"),
-  durationHours: z.number().finite().nonnegative(),
-  allDay: z.boolean().default(false),
-  location: z.string().optional(),
-  description: z.string().optional(),
-}).strict();
+export const CalendarEventSchema = z
+  .object({
+    id: z.string().min(1),
+    title: z.string().min(1),
+    day: CalendarDateSchema,
+    startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Must be HH:MM format"),
+    endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Must be HH:MM format"),
+    durationHours: z.number().finite().nonnegative(),
+    allDay: z.boolean().default(false),
+    location: z.string().optional(),
+    description: z.string().optional(),
+  })
+  .strict();
 
 export type CalendarEvent = z.infer<typeof CalendarEventSchema>;
 
@@ -32,9 +34,7 @@ export function filterEventsForTargetWeek(
   events: CalendarEvent[],
   targetWeek: TargetWeek
 ): CalendarEvent[] {
-  return events.filter(
-    (ev) => ev.day >= targetWeek.startDate && ev.day <= targetWeek.endDate
-  );
+  return events.filter((ev) => ev.day >= targetWeek.startDate && ev.day <= targetWeek.endDate);
 }
 
 /**
@@ -115,7 +115,14 @@ export interface GoogleCalendarTemplateOptions {
  * Builds a 1-click Google Calendar web creation URL pre-populated with task details.
  */
 export function buildGoogleCalendarTemplateUrl(options: GoogleCalendarTemplateOptions): string {
-  const { title, day, startTime = "09:00", durationHours = 1, description = "", location = "" } = options;
+  const {
+    title,
+    day,
+    startTime = "09:00",
+    durationHours = 1,
+    description = "",
+    location = "",
+  } = options;
   const cleanDay = day.replace(/-/g, "");
   const [sh, sm] = startTime.split(":").map(Number);
   const startHour = Number.isFinite(sh) ? sh! : 9;

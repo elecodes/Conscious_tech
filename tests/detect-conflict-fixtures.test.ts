@@ -88,7 +88,9 @@ describe("Skill 08: detect_conflict - 10 Canonical Fixture Suite", () => {
     expect(result.status).toBe("conflicts_detected");
     expect(result.hasBlockingConflicts).toBe(true);
 
-    const capConflict = result.conflicts.find((c) => c.type === "capacity_deficit" && c.scope === "weekly");
+    const capConflict = result.conflicts.find(
+      (c) => c.type === "capacity_deficit" && c.scope === "weekly"
+    );
     expect(capConflict).toBeDefined();
     expect(capConflict?.certainty).toBe("confirmed");
     expect(capConflict?.evidence.metric).toBe("hours_balance");
@@ -196,7 +198,9 @@ describe("Skill 08: detect_conflict - 10 Canonical Fixture Suite", () => {
     expect(result.status).toBe("conflicts_detected");
     expect(result.hasBlockingConflicts).toBe(true);
 
-    const dailyCap = result.conflicts.find((c) => c.type === "capacity_deficit" && c.scope === "daily");
+    const dailyCap = result.conflicts.find(
+      (c) => c.type === "capacity_deficit" && c.scope === "daily"
+    );
     expect(dailyCap).toBeDefined();
     expect(dailyCap?.certainty).toBe("confirmed");
     expect(dailyCap?.evidence.metric).toBe("hours_balance");

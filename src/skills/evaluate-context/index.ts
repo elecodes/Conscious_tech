@@ -5,8 +5,12 @@ import {
   EvaluateContextOutput,
   EvaluateContextOutputSchema,
 } from "../../domain/context";
-import { ContextValidationError } from "./parser";
+import { ContextValidationError, parseAndValidateContextOutput } from "./parser";
 import { cleanAndValidateContextOutput } from "./deterministic";
+import {
+  SYSTEM_PROMPT as CONTEXT_SYSTEM_PROMPT,
+  buildUserPrompt as buildContextUserPrompt,
+} from "./prompt";
 
 export interface EvaluateContextOptions {
   maxRetries?: number;
@@ -35,10 +39,30 @@ export class EvaluateContextService {
     let lastError: unknown;
     let rawResult: EvaluateContextOutput | null = null;
 
+    const useCompleteJson =
+      Boolean(this.provider.completeJson) &&
+      this.provider.id !== "mock" &&
+      !("callProxy" in this.provider);
+
     while (attempts < maxAttempts) {
       attempts++;
       try {
-        rawResult = await this.provider.evaluateContext(validatedInput);
+        if (useCompleteJson && this.provider.completeJson) {
+          const userPrompt = buildContextUserPrompt(validatedInput);
+          const { rawText } = await this.provider.completeJson(CONTEXT_SYSTEM_PROMPT, userPrompt);
+          rawResult = parseAndValidateContextOutput(rawText);
+        } else if (this.provider.evaluateContext) {
+          rawResult = await this.provider.evaluateContext(validatedInput);
+        } else if (this.provider.completeJson) {
+          const userPrompt = buildContextUserPrompt(validatedInput);
+          const { rawText } = await this.provider.completeJson(CONTEXT_SYSTEM_PROMPT, userPrompt);
+          rawResult = parseAndValidateContextOutput(rawText);
+        } else {
+          throw new Error(
+            `Provider "${this.provider.id}" does not support completeJson or evaluateContext.`
+          );
+        }
+
         const parseCheck = EvaluateContextOutputSchema.safeParse(rawResult);
         if (!parseCheck.success) {
           throw new ContextValidationError(

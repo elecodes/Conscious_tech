@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import {
   isPrivateOrReservedIpv4,
   isPrivateOrReservedIp,
@@ -6,6 +8,7 @@ import {
   validateSafeCalendarUrl,
   handleCalendarProxyRequest,
   calendarProxyRateLimiter,
+  isOriginAllowed,
 } from "../src/server/calendar-proxy-handler";
 import { handleAIProxyRequest, aiProxyRateLimiter } from "../src/server/ai-proxy-handler";
 import { SimpleRateLimiter } from "../src/server/rate-limiter";
@@ -22,11 +25,12 @@ function createMockReq(options: {
   const method = options.method || "GET";
   const url = options.url || "/";
   const headers = options.headers || {};
-  const bodyText = options.body !== undefined
-    ? typeof options.body === "string"
-      ? options.body
-      : JSON.stringify(options.body)
-    : "";
+  const bodyText =
+    options.body !== undefined
+      ? typeof options.body === "string"
+        ? options.body
+        : JSON.stringify(options.body)
+      : "";
 
   const stream = new Readable({
     read() {
@@ -73,7 +77,8 @@ function createMockRes(): {
     },
     end(chunk?: unknown) {
       if (chunk) {
-        body += typeof chunk === "string" ? chunk : Buffer.from(chunk as Uint8Array).toString("utf-8");
+        body +=
+          typeof chunk === "string" ? chunk : Buffer.from(chunk as Uint8Array).toString("utf-8");
       }
     },
   } as unknown as ServerResponse;
@@ -172,14 +177,20 @@ describe("Server Proxies Security Hardening", () => {
       expect(isSafeCalendarUrl("http://device.local/calendar.ics")).toBe(false);
       expect(isSafeCalendarUrl("http://internal.service.internal/cal.ics")).toBe(false);
       expect(isSafeCalendarUrl("http://test.lan/calendar.ics")).toBe(false);
+
+      // Phase 2 Residuals: IPv4-compatible, Teredo, 64:ff9b:1::/48
+      expect(isSafeCalendarUrl("http://[::127.0.0.1]/")).toBe(false);
+      expect(isSafeCalendarUrl("http://[2001::1]/")).toBe(false);
+      expect(isPrivateOrReservedIp("::127.0.0.1")).toBe(true);
+      expect(isPrivateOrReservedIp("::8.8.8.8")).toBe(true);
+      expect(isPrivateOrReservedIp("2001::1")).toBe(true);
+      expect(isPrivateOrReservedIp("64:ff9b:1::1")).toBe(true);
     });
   });
 
   describe("validateSafeCalendarUrl with DNS Resolution", () => {
     it("blocks hostnames that resolve to private or loopback IPs (DNS rebinding / localtest.me)", async () => {
-      const mockDnsLookup = vi.fn().mockResolvedValue([
-        { address: "127.0.0.1", family: 4 },
-      ]);
+      const mockDnsLookup = vi.fn().mockResolvedValue([{ address: "127.0.0.1", family: 4 }]);
 
       const result = await validateSafeCalendarUrl("https://localtest.me/feed.ics", mockDnsLookup);
       expect(result.safe).toBe(false);
@@ -187,18 +198,17 @@ describe("Server Proxies Security Hardening", () => {
     });
 
     it("blocks hostnames that resolve to any private IPv6", async () => {
-      const mockDnsLookup = vi.fn().mockResolvedValue([
-        { address: "fd00::1", family: 6 },
-      ]);
+      const mockDnsLookup = vi.fn().mockResolvedValue([{ address: "fd00::1", family: 6 }]);
 
-      const result = await validateSafeCalendarUrl("https://internal-calendar.corp.net/feed.ics", mockDnsLookup);
+      const result = await validateSafeCalendarUrl(
+        "https://internal-calendar.corp.net/feed.ics",
+        mockDnsLookup
+      );
       expect(result.safe).toBe(false);
     });
 
     it("allows hostnames that resolve strictly to public IPs", async () => {
-      const mockDnsLookup = vi.fn().mockResolvedValue([
-        { address: "142.250.190.46", family: 4 },
-      ]);
+      const mockDnsLookup = vi.fn().mockResolvedValue([{ address: "142.250.190.46", family: 4 }]);
 
       const result = await validateSafeCalendarUrl(
         "https://calendar.google.com/calendar/ical/user/basic.ics",
@@ -252,9 +262,7 @@ describe("Server Proxies Security Hardening", () => {
     });
 
     it("streams response with byte cap and cuts off at 5 MB", async () => {
-      const mockDnsLookup = vi.fn().mockResolvedValue([
-        { address: "93.184.216.34", family: 4 },
-      ]);
+      const mockDnsLookup = vi.fn().mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
 
       // Mock fetch with a stream exceeding 5MB
       const chunkSize = 1024 * 1024; // 1 MB
@@ -305,7 +313,8 @@ describe("Server Proxies Security Hardening", () => {
 
       const validIcs = "BEGIN:VCALENDAR\nVERSION:2.0\nSUMMARY:Test\nEND:VCALENDAR";
 
-      const fetchSpy = vi.spyOn(globalThis, "fetch")
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
         .mockResolvedValueOnce({
           ok: false,
           status: 302,
@@ -341,17 +350,14 @@ describe("Server Proxies Security Hardening", () => {
     });
 
     it("blocks redirects that target internal IP addresses", async () => {
-      const mockDnsLookup = vi.fn().mockResolvedValue([
-        { address: "93.184.216.34", family: 4 },
-      ]);
+      const mockDnsLookup = vi.fn().mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
 
-      const fetchSpy = vi.spyOn(globalThis, "fetch")
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 302,
-          statusText: "Found",
-          headers: new Headers({ location: "http://127.0.0.1/admin.ics" }),
-        } as unknown as Response);
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: false,
+        status: 302,
+        statusText: "Found",
+        headers: new Headers({ location: "http://127.0.0.1/admin.ics" }),
+      } as unknown as Response);
 
       const req = createMockReq({
         method: "POST",
@@ -368,11 +374,12 @@ describe("Server Proxies Security Hardening", () => {
     });
 
     it("enforces rate limits on repeated requests", async () => {
-      const reqFactory = () => createMockReq({
-        method: "POST",
-        body: { url: "https://invalid.test" },
-        remoteAddress: "192.0.2.99",
-      });
+      const reqFactory = () =>
+        createMockReq({
+          method: "POST",
+          body: { url: "https://invalid.test" },
+          remoteAddress: "192.0.2.99",
+        });
 
       // Exhaust limit of 20 requests
       for (let i = 0; i < 20; i++) {
@@ -418,11 +425,12 @@ describe("Server Proxies Security Hardening", () => {
     });
 
     it("rate limits AI proxy requests when exceeded", async () => {
-      const reqFactory = () => createMockReq({
-        method: "POST",
-        body: { provider: "mock", action: "extract_items", payload: { notes: "test" } },
-        remoteAddress: "192.0.2.88",
-      });
+      const reqFactory = () =>
+        createMockReq({
+          method: "POST",
+          body: { provider: "mock", action: "extract_items", payload: { notes: "test" } },
+          remoteAddress: "192.0.2.88",
+        });
 
       for (let i = 0; i < 40; i++) {
         const { res } = createMockRes();
@@ -456,6 +464,210 @@ describe("Server Proxies Security Hardening", () => {
       // Separate key has its own capacity
       const rOther = limiter.check("ip-2");
       expect(rOther.allowed).toBe(true);
+    });
+
+    it("prunes expired keys so the map does not grow without bound", () => {
+      const limiter = new SimpleRateLimiter({ windowMs: 100, maxRequests: 5 });
+      limiter.check("client-1");
+      limiter.check("client-2");
+      expect((limiter as any).size?.() ?? (limiter as any).records.size).toBe(2);
+
+      // Advance time past windowMs
+      const future = Date.now() + 200;
+      (limiter as any).prune?.(future);
+      expect((limiter as any).size?.() ?? (limiter as any).records.size).toBe(0);
+    });
+  });
+
+  describe("isOriginAllowed Security Rules", () => {
+    it("rejects undefined or empty origin", () => {
+      expect(isOriginAllowed(undefined)).toBe(false);
+      expect(isOriginAllowed("")).toBe(false);
+    });
+
+    it("does not allow origin merely because host matches Host header", () => {
+      expect(isOriginAllowed("http://evil.com", { hostHeader: "evil.com" } as any)).toBe(false);
+      expect(isOriginAllowed("https://attacker.org", "attacker.org" as any)).toBe(false);
+    });
+
+    it("allows localhost and 127.0.0.1 origins", () => {
+      expect(isOriginAllowed("http://localhost:5173")).toBe(true);
+      expect(isOriginAllowed("http://127.0.0.1:4173")).toBe(true);
+      expect(isOriginAllowed("http://[::1]:5173")).toBe(true);
+    });
+
+    it("allows origins from explicit ALLOWED_ORIGINS env allowlist", () => {
+      const env = {
+        ALLOWED_ORIGINS: "https://app.conscioustech.com,https://staging.conscioustech.com",
+      };
+      expect(isOriginAllowed("https://app.conscioustech.com", env)).toBe(true);
+      expect(isOriginAllowed("https://staging.conscioustech.com", env)).toBe(true);
+      expect(isOriginAllowed("https://unauthorized.com", env)).toBe(false);
+    });
+  });
+
+  describe("AI Proxy Token Authentication (AI_PROXY_TOKEN)", () => {
+    it("rejects requests when AI_PROXY_TOKEN is configured and token is missing or invalid", async () => {
+      const env = { AI_PROXY_TOKEN: "super-secret-token" };
+      const req = createMockReq({
+        method: "POST",
+        body: { provider: "mock", action: "extract_items", payload: { text: "hello" } },
+      });
+      const { res, getStatusCode, getJson } = createMockRes();
+
+      await handleAIProxyRequest(req, res, env);
+
+      expect(getStatusCode()).toBe(401);
+      expect(getJson().code).toBe("UNAUTHORIZED");
+    });
+
+    it("accepts requests when AI_PROXY_TOKEN matches via x-ai-proxy-token header", async () => {
+      const env = { AI_PROXY_TOKEN: "super-secret-token" };
+      const req = createMockReq({
+        method: "POST",
+        headers: { "x-ai-proxy-token": "super-secret-token" },
+        body: {
+          provider: "mock",
+          action: "extract_items",
+          payload: { text: "valid text", currentDate: "2026-10-29" },
+        },
+      });
+      const { res, getStatusCode, getJson } = createMockRes();
+
+      await handleAIProxyRequest(req, res, env);
+
+      expect(getStatusCode()).toBe(200);
+      expect(getJson().success).toBe(true);
+    });
+
+    it("accepts requests when AI_PROXY_TOKEN matches via Authorization header", async () => {
+      const env = { AI_PROXY_TOKEN: "super-secret-token" };
+      const req = createMockReq({
+        method: "POST",
+        headers: { authorization: "Bearer super-secret-token" },
+        body: {
+          provider: "mock",
+          action: "extract_items",
+          payload: { text: "valid text", currentDate: "2026-10-29" },
+        },
+      });
+      const { res, getStatusCode, getJson } = createMockRes();
+
+      await handleAIProxyRequest(req, res, env);
+
+      expect(getStatusCode()).toBe(200);
+      expect(getJson().success).toBe(true);
+    });
+  });
+
+  describe("DNS Rebinding Protection via Connection Pinning", () => {
+    it("pins the connection to the validated IP and prevents DNS rebinding to private IPs", async () => {
+      let dnsCallCount = 0;
+      const injectedDns = vi.fn().mockImplementation(() => {
+        dnsCallCount++;
+        if (dnsCallCount === 1) {
+          // Initial validation resolves to public IP
+          return Promise.resolve([{ address: "93.184.216.34", family: 4 }]);
+        }
+        // Second call (DNS rebinding attack) resolves to private IP
+        return Promise.resolve([{ address: "127.0.0.1", family: 4 }]);
+      });
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => {
+        // If an undici dispatcher/agent is attached with pinned lookup, inspect it
+        const dispatcher = (init as any)?.dispatcher;
+        if (dispatcher && typeof dispatcher === "object") {
+          // Check agent lookup behavior
+          const lookup =
+            dispatcher[
+              Object.getOwnPropertySymbols(dispatcher).find((s) => s.description === "connect") ||
+                "connect"
+            ]?.lookup ||
+            (dispatcher as any).connect?.lookup ||
+            (dispatcher as any).options?.connect?.lookup;
+          if (lookup) {
+            let pinnedResult: any = null;
+            lookup("rebind.example.com", {}, (_err: any, addrs: any) => {
+              pinnedResult = addrs;
+            });
+            if (pinnedResult) {
+              const ip = Array.isArray(pinnedResult) ? pinnedResult[0]?.address : pinnedResult;
+              if (ip === "127.0.0.1") {
+                throw new Error("DNS Rebinding vulnerability: connected to 127.0.0.1");
+              }
+            }
+          }
+        }
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          headers: new Headers({ "Content-Type": "text/calendar" }),
+          body: new ReadableStream({
+            start(controller) {
+              controller.enqueue(
+                new TextEncoder().encode("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR")
+              );
+              controller.close();
+            },
+          }),
+        } as unknown as Response;
+      });
+
+      const req = createMockReq({
+        method: "POST",
+        body: { url: "https://rebind.example.com/feed.ics" },
+      });
+      const { res, getStatusCode, getJson } = createMockRes();
+
+      await handleCalendarProxyRequest(req, res, { dnsLookup: injectedDns });
+
+      expect(getStatusCode()).toBe(200);
+      expect(getJson().success).toBe(true);
+
+      // Verify fetch was called with a dispatcher / agent that pinned to the public IP
+      const fetchOpts = fetchSpy.mock.calls[0]?.[1];
+      expect(fetchOpts).toBeDefined();
+      expect((fetchOpts as any).dispatcher).toBeDefined();
+
+      fetchSpy.mockRestore();
+    });
+  });
+
+  describe("Proxy Token Documentation and Security Contract", () => {
+    it("asserts docs and config do not describe VITE_ proxy token as a secret and clarify real protections", () => {
+      const readme = fs.readFileSync(path.resolve(__dirname, "../README.md"), "utf-8");
+      const envExample = fs.readFileSync(path.resolve(__dirname, "../.env.example"), "utf-8");
+      const adr0023 = fs.readFileSync(
+        path.resolve(__dirname, "../docs/adr/0023-proxy-hardening-and-provider-decoupling.md"),
+        "utf-8"
+      );
+      const changelog = fs.readFileSync(path.resolve(__dirname, "../CHANGELOG.md"), "utf-8");
+
+      for (const [, content] of [
+        ["README.md", readme],
+        [".env.example", envExample],
+        ["ADR 0023", adr0023],
+        ["CHANGELOG.md", changelog],
+      ]) {
+        expect(content).not.toMatch(
+          /(?:shared\s+secret|secreto\s+compartido).*?(?:AI_PROXY_TOKEN|VITE_AI_PROXY_TOKEN)/i
+        );
+        expect(content).not.toMatch(
+          /(?:AI_PROXY_TOKEN|VITE_AI_PROXY_TOKEN).*?(?:shared\s+secret|secreto\s+compartido)/i
+        );
+      }
+
+      expect(readme).toMatch(/dev guard, not a secret/i);
+      expect(readme).toMatch(/origin/i);
+      expect(readme).toMatch(/localhost/i);
+
+      expect(adr0023).toMatch(/guardia de desarrollo/i);
+      expect(adr0023).toMatch(/no es un secreto/i);
+      expect(adr0023).toMatch(/origin/i);
+      expect(adr0023).toMatch(/localhost/i);
+
+      expect(envExample).toMatch(/dev guard/i);
     });
   });
 });

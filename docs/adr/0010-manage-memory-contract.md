@@ -1,9 +1,11 @@
 # ADR 0010: Contrato de Gestión de Memoria (`manage_memory`)
 
 ## Estado
+
 Aceptado
 
 ## Contexto
+
 En Conscious Tech, la memoria personal y de contexto tiene como misión proporcionar continuidad a la persona sin acumular información indiscriminadamente, sin tomar decisiones silenciosas sobre su conocimiento y respetando en todo momento el principio central del producto:
 
 > **La IA propone. La persona decide.**
@@ -73,6 +75,7 @@ La Skill 10 (`manage_memory`) evalúa recuerdos activos y nueva información can
     - **Alcance de los tests de regresión**: Las pruebas que suministran identificadores en `verifiedAcceptedDecisionRefs` demuestran el comportamiento condicional y la simetría del motor ante referencias declaradas como válidas; no demuestran la autenticidad real del evento en un entorno de producción hasta que exista la infraestructura autoritativa correspondiente.
 
 ## Consecuencias
+
 - 64 pruebas unitarias y de fixtures canónicos (19 en `memory-domain.test.ts` y 45 en `manage-memory-fixtures.test.ts`) certifican la totalidad de las invariantes y regresiones de auditoría.
 - Proporciona un marco auditable, seguro y respetuoso con la soberanía y privacidad del usuario para la gestión de su memoria personal.
 - Sienta las bases para que una capa superior de interacción y persistencia ejecute las operaciones aprobadas por el usuario, delimitando con precisión la frontera de confianza de la verificación de decisiones.

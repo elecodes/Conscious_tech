@@ -5,7 +5,7 @@ Estado: Aceptado
 
 ## Contexto
 
-Conscious Tech fue concebido como un cuaderno de claridad y acompañante reflexivo humano («*Un cuaderno personal + un asistente prudente + IA en calma*»). A diferencia de gestores de tareas mecánicos o tableros de productividad corporativos, la voz y el tono del producto están íntimamente arraigados en el idioma español (con sensibilidad rioplatense y neutral: *«AI propone, tú decides»*, *«Margen de calma»*, *«Qué quieres cuidar esta semana»*, *«Tu tiempo de un vistazo»*, *«Tareas postergadas de semanas anteriores»*).
+Conscious Tech fue concebido como un cuaderno de claridad y acompañante reflexivo humano («_Un cuaderno personal + un asistente prudente + IA en calma_»). A diferencia de gestores de tareas mecánicos o tableros de productividad corporativos, la voz y el tono del producto están íntimamente arraigados en el idioma español (con sensibilidad rioplatense y neutral: _«AI propone, tú decides»_, _«Margen de calma»_, _«Qué quieres cuidar esta semana»_, _«Tu tiempo de un vistazo»_, _«Tareas postergadas de semanas anteriores»_).
 
 Tanto los prompts del sistema hacia los modelos de lenguaje (Groq, Gemini), como los analizadores de lenguaje natural (verbos de acción, expresiones de agobio, normalización de fechas como «viernes», «dentro de 2 semanas»), los esquemas de persistencia y las cadenas de interfaz de usuario se encuentran codificados en español.
 
@@ -13,12 +13,12 @@ Introducir frameworks de internacionalización en esta etapa (`react-i18next`, d
 
 ## Decisión
 
-1. **Español Nativo Primero (*Spanish-First*):**
+1. **Español Nativo Primero (_Spanish-First_):**
    - El idioma canónico de prompts, lógica de extracción semántica, normalización temporal y UI es el español.
    - Las decisiones de vocabulario priorizan calidez, claridad y dignidad humana sobre términos de productividad industrial (evitar "backlog", "sprint", "throughput", "overdue alerts").
 
-2. **Aplazamiento de Internacionalización (*Deferred i18n*):**
-   - En estricta concordancia con las reglas de `AGENTS.md` (*«Build incrementally»*, *«Can this be simpler?»*, *«Do not build future abstractions before justified»*), se aplaza cualquier infraestructura formal de i18n hasta que el ciclo de planificación semanal y la retención del producto estén validados con personas reales.
+2. **Aplazamiento de Internacionalización (_Deferred i18n_):**
+   - En estricta concordancia con las reglas de `AGENTS.md` (_«Build incrementally»_, _«Can this be simpler?»_, _«Do not build future abstractions before justified»_), se aplaza cualquier infraestructura formal de i18n hasta que el ciclo de planificación semanal y la retención del producto estén validados con personas reales.
 
 ## Consecuencias
 

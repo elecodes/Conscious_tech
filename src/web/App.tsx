@@ -3,7 +3,7 @@ import { ExtractedItem, ExtractedItems } from "../domain/items";
 import { MockProvider } from "../providers/mock-provider";
 import { RemoteAIProvider } from "../providers/remote-ai-provider";
 import { extractItems } from "../skills/extract-items";
-import realDumpsData from "../../cases/real-dumps.json";
+import sampleDumpsData from "../../cases/sample-dumps.json";
 import { WeeklySessionProvider, useWeeklySession } from "./context/weekly-session-context";
 import { WeeklySessionView } from "./components/weekly-session-view";
 import { WeeklySessionService } from "../application/weekly-session-service";
@@ -20,8 +20,11 @@ const STORAGE_KEY_CAPTURE_RESULT = "conscious_tech_transient_dump_result";
 
 function ProcessStatusBadge() {
   const { state } = useWeeklySession();
-  const activePlan = state.activePlan && state.activePlan.status === "active" ? state.activePlan : null;
-  const draftPlan = state.draftPlan || (state.draftPlans && state.draftPlans.length > 0 ? state.draftPlans[0] : null);
+  const activePlan =
+    state.activePlan && state.activePlan.status === "active" ? state.activePlan : null;
+  const draftPlan =
+    state.draftPlan ||
+    (state.draftPlans && state.draftPlans.length > 0 ? state.draftPlans[0] : null);
 
   return (
     <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
@@ -52,7 +55,11 @@ function ProcessStatusBadge() {
   );
 }
 
-function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" | NavigationSpace }) {
+function AppContent({
+  initialTab = "active",
+}: {
+  initialTab?: "dump" | "weekly" | NavigationSpace;
+}) {
   const { state, exportBackup, importBackup } = useWeeklySession();
   const resolveInitialSpace = (): NavigationSpace => {
     if (initialTab === "dump") return "capture";
@@ -83,7 +90,10 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
   const [selectedCaseId, setSelectedCaseId] = useState("");
   const [showRawJson, setShowRawJson] = useState(false);
   const [planningItems, setPlanningItems] = useState<ExtractedItem[] | null>(null);
-  const [backupStatus, setBackupStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [backupStatus, setBackupStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   // Autosave mental dump text
   useEffect(() => {
@@ -184,7 +194,7 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
       handleClearDump();
       return;
     }
-    const found = realDumpsData.find((c) => c.id === caseId);
+    const found = sampleDumpsData.find((c) => c.id === caseId);
     if (found) {
       setText(found.text);
     }
@@ -228,7 +238,14 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
         <div className="notebook-meta-strip">
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "1rem" }}>✏️</span>
-            <span style={{ fontWeight: 600, fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "0.95rem" }}>
+            <span
+              style={{
+                fontWeight: 600,
+                fontFamily: "var(--font-serif)",
+                fontStyle: "italic",
+                fontSize: "0.95rem",
+              }}
+            >
               Cuaderno de Foco
             </span>
             <span style={{ color: "var(--text-faint)" }}>·</span>
@@ -236,21 +253,46 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span className="notebook-pill">🌱 Presencia</span>
-            <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "#ede4d6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem" }}>
+            <div
+              style={{
+                width: "24px",
+                height: "24px",
+                borderRadius: "50%",
+                background: "#ede4d6",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "0.75rem",
+              }}
+            >
               👤
             </div>
           </div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            flexWrap: "wrap",
+            gap: "10px",
+          }}
+        >
           <div>
             <h1>Tecnología Consciente</h1>
-            <p className="subtitle">Cuaderno de claridad y ciclo semanal · AI propone, tú decides</p>
+            <p className="subtitle">
+              Cuaderno de claridad y ciclo semanal · AI propone, tú decides
+            </p>
           </div>
           <ProcessStatusBadge />
         </div>
 
-        <nav className="tab-nav" style={{ display: "flex", gap: "10px", marginTop: "16px", flexWrap: "wrap" }} aria-label="Espacios principales">
+        <nav
+          className="tab-nav"
+          style={{ display: "flex", gap: "10px", marginTop: "16px", flexWrap: "wrap" }}
+          aria-label="Espacios principales"
+        >
           <button
             type="button"
             className={activeSpace === "capture" ? "primary" : "secondary"}
@@ -328,13 +370,12 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
 
           {activeSpace === "capture" && (
             <>
-              <span className="config-label" style={{ marginLeft: "auto" }}>Caso real:</span>
-              <select
-                value={selectedCaseId}
-                onChange={(e) => handleCaseSelect(e.target.value)}
-              >
+              <span className="config-label" style={{ marginLeft: "auto" }}>
+                Caso real:
+              </span>
+              <select value={selectedCaseId} onChange={(e) => handleCaseSelect(e.target.value)}>
                 <option value="">-- Escribe tus ideas o elige un ejemplo --</option>
-                {realDumpsData.map((c) => (
+                {sampleDumpsData.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.id} - {c.title}
                   </option>
@@ -355,7 +396,10 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
               color: "#444",
             }}
           >
-            🔒 <strong>Aislamiento seguro de credenciales:</strong> Las llamadas con IA real se procesan a través del proxy local del servidor. Las claves API nunca se almacenan en el navegador ni se transmiten al cliente; se leen exclusivamente desde las variables de entorno del servidor (<code>GROQ_API_KEY</code> o <code>GEMINI_API_KEY</code>).
+            🔒 <strong>Aislamiento seguro de credenciales:</strong> Las llamadas con IA real se
+            procesan a través del proxy local del servidor. Las claves API nunca se almacenan en el
+            navegador ni se transmiten al cliente; se leen exclusivamente desde las variables de
+            entorno del servidor (<code>GROQ_API_KEY</code> o <code>GEMINI_API_KEY</code>).
           </div>
         )}
       </section>
@@ -371,7 +415,16 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
               onChange={(e) => setText(e.target.value)}
               placeholder="Escribe todo lo que te venga a la mente sin preocuparte por ordenar..."
             />
-            <div className="actions" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+            <div
+              className="actions"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "8px",
+              }}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                 <span style={{ fontSize: "0.85rem", color: "#8c8273" }}>
                   {text.length} caracteres
@@ -379,7 +432,12 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
                 {text.trim().length > 0 && (
                   <span
                     className="calm-muted"
-                    style={{ fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                    style={{
+                      fontSize: "0.8rem",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
                     data-testid="dump-autosave-indicator"
                   >
                     💾 Borrador guardado automáticamente
@@ -428,9 +486,7 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
                           <span className="badge badge-muted">estado: {item.status}</span>
                         )}
                         {item.commitment && item.commitment !== "none" && (
-                          <span className="badge badge-muted">
-                            compromiso {item.commitment}
-                          </span>
+                          <span className="badge badge-muted">compromiso {item.commitment}</span>
                         )}
                         {item.estimatedEffort && (
                           <span className="badge badge-muted">
@@ -439,13 +495,12 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
                         )}
                         {item.deadline && (
                           <span className="badge badge-muted">
-                            📅 {item.deadline.raw} {item.deadline.resolved ? `(${item.deadline.resolved})` : ""}
+                            📅 {item.deadline.raw}{" "}
+                            {item.deadline.resolved ? `(${item.deadline.resolved})` : ""}
                           </span>
                         )}
                         {item.importance && (
-                          <span className="badge badge-muted">
-                            ⭐ {item.importance}
-                          </span>
+                          <span className="badge badge-muted">⭐ {item.importance}</span>
                         )}
                       </div>
                       <div className="item-raw">"{item.rawText}"</div>
@@ -472,19 +527,12 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
                 >
                   🗓️ Preparar semana con estos elementos ({result.items.length})
                 </button>
-                <button
-                  className="inspector-toggle"
-                  onClick={() => setShowRawJson(!showRawJson)}
-                >
+                <button className="inspector-toggle" onClick={() => setShowRawJson(!showRawJson)}>
                   {showRawJson ? "Ocultar datos JSON" : "Inspeccionar estructura JSON completa"}
                 </button>
               </div>
 
-              {showRawJson && (
-                <pre className="raw-json-box">
-                  {JSON.stringify(result, null, 2)}
-                </pre>
-              )}
+              {showRawJson && <pre className="raw-json-box">{JSON.stringify(result, null, 2)}</pre>}
             </section>
           )}
         </main>
@@ -532,13 +580,22 @@ function AppContent({ initialTab = "active" }: { initialTab?: "dump" | "weekly" 
         }}
         aria-label="Soberanía y respaldo de datos"
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "12px",
+          }}
+        >
           <div>
             <h4 style={{ margin: "0 0 4px 0", fontSize: "0.95rem" }}>
               💾 Soberanía de datos y respaldo local
             </h4>
             <p className="calm-muted" style={{ margin: 0, fontSize: "0.85rem" }}>
-              Tus planes, agendas, cierres y recuerdos se guardan únicamente en tu navegador. Puedes descargar una copia de seguridad o restaurarla en cualquier momento.
+              Tus planes, agendas, cierres y recuerdos se guardan únicamente en tu navegador. Puedes
+              descargar una copia de seguridad o restaurarla en cualquier momento.
             </p>
           </div>
           <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>

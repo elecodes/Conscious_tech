@@ -9,16 +9,18 @@ Accepted
 Following Skill 01 (`extract_items`) and Skill 02 (`detect_relationships`), the system possesses structured items and their pairwise semantic relationships.
 
 Before planning a week (Skill 06 `build_week`) or evaluating deadlines (Skill 04 `detect_deadlines`), individual items must be synthesized into coherent lines of attention to prevent mental fragmentation:
+
 - **Concentration over fragmentation**: The system must transform many disconnected items into a smaller set of meaningful focus areas without turning each item into an isolated pressure point.
 - **A relationship does not imply a group**: Groups must represent genuine lines of work, not arbitrary network clusters. Few coherent groups are strictly preferred over many artificially connected ones.
 - **Code over AI for structural integrity**: Conservation of items, prevention of item duplication across groups, phantom ID rejection, and dissolution of degenerate 1-item groups must be guaranteed deterministically by code.
-- **No planning or prioritization in Skill 03**: Skill 03 must exclusively answer *"What elements belong to the same coherent line of work?"* without answering what is urgent, what has a deadline, or what fits into the week.
+- **No planning or prioritization in Skill 03**: Skill 03 must exclusively answer _"What elements belong to the same coherent line of work?"_ without answering what is urgent, what has a deadline, or what fits into the week.
 
 ## Decisions
 
 ### 1. Domain Modeling (`src/domain/work-groups.ts`)
 
 Defined explicit Zod schemas and TypeScript types:
+
 - `WorkGroup`: `id`, `title` (non-empty), `itemIds` (non-empty array), `rationale` (non-empty description of the binding link).
 - `GroupedWork`: `groups: WorkGroup[]`, `ungroupedItemIds: string[]`.
 - `GroupWorkInput`: `items: ExtractedItem[]`, `relationships: Relationship[]`.
@@ -26,6 +28,7 @@ Defined explicit Zod schemas and TypeScript types:
 ### 2. Deterministic Invariant Engine (`src/skills/group-work/deterministic.ts`)
 
 Implemented `cleanAndValidateGroupedWork` and `validateGroupWorkInvariants`:
+
 - **Conservation Guarantee**: Every single input item is accounted for. If an LLM response omits an item, deterministic post-processing automatically preserves it in `ungroupedItemIds`.
 - **Disjoint Partition**: An item cannot appear in more than one group, nor can it simultaneously exist in a group and `ungroupedItemIds`. The first group claims the item; subsequent overlapping references are cleanly stripped.
 - **Group Threshold ($\ge 2$ items)**: A work group represents a synthesis of multiple items. Any group left with fewer than 2 items is disbanded and its items fall back to `ungroupedItemIds`.
@@ -38,6 +41,7 @@ Implemented `cleanAndValidateGroupedWork` and `validateGroupWorkInvariants`:
 ### 3. Semantic Prompting & Relationship Semantics (`src/skills/group-work/prompt.ts`)
 
 Configured semantic guidelines for relationship signals:
+
 - `same_project` & `same_objective`: Strong signals to group into a shared line of work.
 - `part_of`: Very strong signal uniting constituent and preparatory subtasks with their primary deliverable.
 - `depends_on`: Does not automatically force grouping; causal dependencies between different operational areas stay separate.

@@ -5,6 +5,7 @@ import {
   EvaluateContextOutput,
   EvaluateContextOutputSchema,
 } from "../../domain/context";
+import { logger } from "../../utils/logger";
 
 export class ContextValidationError extends Error {
   public issues: unknown[];
@@ -55,10 +56,7 @@ export function sanitizeContextItemSignals(rawAssessments: unknown): {
     }
 
     const assessmentObj = assessment as Record<string, unknown>;
-    const itemId =
-      typeof assessmentObj.itemId === "string"
-        ? assessmentObj.itemId
-        : "unknown";
+    const itemId = typeof assessmentObj.itemId === "string" ? assessmentObj.itemId : "unknown";
 
     const filteredSignals: ContextSignal[] = [];
 
@@ -72,11 +70,9 @@ export function sanitizeContextItemSignals(rawAssessments: unknown): {
             signal: sig,
             reason: `Non-canonical signal "${sig}" discarded; relation types and ad-hoc strings are not allowed in ContextSignalSchema`,
           });
-          if (process.env.NODE_ENV !== "test") {
-            console.warn(
-              `[evaluate_context parser] Descartando señal no canónica "${sig}" en item "${itemId}". Solo se admiten señales válidas del esquema.`
-            );
-          }
+          logger.warn(
+            `[evaluate_context parser] Descartando señal no canónica "${sig}" en item "${itemId}". Solo se admiten señales válidas del esquema.`
+          );
         }
       }
     }
@@ -107,9 +103,7 @@ export function extractJsonFromMarkdown(raw: string): string {
  * Parses raw JSON string into EvaluateContextOutput and validates against Zod schema,
  * recording any non-canonical signals that were discarded.
  */
-export function parseAndValidateContextOutputWithAudit(
-  rawJson: string
-): ParseContextOutputResult {
+export function parseAndValidateContextOutputWithAudit(rawJson: string): ParseContextOutputResult {
   const cleaned = extractJsonFromMarkdown(rawJson);
   let parsed: unknown;
   try {
@@ -159,4 +153,3 @@ export function parseAndValidateContextOutputWithAudit(
 export function parseAndValidateContextOutput(rawJson: string): EvaluateContextOutput {
   return parseAndValidateContextOutputWithAudit(rawJson).output;
 }
-

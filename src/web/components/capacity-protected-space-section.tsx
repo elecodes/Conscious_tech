@@ -10,9 +10,7 @@ export interface CapacityProtectedSpaceSectionProps {
   capacity: WeeklyCapacitySummary;
 }
 
-export function CapacityProtectedSpaceSection({
-  capacity,
-}: CapacityProtectedSpaceSectionProps) {
+export function CapacityProtectedSpaceSection({ capacity }: CapacityProtectedSpaceSectionProps) {
   const isComplete = capacity.estimationCompleteness === "complete";
   const isPartial = capacity.estimationCompleteness === "partial";
   const isNone = capacity.estimationCompleteness === "none";
@@ -21,22 +19,17 @@ export function CapacityProtectedSpaceSection({
     capacity.protectedSpaceStatus === "respected"
       ? "badge-task"
       : capacity.protectedSpaceStatus === "compromised"
-      ? "badge-commitment"
-      : "badge-muted";
+        ? "badge-commitment"
+        : "badge-muted";
 
   const capacityStatusBadgeClass =
     capacity.capacityStatus === "within_capacity"
       ? "badge-task"
       : capacity.capacityStatus === "over_capacity"
-      ? "badge-commitment"
-      : "badge-muted";
+        ? "badge-commitment"
+        : "badge-muted";
 
-  const estimationBadgeClass =
-    isComplete
-      ? "badge-task"
-      : isPartial
-      ? "badge-idea"
-      : "badge-muted";
+  const estimationBadgeClass = isComplete ? "badge-task" : isPartial ? "badge-idea" : "badge-muted";
 
   const isCapacityConfigured = capacity.totalAvailableHours !== null;
 
@@ -71,9 +64,7 @@ export function CapacityProtectedSpaceSection({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-            <span style={{ fontWeight: 600, fontSize: "0.88rem" }}>
-              Balance de tu semana:
-            </span>
+            <span style={{ fontWeight: 600, fontSize: "0.88rem" }}>Balance de tu semana:</span>
             <span
               className={`badge ${capacityStatusBadgeClass}`}
               data-testid="compact-capacity-status"
@@ -95,7 +86,8 @@ export function CapacityProtectedSpaceSection({
             }}
           >
             <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
-              <span className="calm-muted">Disponibles:</span> <strong>{formatHours(capacity.totalAvailableHours, "No disponible")}</strong>
+              <span className="calm-muted">Disponibles:</span>{" "}
+              <strong>{formatHours(capacity.totalAvailableHours, "No disponible")}</strong>
             </span>
             <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
               <span className="calm-muted">Planificadas:</span>{" "}
@@ -106,63 +98,80 @@ export function CapacityProtectedSpaceSection({
               </strong>
             </span>
             <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
-              <span className="calm-muted">Planificables:</span> <strong>{formatHours(capacity.plannableHours, "Desconocido")}</strong>
+              <span className="calm-muted">Planificables:</span>{" "}
+              <strong>{formatHours(capacity.plannableHours, "Desconocido")}</strong>
             </span>
             <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
-              <span className="calm-muted">Protegidas:</span> <strong>{formatHours(capacity.protectedSpaceHours, "Desconocido")}</strong>
+              <span className="calm-muted">Protegidas:</span>{" "}
+              <strong>{formatHours(capacity.protectedSpaceHours, "Desconocido")}</strong>
             </span>
             <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
               <span className="calm-muted">Restantes:</span>{" "}
               <strong>
-                {capacity.plannableHours != null && (capacity.plannedHours != null || capacity.knownEstimatedHours != null)
-                  ? formatHours(Math.max(0, capacity.plannableHours - (capacity.plannedHours ?? capacity.knownEstimatedHours!)))
+                {capacity.plannableHours != null &&
+                (capacity.plannedHours != null || capacity.knownEstimatedHours != null)
+                  ? formatHours(
+                      Math.max(
+                        0,
+                        capacity.plannableHours -
+                          (capacity.plannedHours ?? capacity.knownEstimatedHours!)
+                      )
+                    )
                   : capacity.plannableHours != null
-                  ? `Hasta ${formatHours(capacity.plannableHours)}`
-                  : "Desconocido"}
+                    ? `Hasta ${formatHours(capacity.plannableHours)}`
+                    : "Desconocido"}
               </strong>
             </span>
           </div>
         </div>
 
         {/* Barra visual limpia de 1 línea */}
-        {capacity.totalAvailableHours != null && capacity.totalAvailableHours > 0 && (() => {
-          const effectivePlanned = capacity.plannedHours ?? capacity.knownEstimatedHours;
-          return (
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "2px" }}>
-              <span className="cognitive-budget-title" style={{ fontSize: "0.75rem", whiteSpace: "nowrap" }}>
-                Tu tiempo de un vistazo
-              </span>
-              <div className="cognitive-bar-track" style={{ flex: 1, height: "6px", margin: 0 }}>
-                {effectivePlanned != null && effectivePlanned > 0 && (
-                  <div
-                    className="cognitive-bar-fill"
-                    style={{
-                      width: `${Math.min(100, Math.round((effectivePlanned / capacity.totalAvailableHours) * 100))}%`,
-                    }}
-                    title={`Planificadas: ${effectivePlanned}h`}
-                  />
-                )}
-                {capacity.protectedSpaceHours != null && capacity.protectedSpaceHours > 0 && (
-                  <div
-                    className="cognitive-bar-fill protected"
-                    style={{
-                      width: `${Math.min(100, Math.round((capacity.protectedSpaceHours / capacity.totalAvailableHours) * 100))}%`,
-                    }}
-                    title={`Margen de calma: ${capacity.protectedSpaceHours}h`}
-                  />
-                )}
+        {capacity.totalAvailableHours != null &&
+          capacity.totalAvailableHours > 0 &&
+          (() => {
+            const effectivePlanned = capacity.plannedHours ?? capacity.knownEstimatedHours;
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "2px" }}>
+                <span
+                  className="cognitive-budget-title"
+                  style={{ fontSize: "0.75rem", whiteSpace: "nowrap" }}
+                >
+                  Tu tiempo de un vistazo
+                </span>
+                <div className="cognitive-bar-track" style={{ flex: 1, height: "6px", margin: 0 }}>
+                  {effectivePlanned != null && effectivePlanned > 0 && (
+                    <div
+                      className="cognitive-bar-fill"
+                      style={{
+                        width: `${Math.min(100, Math.round((effectivePlanned / capacity.totalAvailableHours) * 100))}%`,
+                      }}
+                      title={`Planificadas: ${effectivePlanned}h`}
+                    />
+                  )}
+                  {capacity.protectedSpaceHours != null && capacity.protectedSpaceHours > 0 && (
+                    <div
+                      className="cognitive-bar-fill protected"
+                      style={{
+                        width: `${Math.min(100, Math.round((capacity.protectedSpaceHours / capacity.totalAvailableHours) * 100))}%`,
+                      }}
+                      title={`Margen de calma: ${capacity.protectedSpaceHours}h`}
+                    />
+                  )}
+                </div>
+                <span
+                  className="cognitive-budget-ratio"
+                  style={{ fontSize: "0.75rem", whiteSpace: "nowrap" }}
+                >
+                  {capacity.plannedHours != null
+                    ? `${capacity.plannedHours}h asignadas`
+                    : effectivePlanned != null && effectivePlanned > 0
+                      ? `~${effectivePlanned}h asignadas (parcial)`
+                      : "Tareas sin estimar en horas"}{" "}
+                  / {capacity.totalAvailableHours}h disponibles
+                </span>
               </div>
-              <span className="cognitive-budget-ratio" style={{ fontSize: "0.75rem", whiteSpace: "nowrap" }}>
-                {capacity.plannedHours != null
-                  ? `${capacity.plannedHours}h asignadas`
-                  : effectivePlanned != null && effectivePlanned > 0
-                  ? `~${effectivePlanned}h asignadas (parcial)`
-                  : "Tareas sin estimar en horas"}{" "}
-                / {capacity.totalAvailableHours}h disponibles
-              </span>
-            </div>
-          );
-        })()}
+            );
+          })()}
 
         {/* Desglose progresivo */}
         <details className="calm-details" style={{ marginTop: "4px" }}>
@@ -183,12 +192,10 @@ export function CapacityProtectedSpaceSection({
                 data-testid="guiding-principle"
                 style={{ fontSize: "0.78rem", fontStyle: "italic" }}
               >
-                «El espacio libre no es automáticamente tiempo disponible para asumir más compromisos.»
+                «El espacio libre no es automáticamente tiempo disponible para asumir más
+                compromisos.»
               </span>
-              <p
-                className="calm-muted"
-                style={{ fontSize: "0.78rem", margin: 0 }}
-              >
+              <p className="calm-muted" style={{ fontSize: "0.78rem", margin: 0 }}>
                 El espacio protegido deja margen para imprevistos, descanso y cambios de prioridad.
               </p>
               <p
@@ -230,7 +237,9 @@ export function CapacityProtectedSpaceSection({
                   <strong>Límites de tiempo</strong>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}
+                >
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
                     <span className="calm-muted">Tiempo disponible:</span>
                     <strong data-testid="total-available-hours">
@@ -301,7 +310,8 @@ export function CapacityProtectedSpaceSection({
                         borderRadius: "4px",
                       }}
                     >
-                      Capacidad no configurada: la entrada no aportó horas disponibles. El tiempo planificable y el margen protegido quedan sin definir.
+                      Capacidad no configurada: la entrada no aportó horas disponibles. El tiempo
+                      planificable y el margen protegido quedan sin definir.
                     </p>
                   )}
                 </div>
@@ -317,7 +327,9 @@ export function CapacityProtectedSpaceSection({
                   <strong>Estimación de tareas</strong>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}
+                >
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
                     <span className="calm-muted">Estado:</span>
                     <span
@@ -337,8 +349,8 @@ export function CapacityProtectedSpaceSection({
                       {capacity.plannedHours != null
                         ? formatHours(capacity.plannedHours)
                         : capacity.knownEstimatedHours != null
-                        ? `${formatHours(capacity.knownEstimatedHours)} (parcial · Por definir total)`
-                        : "Por definir"}
+                          ? `${formatHours(capacity.knownEstimatedHours)} (parcial · Por definir total)`
+                          : "Por definir"}
                     </strong>
                   </div>
 
@@ -362,15 +374,15 @@ export function CapacityProtectedSpaceSection({
                         !isCapacityConfigured && capacity.capacityStatus === "unknown"
                           ? "Capacidad desconocida (sin configurar)"
                           : isCapacityConfigured && capacity.capacityStatus === "unknown"
-                          ? "Capacidad desconocida (faltan estimaciones)"
-                          : formatCapacityStatus(capacity.capacityStatus)
+                            ? "Capacidad desconocida (faltan estimaciones)"
+                            : formatCapacityStatus(capacity.capacityStatus)
                       }`}
                     >
                       {!isCapacityConfigured && capacity.capacityStatus === "unknown"
                         ? "Sin configurar"
                         : isCapacityConfigured && capacity.capacityStatus === "unknown"
-                        ? "Pendiente de estimar"
-                        : formatCapacityStatus(capacity.capacityStatus)}
+                          ? "Pendiente de estimar"
+                          : formatCapacityStatus(capacity.capacityStatus)}
                     </span>
                   </div>
                 </div>
@@ -404,7 +416,8 @@ export function CapacityProtectedSpaceSection({
                       borderRadius: "4px",
                     }}
                   >
-                    Hay {formatHours(capacity.knownEstimatedHours, "algunas horas")} estimadas, pero aún faltan tareas por definir.
+                    Hay {formatHours(capacity.knownEstimatedHours, "algunas horas")} estimadas, pero
+                    aún faltan tareas por definir.
                   </p>
                 )}
 

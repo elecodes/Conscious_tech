@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  CloseWeekInputSchema,
-  ItemOutcomeInputSchema,
-} from "../src/domain/close-week";
+import { CloseWeekInputSchema, ItemOutcomeInputSchema } from "../src/domain/close-week";
 import type { ProposedWeek } from "../src/domain/week";
 
 describe("Skill 11 Domain: close-week schemas & invariants", () => {
