@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import {
   isPrivateOrReservedIpv4,
   isPrivateOrReservedIp,
@@ -629,6 +631,39 @@ describe("Server Proxies Security Hardening", () => {
       expect((fetchOpts as any).dispatcher).toBeDefined();
 
       fetchSpy.mockRestore();
+    });
+  });
+
+  describe("Proxy Token Documentation and Security Contract", () => {
+    it("asserts docs and config do not describe VITE_ proxy token as a secret and clarify real protections", () => {
+      const readme = fs.readFileSync(path.resolve(__dirname, "../README.md"), "utf-8");
+      const envExample = fs.readFileSync(path.resolve(__dirname, "../.env.example"), "utf-8");
+      const adr0023 = fs.readFileSync(
+        path.resolve(__dirname, "../docs/adr/0023-proxy-hardening-and-provider-decoupling.md"),
+        "utf-8"
+      );
+      const changelog = fs.readFileSync(path.resolve(__dirname, "../CHANGELOG.md"), "utf-8");
+
+      for (const [, content] of [
+        ["README.md", readme],
+        [".env.example", envExample],
+        ["ADR 0023", adr0023],
+        ["CHANGELOG.md", changelog],
+      ]) {
+        expect(content).not.toMatch(/(?:shared\s+secret|secreto\s+compartido).*?(?:AI_PROXY_TOKEN|VITE_AI_PROXY_TOKEN)/i);
+        expect(content).not.toMatch(/(?:AI_PROXY_TOKEN|VITE_AI_PROXY_TOKEN).*?(?:shared\s+secret|secreto\s+compartido)/i);
+      }
+
+      expect(readme).toMatch(/dev guard, not a secret/i);
+      expect(readme).toMatch(/origin/i);
+      expect(readme).toMatch(/localhost/i);
+
+      expect(adr0023).toMatch(/guardia de desarrollo/i);
+      expect(adr0023).toMatch(/no es un secreto/i);
+      expect(adr0023).toMatch(/origin/i);
+      expect(adr0023).toMatch(/localhost/i);
+
+      expect(envExample).toMatch(/dev guard/i);
     });
   });
 });

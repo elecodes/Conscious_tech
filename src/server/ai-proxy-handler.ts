@@ -169,7 +169,7 @@ export async function handleAIProxyRequest(
     return;
   }
 
-  // Verify shared secret token if AI_PROXY_TOKEN is configured
+  // Verify optional dev guard token if AI_PROXY_TOKEN is configured
   const configuredToken = env.AI_PROXY_TOKEN;
   if (configuredToken) {
     const headerToken = req.headers?.["x-ai-proxy-token"] as string | undefined;

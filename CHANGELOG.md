@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Expanded SSRF IP validator to block IPv4-compatible IPv6 (`::/96`), Teredo (`2001::/32`), and NAT64 (`64:ff9b:1::/48`).
   - Added DNS rebinding protection in `calendar-proxy-handler.ts` using custom `undici.Agent` with pinned IP `lookup` preserving original `Host` and SNI headers.
   - Hardened `isOriginAllowed` to reject requests without `Origin` header for browser endpoints, allowing only `localhost` origins or explicit `ALLOWED_ORIGINS` env var without Host mirroring.
-  - Added optional shared secret authentication (`AI_PROXY_TOKEN`) for `ai-proxy-handler.ts` transmitted by `RemoteAIProvider`.
+  - Added optional dev guard token (`AI_PROXY_TOKEN` / `VITE_AI_PROXY_TOKEN`) for `ai-proxy-handler.ts` transmitted by `RemoteAIProvider` (explicit dev guard, not a secret or security boundary for browser clients; real protections remain Origin validation and localhost binding).
   - Added automatic expired key pruning to `SimpleRateLimiter` preventing memory growth under sustained load.
   - Documented in `README.md` that development proxies are dev-only and must never be exposed via `vite --host`.
 

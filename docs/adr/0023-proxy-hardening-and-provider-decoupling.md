@@ -22,7 +22,7 @@ Durante la revisión de residuos técnicos y de seguridad se identificaron tres 
    - **SSRF integral:** Bloqueo explícito de rangos IPv6 no públicos adicionales (`::/96`, `2001::/32`, `64:ff9b:1::/48`) junto con los rangos RFC 1918, CGNAT, loopback y link-local preexistentes.
    - **Prevención de DNS rebinding:** Conexión HTTP pineada mediante `undici.Agent` personalizado con función `lookup` que devuelve la IP ya validada, preservando la cabecera `Host` y SNI originales.
    - **Validación de origen estricta:** Rechazo de peticiones sin cabecera `Origin` en rutas navegables y restricción a orígenes localhost o lista explícita vía variable de entorno `ALLOWED_ORIGINS` (sin reflejar la cabecera `Host`).
-   - **Autenticación opcional vía token:** Soporte de `AI_PROXY_TOKEN` para requerir clave compartida en el proxy de IA cuando esté configurada.
+   - **Guardia de desarrollo opcional vía token:** Soporte de `AI_PROXY_TOKEN` y `VITE_AI_PROXY_TOKEN` como guardia de desarrollo opcional (dev guard, no es un secreto ni frontera de seguridad para clientes de navegador; las protecciones efectivas son la validación estricta de `Origin` y el enlace exclusivo a localhost).
    - **Poda activa en el limitador de tasa:** Limpieza automática de claves expiradas para prevenir fugas de memoria.
 
 2. **Inversión de control y proveedores sin estado:**
