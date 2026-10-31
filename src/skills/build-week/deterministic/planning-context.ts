@@ -15,7 +15,7 @@ import {
   extractItemHours,
   isDateInTargetWeek,
 } from "./capacity-math";
-import { assertValidBuildWeekInput } from "./validation";
+import { assertValidBuildWeekInput } from "./input-validation";
 
 export interface ExternalCommitmentConstraint {
   itemId: string;

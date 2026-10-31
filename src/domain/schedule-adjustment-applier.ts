@@ -12,7 +12,7 @@ import {
   ScheduleAdjustmentRecordSchema,
   HumanDecisionSchema,
   HumanDecision,
-} from "./schedule";
+} from "./schedule-types";
 import { validateWeeklyScheduleInvariants } from "./schedule-invariants";
 
 export const ApplyAdjustmentErrorCodeSchema = z.enum([

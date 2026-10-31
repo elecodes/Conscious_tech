@@ -19,7 +19,7 @@ import {
   PipelineDiagnostic,
 } from "../../application/planning-pipeline";
 import { useWeeklySession } from "../context/weekly-session-context";
-import { formatHours } from "./weekly-session-view";
+import { formatHours } from "./weekly-session-formatters";
 import { VoiceDictationButton } from "./voice-dictation-button";
 import { PlanningCapacityHud } from "./planning-capacity-hud";
 import { PlanningHeaderSection, type PendingCarryOverTask } from "./planning-header-section";

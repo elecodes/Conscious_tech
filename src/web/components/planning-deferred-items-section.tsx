@@ -1,6 +1,6 @@
 import { ProposedWeek } from "../../domain/week";
 import { ExtractedItem } from "../../domain/items";
-import { formatDeferredReason, formatUnscheduledCategory } from "./weekly-session-view";
+import { formatDeferredReason, formatUnscheduledCategory } from "./weekly-session-formatters";
 
 export interface PlanningDeferredItemsSectionProps {
   proposedWeek: ProposedWeek;
