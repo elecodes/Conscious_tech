@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.22.0] - 2026-10-31
+
+### Architecture & Circular Dependency Prevention
+
+- **Schedule Domain Decoupling**:
+  - Split `src/domain/schedule.ts` into `schedule-types.ts`, `schedule-invariants.ts`, and `schedule-adjustment-applier.ts`, eliminating circular module imports with `src/domain/week.ts` that caused `ReferenceError` crashes during production preview.
+  - Kept `src/domain/schedule.ts` as a clean facade re-exporting all types and functions for seamless backward compatibility.
+  - Added `npm run check:cycles` using `madge` to statically verify 0 circular dependencies across all 114 source files.
+  - Added mandatory circular dependency check step in GitHub Actions CI workflow.
+
+### Automated Browser Testing & CI Pipeline
+
+- **Programmatic Playwright Smoke Testing**:
+  - Refactored `scripts/smoke-test.ts` to use Vite's programmatic Node.js API (`createServer`, `preview`, `build`) with Playwright Chromium, eliminating hanging child processes.
+  - Added automated Playwright Chromium installation (`npx playwright install --with-deps chromium`) and headless browser verification (`npm run test:smoke`) in CI.
+  - Ignored `*.png` in `.gitignore` and untracked root screenshot artifacts.
+
+### UI Copy, Sample Cases & Domain Enum Localization
+
+- **Spain-Spanish Copy Standardization**:
+  - Harmonized remaining voseo forms to Spain Spanish across components (`Tienes`, `Sincroniza`, `Elige` in `calendar-sync-card.tsx`, `radar-pipeline.ts`, and `active-week-adjustment-panel.tsx`).
+  - Implemented automated recursive source code scanner `tests/voseo-denylist.test.ts` to prevent voseo regressions.
+- **Sample Cases Labeling**:
+  - Renamed dropdown label in `src/web/App.tsx` from "Caso real:" to "Caso de ejemplo:" to accurately reflect that benchmark cases are synthetic, with regression test in `tests/sample-cases-label.test.tsx`.
+- **Spanish Enum Badges**:
+  - Created `src/web/labels.ts` with natural Spain-Spanish maps in sentence case for item types (`Tarea`, `Proyecto`, `Idea`, `Compromiso`, `Preocupación`), item statuses (`Pendiente`, `En marcha`, `Explorando`, `Archivado`), and commitments (`Externo`, `Personal`).
+  - Preserved raw enum values for data, schemas, APIs, and CSS classes (e.g. `badge-task`). Added tests in `tests/labels-and-extracted-card.test.tsx`.
+
+### Privacy-Preserving Logging Hardening
+
+- **Error Redaction Guard**:
+  - Introduced `AppError` and `isAppError` helper in `src/utils/logger.ts`.
+  - Non-app errors (plain `Error`, `TypeError`, `SyntaxError`, etc.) have their messages redacted to `[REDACTED_ERROR_MESSAGE]`, preventing accidental leakage of user notes in short error messages.
+  - Domain and skill error classes implement `readonly isAppError = true`, preserving diagnostic messages up to 200 characters.
+  - Added test coverage in `tests/logger.test.ts`.
+
+### Test Suite Growth
+
+- Expanded from 897 to **909 passing tests across 67 test suites** running in ~4 seconds with zero token cost.
+
+---
+
 ## [0.21.0] - 2026-10-30
 
 ### Security & Dependency Upgrade (Zod 4 Migration)

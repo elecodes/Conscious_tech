@@ -330,6 +330,20 @@ Implemented and calibrated skills:
 - **Modularización de UI y Code-Splitting**: Extracción de componentes y formateadores (`weekly-session-formatters.tsx`, `confirmed-active-memories-section.tsx`, `capacity-protected-space-section.tsx`, `carry-over-tasks-section.tsx`) y configuración de `manualChunks` en Rollup/Vite, reduciendo todos los bundles de producción por debajo de 500 kB.
 - **ADR 0021**: Migración a Zod 4 implementada (zod@4.6.7), resolviendo el aviso de seguridad GHSA-mrhx-c7xc-m3w5 con paridad total de esquemas, compatibilidad regresiva en IndexedDB y 0 vulnerabilidades en audit.
 
+17. **Desacoplamiento de Ciclos en Dominio, Pruebas de Humo en Navegador y Endurecimiento de Privacidad (ADR 0024)**:
+
+- **Desacoplamiento de Agenda (`schedule.ts`)**: Descomposición modular en `schedule-types.ts`, `schedule-invariants.ts` y `schedule-adjustment-applier.ts`. Se eliminó la dependencia circular con `week.ts` que provocaba fallos de inicialización en previsualización de producción.
+- **Compuerta Estricta Anti-Ciclos**: Se añadió `npm run check:cycles` con `madge` como verificación obligatoria de cero ciclos en CI.
+- **Pruebas de Humo Programáticas con Playwright Chromium**: `scripts/smoke-test.ts` utiliza la API de Node.js de Vite (`createServer`, `preview`, `build`) con cierre limpio sin procesos huérfanos. Se integró la instalación de Chromium y el smoke test (`npm run test:smoke`) en el flujo de CI.
+- **Estandarización de Copia y Mapeo de Enums (ADR 0022/0024)**:
+  - Unificación al español de España eliminando formas remanentes de voseo (`Tienes`, `Sincroniza`, `Elige`), con test automatizado de denylist (`tests/voseo-denylist.test.ts`).
+  - Actualización de la etiqueta del selector de casos a "Caso de ejemplo:" en `App.tsx` para reflejar la naturaleza sintética de los benchmarks.
+  - Creación de `src/web/labels.ts` con mapeos en español y sentence case para tipos de ítem, estado, compromiso e importancia, manteniendo los valores crudos para esquemas, APIs y clases CSS (`badge-task`).
+- **Endurecimiento de Privacidad en Logger**:
+  - Introducción de `AppError` e `isAppError: true` en `src/utils/logger.ts`.
+  - Los errores planos (`Error`) o nativos del runtime (`TypeError`, `SyntaxError`) se redactan a `[REDACTED_ERROR_MESSAGE]`, impidiendo que notas o entradas privadas del usuario se filtren a través de mensajes de error cortos en la consola.
+  - Errores confiables de la aplicación (`StorageError`, validaciones) conservan su mensaje técnico diagnóstico. Suite ampliada a 909 tests passing.
+
 Detailed specifications for individual skills live separately from this file.
 
 ---
