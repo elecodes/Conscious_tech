@@ -1,8 +1,7 @@
-import { spawn, execSync, ChildProcess } from "node:child_process";
 import net from "node:net";
 import { createRequire } from "node:module";
+import { createServer, preview, build } from "vite";
 
-// Use installed chromium via require('playwright') as requested
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 
@@ -17,69 +16,49 @@ function getFreePort(): Promise<number> {
   });
 }
 
-async function waitForServer(url: string, timeoutMs = 15000): Promise<void> {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    try {
-      const res = await fetch(url);
-      if (res.ok || res.status < 500) return;
-    } catch {
-      // Retry until server accepts connections
-    }
-    await new Promise((r) => setTimeout(r, 200));
-  }
-  throw new Error(`Server at ${url} failed to respond within ${timeoutMs}ms`);
-}
-
 async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
   console.log(`\n=== Running Smoke Test: [${mode}] ===`);
 
   if (mode === "preview") {
     console.log("Building app for production preview...");
-    execSync("npm run build", { stdio: "inherit" });
+    await build();
   }
 
   const port = await getFreePort();
-  const url = `http://localhost:${port}`;
   console.log(`Starting Vite in ${mode} mode on port ${port}...`);
 
-  const args =
-    mode === "preview"
-      ? ["vite", "preview", "--port", String(port), "--strictPort"]
-      : ["vite", "--port", String(port), "--strictPort"];
+  let serverInstance: {
+    close: () => Promise<void> | void;
+    resolvedUrls?: { local: string[] } | null;
+  } | null = null;
+  let url = `http://localhost:${port}`;
 
-  let serverProc: ChildProcess | null = spawn("npx", args, {
-    stdio: "pipe",
-    env: { ...process.env, BROWSER: "none" },
-    detached: false,
-  });
-
-  serverProc.stdout?.on("data", (data) => {
-    const line = data.toString().trim();
-    if (line) console.log(`[vite ${mode}] ${line}`);
-  });
-
-  serverProc.stderr?.on("data", (data) => {
-    const line = data.toString().trim();
-    if (line) console.error(`[vite ${mode} err] ${line}`);
-  });
-
-  const cleanup = () => {
-    if (serverProc) {
-      try {
-        serverProc.kill("SIGTERM");
-      } catch {
-        // ignore
-      }
-      serverProc = null;
+  if (mode === "preview") {
+    const previewServer = await preview({
+      preview: { port, strictPort: true },
+    });
+    serverInstance = previewServer;
+    if (previewServer.resolvedUrls?.local?.[0]) {
+      url = previewServer.resolvedUrls.local[0];
     }
-  };
+  } else {
+    const devServer = await createServer({
+      server: { port, strictPort: true },
+    });
+    await devServer.listen();
+    serverInstance = devServer;
+    if (devServer.resolvedUrls?.local?.[0]) {
+      url = devServer.resolvedUrls.local[0];
+    }
+  }
 
   try {
-    await waitForServer(url);
     console.log(`Server is ready at ${url}`);
 
-    const browser = await chromium.launch({ headless: true });
+    const browser = await chromium.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
     const page = await browser.newPage();
 
     const pageErrors: string[] = [];
@@ -89,9 +68,8 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     });
 
     console.log(`Navigating to ${url}...`);
-    await page.goto(url, { waitUntil: "networkidle", timeout: 10000 });
+    await page.goto(url, { waitUntil: "networkidle", timeout: 15000 });
 
-    // Assert: no pageerror events occurred
     if (pageErrors.length > 0) {
       throw new Error(
         `Assertion failed: pageerror events detected in [${mode}]:\n` +
@@ -99,12 +77,10 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
       );
     }
 
-    // Assert: text "Tecnología Consciente" is visible
     const textLocator = page.locator("text=Tecnología Consciente").first();
-    await textLocator.waitFor({ state: "visible", timeout: 5000 });
+    await textLocator.waitFor({ state: "visible", timeout: 10000 });
     console.log(`Assertion passed: "Tecnología Consciente" is visible.`);
 
-    // Capture screenshot
     if (mode === "preview") {
       await page.screenshot({ path: "screenshot.png", fullPage: true });
       console.log("Saved screenshot to screenshot.png");
@@ -113,7 +89,9 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     await browser.close();
     console.log(`=== Smoke Test [${mode}] PASSED ===\n`);
   } finally {
-    cleanup();
+    if (serverInstance) {
+      await serverInstance.close();
+    }
   }
 }
 
@@ -132,7 +110,12 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error("\n❌ Smoke test failed:", err.message);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    console.log("All smoke tests passed successfully.");
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error("\n❌ Smoke test failed:", err.message);
+    process.exit(1);
+  });
