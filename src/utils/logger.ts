@@ -22,6 +22,38 @@ const USER_TEXT_KEYS = new Set([
 
 const MAX_LOG_STRING_LENGTH = 200;
 
+export class AppError extends Error {
+  readonly isAppError = true;
+  constructor(message: string) {
+    super(message);
+    this.name = "AppError";
+  }
+}
+
+const KNOWN_APP_ERROR_NAMES = new Set([
+  "AppError",
+  "StorageError",
+  "StaleVersionConflictError",
+  "InvalidRecordDataError",
+  "AmbiguousActivePlanError",
+  "AmbiguousDraftPlanError",
+  "StorageConnectionError",
+  "WeekValidationError",
+  "DeadlinesValidationError",
+  "RelationshipValidationError",
+  "ContextValidationError",
+  "ExtractionValidationError",
+  "GroupWorkValidationError",
+]);
+
+export function isAppError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  if (error instanceof AppError) return true;
+  if ((error as { isAppError?: boolean }).isAppError === true) return true;
+  if (KNOWN_APP_ERROR_NAMES.has(error.name)) return true;
+  return false;
+}
+
 function isZodIssue(data: Record<string, unknown>): boolean {
   return typeof data.code === "string" && Array.isArray(data.path);
 }
@@ -44,10 +76,14 @@ export function sanitizeForLogging(data: unknown): unknown {
         issues: (data as unknown as { issues: unknown[] }).issues.map(sanitizeForLogging),
       };
     }
+    const isApp = isAppError(data);
     return {
       name: data.name,
-      message:
-        data.message.length > MAX_LOG_STRING_LENGTH ? "[REDACTED_LONG_STRING]" : data.message,
+      message: isApp
+        ? data.message.length > MAX_LOG_STRING_LENGTH
+          ? "[REDACTED_LONG_STRING]"
+          : data.message
+        : "[REDACTED_ERROR_MESSAGE]",
     };
   }
 

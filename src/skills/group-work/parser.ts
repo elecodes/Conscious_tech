@@ -2,6 +2,7 @@ import { ZodError } from "zod";
 import { GroupedWork, GroupedWorkSchema } from "../../domain/work-groups";
 
 export class GroupWorkValidationError extends Error {
+  readonly isAppError = true;
   public issues: unknown[];
 
   constructor(message: string, issues: unknown[] = []) {
