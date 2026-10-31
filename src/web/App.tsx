@@ -371,7 +371,7 @@ function AppContent({
           {activeSpace === "capture" && (
             <>
               <span className="config-label" style={{ marginLeft: "auto" }}>
-                Caso real:
+                Caso de ejemplo:
               </span>
               <select value={selectedCaseId} onChange={(e) => handleCaseSelect(e.target.value)}>
                 <option value="">-- Escribe tus ideas o elige un ejemplo --</option>

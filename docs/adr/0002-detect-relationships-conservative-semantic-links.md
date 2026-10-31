@@ -56,7 +56,7 @@ Relationships include `confidence` (`high | medium | low`), an explicit `reason`
 
 ### 5. Semantic Calibration & Boundary Hardening
 
-Through evaluation of 25 real brain dumps, three edge-case failure modes were identified and hardened:
+Through evaluation of 25 sample brain dumps, three edge-case failure modes were identified and hardened:
 
 - **Rule 1 (`related_to`)**: Prohibit `related_to` purely because two items share context, a sprint/project, or because one serves as a workaround while another is blocked (e.g. "mientras tanto..."). An intrinsic semantic connection is required.
 - **Rule 2 (`part_of` vs `depends_on`)**: Clarified that a prerequisite/precondition is not automatically a constituent part. If item B must occur before A but does not form part of A's deliverable, use `depends_on`, not `part_of`.
@@ -67,4 +67,4 @@ Through evaluation of 25 real brain dumps, three edge-case failure modes were id
 - **Positive**: Clean separation of concerns between extraction (01), relationship detection (02), and future grouping (03).
 - **Positive**: Deterministic test suite executes in < 400ms with 0 token spend.
 - **Positive**: Resilient against LLM hallucinations (phantom IDs, loops, redundant opposite edges, and spurious workaround links).
-- **Positive**: Evaluation across 25 real dumps produces faithful dependency and constituent graphs without artificial clustering.
+- **Positive**: Evaluation across 25 sample dumps produces faithful dependency and constituent graphs without artificial clustering.

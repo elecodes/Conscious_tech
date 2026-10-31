@@ -252,4 +252,4 @@ Consistent with our deterministic engine patterns in Skills 01–04, the followi
    - Items explicitly qualified as optional ("si me da tiempo", "si tengo un rato") or exploratory preserve `low` attention even if calendar deadlines or proximity are present (e.g. Case 03, Case 22).
 4. **Verification & Invariant Health**:
    - Tested with 39 unit/behavioral tests (169 total in the suite) passing in < 700ms.
-   - Evaluated across 25 real dumps with 100% item coverage (63/63), 100% group coverage (7/7), 0 phantom IDs, and 0 duplicate entries.
+   - Evaluated across 25 sample dumps with 100% item coverage (63/63), 100% group coverage (7/7), 0 phantom IDs, and 0 duplicate entries.

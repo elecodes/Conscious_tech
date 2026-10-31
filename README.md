@@ -274,7 +274,7 @@ GEMINI_MODEL=gemini-2.5-flash
 npm run dev
 ```
 
-Open `http://localhost:5173` to test brain dumps interactively, select real-world cases, switch providers, and inspect raw JSON outputs.
+Open `http://localhost:5173` to test brain dumps interactively, select sample cases, switch providers, and inspect raw JSON outputs.
 
 ### 4. Run Test Suite
 
