@@ -7,6 +7,7 @@ import sampleDumpsData from "../../cases/sample-dumps.json";
 import { WeeklySessionProvider, useWeeklySession } from "./context/weekly-session-context";
 import { WeeklySessionView } from "./components/weekly-session-view";
 import { WeeklySessionService } from "../application/weekly-session-service";
+import { formatItemType, formatItemStatus, formatCommitmentType, formatImportance } from "./labels";
 
 export type NavigationSpace = "capture" | "prepare" | "active" | "review";
 
@@ -478,15 +479,21 @@ function AppContent({
                     <div className="item-content">
                       <div className="item-title">{item.title}</div>
                       <div className="item-tags">
-                        <span className={`badge badge-${item.type}`}>{item.type}</span>
+                        <span className={`badge badge-${item.type}`}>
+                          {formatItemType(item.type)}
+                        </span>
                         {item.project && (
                           <span className="badge badge-muted">📁 {item.project}</span>
                         )}
                         {item.status && (
-                          <span className="badge badge-muted">estado: {item.status}</span>
+                          <span className="badge badge-muted">
+                            Estado: {formatItemStatus(item.status)}
+                          </span>
                         )}
                         {item.commitment && item.commitment !== "none" && (
-                          <span className="badge badge-muted">compromiso {item.commitment}</span>
+                          <span className="badge badge-muted">
+                            Compromiso {formatCommitmentType(item.commitment).toLowerCase()}
+                          </span>
                         )}
                         {item.estimatedEffort && (
                           <span className="badge badge-muted">
@@ -500,7 +507,9 @@ function AppContent({
                           </span>
                         )}
                         {item.importance && (
-                          <span className="badge badge-muted">⭐ {item.importance}</span>
+                          <span className="badge badge-muted">
+                            ⭐ {formatImportance(item.importance)}
+                          </span>
                         )}
                       </div>
                       <div className="item-raw">"{item.rawText}"</div>

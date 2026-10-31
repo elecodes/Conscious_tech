@@ -1,6 +1,7 @@
 import { ProposedWeek, TargetWeek } from "../../domain/week";
 import { ExtractedItem } from "../../domain/items";
 import { buildGoogleCalendarTemplateUrl } from "../../domain/calendar";
+import { formatCommitmentType } from "../labels";
 
 export interface PlanningProposedItemsSectionProps {
   proposedWeek: ProposedWeek;
@@ -291,7 +292,9 @@ export function PlanningProposedItemsSection({
               >
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <strong>{ob.title}</strong>
-                  <span className="badge badge-commitment">{ob.commitmentType}</span>
+                  <span className="badge badge-commitment">
+                    {formatCommitmentType(ob.commitmentType)}
+                  </span>
                 </div>
                 {ob.dueDate && (
                   <div className="calm-text" style={{ fontSize: "0.85rem", marginTop: "2px" }}>
@@ -344,7 +347,7 @@ export function PlanningProposedItemsSection({
                         title: ob.title,
                         day: ob.dueDate || activeTargetWeek.startDate,
                         durationHours: ob.estimatedHours || 1,
-                        description: `Compromiso semanal (${ob.commitmentType})\nFundamentación: ${ob.rationale}`,
+                        description: `Compromiso semanal (${formatCommitmentType(ob.commitmentType)})\nFundamentación: ${ob.rationale}`,
                       });
                       window.open(gcalUrl, "_blank", "noopener,noreferrer");
                     }}

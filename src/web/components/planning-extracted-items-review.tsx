@@ -1,4 +1,5 @@
 import { ExtractedItem } from "../../domain/items";
+import { formatItemType } from "../labels";
 import { VoiceDictationButton } from "./voice-dictation-button";
 
 export interface PlanningExtractedItemsReviewProps {
@@ -188,7 +189,9 @@ export function PlanningExtractedItemsReview({
                         flexWrap: "wrap",
                       }}
                     >
-                      <span className={`badge badge-${item.type}`}>{item.type}</span>
+                      <span className={`badge badge-${item.type}`}>
+                        {formatItemType(item.type)}
+                      </span>
                       {item.project && <span className="badge badge-muted">📁 {item.project}</span>}
                       {item.estimatedEffort && (
                         <span className="badge badge-muted">

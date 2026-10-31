@@ -1,4 +1,5 @@
 import { TargetWeek } from "../../domain/week";
+import { formatPlanCategoryOrigin } from "../labels";
 
 export interface PendingCarryOverTask {
   itemId: string;
@@ -114,7 +115,9 @@ export function CarryOverTasksSection({
                 >
                   <strong style={{ fontSize: "0.95rem" }}>{task.title}</strong>
                   <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                    <span className="badge badge-task">Origen: {task.originCategory}</span>
+                    <span className="badge badge-task">
+                      Origen: {formatPlanCategoryOrigin(task.originCategory)}
+                    </span>
                     {task.estimatedHours != null && (
                       <span className="badge badge-muted">⏱ {task.estimatedHours}h</span>
                     )}
