@@ -42,7 +42,8 @@ docs/
     ├── 0020-google-calendar-ical-integration.md
     ├── 0021-zod-advisory-mitigation-and-v4-migration-strategy.md
     ├── 0022-spanish-first-language-and-deferred-i18n.md
-    └── 0023-proxy-hardening-and-provider-decoupling.md
+    ├── 0023-proxy-hardening-and-provider-decoupling.md
+    └── 0024-domain-decoupling-browser-smoke-tests-and-privacy-hardening.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
 │   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
@@ -55,7 +56,11 @@ src/
 │   ├── conflict.ts          # ConflictType, DetectedConflict, TimeBlock, Evidence
 │   ├── adjustment.ts        # AdjustmentProposal, SuggestedAdjustmentAction, Partitions
 │   ├── memory.ts            # MemoryItem, MemoryOperation, CandidateMemoryInput, Invariants
-│   └── calendar.ts          # CalendarEvent, CalendarWeekSummary, 1-click & ICS export
+│   ├── calendar.ts          # CalendarEvent, CalendarWeekSummary, 1-click & ICS export
+│   ├── schedule.ts          # WeeklySchedule re-export facade
+│   ├── schedule-types.ts    # Schedule types & schemas (no circular dependencies)
+│   ├── schedule-invariants.ts # Schedule invariant validators
+│   └── schedule-adjustment-applier.ts # Plan & schedule adjustment applier
 ├── infrastructure/          # Storage, calendar parsing & backup
 │   ├── calendar/            # RFC 5545 iCalendar parser (recurring, timezones, status)
 │   └── storage/indexeddb/   # IndexedDB repositories (plans, schedules, memory, close, backup)
@@ -123,6 +128,7 @@ src/
 └── web/                     # React UI, conscious spaces & hooks
     ├── components/          # Calm UI components (session, planning, radar, calendar, voice)
     ├── hooks/               # useSpeechRecognition (Web Speech API)
+    ├── labels.ts            # Localized Spanish labels for domain enums
     ├── App.tsx
     ├── main.tsx
     └── style.css
@@ -278,7 +284,7 @@ Open `http://localhost:5173` to test brain dumps interactively, select sample ca
 
 ### 4. Run Test Suite
 
-Unit, behavioral, and security tests run deterministically with zero token consumption (860+ tests across 62 suites):
+Unit, behavioral, and security tests run deterministically with zero token consumption (900+ tests across 67 suites):
 
 ```bash
 npm test
@@ -314,8 +320,10 @@ npm run eval -- --provider=groq --case=case-01
 npm run typecheck
 npm run lint
 npm run format:check
+npm run check:cycles
 npm test
 npm run build
+npm run test:smoke
 ```
 
 ---
