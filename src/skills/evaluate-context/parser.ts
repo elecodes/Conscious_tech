@@ -8,6 +8,7 @@ import {
 import { logger } from "../../utils/logger";
 
 export class ContextValidationError extends Error {
+  readonly isAppError = true;
   public issues: unknown[];
 
   constructor(message: string, issues: unknown[] = []) {

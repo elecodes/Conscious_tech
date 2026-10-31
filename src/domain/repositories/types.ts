@@ -16,6 +16,7 @@ import {
 // ============================================================================
 
 export class StorageError extends Error {
+  readonly isAppError = true;
   constructor(message: string) {
     super(message);
     this.name = "StorageError";

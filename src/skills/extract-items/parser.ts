@@ -1,6 +1,7 @@
 import { ExtractedItems, ExtractedItemsSchema } from "../../domain/items";
 
 export class ExtractionValidationError extends Error {
+  readonly isAppError = true;
   constructor(
     message: string,
     public readonly issues?: unknown,

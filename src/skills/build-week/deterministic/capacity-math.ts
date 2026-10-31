@@ -10,6 +10,7 @@ import {
 } from "../../../domain/week";
 
 export class WeekValidationError extends Error {
+  readonly isAppError = true;
   public issues: unknown[];
 
   constructor(message: string, issues: unknown[] = []) {

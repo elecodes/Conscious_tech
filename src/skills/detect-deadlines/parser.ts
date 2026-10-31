@@ -2,6 +2,7 @@ import { ZodError } from "zod";
 import { DetectedDeadlines, DetectedDeadlinesSchema } from "../../domain/deadlines";
 
 export class DeadlinesValidationError extends Error {
+  readonly isAppError = true;
   public issues: unknown[];
 
   constructor(message: string, issues: unknown[] = []) {

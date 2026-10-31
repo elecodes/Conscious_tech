@@ -2,6 +2,7 @@ import { DetectedRelationships, DetectedRelationshipsSchema } from "../../domain
 import { cleanJsonString } from "../extract-items/parser";
 
 export class RelationshipValidationError extends Error {
+  readonly isAppError = true;
   constructor(
     message: string,
     public readonly issues?: unknown,

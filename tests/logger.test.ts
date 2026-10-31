@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { z } from "zod";
-import { logger, sanitizeForLogging } from "../src/utils/logger";
+import { logger, sanitizeForLogging, AppError } from "../src/utils/logger";
+import { StorageError } from "../src/domain/repositories/types";
 
 describe("Privacy-preserving Logger Utility", () => {
   it("redacts sensitive user text properties from logged objects", () => {
@@ -38,7 +39,40 @@ describe("Privacy-preserving Logger Utility", () => {
     const err = new Error("Database connection dropped");
     const sanitizedErr = sanitizeForLogging(err) as { name: string; message: string };
     expect(sanitizedErr.name).toBe("Error");
-    expect(sanitizedErr.message).toBe("Database connection dropped");
+    // Plain Error is not an app error, so message is redacted to avoid leaking user text
+    expect(sanitizedErr.message).toBe("[REDACTED_ERROR_MESSAGE]");
+
+    const appErr = new AppError("Database connection dropped");
+    const sanitizedAppErr = sanitizeForLogging(appErr) as { name: string; message: string };
+    expect(sanitizedAppErr.name).toBe("AppError");
+    expect(sanitizedAppErr.message).toBe("Database connection dropped");
+  });
+
+  it("redacts plain and runtime errors while preserving trusted app errors", () => {
+    const plainErrorWithUserContent = new Error(
+      "Failed to parse task: Buy milk with sensitive note"
+    );
+    const sanitizedPlain = sanitizeForLogging(plainErrorWithUserContent) as {
+      name: string;
+      message: string;
+    };
+    expect(sanitizedPlain.name).toBe("Error");
+    expect(sanitizedPlain.message).toBe("[REDACTED_ERROR_MESSAGE]");
+
+    const typeError = new TypeError("Cannot read properties of user input 'secret'");
+    const sanitizedType = sanitizeForLogging(typeError) as { name: string; message: string };
+    expect(sanitizedType.name).toBe("TypeError");
+    expect(sanitizedType.message).toBe("[REDACTED_ERROR_MESSAGE]");
+
+    const storageErr = new StorageError("IndexedDB connection failed");
+    const sanitizedStorage = sanitizeForLogging(storageErr) as { name: string; message: string };
+    expect(sanitizedStorage.name).toBe("StorageError");
+    expect(sanitizedStorage.message).toBe("IndexedDB connection failed");
+
+    const longAppErr = new AppError("A".repeat(250));
+    const sanitizedLong = sanitizeForLogging(longAppErr) as { name: string; message: string };
+    expect(sanitizedLong.name).toBe("AppError");
+    expect(sanitizedLong.message).toBe("[REDACTED_LONG_STRING]");
   });
 
   it("routes through console.warn when forceLog is enabled", () => {
