@@ -71,6 +71,17 @@ describe("FIX 3: Spanish labels for enum badges", () => {
       }
     });
 
+    it("ensures natural sentence case for multi-word labels (En marcha, Compromiso externo)", () => {
+      expect(ITEM_STATUS_LABELS.started).toBe("En marcha");
+      expect(ITEM_STATUS_LABELS.started).not.toBe("En Marcha");
+      expect(`Compromiso ${formatCommitmentType("external").toLowerCase()}`).toBe(
+        "Compromiso externo"
+      );
+      expect(`Compromiso ${formatCommitmentType("external").toLowerCase()}`).not.toBe(
+        "Compromiso Externo"
+      );
+    });
+
     it("auxiliary label maps (origins, relationships, deadline kinds, signals) are properly defined", () => {
       expect(PLAN_CATEGORY_ORIGIN_LABELS.focus).toBe("Foco");
       expect(RELATIONSHIP_TYPE_LABELS.depends_on).toBe("Depende de");
