@@ -118,7 +118,7 @@ export function ActiveWeekAdjustmentPanel({
 
         <div style={{ marginTop: "12px" }}>
           <p className="calm-muted" style={{ fontSize: "0.84rem", marginBottom: "14px" }}>
-            Elegí una tarea para definir sus horas o programarla en un día específico.
+            Elige una tarea para definir sus horas o programarla en un día específico.
           </p>
 
           {planItems.length === 0 ? (
