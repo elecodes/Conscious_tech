@@ -1,5 +1,5 @@
 import type { TimeBlock } from "./conflict";
-import type { WeeklySchedule } from "./schedule";
+import type { WeeklySchedule } from "./schedule-types";
 
 export interface ScheduleInvariantValidationResult {
   valid: boolean;

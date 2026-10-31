@@ -1,4 +1,14 @@
-import { PendingCarryOverTask } from "./weekly-planning-from-notes";
+import { TargetWeek } from "../../domain/week";
+
+export interface PendingCarryOverTask {
+  itemId: string;
+  title: string;
+  originCategory: string;
+  postponementReason: string;
+  targetWeek?: TargetWeek;
+  dueDate?: string;
+  estimatedHours?: number | null;
+}
 
 export interface CarryOverTasksSectionProps {
   carryOverTasks: PendingCarryOverTask[];

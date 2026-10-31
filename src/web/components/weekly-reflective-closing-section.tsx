@@ -1,6 +1,13 @@
 import { StoredWeeklyPlan } from "../../domain/repositories/types";
 import { ItemOutcomeInput } from "../../domain/close-week";
-import { ItemDispositionChoice, ItemDispositionForm } from "./weekly-session-view";
+
+export type ItemDispositionChoice =
+  "unreviewed" | "completed" | "in_progress" | "not_started" | "consciously_postponed" | "dropped";
+
+export interface ItemDispositionForm {
+  status: ItemDispositionChoice;
+  postponementReason: string;
+}
 
 export interface PlanItemSummary {
   itemId: string;

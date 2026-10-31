@@ -35,8 +35,17 @@ jobs:
       - name: Format Check
         run: npm run format:check
 
+      - name: Check circular dependencies
+        run: npm run check:cycles
+
       - name: Test
         run: npm test
 
       - name: Build
         run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke Test
+        run: npm run test:smoke

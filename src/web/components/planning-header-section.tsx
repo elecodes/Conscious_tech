@@ -4,17 +4,9 @@ import { ExtractedItem } from "../../domain/items";
 import { StoredWeeklyPlan } from "../../domain/repositories/types";
 import { CalendarWeekSummary } from "../../domain/calendar";
 import { CalendarSyncCard } from "./calendar-sync-card";
-import { CarryOverTasksSection } from "./carry-over-tasks-section";
+import { CarryOverTasksSection, type PendingCarryOverTask } from "./carry-over-tasks-section";
 
-export interface PendingCarryOverTask {
-  itemId: string;
-  title: string;
-  originCategory: string;
-  postponementReason: string;
-  targetWeek?: TargetWeek;
-  dueDate?: string;
-  estimatedHours?: number | null;
-}
+export type { PendingCarryOverTask };
 
 export interface PlanningHeaderSectionProps {
   hasActivePlan: boolean;

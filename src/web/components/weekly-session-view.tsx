@@ -39,18 +39,16 @@ import { CapacityProtectedSpaceSection } from "./capacity-protected-space-sectio
 import { ClosedWeekReviewCard } from "./closed-week-review-card";
 import { UnforeseenRadarSection } from "./unforeseen-radar-section";
 import { ActiveWeekScheduleSection } from "./active-week-schedule-section";
-import { WeeklyReflectiveClosingSection } from "./weekly-reflective-closing-section";
+import {
+  WeeklyReflectiveClosingSection,
+  type ItemDispositionChoice,
+  type ItemDispositionForm,
+} from "./weekly-reflective-closing-section";
 import { ScheduleAdjustmentHistorySection } from "./schedule-adjustment-history-section";
 import { ConfirmedCloseReportSection } from "./confirmed-close-report-section";
 import { MemoryCandidatesSection } from "./memory-candidates-section";
 
-export type ItemDispositionChoice =
-  "unreviewed" | "completed" | "in_progress" | "not_started" | "consciously_postponed" | "dropped";
-
-export interface ItemDispositionForm {
-  status: ItemDispositionChoice;
-  postponementReason: string;
-}
+export type { ItemDispositionChoice, ItemDispositionForm };
 
 export interface WeeklySessionViewProps {
   provider?: AIProvider;
