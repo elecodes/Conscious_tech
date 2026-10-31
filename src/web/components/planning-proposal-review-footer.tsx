@@ -1,6 +1,7 @@
 import { ProposedWeek, TargetWeek } from "../../domain/week";
 import { PipelineDiagnostic } from "../../application/planning-pipeline";
 import { generateIcsCalendarExport } from "../../domain/calendar";
+import { formatCommitmentType } from "../labels";
 
 export interface PlanningProposalReviewFooterProps {
   proposedWeek: ProposedWeek;
@@ -268,7 +269,7 @@ export function PlanningProposalReviewFooter({
                   title: o.title,
                   day: o.dueDate || activeTargetWeek.startDate,
                   durationHours: o.estimatedHours || 1,
-                  description: `Compromiso (${o.commitmentType})`,
+                  description: `Compromiso (${formatCommitmentType(o.commitmentType)})`,
                 })),
                 ...proposedWeek.flexibleOptions.map((fl) => ({
                   title: fl.title,

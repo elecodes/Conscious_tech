@@ -239,7 +239,7 @@ export async function evaluateRadarInput(
     outcome: "fits_available_space",
     verdictTitle: "🟢 Cabe en el espacio disponible",
     verdictExplanation:
-      "Tenés suficiente margen en tu semana para incorporar esta tarea sin comprometer tus focos principales ni el espacio protegido.",
+      "Tienes suficiente margen en tu semana para incorporar esta tarea sin comprometer tus focos principales ni el espacio protegido.",
     extractedItems: items,
     changeAnalysis,
     conflictReport,

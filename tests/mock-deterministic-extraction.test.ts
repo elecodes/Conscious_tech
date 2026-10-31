@@ -256,7 +256,7 @@ describe("MockProvider — Extracción determinista de notas arbitrarias", () =>
   });
 
   // --------------------------------------------------------------------------
-  // 8. Descomposición de oraciones compuestas con múltiples acciones (caso real usuario)
+  // 8. Descomposición de oraciones compuestas con múltiples acciones (caso de ejemplo de usuario)
   // --------------------------------------------------------------------------
   it("descompone 'También quieroavanzar Tecnología Consciente, estudiar SOLID y seguir con ArchitectAI' en 3 tareas independientes", async () => {
     const rawNote =

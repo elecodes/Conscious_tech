@@ -10,14 +10,14 @@ import { manageMemoryDeterministically } from "../src/skills/manage-memory/deter
 import { executeCloseWeekDeterministic } from "../src/skills/close-week/deterministic";
 import { ItemOutcomeInput } from "../src/domain/close-week";
 
-describe("Skills 07–11 Real-Input Evaluation Pipeline", () => {
+describe("Skills 07–11 Sample-Input Evaluation Pipeline", () => {
   const evalWeekResultsPath = path.resolve(__dirname, "../cases/eval-week-results.json");
   const rawData = JSON.parse(fs.readFileSync(evalWeekResultsPath, "utf-8"));
 
   const sampleCaseIds = ["case-01", "case-02", "case-03", "case-04", "case-05"];
 
   for (const caseId of sampleCaseIds) {
-    describe(`Evaluating real plan output from ${caseId}`, () => {
+    describe(`Evaluating sample plan output from ${caseId}`, () => {
       const record = rawData[caseId];
       if (!record || !record.proposal) {
         it.skip(`Missing proposal in ${caseId}`, () => {});

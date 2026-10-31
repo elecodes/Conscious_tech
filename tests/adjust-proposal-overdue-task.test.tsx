@@ -211,7 +211,7 @@ describe("Corregir el ajuste de una propuesta semanal y manejo de tareas vencida
     // La reunión externa del martes 20 a las 10:00 se mantiene intacta como compromiso
     expect(html).toContain('data-testid="proposed-obligation-item-mock-2"');
     expect(html).toContain("2026-10-20");
-    expect(html).toContain("external");
+    expect(html).toContain("Externo");
   });
 
   it("4. No persiste ni activa automáticamente en almacén hasta confirmación humana", async () => {
