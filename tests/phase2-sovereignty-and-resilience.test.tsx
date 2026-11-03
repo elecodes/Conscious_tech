@@ -329,7 +329,7 @@ describe("Fase 2: Soberanía de Datos y Resiliencia (H-03, H-05, H-08)", () => {
         </WeeklySessionReactContext.Provider>
       );
 
-      expect(html).toContain("Memorias activas confirmadas");
+      expect(html).toContain("Lo que he aprendido");
       expect(html).toContain("Las mañanas de los lunes son mejores para foco profundo");
       expect(html).toContain("💤 Desactivar");
       expect(html).toContain("🗑️ Olvidar");

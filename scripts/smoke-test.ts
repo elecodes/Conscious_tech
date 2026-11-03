@@ -54,9 +54,9 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
   }
 
-  const baselineDir = path.resolve(process.cwd(), "docs/ui-baseline");
-  if (!fs.existsSync(baselineDir)) {
-    fs.mkdirSync(baselineDir, { recursive: true });
+  const outputDir = path.resolve(process.cwd(), "docs/ui-pr-b");
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
   }
 
   try {
@@ -90,69 +90,127 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     await textLocator.waitFor({ state: "visible", timeout: 10000 });
     console.log(`Assertion passed: "Tecnología Consciente" is visible.`);
 
-    // --- STEP 1: Assert empty states on all 4 tabs & capture baseline screenshots ---
+    // PR B checks:
+    // 1. Verify header is simplified: presence chip and avatar are absent
+    const presenceCount = await page.locator("text=Presencia").count();
+    if (presenceCount > 0) {
+      throw new Error("Presence pill should not be rendered in header");
+    }
+    console.log("  ✓ No presence pill in header");
+
+    // 2. Verify Ajustes dropdown exists in header
+    const settingsDetails = page.locator('[data-testid="settings-dropdown"]');
+    await settingsDetails.waitFor({ state: "visible", timeout: 5000 });
+    console.log("  ✓ Ajustes dropdown visible in header");
+
+    // Open Ajustes dropdown and take screenshot
+    await page.locator('[data-testid="settings-dropdown"] summary').click();
+    await page
+      .locator('[data-testid="export-backup-button"]')
+      .waitFor({ state: "visible", timeout: 5000 });
+    if (mode === "preview") {
+      await page.screenshot({
+        path: path.join(outputDir, "00-settings-open.png"),
+        fullPage: true,
+      });
+    }
+    // Close Ajustes dropdown
+    await page.locator('[data-testid="settings-dropdown"] summary').click();
+
+    // 3. Verify plain tab labels without numbers
+    const tabCapture = page.locator('[data-testid="nav-tab-capture"]');
+    const tabPrepare = page.locator('[data-testid="nav-tab-prepare"]');
+    const tabActive = page.locator('[data-testid="nav-tab-active"]');
+    const tabReview = page.locator('[data-testid="nav-tab-review"]');
+    const tabCaptureText = (await tabCapture.innerText()).trim();
+    const tabPrepareText = (await tabPrepare.innerText()).trim();
+    const tabActiveText = (await tabActive.innerText()).trim();
+    const tabReviewText = (await tabReview.innerText()).trim();
+
+    if (tabCaptureText !== "Ideas")
+      throw new Error(`Tab 1 label expected "Ideas", got "${tabCaptureText}"`);
+    if (tabPrepareText !== "Planificar")
+      throw new Error(`Tab 2 label expected "Planificar", got "${tabPrepareText}"`);
+    if (tabActiveText !== "Mi semana")
+      throw new Error(`Tab 3 label expected "Mi semana", got "${tabActiveText}"`);
+    if (tabReviewText !== "Cierre")
+      throw new Error(`Tab 4 label expected "Cierre", got "${tabReviewText}"`);
+    console.log("  ✓ Simplified tab labels: Ideas, Planificar, Mi semana, Cierre");
+
+    // 4. Verify provider select is NOT visible for normal user
+    const normalProviderCount = await page.locator('[data-testid="provider-select"]').count();
+    if (normalProviderCount > 0) {
+      throw new Error("Provider selector should NOT be visible in normal mode without ?dev=1");
+    }
+    console.log("  ✓ Provider select hidden for normal users");
+
+    // --- STEP 1: Assert empty states on all 4 tabs & capture screenshots ---
     console.log("\nVerifying 4 main tabs navigation and empty states...");
 
-    // 1. Tab 1: Capturar ideas
-    await page.locator('[data-testid="nav-tab-capture"]').click();
+    // 1. Tab 1: Ideas
+    await tabCapture.click();
     await page
       .locator('[data-testid="extract-dump-button"]')
       .waitFor({ state: "visible", timeout: 5000 });
     if (mode === "preview") {
       await page.screenshot({
-        path: path.join(baselineDir, "01-tab-capture-empty.png"),
+        path: path.join(outputDir, "01-tab-capture-empty.png"),
         fullPage: true,
       });
     }
-    console.log("  ✓ Tab 1 (Capturar ideas) rendered without errors");
+    console.log("  ✓ Tab 1 (Ideas) rendered without errors");
 
-    // 2. Tab 2: Preparar semana
-    await page.locator('[data-testid="nav-tab-prepare"]').click();
-    await page
-      .locator('[data-testid="nav-tab-prepare"]')
-      .waitFor({ state: "visible", timeout: 5000 });
+    // 2. Tab 2: Planificar
+    await tabPrepare.click();
+    await tabPrepare.waitFor({ state: "visible", timeout: 5000 });
     if (mode === "preview") {
       await page.screenshot({
-        path: path.join(baselineDir, "02-tab-prepare-empty.png"),
+        path: path.join(outputDir, "02-tab-prepare-empty.png"),
         fullPage: true,
       });
     }
-    console.log("  ✓ Tab 2 (Preparar semana) rendered without errors");
+    console.log("  ✓ Tab 2 (Planificar) rendered without errors");
 
     // 3. Tab 3: Mi semana
-    await page.locator('[data-testid="nav-tab-active"]').click();
-    await page
-      .locator('[data-testid="nav-tab-active"]')
-      .waitFor({ state: "visible", timeout: 5000 });
+    await tabActive.click();
+    await tabActive.waitFor({ state: "visible", timeout: 5000 });
     if (mode === "preview") {
       await page.screenshot({
-        path: path.join(baselineDir, "03-tab-active-empty.png"),
+        path: path.join(outputDir, "03-tab-active-empty.png"),
         fullPage: true,
       });
     }
     console.log("  ✓ Tab 3 (Mi semana) rendered without errors");
 
-    // 4. Tab 4: Revisar y aprender
-    await page.locator('[data-testid="nav-tab-review"]').click();
-    await page
-      .locator('[data-testid="nav-tab-review"]')
-      .waitFor({ state: "visible", timeout: 5000 });
+    // 4. Tab 4: Cierre
+    await tabReview.click();
+    await tabReview.waitFor({ state: "visible", timeout: 5000 });
     if (mode === "preview") {
       await page.screenshot({
-        path: path.join(baselineDir, "04-tab-review-empty.png"),
+        path: path.join(outputDir, "04-tab-review-empty.png"),
         fullPage: true,
       });
     }
-    console.log("  ✓ Tab 4 (Revisar y aprender) rendered without errors");
+    console.log("  ✓ Tab 4 (Cierre) rendered without errors");
 
-    // --- STEP 2: Full flow with Mock provider ---
-    console.log("\nExecuting full Mock provider planning flow...");
+    // --- STEP 2: Dev mode query activation & Full flow with Mock provider ---
+    console.log("\nVerifying ?dev=1 parameter and executing Mock planning flow...");
 
-    // Go to Tab 1 (Capturar ideas)
+    // Activate dev mode via URL parameter
+    await page.goto(`${url}?dev=1`, { waitUntil: "networkidle", timeout: 15000 });
+    const providerSelect = page.locator('[data-testid="provider-select"]');
+    await providerSelect.waitFor({ state: "visible", timeout: 5000 });
+    console.log("  ✓ Provider select visible with ?dev=1");
+
+    // Reload without ?dev=1 to assert sessionStorage persistence
+    await page.goto(url, { waitUntil: "networkidle", timeout: 15000 });
+    await providerSelect.waitFor({ state: "visible", timeout: 5000 });
+    console.log("  ✓ Dev mode persisted across page reloads via sessionStorage");
+
+    // Go to Tab 1 (Ideas)
     await page.locator('[data-testid="nav-tab-capture"]').click();
 
     // Ensure Mock provider is selected
-    const providerSelect = page.locator('[data-testid="provider-select"]');
     await providerSelect.selectOption("mock");
 
     // Pick sample case (case-01)
@@ -166,7 +224,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
 
     if (mode === "preview") {
       await page.screenshot({
-        path: path.join(baselineDir, "05-capture-sample-selected.png"),
+        path: path.join(outputDir, "05-capture-sample-selected.png"),
         fullPage: true,
       });
     }
@@ -182,7 +240,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
 
     if (mode === "preview") {
       await page.screenshot({
-        path: path.join(baselineDir, "06-capture-extracted.png"),
+        path: path.join(outputDir, "06-capture-extracted.png"),
         fullPage: true,
       });
     }
@@ -197,11 +255,11 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
 
     if (mode === "preview") {
       await page.screenshot({
-        path: path.join(baselineDir, "07-prepare-transferred-items.png"),
+        path: path.join(outputDir, "07-prepare-transferred-items.png"),
         fullPage: true,
       });
     }
-    console.log("  ✓ Transferred to Preparar semana");
+    console.log("  ✓ Transferred to Planificar");
 
     // Click "Analizar" / "Generar propuesta semanal"
     await generateProposalBtn.click();
@@ -214,7 +272,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
 
     if (mode === "preview") {
       await page.screenshot({
-        path: path.join(baselineDir, "08-proposal-screen.png"),
+        path: path.join(outputDir, "08-proposal-screen.png"),
         fullPage: true,
       });
     }
@@ -230,16 +288,23 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     const statusBadge = page.locator('[data-testid="process-status-badge"]');
     await statusBadge.waitFor({ state: "visible", timeout: 10000 });
 
+    // Assert PR B renamed jargon in active week
+    await page.locator("text=Lo que he aprendido").waitFor({ state: "visible", timeout: 5000 });
+    await page
+      .locator("text=Imprevistos: ¿Ha aparecido algo nuevo?")
+      .waitFor({ state: "visible", timeout: 5000 });
+    console.log("  ✓ Jargon replacements verified: 'Lo que he aprendido' and 'Imprevistos'");
+
     if (mode === "preview") {
       await page.screenshot({
-        path: path.join(baselineDir, "09-active-week-populated.png"),
+        path: path.join(outputDir, "09-active-week-populated.png"),
         fullPage: true,
       });
       await page.screenshot({ path: "screenshot.png", fullPage: true });
     }
     console.log("  ✓ Active week confirmed and populated in Mi semana");
 
-    // Open Tab 4: Revisar y aprender with active week
+    // Open Tab 4: Cierre with active week
     await page.locator('[data-testid="nav-tab-review"]').click();
     const closingSection = page
       .locator(
@@ -250,11 +315,11 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
 
     if (mode === "preview") {
       await page.screenshot({
-        path: path.join(baselineDir, "10-review-with-active-week.png"),
+        path: path.join(outputDir, "10-review-with-active-week.png"),
         fullPage: true,
       });
     }
-    console.log("  ✓ Revisar y aprender opened with active week");
+    console.log("  ✓ Cierre opened with active week");
 
     // Check for errors
     if (pageErrors.length > 0) {

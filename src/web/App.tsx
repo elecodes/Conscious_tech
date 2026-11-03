@@ -9,6 +9,8 @@ import { WeeklySessionView } from "./components/weekly-session-view";
 import { WeeklySessionService } from "../application/weekly-session-service";
 import { formatItemType, formatItemStatus, formatCommitmentType, formatImportance } from "./labels";
 
+import { isDevMode } from "./dev-mode";
+
 export type NavigationSpace = "capture" | "prepare" | "active" | "review";
 
 export interface AppProps {
@@ -23,12 +25,9 @@ function ProcessStatusBadge() {
   const { state } = useWeeklySession();
   const activePlan =
     state.activePlan && state.activePlan.status === "active" ? state.activePlan : null;
-  const draftPlan =
-    state.draftPlan ||
-    (state.draftPlans && state.draftPlans.length > 0 ? state.draftPlans[0] : null);
 
   return (
-    <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+    <div>
       {activePlan ? (
         <span className="badge badge-task" data-testid="process-status-badge">
           🟢 Semana activa ({activePlan.targetWeek.startDate} al {activePlan.targetWeek.endDate})
@@ -42,16 +41,6 @@ function ProcessStatusBadge() {
           Borrador / Sin semana activa
         </span>
       )}
-
-      {draftPlan && activePlan && (
-        <span
-          className="badge badge-idea"
-          data-testid="future-draft-badge"
-          style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #fde68a" }}
-        >
-          📝 Borrador futuro ({draftPlan.targetWeek.startDate} al {draftPlan.targetWeek.endDate})
-        </span>
-      )}
     </div>
   );
 }
@@ -62,6 +51,7 @@ function AppContent({
   initialTab?: "dump" | "weekly" | NavigationSpace;
 }) {
   const { state, exportBackup, importBackup } = useWeeklySession();
+  const isDev = isDevMode();
   const resolveInitialSpace = (): NavigationSpace => {
     if (initialTab === "dump") return "capture";
     if (initialTab === "weekly") return "active";
@@ -236,41 +226,6 @@ function AppContent({
   return (
     <div className="container">
       <header>
-        <div className="notebook-meta-strip">
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "1rem" }}>✏️</span>
-            <span
-              style={{
-                fontWeight: 600,
-                fontFamily: "var(--font-serif)",
-                fontStyle: "italic",
-                fontSize: "0.95rem",
-              }}
-            >
-              Cuaderno de Foco
-            </span>
-            <span style={{ color: "var(--text-faint)" }}>·</span>
-            <span>Cuaderno personal</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span className="notebook-pill">🌱 Presencia</span>
-            <div
-              style={{
-                width: "24px",
-                height: "24px",
-                borderRadius: "50%",
-                background: "#ede4d6",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "0.75rem",
-              }}
-            >
-              👤
-            </div>
-          </div>
-        </div>
-
         <div
           style={{
             display: "flex",
@@ -286,7 +241,89 @@ function AppContent({
               Cuaderno de claridad y ciclo semanal · AI propone, tú decides
             </p>
           </div>
-          <ProcessStatusBadge />
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+            <ProcessStatusBadge />
+            <details
+              className="calm-details"
+              style={{ margin: 0, padding: "4px 10px", position: "relative" }}
+              data-testid="settings-dropdown"
+            >
+              <summary
+                style={{
+                  cursor: "pointer",
+                  fontSize: "0.85rem",
+                  fontWeight: 500,
+                  listStyle: "none",
+                }}
+              >
+                ⚙️ Ajustes
+              </summary>
+              <div
+                style={{
+                  marginTop: "8px",
+                  padding: "12px",
+                  background: "#ffffff",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+                  minWidth: "280px",
+                  maxWidth: "340px",
+                }}
+              >
+                <h4 style={{ margin: "0 0 6px 0", fontSize: "0.9rem" }}>
+                  💾 Soberanía de datos y respaldo local
+                </h4>
+                <p
+                  className="calm-muted"
+                  style={{ margin: "0 0 10px 0", fontSize: "0.8rem", lineHeight: 1.4 }}
+                >
+                  Tus planes, agendas, cierres y recuerdos se guardan únicamente en tu navegador.
+                  Puedes descargar una copia de seguridad o restaurarla en cualquier momento.
+                </p>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className="secondary small"
+                    style={{ fontSize: "0.8rem" }}
+                    onClick={handleExportBackup}
+                    data-testid="export-backup-button"
+                  >
+                    📥 Descargar copia (.json)
+                  </button>
+                  <label
+                    className="button secondary small"
+                    style={{
+                      fontSize: "0.8rem",
+                      cursor: "pointer",
+                      margin: 0,
+                      display: "inline-flex",
+                      alignItems: "center",
+                    }}
+                    data-testid="import-backup-label"
+                  >
+                    📤 Restaurar copia (.json)
+                    <input
+                      type="file"
+                      accept=".json"
+                      style={{ display: "none" }}
+                      onChange={handleImportBackupFile}
+                      data-testid="import-backup-input"
+                    />
+                  </label>
+                </div>
+                {backupStatus && (
+                  <div
+                    className={`status-message status-${backupStatus.type}`}
+                    style={{ marginTop: "10px", fontSize: "0.78rem" }}
+                    role="status"
+                    data-testid="backup-status-message"
+                  >
+                    {backupStatus.message}
+                  </div>
+                )}
+              </div>
+            </details>
+          </div>
         </div>
 
         <nav
@@ -300,7 +337,7 @@ function AppContent({
             onClick={() => setActiveSpace("capture")}
             data-testid="nav-tab-capture"
           >
-            1. Capturar ideas
+            Ideas
           </button>
           <button
             type="button"
@@ -308,7 +345,7 @@ function AppContent({
             onClick={() => setActiveSpace("prepare")}
             data-testid="nav-tab-prepare"
           >
-            2. Preparar semana
+            Planificar
             {(state.draftPlan || (state.draftPlans && state.draftPlans.length > 0)) && (
               <span
                 style={{
@@ -320,7 +357,7 @@ function AppContent({
                   color: activeSpace === "prepare" ? "inherit" : "#92400e",
                 }}
               >
-                📝 Borrador
+                Borrador
               </span>
             )}
           </button>
@@ -330,7 +367,7 @@ function AppContent({
             onClick={() => setActiveSpace("active")}
             data-testid="nav-tab-active"
           >
-            3. Mi semana
+            Mi semana
             {state.activePlan && state.activePlan.status === "active" && (
               <span
                 style={{
@@ -352,63 +389,69 @@ function AppContent({
             onClick={() => setActiveSpace("review")}
             data-testid="nav-tab-review"
           >
-            4. Revisar y aprender
+            Cierre
           </button>
         </nav>
       </header>
 
-      <section className="config-bar" style={{ marginTop: "16px" }}>
-        <div className="config-row">
-          <span className="config-label">Proveedor IA:</span>
-          <select
-            data-testid="provider-select"
-            value={providerType}
-            onChange={(e) => setProviderType(e.target.value as "mock" | "groq" | "gemini")}
-          >
-            <option value="mock">Mock (Prueba local determinista)</option>
-            <option value="groq">Groq (Servidor local / Qwen 2.5 32B)</option>
-            <option value="gemini">Gemini (Servidor local / Gemini 2.5 Flash)</option>
-          </select>
+      {(isDev || activeSpace === "capture") && (
+        <section className="config-bar" style={{ marginTop: "16px" }}>
+          <div className="config-row">
+            {isDev && (
+              <>
+                <span className="config-label">Proveedor IA:</span>
+                <select
+                  data-testid="provider-select"
+                  value={providerType}
+                  onChange={(e) => setProviderType(e.target.value as "mock" | "groq" | "gemini")}
+                >
+                  <option value="mock">Mock (Prueba local determinista)</option>
+                  <option value="groq">Groq (Servidor local / Qwen 2.5 32B)</option>
+                  <option value="gemini">Gemini (Servidor local / Gemini 2.5 Flash)</option>
+                </select>
+              </>
+            )}
 
-          {activeSpace === "capture" && (
-            <>
-              <span className="config-label" style={{ marginLeft: "auto" }}>
-                Caso de ejemplo:
-              </span>
-              <select
-                data-testid="sample-case-select"
-                value={selectedCaseId}
-                onChange={(e) => handleCaseSelect(e.target.value)}
-              >
-                <option value="">-- Escribe tus ideas o elige un ejemplo --</option>
-                {sampleDumpsData.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.id} - {c.title}
-                  </option>
-                ))}
-              </select>
-            </>
-          )}
-        </div>
-
-        {providerType !== "mock" && (
-          <div
-            className="calm-box"
-            style={{
-              marginTop: "8px",
-              fontSize: "0.85rem",
-              background: "#f7f9fa",
-              borderColor: "#e1e4e8",
-              color: "#444",
-            }}
-          >
-            🔒 <strong>Aislamiento seguro de credenciales:</strong> Las llamadas con IA real se
-            procesan a través del proxy local del servidor. Las claves API nunca se almacenan en el
-            navegador ni se transmiten al cliente; se leen exclusivamente desde las variables de
-            entorno del servidor (<code>GROQ_API_KEY</code> o <code>GEMINI_API_KEY</code>).
+            {activeSpace === "capture" && (
+              <>
+                <span className="config-label" style={isDev ? { marginLeft: "auto" } : undefined}>
+                  Caso de ejemplo:
+                </span>
+                <select
+                  data-testid="sample-case-select"
+                  value={selectedCaseId}
+                  onChange={(e) => handleCaseSelect(e.target.value)}
+                >
+                  <option value="">-- Escribe tus ideas o elige un ejemplo --</option>
+                  {sampleDumpsData.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.id} - {c.title}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
           </div>
-        )}
-      </section>
+
+          {isDev && providerType !== "mock" && (
+            <div
+              className="calm-box"
+              style={{
+                marginTop: "8px",
+                fontSize: "0.85rem",
+                background: "#f7f9fa",
+                borderColor: "#e1e4e8",
+                color: "#444",
+              }}
+            >
+              🔒 <strong>Aislamiento seguro de credenciales:</strong> Las llamadas con IA real se
+              procesan a través del proxy local del servidor. Las claves API nunca se almacenan en
+              el navegador ni se transmiten al cliente; se leen exclusivamente desde las variables
+              de entorno del servidor (<code>GROQ_API_KEY</code> o <code>GEMINI_API_KEY</code>).
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Render active space */}
       {activeSpace === "capture" && (
@@ -542,12 +585,16 @@ function AppContent({
                 >
                   🗓️ Preparar semana con estos elementos ({result.items.length})
                 </button>
-                <button className="inspector-toggle" onClick={() => setShowRawJson(!showRawJson)}>
-                  {showRawJson ? "Ocultar datos JSON" : "Inspeccionar estructura JSON completa"}
-                </button>
+                {isDev && (
+                  <button className="inspector-toggle" onClick={() => setShowRawJson(!showRawJson)}>
+                    {showRawJson ? "Ocultar datos JSON" : "Inspeccionar estructura JSON completa"}
+                  </button>
+                )}
               </div>
 
-              {showRawJson && <pre className="raw-json-box">{JSON.stringify(result, null, 2)}</pre>}
+              {isDev && showRawJson && (
+                <pre className="raw-json-box">{JSON.stringify(result, null, 2)}</pre>
+              )}
             </section>
           )}
         </main>
@@ -584,79 +631,6 @@ function AppContent({
           />
         </main>
       )}
-
-      {/* Local Backup & Sovereignty Section */}
-      <footer
-        style={{
-          marginTop: "48px",
-          borderTop: "1px solid var(--border-color)",
-          paddingTop: "24px",
-          paddingBottom: "32px",
-        }}
-        aria-label="Soberanía y respaldo de datos"
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "12px",
-          }}
-        >
-          <div>
-            <h4 style={{ margin: "0 0 4px 0", fontSize: "0.95rem" }}>
-              💾 Soberanía de datos y respaldo local
-            </h4>
-            <p className="calm-muted" style={{ margin: 0, fontSize: "0.85rem" }}>
-              Tus planes, agendas, cierres y recuerdos se guardan únicamente en tu navegador. Puedes
-              descargar una copia de seguridad o restaurarla en cualquier momento.
-            </p>
-          </div>
-          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
-            <button
-              type="button"
-              className="secondary"
-              style={{ fontSize: "0.85rem" }}
-              onClick={handleExportBackup}
-              data-testid="export-backup-button"
-            >
-              📥 Descargar copia (.json)
-            </button>
-            <label
-              className="button secondary"
-              style={{
-                fontSize: "0.85rem",
-                cursor: "pointer",
-                margin: 0,
-                display: "inline-flex",
-                alignItems: "center",
-              }}
-              data-testid="import-backup-label"
-            >
-              📤 Restaurar copia (.json)
-              <input
-                type="file"
-                accept=".json"
-                style={{ display: "none" }}
-                onChange={handleImportBackupFile}
-                data-testid="import-backup-input"
-              />
-            </label>
-          </div>
-        </div>
-
-        {backupStatus && (
-          <div
-            className={`status-message status-${backupStatus.type}`}
-            style={{ marginTop: "12px", fontSize: "0.85rem" }}
-            role="status"
-            data-testid="backup-status-message"
-          >
-            {backupStatus.message}
-          </div>
-        )}
-      </footer>
     </div>
   );
 }

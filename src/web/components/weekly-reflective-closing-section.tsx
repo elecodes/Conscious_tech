@@ -74,7 +74,7 @@ export function WeeklyReflectiveClosingSection({
         </p>
         <p className="calm-muted" style={{ fontSize: "0.88rem" }}>
           <strong>Alternativa segura:</strong> Puedes mantenerla activa y continuar tu seguimiento
-          en «Mi semana», o preparar borradores para semanas futuras desde «Preparar semana» sin
+          en «Mi semana», o preparar borradores para semanas futuras desde «Planificar» sin
           necesidad de cerrar esta prematuramente.
         </p>
         <div

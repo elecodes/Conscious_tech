@@ -33,7 +33,7 @@ export function UnforeseenRadarSection({
     <section
       className="results-section calm-box"
       style={{ marginTop: "24px" }}
-      aria-label="Radar de imprevistos"
+      aria-label="Gestión de imprevistos"
       data-testid="radar-section"
     >
       <div
@@ -46,7 +46,7 @@ export function UnforeseenRadarSection({
         }}
       >
         <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
-          <span>📡 Radar: ¿Ha aparecido algo nuevo?</span>
+          <span>📡 Imprevistos: ¿Ha aparecido algo nuevo?</span>
         </h3>
         <span className="calm-muted" style={{ fontSize: "0.82rem" }}>
           AI propone, tú decides · No interrumpe silenciosamente
@@ -57,8 +57,8 @@ export function UnforeseenRadarSection({
         className="calm-text"
         style={{ fontSize: "0.88rem", marginTop: "8px", marginBottom: "12px" }}
       >
-        Expresá lo que surgió o cambió en tu semana. El Radar evalúa el impacto en tu capacidad y
-        compromisos sin alterar tu semana automáticamente.
+        Expresa lo que surgió o cambió en tu semana. Evalúa el impacto en tu capacidad y compromisos
+        sin alterar tu semana automáticamente.
       </p>
 
       <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -106,7 +106,7 @@ export function UnforeseenRadarSection({
             disabled={radarEvaluating || !radarInput.trim()}
             style={{ padding: "8px 18px", fontWeight: 600 }}
           >
-            {radarEvaluating ? "Evaluando con Radar..." : "Evaluar con Radar"}
+            {radarEvaluating ? "Evaluando imprevisto..." : "Evaluar imprevisto"}
           </button>
 
           {radarResult && (
@@ -205,7 +205,7 @@ export function UnforeseenRadarSection({
               data-testid="radar-extracted-items"
             >
               <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#4b5563" }}>
-                Elementos identificados por el Radar:
+                Elementos identificados:
               </span>
               <ul style={{ margin: "6px 0 0 18px", padding: 0, fontSize: "0.85rem" }}>
                 {radarResult.extractedItems.map((item) => (

@@ -10,6 +10,7 @@ import { calculateWeeklyCapacity, resolveTargetWeek } from "../../skills/build-w
 import { WeeklyPlanningFromNotes } from "./weekly-planning-from-notes";
 import { evaluateRadarInput, RadarEvaluationResult } from "../../application/radar-pipeline";
 import { AdjustmentProposal } from "../../domain/adjustment";
+import { isDevMode } from "../dev-mode";
 
 export {
   getWeekDays,
@@ -139,9 +140,7 @@ export function WeeklySessionView({
       });
       setRadarResult(res);
     } catch (err) {
-      setRadarError(
-        (err as Error).message || "Ocurrió un error al evaluar el imprevisto con el Radar."
-      );
+      setRadarError((err as Error).message || "Ocurrió un error al evaluar el imprevisto.");
     } finally {
       setRadarEvaluating(false);
     }
@@ -164,7 +163,7 @@ export function WeeklySessionView({
       });
 
       if (res.status === "success") {
-        setFeedbackMessage("Ajuste del Radar aplicado con éxito a tu agenda.");
+        setFeedbackMessage("Ajuste de imprevisto aplicado con éxito a tu agenda.");
         setRadarResult(null);
         setRadarInput("");
       } else if (res.status === "concurrency_conflict") {
@@ -173,7 +172,7 @@ export function WeeklySessionView({
         setFeedbackMessage(`No se pudo aplicar el ajuste: ${res.status}`);
       }
     } catch (err) {
-      setFeedbackMessage((err as Error).message || "Error al aplicar ajuste del Radar.");
+      setFeedbackMessage((err as Error).message || "Error al aplicar ajuste de imprevisto.");
     }
   };
 
@@ -303,7 +302,7 @@ export function WeeklySessionView({
 
       if (res.status === "success") {
         setFeedbackMessage(
-          `Se incorporaron ${radarResult.extractedItems.length} elemento(s) del Radar a tu semana.`
+          `Se incorporaron ${radarResult.extractedItems.length} imprevisto(s) a tu semana.`
         );
         setRadarResult(null);
         setRadarInput("");
@@ -663,123 +662,126 @@ export function WeeklySessionView({
     />
   );
 
-  const renderDevOptions = () => (
-    <div
-      style={{
-        marginTop: "24px",
-        paddingTop: "12px",
-        borderTop: "1px dashed var(--border-color, #ddd)",
-      }}
-      data-testid="dev-options-section"
-    >
-      <details className="calm-details">
-        <summary style={{ cursor: "pointer", fontSize: "0.85rem", color: "#666" }}>
-          Opciones de desarrollo: Iniciar semana de ejemplo prefijada
-        </summary>
-        <div style={{ marginTop: "12px" }}>
-          <button
-            type="button"
-            className="secondary"
-            aria-label="Iniciar nueva semana de ejemplo"
-            onClick={async () => {
-              const today = new Date().toISOString().split("T")[0]!;
-              const targetWeek = resolveTargetWeek(today);
-              const monday = targetWeek.startDate;
-              const tuesdayDate = new Date(`${monday}T00:00:00Z`);
-              tuesdayDate.setUTCDate(tuesdayDate.getUTCDate() + 1);
-              const tuesday = tuesdayDate.toISOString().split("T")[0]!;
-              const planId = `plan-${today}`;
-              const demoPlan: StoredWeeklyPlan = {
-                planId,
-                status: "active",
-                targetWeek,
-                proposal: {
-                  weekSummary: {
-                    targetWeek,
-                    capacity: {
-                      totalAvailableHours: 30,
-                      plannableHours: 22.5,
-                      plannedHours: 16,
-                      knownEstimatedHours: 16,
-                      estimationCompleteness: "complete",
-                      protectedSpaceHours: 7.5,
-                      capacityStatus: "within_capacity",
-                      protectedSpaceStatus: "respected",
+  const renderDevOptions = () => {
+    if (!isDevMode()) return null;
+    return (
+      <div
+        style={{
+          marginTop: "24px",
+          paddingTop: "12px",
+          borderTop: "1px dashed var(--border-color, #ddd)",
+        }}
+        data-testid="dev-options-section"
+      >
+        <details className="calm-details">
+          <summary style={{ cursor: "pointer", fontSize: "0.85rem", color: "#666" }}>
+            Opciones de desarrollo: Iniciar semana de ejemplo prefijada
+          </summary>
+          <div style={{ marginTop: "12px" }}>
+            <button
+              type="button"
+              className="secondary"
+              aria-label="Iniciar nueva semana de ejemplo"
+              onClick={async () => {
+                const today = new Date().toISOString().split("T")[0]!;
+                const targetWeek = resolveTargetWeek(today);
+                const monday = targetWeek.startDate;
+                const tuesdayDate = new Date(`${monday}T00:00:00Z`);
+                tuesdayDate.setUTCDate(tuesdayDate.getUTCDate() + 1);
+                const tuesday = tuesdayDate.toISOString().split("T")[0]!;
+                const planId = `plan-${today}`;
+                const demoPlan: StoredWeeklyPlan = {
+                  planId,
+                  status: "active",
+                  targetWeek,
+                  proposal: {
+                    weekSummary: {
+                      targetWeek,
+                      capacity: {
+                        totalAvailableHours: 30,
+                        plannableHours: 22.5,
+                        plannedHours: 16,
+                        knownEstimatedHours: 16,
+                        estimationCompleteness: "complete",
+                        protectedSpaceHours: 7.5,
+                        capacityStatus: "within_capacity",
+                        protectedSpaceStatus: "respected",
+                      },
+                      intent: "Semana de consolidación y respiro",
                     },
-                    intent: "Semana de consolidación y respiro",
+                    foci: [
+                      {
+                        id: "focus-1",
+                        title: "Reporte estratégico",
+                        desiredOutcome: "Borrador revisado",
+                        rationale: "Foco principal de la semana",
+                        contributingItemIds: ["task-reporte"],
+                        estimatedHours: 12,
+                      },
+                    ],
+                    obligations: [
+                      {
+                        itemId: "task-reunion",
+                        title: "Reunión de equipo",
+                        dueDate: tuesday,
+                        commitmentType: "external",
+                        rationale: "Compromiso de coordinación",
+                        estimatedHours: 4,
+                      },
+                    ],
+                    flexibleOptions: [],
+                    deferredItems: [],
+                    unplannedSpace: {
+                      recommendedHours: 7.5,
+                      rationale: "Espacio protegido para imprevistos",
+                    },
+                    confirmationPrompt: {
+                      question: "¿Te representa este plan?",
+                      keyTradeoffs: ["Foco en reporte estratégico vs otras tareas"],
+                      pendingQuestions: [],
+                    },
                   },
-                  foci: [
+                  createdAt: today,
+                  updatedAt: today,
+                };
+
+                const demoSchedule: WeeklySchedule = {
+                  scheduleId: `sched-${planId}`,
+                  planId,
+                  weekRange: targetWeek,
+                  version: 1,
+                  timeBlocks: [
                     {
-                      id: "focus-1",
-                      title: "Reporte estratégico",
-                      desiredOutcome: "Borrador revisado",
-                      rationale: "Foco principal de la semana",
-                      contributingItemIds: ["task-reporte"],
-                      estimatedHours: 12,
+                      itemId: "task-reporte",
+                      day: monday,
+                      startTime: "09:00",
+                      endTime: "11:00",
                     },
                   ],
-                  obligations: [
-                    {
-                      itemId: "task-reunion",
-                      title: "Reunión de equipo",
-                      dueDate: tuesday,
-                      commitmentType: "external",
-                      rationale: "Compromiso de coordinación",
-                      estimatedHours: 4,
-                    },
+                  dailyAllocations: [
+                    { day: monday, allocatedHours: 5, itemId: "task-reporte" },
+                    { day: tuesday, allocatedHours: 4, itemId: "task-reunion" },
                   ],
-                  flexibleOptions: [],
-                  deferredItems: [],
-                  unplannedSpace: {
-                    recommendedHours: 7.5,
-                    rationale: "Espacio protegido para imprevistos",
-                  },
-                  confirmationPrompt: {
-                    question: "¿Te representa este plan?",
-                    keyTradeoffs: ["Foco en reporte estratégico vs otras tareas"],
-                    pendingQuestions: [],
-                  },
-                },
-                createdAt: today,
-                updatedAt: today,
-              };
+                  appliedAdjustments: [],
+                  createdAt: today,
+                  updatedAt: today,
+                };
 
-              const demoSchedule: WeeklySchedule = {
-                scheduleId: `sched-${planId}`,
-                planId,
-                weekRange: targetWeek,
-                version: 1,
-                timeBlocks: [
-                  {
-                    itemId: "task-reporte",
-                    day: monday,
-                    startTime: "09:00",
-                    endTime: "11:00",
-                  },
-                ],
-                dailyAllocations: [
-                  { day: monday, allocatedHours: 5, itemId: "task-reporte" },
-                  { day: tuesday, allocatedHours: 4, itemId: "task-reunion" },
-                ],
-                appliedAdjustments: [],
-                createdAt: today,
-                updatedAt: today,
-              };
-
-              const res = await createOrSavePlan(demoPlan, demoSchedule);
-              if (res.status === "success") {
-                setFeedbackMessage("Semana de ejemplo iniciada correctamente.");
-                reloadSession();
-                onNavigateSpace?.("active");
-              }
-            }}
-          >
-            Iniciar semana activa de ejemplo (12 al 18 Octubre)
-          </button>
-        </div>
-      </details>
-    </div>
-  );
+                const res = await createOrSavePlan(demoPlan, demoSchedule);
+                if (res.status === "success") {
+                  setFeedbackMessage("Semana de ejemplo iniciada correctamente.");
+                  reloadSession();
+                  onNavigateSpace?.("active");
+                }
+              }}
+            >
+              Iniciar semana activa de ejemplo (12 al 18 Octubre)
+            </button>
+          </div>
+        </details>
+      </div>
+    );
+  };
 
   // --------------------------------------------------------------------------
   // Space 2: Preparar semana (Dedicated space view)
@@ -814,7 +816,7 @@ export function WeeklySessionView({
               gap: "8px",
             }}
           >
-            <h2>2. Preparar semana</h2>
+            <h2>Planificar</h2>
             {state.status === "session_resumed" && state.activePlan && (
               <span className="badge badge-task">
                 Semana activa: {state.activePlan.targetWeek.startDate} al{" "}
@@ -911,7 +913,7 @@ export function WeeklySessionView({
           </div>
         )}
         <section className="plan-summary-card" aria-label="Espacio de mi semana activa">
-          <h2>3. Mi semana</h2>
+          <h2>Mi semana</h2>
           <p className="calm-text" style={{ marginTop: "8px" }}>
             Tu cuaderno está despejado. No hay ninguna semana activa en este momento.
           </p>
@@ -1012,7 +1014,7 @@ export function WeeklySessionView({
           </div>
         )}
         <section className="plan-summary-card" aria-label="Espacio de revisión y aprendizaje">
-          <h2>4. Revisar y aprender</h2>
+          <h2>Cierre</h2>
           <p className="calm-muted" style={{ marginTop: "6px" }}>
             Cierre de ciclo, evaluación honesta de tareas y aprendizaje para las próximas semanas.
             Nada se guarda en memoria sin tu confirmación explícita.
@@ -1069,115 +1071,7 @@ export function WeeklySessionView({
           }}
         />
 
-        <div
-          style={{
-            marginTop: "24px",
-            paddingTop: "12px",
-            borderTop: "1px dashed var(--border-color, #ddd)",
-          }}
-        >
-          <details>
-            <summary style={{ cursor: "pointer", fontSize: "0.85rem", color: "#666" }}>
-              Opciones de desarrollo: Iniciar semana de ejemplo prefijada
-            </summary>
-            <div style={{ marginTop: "12px" }}>
-              <button
-                className="secondary"
-                aria-label="Iniciar nueva semana de ejemplo"
-                onClick={async () => {
-                  const today = new Date().toISOString().split("T")[0]!;
-                  const targetWeek = resolveTargetWeek(today);
-                  const monday = targetWeek.startDate;
-                  const tuesdayDate = new Date(`${monday}T00:00:00Z`);
-                  tuesdayDate.setUTCDate(tuesdayDate.getUTCDate() + 1);
-                  const tuesday = tuesdayDate.toISOString().split("T")[0]!;
-                  const planId = `plan-${today}`;
-                  const demoPlan: StoredWeeklyPlan = {
-                    planId,
-                    status: "active",
-                    targetWeek,
-                    proposal: {
-                      weekSummary: {
-                        targetWeek,
-                        capacity: {
-                          totalAvailableHours: 30,
-                          plannableHours: 22.5,
-                          plannedHours: 16,
-                          knownEstimatedHours: 16,
-                          estimationCompleteness: "complete",
-                          protectedSpaceHours: 7.5,
-                          capacityStatus: "within_capacity",
-                          protectedSpaceStatus: "respected",
-                        },
-                        intent: "Semana de consolidación y respiro",
-                      },
-                      foci: [
-                        {
-                          id: "focus-1",
-                          title: "Reporte estratégico",
-                          desiredOutcome: "Borrador revisado",
-                          rationale: "Foco principal de la semana",
-                          contributingItemIds: ["task-reporte"],
-                          estimatedHours: 12,
-                        },
-                      ],
-                      obligations: [
-                        {
-                          itemId: "task-reunion",
-                          title: "Reunión de equipo",
-                          dueDate: tuesday,
-                          commitmentType: "external",
-                          rationale: "Compromiso de coordinación",
-                          estimatedHours: 4,
-                        },
-                      ],
-                      flexibleOptions: [],
-                      deferredItems: [],
-                      unplannedSpace: {
-                        recommendedHours: 7.5,
-                        rationale: "Espacio protegido para imprevistos",
-                      },
-                      confirmationPrompt: {
-                        question: "¿Te representa este plan?",
-                        keyTradeoffs: ["Foco en reporte estratégico vs otras tareas"],
-                        pendingQuestions: [],
-                      },
-                    },
-                    createdAt: today,
-                    updatedAt: today,
-                  };
-
-                  const demoSchedule: WeeklySchedule = {
-                    scheduleId: `sched-${planId}`,
-                    planId,
-                    weekRange: targetWeek,
-                    version: 1,
-                    timeBlocks: [
-                      {
-                        itemId: "task-reporte",
-                        day: monday,
-                        startTime: "09:00",
-                        endTime: "11:00",
-                      },
-                    ],
-                    dailyAllocations: [
-                      { day: monday, allocatedHours: 5, itemId: "task-reporte" },
-                      { day: tuesday, allocatedHours: 4, itemId: "task-reunion" },
-                    ],
-                    appliedAdjustments: [],
-                    createdAt: today,
-                    updatedAt: today,
-                  };
-
-                  await createOrSavePlan(demoPlan, demoSchedule);
-                  setFeedbackMessage("Semana iniciada con éxito.");
-                }}
-              >
-                Iniciar nueva semana de ejemplo
-              </button>
-            </div>
-          </details>
-        </div>
+        {renderDevOptions()}
       </div>
     );
   }
@@ -1244,9 +1138,9 @@ export function WeeklySessionView({
         >
           <h2>
             {activeSpace === "active"
-              ? "3. Mi semana"
+              ? "Mi semana"
               : activeSpace === "review"
-                ? "4. Revisar y aprender"
+                ? "Cierre"
                 : plan?.status === "closed"
                   ? "Semana cerrada"
                   : "Semana en curso"}

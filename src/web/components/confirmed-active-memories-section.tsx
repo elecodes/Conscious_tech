@@ -20,7 +20,7 @@ export function ConfirmedActiveMemoriesSection({
         borderTop: "1px solid var(--border-color, #e8e3d9)",
         paddingTop: "20px",
       }}
-      aria-label="Memorias activas confirmadas"
+      aria-label="Lo que he aprendido"
       data-testid="confirmed-memories-section"
     >
       <div
@@ -33,7 +33,7 @@ export function ConfirmedActiveMemoriesSection({
           gap: "8px",
         }}
       >
-        <h3 style={{ margin: 0 }}>Memorias activas confirmadas ({memories.length})</h3>
+        <h3 style={{ margin: 0 }}>Lo que he aprendido ({memories.length})</h3>
         <span className="calm-muted" style={{ fontSize: "0.85rem" }}>
           Influyen con prudencia en futuras sugerencias · AI propone, tú decides
         </span>
@@ -51,9 +51,9 @@ export function ConfirmedActiveMemoriesSection({
           data-testid="no-memories-placeholder"
         >
           <p className="calm-muted" style={{ margin: 0, fontSize: "0.9rem" }}>
-            🌱 <em>No tienes memorias activas guardadas todavía.</em> Cuando completes el cierre
-            reflexivo en «4. Revisar y aprender», el sistema te propondrá aprendizajes identificados
-            y podrás decidir explícitamente cuáles conservar en tu cuaderno.
+            🌱 <em>No tienes aprendizajes guardados todavía.</em> Cuando completes el cierre de
+            semana en «Cierre», el sistema te propondrá aprendizajes identificados y podrás decidir
+            explícitamente cuáles conservar en tu cuaderno.
           </p>
         </div>
       ) : (

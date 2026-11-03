@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { indexedDB as fakeIDB, IDBKeyRange as fakeKeyRange } from "fake-indexeddb";
 import {
@@ -20,6 +20,7 @@ import {
 import { MockProvider } from "../src/providers/mock-provider";
 import { StoredWeeklyPlan } from "../src/domain/repositories/types";
 import { WeeklySchedule } from "../src/domain/schedule";
+import { setDevModeForTesting } from "../src/web/dev-mode";
 
 describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva", () => {
   const TEST_DB = "conscious_tech_ux_flow_test_db";
@@ -49,6 +50,10 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     controller = new WeeklySessionController(service);
   });
 
+  afterEach(() => {
+    setDevModeForTesting(null);
+  });
+
   function createMockContextValue(
     overrides?: Partial<WeeklySessionContextValue>
   ): WeeklySessionContextValue {
@@ -75,10 +80,10 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     const html = renderToStaticMarkup(<App service={service} initialTab="active" />);
 
     // 4 pestañas de navegación
-    expect(html).toContain("1. Capturar ideas");
-    expect(html).toContain("2. Preparar semana");
-    expect(html).toContain("3. Mi semana");
-    expect(html).toContain("4. Revisar y aprender");
+    expect(html).toContain("Ideas");
+    expect(html).toContain("Planificar");
+    expect(html).toContain("Mi semana");
+    expect(html).toContain("Cierre");
 
     // Indicador de estado del proceso
     expect(html).toContain("process-status-badge");
@@ -171,7 +176,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     );
 
     // Debe indicar claramente que la semana activa continúa protegida
-    expect(htmlPrepare).toContain("2. Preparar semana");
+    expect(htmlPrepare).toContain("Planificar");
     expect(htmlPrepare).toContain("Semana activa: 2026-10-12 al 2026-10-18");
     expect(htmlPrepare).toContain("sin alterar la semana activa");
   });
@@ -380,9 +385,18 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     expect(html).toContain("2026-10-19");
     expect(html).toContain("Continuar borrador →");
 
-    // Y debe ofrecer las opciones de desarrollo
-    expect(html).toContain("dev-options-section");
-    expect(html).toContain("Opciones de desarrollo: Iniciar semana de ejemplo prefijada");
+    // Por defecto (modo normal) no muestra opciones de desarrollo
+    expect(html).not.toContain("dev-options-section");
+
+    // En modo desarrollador (?dev=1), debe ofrecer las opciones de desarrollo
+    setDevModeForTesting(true);
+    const htmlDev = renderToStaticMarkup(
+      <WeeklySessionReactContext.Provider value={contextVal}>
+        <WeeklySessionView provider={mockProvider} activeSpace="active" />
+      </WeeklySessionReactContext.Provider>
+    );
+    expect(htmlDev).toContain("dev-options-section");
+    expect(htmlDev).toContain("Opciones de desarrollo: Iniciar semana de ejemplo prefijada");
   });
 
   it("9. Permite añadir más ideas a una lista existente y limpiar el cuaderno para una nueva semana", async () => {

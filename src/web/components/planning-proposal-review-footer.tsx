@@ -130,9 +130,9 @@ export function PlanningProposalReviewFooter({
             <strong>{activePlanConflict.targetWeek.startDate}</strong> al{" "}
             <strong>{activePlanConflict.targetWeek.endDate}</strong> está guardada de forma segura
             como borrador en tu cuaderno local (almacenamiento en este dispositivo). Puedes volver a
-            verla y ajustarla en cualquier momento desde esta pestaña (
-            <strong>2. Preparar semana</strong>). En cuanto completes el cierre reflexivo de tu
-            semana actual, podrás activarla directamente.
+            verla y ajustarla en cualquier momento desde esta pestaña (<strong>Planificar</strong>).
+            En cuanto completes el cierre de semana de tu semana actual, podrás activarla
+            directamente.
           </p>
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <button

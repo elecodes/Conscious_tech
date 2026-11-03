@@ -6,4 +6,5 @@ dist/
 coverage/
 *.png
 !docs/ui-baseline/*.png
+!docs/ui-pr-b/*.png
 

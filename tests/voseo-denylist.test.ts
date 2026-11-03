@@ -37,6 +37,7 @@ const VOSEO_DENYLIST: { term: string; pattern: RegExp; replacement: string }[] =
   { term: "recordá", pattern: /\brecordá\b/i, replacement: "recuerda" },
   { term: "ingresá", pattern: /\bingresá\b/i, replacement: "ingresa / introduce" },
   { term: "anotá", pattern: /\banotá\b/i, replacement: "anota" },
+  { term: "expresá", pattern: /\bexpresá\b/i, replacement: "expresa" },
   { term: "vos", pattern: /\bvos\b/i, replacement: "tú / ti / usted" },
 ];
 

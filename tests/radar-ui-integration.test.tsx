@@ -155,8 +155,8 @@ describe("Radar de Imprevistos — Integración en WeeklySessionView (Sección 2
     expect(html).toContain('data-testid="radar-section"');
     expect(html).toContain('data-testid="radar-input"');
     expect(html).toContain('data-testid="radar-evaluate-button"');
-    expect(html).toMatch(/Radar: ¿Ha aparecido algo nuevo\?/i);
-    expect(html).toMatch(/Expresá lo que surgió o cambió/i);
+    expect(html).toMatch(/Imprevistos: ¿Ha aparecido algo nuevo\?/i);
+    expect(html).toMatch(/Expresa lo que surgió o cambió/i);
   });
 
   it("2. El Radar solo se renderiza en el espacio 'active' (Mi semana) y no invade 'prepare'", () => {
