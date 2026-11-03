@@ -35,7 +35,11 @@ producto ("La IA propone. La persona decide.").
      en `sessionStorage`).
    - El selector de proveedor de IA vive en el menú "Ajustes"
      ("Asistente de IA"), cerrado por defecto; copia de seguridad y
-     restauración también en Ajustes.
+     restauración también en Ajustes. La aplicación inicializa por defecto
+     con el proveedor simulado (Mock determinista, sin coste ni necesidad de
+     credenciales en el servidor); si en el futuro se decide cambiar el valor
+     por defecto a un proveedor remoto, este punto de configuración inicial
+     deberá actualizarse.
    - Se elimina el indicador "Presencia" y el avatar de la cabecera, que
      no tenían función.
 5. **Divulgación progresiva en las pantallas con datos.**

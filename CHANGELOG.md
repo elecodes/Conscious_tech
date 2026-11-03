@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.23.0] - 2026-11-03
+
+### UI Simplification & Progressive Disclosure (ADR 0025)
+
+- **One Clear Next Action & Guided Flow**:
+  - Added guided "Paso sugerido" next-step bar (`next-step-bar`) under navigation tabs, derived deterministically from existing session state without adding persisted state.
+  - Hides the primary navigation button when pointing to the user's current space, keeping only the instructional message.
+  - Dynamically lands on "Ideas" on fresh launch with no active week, "Planificar" when a proposal/draft is pending, and "Mi semana" when an active week is present, preventing tab flicker during initial load.
+- **Header & Settings Modernization**:
+  - Removed decorative presence chip and avatar from header.
+  - Added quiet "Ajustes" dropdown (`settings-dropdown`) grouping data sovereignty explanations, backup export/import, and the "Asistente de IA" provider selection.
+  - Kept default AI provider as deterministic Mock (`mock`) for zero-cost offline exploration, with instant switching to Groq and Gemini.
+  - Isolated dev-only tooling (preset sample week initializer, full JSON inspection) behind `?dev=1` (persisted in `sessionStorage`).
+- **Progressive Disclosure on Populated Surfaces**:
+  - **Proposal Review (`Planificar`)**: Consolidated capacity balance into a single human-readable sentence (with full metrics collapsed under "Ver desglose completo"), per-item "••• Más" action menus, collapsed deferred items with counters, and a single primary "Confirmar y activar semana" button with secondary operations grouped under "Más acciones".
+  - **Active Week (`Mi semana`)**: Elevated active tasks to the top surface with contextual "••• Más" menus; collapsed secondary analytical sections (Imprevistos radar, adjustment history, and learned memories) by default with item badges.
+  - **Planning Preparation**: Collapsed calendar sync, target week dates, and notebook reset under an "Opciones" panel; streamlined voice dictation into a compact action button; collapsed optional "Añadir más ideas" accordion.
+  - **Sentence Case Badge Consistency**: Normalized status badges to natural sentence case (`Borrador en cuaderno local`, `Sin programar en la semana`), preventing Title Case styling.
+- **Copy & Terminology Harmonization**:
+  - Replaced internal terminology with natural user vocabulary: "Radar" $\rightarrow$ "Imprevistos", "Memorias activas confirmadas" $\rightarrow$ "Lo que he aprendido", "Cierre reflexivo" $\rightarrow$ "Cierre de semana", "Volver a Capturar" $\rightarrow$ "Volver a Ideas", and "volcado mental" $\rightarrow$ "ideas de tu captura".
+  - Simplified planning subheadings to concise action copy ("Elige qué entra en tu semana.").
+  - Added `disponés` to the automated Spain-Spanish regression guard (`tests/voseo-denylist.test.ts`).
+- **Comprehensive Smoke Testing**:
+  - Extended programmatic Playwright test (`scripts/smoke-test.ts`) covering all 4 tabs, dev mode query persistence, sample case extraction, full proposal review, week activation, active week inspectability, reload landing verification, and early closure navigation.
+  - Configured smoke test output to gitignored `.smoke-output/` and untracked temporary screenshot artifacts.
+
 ## [0.22.0] - 2026-10-31
 
 ### Architecture & Circular Dependency Prevention
