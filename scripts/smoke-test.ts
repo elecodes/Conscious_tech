@@ -383,6 +383,72 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
     console.log("  ✓ Next step bar updated during proposal review");
 
+    // PR E checks on proposal screen:
+    // 1. Capacity one-sentence summary
+    await page
+      .locator('[data-testid="capacity-sentence-summary"]')
+      .first()
+      .waitFor({ state: "visible", timeout: 5000 });
+    console.log("  ✓ Capacity one-sentence summary visible in proposal");
+
+    // 2. Capacity details can be expanded
+    const capacityDetails = page.locator('[data-testid="planning-capacity-details"]');
+    if ((await capacityDetails.count()) > 0) {
+      await capacityDetails.locator("> summary").click();
+      await page.locator("text=Disponibles:").first().waitFor({ state: "visible", timeout: 5000 });
+      await capacityDetails.locator("> summary").click();
+      console.log("  ✓ Capacity details collapse verified in proposal screen");
+    }
+
+    // 3. Item "••• Más" menu can be expanded
+    const itemMoreDetails = page.locator('[data-testid^="more-actions-"]').first();
+    if ((await itemMoreDetails.count()) > 0) {
+      await itemMoreDetails.locator("> summary").click();
+      await itemMoreDetails
+        .locator('button:has-text("Ajustar horas")')
+        .waitFor({ state: "visible", timeout: 5000 });
+      await itemMoreDetails.locator("> summary").click();
+      console.log("  ✓ Item '••• Más' menu verified in proposal items");
+    }
+
+    // 4. "Elementos no programados o diferidos" collapsed by default
+    const deferredDetails = page.locator('[data-testid="proposed-deferred-items-section"]');
+    if ((await deferredDetails.count()) > 0) {
+      const isDeferredOpen = await deferredDetails.evaluate((el: HTMLDetailsElement) => el.open);
+      if (isDeferredOpen) {
+        throw new Error("Elementos no programados o diferidos should be collapsed by default");
+      }
+      await deferredDetails.locator("> summary").click();
+      await page
+        .locator('[data-testid="pending-decision-items-group"]')
+        .waitFor({ state: "visible", timeout: 5000 });
+      await deferredDetails.locator("> summary").click();
+      console.log("  ✓ Deferred items collapse verified in proposal screen");
+    }
+
+    // 5. Proposal footer secondary actions grouped under "Más acciones"
+    const proposalMoreActions = page.locator('[data-testid="proposal-more-actions-details"]');
+    await proposalMoreActions.waitFor({ state: "visible", timeout: 5000 });
+    const isMoreOpen = await proposalMoreActions.evaluate((el: HTMLDetailsElement) => el.open);
+    if (isMoreOpen) {
+      throw new Error("Proposal 'Más acciones' should be collapsed by default");
+    }
+    await proposalMoreActions.locator("> summary").click();
+    await page
+      .locator('[data-testid="adjust-elements-button"]')
+      .waitFor({ state: "visible", timeout: 5000 });
+    await page
+      .locator('[data-testid="add-more-ideas-button"]')
+      .waitFor({ state: "visible", timeout: 5000 });
+    await page
+      .locator('[data-testid="start-fresh-week-button"]')
+      .waitFor({ state: "visible", timeout: 5000 });
+    await page
+      .locator('[data-testid="proposal-export-to-gcal"]')
+      .waitFor({ state: "visible", timeout: 5000 });
+    await proposalMoreActions.locator("> summary").click();
+    console.log("  ✓ Footer 'Más acciones' menu verified in proposal screen");
+
     if (mode === "preview") {
       await page.screenshot({
         path: path.join(outputDir, "08-proposal-screen.png"),
@@ -424,10 +490,67 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     await page.waitForTimeout(300);
     console.log("  ✓ Tab highlight settled on 'Mi semana' (primary)");
 
+    // PR E checks on active week:
+    // 6. Capacity one-sentence summary
+    await page
+      .locator('[data-testid="capacity-sentence-summary"]')
+      .first()
+      .waitFor({ state: "visible", timeout: 5000 });
+    console.log("  ✓ Capacity one-sentence summary visible in active week");
+
+    // 7. Task row "••• Más" menu
+    const taskMoreDetails = page.locator('[data-testid^="task-more-actions-"]').first();
+    if ((await taskMoreDetails.count()) > 0) {
+      await taskMoreDetails.locator("> summary").click();
+      await taskMoreDetails
+        .locator('[data-testid^="adjust-task-"]')
+        .waitFor({ state: "visible", timeout: 5000 });
+      await taskMoreDetails
+        .locator('[data-testid^="add-to-gcal-"]')
+        .waitFor({ state: "visible", timeout: 5000 });
+      await taskMoreDetails.locator("> summary").click();
+      console.log("  ✓ Task row '••• Más' menu verified in active week");
+    }
+
+    // 8. Imprevistos collapsed by default and expandable
+    const radarDetails = page.locator('[data-testid="radar-section"]');
+    await radarDetails.waitFor({ state: "visible", timeout: 5000 });
+    const isRadarOpen = await radarDetails.evaluate((el: HTMLDetailsElement) => el.open);
+    if (isRadarOpen) {
+      throw new Error("Imprevistos section should be collapsed by default");
+    }
+    await radarDetails.locator("> summary").click();
+    await page.locator('[data-testid="radar-input"]').waitFor({ state: "visible", timeout: 5000 });
+    await radarDetails.locator("> summary").click();
+    console.log("  ✓ Imprevistos collapsed section verified in active week");
+
+    // 9. Historial de ajustes collapsed by default
+    const histDetails = page.locator('[data-testid="schedule-adjustments-details"]');
+    await histDetails.waitFor({ state: "visible", timeout: 5000 });
+    const isHistOpen = await histDetails.evaluate((el: HTMLDetailsElement) => el.open);
+    if (isHistOpen) {
+      throw new Error("Historial de ajustes should be collapsed by default");
+    }
+    console.log("  ✓ Historial de ajustes collapsed by default verified");
+
+    // 10. Lo que he aprendido collapsed by default
+    const memoriesDetails = page.locator('[data-testid="confirmed-memories-details"]');
+    await memoriesDetails.waitFor({ state: "visible", timeout: 5000 });
+    const isMemoriesOpen = await memoriesDetails.evaluate((el: HTMLDetailsElement) => el.open);
+    if (isMemoriesOpen) {
+      throw new Error("Lo que he aprendido should be collapsed by default");
+    }
+    console.log("  ✓ Lo que he aprendido collapsed by default verified");
+
+    // 11. "Abrir ajustes" panel reachable
+    const adjBox = page.locator('[data-testid="adjustment-proposal-box"]');
+    await adjBox.waitFor({ state: "visible", timeout: 5000 });
+    console.log("  ✓ 'Abrir ajustes' panel reachable in active week");
+
     // Assert PR B renamed jargon in active week
     await page.locator("text=Lo que he aprendido").waitFor({ state: "visible", timeout: 5000 });
     await page
-      .locator("text=Imprevistos: ¿Ha aparecido algo nuevo?")
+      .locator("text=Imprevistos: ¿Ha surgido algo nuevo?")
       .waitFor({ state: "visible", timeout: 5000 });
     console.log("  ✓ Jargon replacements verified: 'Lo que he aprendido' and 'Imprevistos'");
 

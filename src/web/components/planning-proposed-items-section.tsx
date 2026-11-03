@@ -116,39 +116,75 @@ export function PlanningProposedItemsSection({
                       {focus.estimatedHours !== null ? ` · ${focus.estimatedHours}H` : ""}
                     </span>
                     <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                      <button
-                        type="button"
-                        className="secondary small"
-                        data-testid={`focus-add-to-gcal-${focus.id}`}
-                        style={{
-                          fontSize: "0.78rem",
-                          padding: "2px 8px",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "4px",
-                        }}
-                        title="Abrir y guardar en Google Calendar con 1 clic"
-                        onClick={() => {
-                          const gcalUrl = buildGoogleCalendarTemplateUrl({
-                            title: focus.title,
-                            day: activeTargetWeek.startDate,
-                            durationHours: focus.estimatedHours || 2,
-                            description: `Foco semanal\nResultado deseado: ${focus.desiredOutcome}\nFundamentación: ${focus.rationale}`,
-                          });
-                          window.open(gcalUrl, "_blank", "noopener,noreferrer");
-                        }}
-                      >
-                        <span>📅</span>
-                        <span>Google Cal</span>
-                      </button>
                       {isRecoveryFocus && (
                         <span className="badge badge-warning" data-testid="recovery-focus-badge">
                           Prioridad de recuperación
                         </span>
                       )}
-                      {focus.estimatedHours !== null && (
-                        <span className="badge badge-muted">{focus.estimatedHours}h</span>
-                      )}
+                      <details
+                        className="calm-details item-more-actions"
+                        style={{ margin: 0, padding: "2px 8px" }}
+                        data-testid={`more-actions-focus-${focus.id}`}
+                      >
+                        <summary
+                          style={{
+                            cursor: "pointer",
+                            fontSize: "0.82rem",
+                            fontWeight: 600,
+                            listStyle: "none",
+                          }}
+                          aria-label={`Más opciones para ${focus.title}`}
+                        >
+                          ••• Más
+                        </summary>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "6px",
+                            marginTop: "6px",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <button
+                            type="button"
+                            className="secondary small"
+                            onClick={() => {
+                              setEditingProposalItemId(focus.id);
+                              setProposalItemHoursInput(
+                                focus.estimatedHours !== null ? String(focus.estimatedHours) : ""
+                              );
+                            }}
+                            data-testid={`adjust-focus-hours-${focus.id}`}
+                          >
+                            ⏱️ Ajustar horas
+                          </button>
+                          <button
+                            type="button"
+                            className="secondary small"
+                            data-testid={`focus-add-to-gcal-${focus.id}`}
+                            style={{
+                              fontSize: "0.78rem",
+                              padding: "2px 8px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                            }}
+                            title="Abrir y guardar en Google Calendar con 1 clic"
+                            onClick={() => {
+                              const gcalUrl = buildGoogleCalendarTemplateUrl({
+                                title: focus.title,
+                                day: activeTargetWeek.startDate,
+                                durationHours: focus.estimatedHours || 2,
+                                description: `Foco semanal\nResultado deseado: ${focus.desiredOutcome}\nFundamentación: ${focus.rationale}`,
+                              });
+                              window.open(gcalUrl, "_blank", "noopener,noreferrer");
+                            }}
+                          >
+                            <span>📅</span>
+                            <span>Google Cal</span>
+                          </button>
+                        </div>
+                      </details>
                     </div>
                   </div>
 
@@ -290,71 +326,99 @@ export function PlanningProposedItemsSection({
                 style={{ padding: "8px 12px", background: "#fbfbfb" }}
                 data-testid={`proposed-obligation-${ob.itemId}`}
               >
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <strong>{ob.title}</strong>
-                  <span className="badge badge-commitment">
-                    {formatCommitmentType(ob.commitmentType)}
-                  </span>
-                </div>
-                {ob.dueDate && (
-                  <div className="calm-text" style={{ fontSize: "0.85rem", marginTop: "2px" }}>
-                    📅 Fecha límite: {ob.dueDate}
-                  </div>
-                )}
-                {ob.estimatedHours !== null && (
-                  <div className="calm-muted" style={{ fontSize: "0.8rem" }}>
-                    Estimado: {ob.estimatedHours}h
-                  </div>
-                )}
-
-                {/* Actions on Obligation */}
                 <div
                   style={{
                     display: "flex",
-                    gap: "8px",
-                    marginTop: "8px",
-                    flexWrap: "wrap",
+                    justifyContent: "space-between",
                     alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "8px",
                   }}
                 >
-                  <button
-                    type="button"
-                    className="secondary small"
-                    onClick={() => {
-                      setEditingProposalItemId(ob.itemId);
-                      setProposalItemHoursInput(
-                        ob.estimatedHours !== null ? String(ob.estimatedHours) : ""
-                      );
-                    }}
-                    data-testid={`adjust-obligation-hours-${ob.itemId}`}
-                  >
-                    ⏱️ Ajustar horas
-                  </button>
-                  <button
-                    type="button"
-                    className="secondary small"
-                    data-testid={`obligation-add-to-gcal-${ob.itemId}`}
+                  <div
                     style={{
-                      fontSize: "0.8rem",
-                      padding: "3px 8px",
-                      display: "inline-flex",
+                      display: "flex",
                       alignItems: "center",
-                      gap: "4px",
-                    }}
-                    title="Abrir y guardar en Google Calendar con 1 clic"
-                    onClick={() => {
-                      const gcalUrl = buildGoogleCalendarTemplateUrl({
-                        title: ob.title,
-                        day: ob.dueDate || activeTargetWeek.startDate,
-                        durationHours: ob.estimatedHours || 1,
-                        description: `Compromiso semanal (${formatCommitmentType(ob.commitmentType)})\nFundamentación: ${ob.rationale}`,
-                      });
-                      window.open(gcalUrl, "_blank", "noopener,noreferrer");
+                      gap: "8px",
+                      flexWrap: "wrap",
+                      flex: "1 1 auto",
                     }}
                   >
-                    <span>📅</span>
-                    <span>Google Cal</span>
-                  </button>
+                    <strong>{ob.title}</strong>
+                    <span className="badge badge-commitment">
+                      {formatCommitmentType(ob.commitmentType)}
+                    </span>
+                    {ob.dueDate && (
+                      <span className="calm-muted" style={{ fontSize: "0.8rem" }}>
+                        📅 {ob.dueDate}
+                      </span>
+                    )}
+                    {ob.estimatedHours !== null && (
+                      <span className="badge badge-muted" style={{ fontSize: "0.78rem" }}>
+                        {ob.estimatedHours}h
+                      </span>
+                    )}
+                  </div>
+
+                  <details
+                    className="calm-details item-more-actions"
+                    style={{ margin: 0, padding: "2px 8px" }}
+                    data-testid={`more-actions-obligation-${ob.itemId}`}
+                  >
+                    <summary
+                      style={{
+                        cursor: "pointer",
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                        listStyle: "none",
+                      }}
+                      aria-label={`Más opciones para ${ob.title}`}
+                    >
+                      ••• Más
+                    </summary>
+                    <div
+                      style={{ display: "flex", gap: "6px", marginTop: "6px", flexWrap: "wrap" }}
+                    >
+                      <button
+                        type="button"
+                        className="secondary small"
+                        onClick={() => {
+                          setEditingProposalItemId(ob.itemId);
+                          setProposalItemHoursInput(
+                            ob.estimatedHours !== null ? String(ob.estimatedHours) : ""
+                          );
+                        }}
+                        data-testid={`adjust-obligation-hours-${ob.itemId}`}
+                      >
+                        ⏱️ Ajustar horas
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary small"
+                        data-testid={`obligation-add-to-gcal-${ob.itemId}`}
+                        style={{
+                          fontSize: "0.8rem",
+                          padding: "3px 8px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                        title="Abrir y guardar en Google Calendar con 1 clic"
+                        onClick={() => {
+                          const gcalUrl = buildGoogleCalendarTemplateUrl({
+                            title: ob.title,
+                            day: ob.dueDate || activeTargetWeek.startDate,
+                            durationHours: ob.estimatedHours || 1,
+                            description: `Compromiso semanal (${formatCommitmentType(ob.commitmentType)})\nFundamentación: ${ob.rationale}`,
+                          });
+                          window.open(gcalUrl, "_blank", "noopener,noreferrer");
+                        }}
+                      >
+                        <span>📅</span>
+                        <span>Google Cal</span>
+                      </button>
+                    </div>
+                  </details>
                 </div>
 
                 {/* Inline Hours Editor */}
@@ -434,87 +498,117 @@ export function PlanningProposedItemsSection({
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    alignItems: "baseline",
+                    alignItems: "center",
                     flexWrap: "wrap",
-                    gap: "6px",
+                    gap: "8px",
                   }}
                 >
-                  <strong>{opt.title}</strong>
-                  <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      flexWrap: "wrap",
+                      flex: "1 1 auto",
+                    }}
+                  >
+                    <strong>{opt.title}</strong>
                     <span className="badge badge-idea">Flexible</span>
+                    {opt.condition && (
+                      <span className="calm-muted" style={{ fontSize: "0.8rem" }}>
+                        <em>Condición:</em> {opt.condition}
+                      </span>
+                    )}
                     {opt.estimatedHours !== null && (
-                      <span className="badge badge-muted">{opt.estimatedHours}h</span>
+                      <span className="badge badge-muted" style={{ fontSize: "0.78rem" }}>
+                        {opt.estimatedHours}h
+                      </span>
                     )}
                   </div>
-                </div>
-                {opt.condition && (
-                  <div className="calm-muted" style={{ fontSize: "0.8rem", marginTop: "2px" }}>
-                    <em>Condición:</em> {opt.condition}
-                  </div>
-                )}
 
-                {/* Actions on Flexible Option */}
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    marginTop: "10px",
-                    flexWrap: "wrap",
-                    alignItems: "center",
-                  }}
-                >
-                  <button
-                    type="button"
-                    className="primary small"
-                    onClick={() => handlePromoteFlexibleToFocus(opt.itemId)}
-                    data-testid={`promote-flexible-to-focus-${opt.itemId}`}
-                    disabled={proposedWeek.foci.length >= 3}
-                    title={
-                      proposedWeek.foci.length >= 3
-                        ? "Límite máximo de 3 focos alcanzado"
-                        : "Elegir como foco principal de la semana"
-                    }
-                  >
-                    ⭐ Elegir como foco
-                  </button>
-                  <button
-                    type="button"
-                    className="secondary small"
-                    onClick={() => {
-                      setEditingProposalItemId(opt.itemId);
-                      setProposalItemHoursInput(
-                        opt.estimatedHours !== null ? String(opt.estimatedHours) : ""
-                      );
-                    }}
-                    data-testid={`adjust-flexible-hours-${opt.itemId}`}
-                  >
-                    ⏱️ Ajustar horas
-                  </button>
-                  <button
-                    type="button"
-                    className="secondary small"
-                    data-testid={`flexible-add-to-gcal-${opt.itemId}`}
+                  <div
                     style={{
-                      fontSize: "0.8rem",
-                      padding: "3px 8px",
-                      display: "inline-flex",
+                      display: "flex",
                       alignItems: "center",
-                      gap: "4px",
-                    }}
-                    title="Abrir y guardar en Google Calendar con 1 clic"
-                    onClick={() => {
-                      const gcalUrl = buildGoogleCalendarTemplateUrl({
-                        title: opt.title,
-                        day: activeTargetWeek.startDate,
-                        durationHours: opt.estimatedHours || 1,
-                        description: `Opción flexible${opt.condition ? `\nCondición: ${opt.condition}` : ""}`,
-                      });
-                      window.open(gcalUrl, "_blank", "noopener,noreferrer");
+                      gap: "8px",
+                      flexWrap: "wrap",
                     }}
                   >
-                    <span>📅</span>
-                    <span>Google Cal</span>
-                  </button>
+                    <button
+                      type="button"
+                      className="primary small"
+                      onClick={() => handlePromoteFlexibleToFocus(opt.itemId)}
+                      data-testid={`promote-flexible-to-focus-${opt.itemId}`}
+                      disabled={proposedWeek.foci.length >= 3}
+                      title={
+                        proposedWeek.foci.length >= 3
+                          ? "Límite máximo de 3 focos alcanzado"
+                          : "Elegir como foco principal de la semana"
+                      }
+                    >
+                      ⭐ Elegir como foco
+                    </button>
+
+                    <details
+                      className="calm-details item-more-actions"
+                      style={{ margin: 0, padding: "2px 8px" }}
+                      data-testid={`more-actions-flexible-${opt.itemId}`}
+                    >
+                      <summary
+                        style={{
+                          cursor: "pointer",
+                          fontSize: "0.82rem",
+                          fontWeight: 600,
+                          listStyle: "none",
+                        }}
+                        aria-label={`Más opciones para ${opt.title}`}
+                      >
+                        ••• Más
+                      </summary>
+                      <div
+                        style={{ display: "flex", gap: "6px", marginTop: "6px", flexWrap: "wrap" }}
+                      >
+                        <button
+                          type="button"
+                          className="secondary small"
+                          onClick={() => {
+                            setEditingProposalItemId(opt.itemId);
+                            setProposalItemHoursInput(
+                              opt.estimatedHours !== null ? String(opt.estimatedHours) : ""
+                            );
+                          }}
+                          data-testid={`adjust-flexible-hours-${opt.itemId}`}
+                        >
+                          ⏱️ Ajustar horas
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary small"
+                          data-testid={`flexible-add-to-gcal-${opt.itemId}`}
+                          style={{
+                            fontSize: "0.8rem",
+                            padding: "3px 8px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                          title="Abrir y guardar en Google Calendar con 1 clic"
+                          onClick={() => {
+                            const gcalUrl = buildGoogleCalendarTemplateUrl({
+                              title: opt.title,
+                              day: activeTargetWeek.startDate,
+                              durationHours: opt.estimatedHours || 1,
+                              description: `Opción flexible${opt.condition ? `\nCondición: ${opt.condition}` : ""}`,
+                            });
+                            window.open(gcalUrl, "_blank", "noopener,noreferrer");
+                          }}
+                        >
+                          <span>📅</span>
+                          <span>Google Cal</span>
+                        </button>
+                      </div>
+                    </details>
+                  </div>
                 </div>
 
                 {/* Inline Hours Editor */}

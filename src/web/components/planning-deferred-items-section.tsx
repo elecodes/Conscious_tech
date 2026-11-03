@@ -27,290 +27,290 @@ export function PlanningDeferredItemsSection({
     <>
       {/* Deferred / Unscheduled Items */}
       {proposedWeek.deferredItems.length > 0 && (
-        <div
-          className="permiso-no-hacer-box"
+        <details
+          className="calm-details permiso-no-hacer-box"
           style={{ marginTop: "24px" }}
           data-testid="proposed-deferred-items-section"
         >
-          <div
+          <summary
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "baseline",
-              flexWrap: "wrap",
-              gap: "8px",
-              marginBottom: "8px",
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: "1.05rem",
+              padding: "4px 0",
             }}
+            data-testid="proposed-deferred-items-summary"
           >
-            <h4
-              style={{
-                margin: 0,
-                fontSize: "1.1rem",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
+            <span>☕</span> Elementos no programados o diferidos (
+            {proposedWeek.deferredItems.length === 1
+              ? "1 idea pendiente de decidir"
+              : `${proposedWeek.deferredItems.length} ideas pendientes de decidir`}
+            )
+          </summary>
+          <div style={{ marginTop: "12px" }}>
+            <span
+              className="calm-muted"
+              style={{ fontSize: "0.82rem", display: "block", marginBottom: "12px" }}
             >
-              <span>☕</span> Elementos no programados o diferidos (
-              {proposedWeek.deferredItems.length})
-            </h4>
-            <span className="calm-muted" style={{ fontSize: "0.82rem" }}>
               Dejar tareas fuera te permite enfocarte en lo prioritario
             </span>
-          </div>
 
-          {/* 1. Pendientes de decisión / Fuera de propuesta */}
-          {(() => {
-            const pendingItems = proposedWeek.deferredItems.filter(
-              (d) => d.reason !== "intentional_postponement"
-            );
-            if (pendingItems.length === 0) return null;
-            return (
-              <div style={{ marginBottom: "12px" }} data-testid="pending-decision-items-group">
-                <span
-                  style={{
-                    fontSize: "0.85rem",
-                    fontWeight: 600,
-                    color: "#4b5563",
-                    display: "block",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Pendientes de decisión ({pendingItems.length}):
-                </span>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {pendingItems.map((def) => {
-                    const sourceItem = extractedItems?.find((i) => i.id === def.itemId);
-                    const originalDueDate = sourceItem?.deadline?.resolved;
-                    const isOverdue =
-                      originalDueDate &&
-                      originalDueDate < proposedWeek.weekSummary.targetWeek.startDate;
+            {/* 1. Pendientes de decisión / Fuera de propuesta */}
+            {(() => {
+              const pendingItems = proposedWeek.deferredItems.filter(
+                (d) => d.reason !== "intentional_postponement"
+              );
+              if (pendingItems.length === 0) return null;
+              return (
+                <div style={{ marginBottom: "12px" }} data-testid="pending-decision-items-group">
+                  <span
+                    style={{
+                      fontSize: "0.85rem",
+                      fontWeight: 600,
+                      color: "#4b5563",
+                      display: "block",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    Pendientes de decisión ({pendingItems.length}):
+                  </span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {pendingItems.map((def) => {
+                      const sourceItem = extractedItems?.find((i) => i.id === def.itemId);
+                      const originalDueDate = sourceItem?.deadline?.resolved;
+                      const isOverdue =
+                        originalDueDate &&
+                        originalDueDate < proposedWeek.weekSummary.targetWeek.startDate;
 
-                    return (
-                      <div
-                        key={def.itemId}
-                        className="item-card"
-                        style={{
-                          padding: "10px 14px",
-                          background: "#fffdf9",
-                          borderColor: "#f0e6d6",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "6px",
-                        }}
-                        data-testid={`proposed-deferred-item-${def.itemId}`}
-                      >
+                      return (
                         <div
+                          key={def.itemId}
+                          className="item-card"
                           style={{
+                            padding: "10px 14px",
+                            background: "#fffdf9",
+                            borderColor: "#f0e6d6",
                             display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "baseline",
-                            flexWrap: "wrap",
+                            flexDirection: "column",
                             gap: "6px",
                           }}
+                          data-testid={`proposed-deferred-item-${def.itemId}`}
                         >
-                          <strong>{def.title}</strong>
                           <div
                             style={{
                               display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "baseline",
+                              flexWrap: "wrap",
                               gap: "6px",
-                              alignItems: "center",
+                            }}
+                          >
+                            <strong>{def.title}</strong>
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: "6px",
+                                alignItems: "center",
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              <span
+                                className={`badge ${formatUnscheduledCategory(def.reason, deferredDecisions[def.itemId]).badgeClass}`}
+                                data-testid={`unscheduled-category-badge-${def.itemId}`}
+                              >
+                                {
+                                  formatUnscheduledCategory(
+                                    def.reason,
+                                    deferredDecisions[def.itemId]
+                                  ).label
+                                }
+                              </span>
+                              <span className="badge badge-muted">
+                                {formatDeferredReason(def.reason)}
+                              </span>
+                            </div>
+                          </div>
+                          <div
+                            className="calm-muted"
+                            style={{ fontSize: "0.82rem" }}
+                            data-testid={`proposed-deferred-rationale-${def.itemId}`}
+                          >
+                            {def.rationale}
+                          </div>
+                          {isOverdue && (
+                            <div
+                              className="calm-muted"
+                              style={{ fontSize: "0.8rem", color: "#b45309" }}
+                              data-testid={`deferred-original-deadline-${def.itemId}`}
+                            >
+                              📅 Fecha límite original: <strong>{originalDueDate}</strong> (vencida
+                              antes de la semana)
+                            </div>
+                          )}
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "8px",
+                              marginTop: "6px",
                               flexWrap: "wrap",
                             }}
                           >
-                            <span
-                              className={`badge ${formatUnscheduledCategory(def.reason, deferredDecisions[def.itemId]).badgeClass}`}
-                              data-testid={`unscheduled-category-badge-${def.itemId}`}
+                            <button
+                              type="button"
+                              className="secondary small"
+                              onClick={() => handleDeferredDecisionChange(def.itemId, "postpone")}
+                              data-testid={`defer-item-postpone-button-${def.itemId}`}
                             >
-                              {
-                                formatUnscheduledCategory(def.reason, deferredDecisions[def.itemId])
-                                  .label
+                              Posponer
+                            </button>
+                            <button
+                              type="button"
+                              className="secondary small"
+                              onClick={() =>
+                                handleDeferredDecisionChange(def.itemId, "include_flexible")
                               }
-                            </span>
-                            <span className="badge badge-muted">
-                              {formatDeferredReason(def.reason)}
-                            </span>
+                              data-testid={`defer-item-include-button-${def.itemId}`}
+                            >
+                              Incluir en la semana
+                            </button>
+                            <button
+                              type="button"
+                              className="secondary small"
+                              onClick={() =>
+                                handleDeferredDecisionChange(def.itemId, "reconsider_unscheduled")
+                              }
+                              data-testid={`defer-item-review-button-${def.itemId}`}
+                            >
+                              Dejar fuera
+                            </button>
                           </div>
                         </div>
-                        <div
-                          className="calm-muted"
-                          style={{ fontSize: "0.82rem" }}
-                          data-testid={`proposed-deferred-rationale-${def.itemId}`}
-                        >
-                          {def.rationale}
-                        </div>
-                        {isOverdue && (
-                          <div
-                            className="calm-muted"
-                            style={{ fontSize: "0.8rem", color: "#b45309" }}
-                            data-testid={`deferred-original-deadline-${def.itemId}`}
-                          >
-                            📅 Fecha límite original: <strong>{originalDueDate}</strong> (vencida
-                            antes de la semana)
-                          </div>
-                        )}
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "8px",
-                            marginTop: "6px",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <button
-                            type="button"
-                            className="secondary small"
-                            onClick={() => handleDeferredDecisionChange(def.itemId, "postpone")}
-                            data-testid={`defer-item-postpone-button-${def.itemId}`}
-                          >
-                            Posponer
-                          </button>
-                          <button
-                            type="button"
-                            className="secondary small"
-                            onClick={() =>
-                              handleDeferredDecisionChange(def.itemId, "include_flexible")
-                            }
-                            data-testid={`defer-item-include-button-${def.itemId}`}
-                          >
-                            Incluir en la semana
-                          </button>
-                          <button
-                            type="button"
-                            className="secondary small"
-                            onClick={() =>
-                              handleDeferredDecisionChange(def.itemId, "reconsider_unscheduled")
-                            }
-                            data-testid={`defer-item-review-button-${def.itemId}`}
-                          >
-                            Dejar fuera
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
 
-          {/* 2. Postergados conscientemente para después */}
-          {(() => {
-            const postponedItems = proposedWeek.deferredItems.filter(
-              (d) => d.reason === "intentional_postponement"
-            );
-            if (postponedItems.length === 0) return null;
-            return (
-              <div style={{ marginBottom: "12px" }} data-testid="postponed-items-group">
-                <span
-                  style={{
-                    fontSize: "0.85rem",
-                    fontWeight: 600,
-                    color: "#6b7280",
-                    display: "block",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Postergados conscientemente ({postponedItems.length}):
-                </span>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {postponedItems.map((def) => {
-                    const sourceItem = extractedItems?.find((i) => i.id === def.itemId);
-                    const originalDueDate = sourceItem?.deadline?.resolved;
+            {/* 2. Postergados conscientemente para después */}
+            {(() => {
+              const postponedItems = proposedWeek.deferredItems.filter(
+                (d) => d.reason === "intentional_postponement"
+              );
+              if (postponedItems.length === 0) return null;
+              return (
+                <div style={{ marginBottom: "12px" }} data-testid="postponed-items-group">
+                  <span
+                    style={{
+                      fontSize: "0.85rem",
+                      fontWeight: 600,
+                      color: "#6b7280",
+                      display: "block",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    Postergados conscientemente ({postponedItems.length}):
+                  </span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {postponedItems.map((def) => {
+                      const sourceItem = extractedItems?.find((i) => i.id === def.itemId);
+                      const originalDueDate = sourceItem?.deadline?.resolved;
 
-                    return (
-                      <div
-                        key={def.itemId}
-                        className="item-card"
-                        style={{
-                          padding: "10px 14px",
-                          background: "#f8fafc",
-                          borderColor: "#e2e8f0",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "6px",
-                        }}
-                        data-testid={`proposed-deferred-item-${def.itemId}`}
-                      >
+                      return (
                         <div
+                          key={def.itemId}
+                          className="item-card"
                           style={{
+                            padding: "10px 14px",
+                            background: "#f8fafc",
+                            borderColor: "#e2e8f0",
                             display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "baseline",
-                            flexWrap: "wrap",
+                            flexDirection: "column",
                             gap: "6px",
                           }}
+                          data-testid={`proposed-deferred-item-${def.itemId}`}
                         >
-                          <strong>{def.title}</strong>
                           <div
                             style={{
                               display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "baseline",
+                              flexWrap: "wrap",
                               gap: "6px",
-                              alignItems: "center",
+                            }}
+                          >
+                            <strong>{def.title}</strong>
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: "6px",
+                                alignItems: "center",
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              <span
+                                className="badge badge-idea"
+                                data-testid={`postponed-category-badge-${def.itemId}`}
+                              >
+                                {formatDeferredReason(def.reason)}
+                              </span>
+                            </div>
+                          </div>
+                          <div
+                            className="calm-muted"
+                            style={{ fontSize: "0.82rem" }}
+                            data-testid={`proposed-deferred-rationale-${def.itemId}`}
+                          >
+                            {def.rationale}
+                          </div>
+                          {originalDueDate && (
+                            <div
+                              className="calm-muted"
+                              style={{ fontSize: "0.8rem", color: "#64748b" }}
+                              data-testid={`deferred-original-deadline-${def.itemId}`}
+                            >
+                              📅 Fecha límite original conservada:{" "}
+                              <strong>{originalDueDate}</strong>
+                            </div>
+                          )}
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "8px",
+                              marginTop: "6px",
                               flexWrap: "wrap",
                             }}
                           >
-                            <span
-                              className="badge badge-idea"
-                              data-testid={`postponed-category-badge-${def.itemId}`}
+                            <button
+                              type="button"
+                              className="secondary small"
+                              onClick={() =>
+                                handleDeferredDecisionChange(def.itemId, "reconsider_unscheduled")
+                              }
+                              data-testid={`defer-item-unschedule-button-${def.itemId}`}
                             >
-                              {formatDeferredReason(def.reason)}
-                            </span>
+                              Volver a evaluar
+                            </button>
+                            <button
+                              type="button"
+                              className="secondary small"
+                              onClick={() =>
+                                handleDeferredDecisionChange(def.itemId, "include_flexible")
+                              }
+                              data-testid={`defer-item-include-button-${def.itemId}`}
+                            >
+                              Incluir en la semana
+                            </button>
                           </div>
                         </div>
-                        <div
-                          className="calm-muted"
-                          style={{ fontSize: "0.82rem" }}
-                          data-testid={`proposed-deferred-rationale-${def.itemId}`}
-                        >
-                          {def.rationale}
-                        </div>
-                        {originalDueDate && (
-                          <div
-                            className="calm-muted"
-                            style={{ fontSize: "0.8rem", color: "#64748b" }}
-                            data-testid={`deferred-original-deadline-${def.itemId}`}
-                          >
-                            📅 Fecha límite original conservada: <strong>{originalDueDate}</strong>
-                          </div>
-                        )}
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "8px",
-                            marginTop: "6px",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <button
-                            type="button"
-                            className="secondary small"
-                            onClick={() =>
-                              handleDeferredDecisionChange(def.itemId, "reconsider_unscheduled")
-                            }
-                            data-testid={`defer-item-unschedule-button-${def.itemId}`}
-                          >
-                            Volver a evaluar
-                          </button>
-                          <button
-                            type="button"
-                            className="secondary small"
-                            onClick={() =>
-                              handleDeferredDecisionChange(def.itemId, "include_flexible")
-                            }
-                            data-testid={`defer-item-include-button-${def.itemId}`}
-                          >
-                            Incluir en la semana
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            );
-          })()}
-        </div>
+              );
+            })()}
+          </div>
+        </details>
       )}
 
       {/* Decisiones sobre tareas con fecha límite vencida (Requirement 3 & 4) */}

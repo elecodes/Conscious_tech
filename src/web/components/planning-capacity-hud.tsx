@@ -56,7 +56,7 @@ export function PlanningCapacityHud({
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "baseline",
+          alignItems: "center",
           flexWrap: "wrap",
           gap: "8px",
           marginBottom: "8px",
@@ -64,6 +64,25 @@ export function PlanningCapacityHud({
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
           <h5 style={{ margin: 0, fontSize: "1rem" }}>Balance de tu semana</h5>
+          <span
+            data-testid="capacity-sentence-summary"
+            style={{ fontSize: "0.92rem", color: "var(--text-main)", fontWeight: 500 }}
+          >
+            {proposedWeek.weekSummary.capacity.totalAvailableHours != null &&
+            proposedWeek.weekSummary.capacity.totalAvailableHours > 0
+              ? `Tienes ${Math.max(
+                  0,
+                  proposedWeek.weekSummary.capacity.totalAvailableHours -
+                    (proposedWeek.weekSummary.capacity.plannedHours ??
+                      proposedWeek.weekSummary.capacity.knownEstimatedHours ??
+                      0)
+                )} h libres y has planificado ${
+                  proposedWeek.weekSummary.capacity.plannedHours ??
+                  proposedWeek.weekSummary.capacity.knownEstimatedHours ??
+                  0
+                } h`
+              : "Aún no has configurado tu capacidad"}
+          </span>
           <span
             className={`badge ${
               proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity"
@@ -81,42 +100,6 @@ export function PlanningCapacityHud({
                 : proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity"
                   ? "Dentro de la capacidad"
                   : "Estimación parcial"}
-          </span>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "6px",
-            fontSize: "0.82rem",
-          }}
-        >
-          <span style={{ background: "#f3f0ea", padding: "2px 6px", borderRadius: "4px" }}>
-            <span className="calm-muted">Disponibles:</span>{" "}
-            <strong>
-              {formatHours(proposedWeek.weekSummary.capacity.totalAvailableHours, "No disponible")}
-            </strong>
-          </span>
-          <span style={{ background: "#f3f0ea", padding: "2px 6px", borderRadius: "4px" }}>
-            <span className="calm-muted">Planificadas:</span>{" "}
-            <strong>
-              {proposedWeek.weekSummary.capacity.plannedHours != null
-                ? formatHours(proposedWeek.weekSummary.capacity.plannedHours)
-                : formatHours(proposedWeek.weekSummary.capacity.knownEstimatedHours, "Sin estimar")}
-            </strong>
-          </span>
-          <span style={{ background: "#f3f0ea", padding: "2px 6px", borderRadius: "4px" }}>
-            <span className="calm-muted">Planificables:</span>{" "}
-            <strong>
-              {formatHours(proposedWeek.weekSummary.capacity.plannableHours, "Desconocido")}
-            </strong>
-          </span>
-          <span style={{ background: "#f3f0ea", padding: "2px 6px", borderRadius: "4px" }}>
-            <span className="calm-muted">Protegidas:</span>{" "}
-            <strong>
-              {formatHours(proposedWeek.weekSummary.capacity.protectedSpaceHours, "Desconocido")}
-            </strong>
           </span>
         </div>
       </div>
@@ -193,6 +176,52 @@ export function PlanningCapacityHud({
           Ver desglose completo de cálculos y viabilidad
         </summary>
         <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "12px" }}>
+          {/* Desglose de valores totales */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "6px",
+              fontSize: "0.82rem",
+              paddingBottom: "8px",
+              borderBottom: "1px solid #f0f0f0",
+            }}
+          >
+            <span style={{ background: "#f3f0ea", padding: "2px 6px", borderRadius: "4px" }}>
+              <span className="calm-muted">Disponibles:</span>{" "}
+              <strong>
+                {formatHours(
+                  proposedWeek.weekSummary.capacity.totalAvailableHours,
+                  "No disponible"
+                )}
+              </strong>
+            </span>
+            <span style={{ background: "#f3f0ea", padding: "2px 6px", borderRadius: "4px" }}>
+              <span className="calm-muted">Planificadas:</span>{" "}
+              <strong>
+                {proposedWeek.weekSummary.capacity.plannedHours != null
+                  ? formatHours(proposedWeek.weekSummary.capacity.plannedHours)
+                  : formatHours(
+                      proposedWeek.weekSummary.capacity.knownEstimatedHours,
+                      "Sin estimar"
+                    )}
+              </strong>
+            </span>
+            <span style={{ background: "#f3f0ea", padding: "2px 6px", borderRadius: "4px" }}>
+              <span className="calm-muted">Planificables:</span>{" "}
+              <strong>
+                {formatHours(proposedWeek.weekSummary.capacity.plannableHours, "Desconocido")}
+              </strong>
+            </span>
+            <span style={{ background: "#f3f0ea", padding: "2px 6px", borderRadius: "4px" }}>
+              <span className="calm-muted">Protegidas:</span>{" "}
+              <strong>
+                {formatHours(proposedWeek.weekSummary.capacity.protectedSpaceHours, "Desconocido")}
+              </strong>
+            </span>
+          </div>
+
           {/* Separación visual nítida en dos paneles independientes */}
           <div
             style={{

@@ -19,7 +19,7 @@ export function ScheduleAdjustmentHistorySection({
       aria-label="Historial de ajustes de la agenda semanal"
       data-testid="schedule-adjustments-history"
     >
-      <details className="calm-details" open={schedule.appliedAdjustments.length > 0}>
+      <details className="calm-details" data-testid="schedule-adjustments-details">
         <summary
           style={{
             cursor: "pointer",
@@ -29,6 +29,7 @@ export function ScheduleAdjustmentHistorySection({
             alignItems: "center",
             userSelect: "none",
           }}
+          data-testid="schedule-adjustments-summary"
         >
           <span>Historial de ajustes de la agenda</span>
           <span className="badge badge-muted">

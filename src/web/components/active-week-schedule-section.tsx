@@ -133,6 +133,8 @@ export function ActiveWeekScheduleSection({
           planItems.map((item) => {
             const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
             const isSelected = (selectedAdjustmentItemId || planItems[0]?.itemId) === item.itemId;
+            const isObligation =
+              item.source === "Obligación" || item.source?.toLowerCase().includes("obligaci");
 
             return (
               <div
@@ -145,9 +147,14 @@ export function ActiveWeekScheduleSection({
                   flexWrap: "wrap",
                   gap: "10px",
                   padding: "10px 14px",
-                  borderLeft: isSelected ? "3px solid var(--accent-color, #2b6cb0)" : undefined,
+                  borderLeft: isObligation
+                    ? "4px solid #c53030"
+                    : isSelected
+                      ? "3px solid var(--accent-color, #2b6cb0)"
+                      : undefined,
                   background: isSelected ? "#f8fafc" : undefined,
                 }}
+                data-testid={`active-task-item-${item.itemId}`}
               >
                 <div style={{ flex: "1 1 240px" }}>
                   <div
@@ -165,61 +172,95 @@ export function ActiveWeekScheduleSection({
                   )}
                 </div>
 
-                <div
-                  style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}
+                <details
+                  className="calm-details item-more-actions"
+                  data-testid={`task-more-actions-${item.itemId}`}
                 >
-                  <span className="badge badge-muted" style={{ fontSize: "0.8rem" }}>
-                    ⏱️ {item.estimatedHours ? `${item.estimatedHours}h` : "Sin estimar"}
-                  </span>
-                  <span
-                    className={alloc ? "badge badge-task" : "badge badge-muted"}
-                    style={{ fontSize: "0.8rem" }}
-                  >
-                    📅 {alloc ? alloc.day : "En la semana"}
-                  </span>
-                  <button
-                    type="button"
-                    className="secondary small"
-                    style={{ fontSize: "0.8rem", padding: "4px 10px" }}
-                    onClick={() => {
-                      setSelectedAdjustmentItemId(item.itemId);
-                      setIsAdjustmentOpen(true);
-                      setLastSavedAdjustment(null);
-                      const box = document.getElementById("adjustment-proposal-box");
-                      if (box) box.scrollIntoView({ behavior: "smooth" });
-                    }}
-                  >
-                    Ajustar
-                  </button>
-                  <button
-                    type="button"
-                    className="secondary small"
-                    data-testid={`add-to-gcal-${item.itemId}`}
+                  <summary
                     style={{
+                      cursor: "pointer",
                       fontSize: "0.8rem",
                       padding: "4px 8px",
+                      borderRadius: "4px",
+                      background: "#f3f4f6",
+                      border: "1px solid #d1d5db",
+                      color: "#4b5563",
+                      userSelect: "none",
                       display: "inline-flex",
                       alignItems: "center",
                       gap: "4px",
                     }}
-                    title="Abrir y guardar en Google Calendar con 1 clic"
-                    onClick={() => {
-                      const day = alloc
-                        ? alloc.day
-                        : item.dueDate || plan?.targetWeek.startDate || "2026-10-19";
-                      const gcalUrl = buildGoogleCalendarTemplateUrl({
-                        title: item.title,
-                        day,
-                        durationHours: item.estimatedHours || 1,
-                        description: `Categoría: ${item.source}${item.rationale ? `\n${item.rationale}` : ""}`,
-                      });
-                      window.open(gcalUrl, "_blank", "noopener,noreferrer");
+                    data-testid={`task-more-actions-summary-${item.itemId}`}
+                  >
+                    ••• Más
+                  </summary>
+                  <div
+                    style={{
+                      marginTop: "6px",
+                      display: "flex",
+                      gap: "8px",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      padding: "6px 8px",
+                      background: "#f8fafc",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "4px",
                     }}
                   >
-                    <span>📅</span>
-                    <span>Google Cal</span>
-                  </button>
-                </div>
+                    <span className="badge badge-muted" style={{ fontSize: "0.8rem" }}>
+                      ⏱️ {item.estimatedHours ? `${item.estimatedHours}h` : "Sin estimar"}
+                    </span>
+                    <span
+                      className={alloc ? "badge badge-task" : "badge badge-muted"}
+                      style={{ fontSize: "0.8rem" }}
+                    >
+                      📅 {alloc ? alloc.day : "En la semana"}
+                    </span>
+                    <button
+                      type="button"
+                      className="secondary small"
+                      style={{ fontSize: "0.8rem", padding: "4px 10px" }}
+                      data-testid={`adjust-task-${item.itemId}`}
+                      onClick={() => {
+                        setSelectedAdjustmentItemId(item.itemId);
+                        setIsAdjustmentOpen(true);
+                        setLastSavedAdjustment(null);
+                        const box = document.getElementById("adjustment-proposal-box");
+                        if (box) box.scrollIntoView({ behavior: "smooth" });
+                      }}
+                    >
+                      Ajustar
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary small"
+                      data-testid={`add-to-gcal-${item.itemId}`}
+                      style={{
+                        fontSize: "0.8rem",
+                        padding: "4px 8px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
+                      title="Abrir y guardar en Google Calendar con 1 clic"
+                      onClick={() => {
+                        const day = alloc
+                          ? alloc.day
+                          : item.dueDate || plan?.targetWeek.startDate || "2026-10-19";
+                        const gcalUrl = buildGoogleCalendarTemplateUrl({
+                          title: item.title,
+                          day,
+                          durationHours: item.estimatedHours || 1,
+                          description: `Categoría: ${item.source}${item.rationale ? `\n${item.rationale}` : ""}`,
+                        });
+                        window.open(gcalUrl, "_blank", "noopener,noreferrer");
+                      }}
+                    >
+                      <span>📅</span>
+                      <span>Google Cal</span>
+                    </button>
+                  </div>
+                </details>
               </div>
             );
           })

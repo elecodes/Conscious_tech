@@ -42,35 +42,64 @@ export function PlanningProposalReviewFooter({
   return (
     <>
       {/* Confirmation Prompt & Key Tradeoffs */}
-      {proposedWeek.confirmationPrompt && (
-        <div
-          className="calm-box"
-          style={{
-            marginTop: "20px",
-            padding: "16px 18px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-            <span style={{ fontSize: "1.1rem" }}>💡</span>
-            <h4 style={{ margin: 0, fontSize: "1.05rem" }}>Revisión del plan</h4>
-          </div>
-          <p className="calm-text" style={{ fontWeight: 500, margin: "4px 0" }}>
-            {proposedWeek.confirmationPrompt.question}
-          </p>
-          {proposedWeek.confirmationPrompt.keyTradeoffs.length > 0 && (
-            <div style={{ marginTop: "8px" }}>
-              <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>
-                Puntos a tener en cuenta:
-              </span>
-              <ul style={{ margin: "4px 0 0 16px", fontSize: "0.85rem", color: "#444" }}>
-                {proposedWeek.confirmationPrompt.keyTradeoffs.map((tradeoff, idx) => (
-                  <li key={idx}>{tradeoff}</li>
-                ))}
-              </ul>
+      {(() => {
+        if (!proposedWeek.confirmationPrompt) return null;
+        const hasKeyTradeoffs = proposedWeek.confirmationPrompt.keyTradeoffs.length > 0;
+        const hasPendingQuestions = Boolean(
+          proposedWeek.confirmationPrompt.pendingQuestions &&
+          proposedWeek.confirmationPrompt.pendingQuestions.length > 0
+        );
+        const isCustomQuestion =
+          Boolean(proposedWeek.confirmationPrompt.question) &&
+          proposedWeek.confirmationPrompt.question.trim().length > 0 &&
+          proposedWeek.confirmationPrompt.question !==
+            "¿Te representa esta propuesta para estructurar la semana?";
+
+        // Hide technical box unless it carries actual content
+        if (!hasKeyTradeoffs && !hasPendingQuestions && !isCustomQuestion) {
+          return null;
+        }
+
+        return (
+          <div
+            className="calm-box"
+            style={{
+              marginTop: "20px",
+              padding: "16px 18px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+              <span style={{ fontSize: "1.1rem" }}>💡</span>
+              <h4 style={{ margin: 0, fontSize: "1.05rem" }}>Revisión del plan</h4>
             </div>
-          )}
-        </div>
-      )}
+            <p className="calm-text" style={{ fontWeight: 500, margin: "4px 0" }}>
+              {proposedWeek.confirmationPrompt.question}
+            </p>
+            {hasKeyTradeoffs && (
+              <div style={{ marginTop: "8px" }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                  Puntos a tener en cuenta:
+                </span>
+                <ul style={{ margin: "4px 0 0 16px", fontSize: "0.85rem", color: "#444" }}>
+                  {proposedWeek.confirmationPrompt.keyTradeoffs.map((tradeoff, idx) => (
+                    <li key={idx}>{tradeoff}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {hasPendingQuestions && (
+              <div style={{ marginTop: "8px" }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>Preguntas pendientes:</span>
+                <ul style={{ margin: "4px 0 0 16px", fontSize: "0.85rem", color: "#444" }}>
+                  {proposedWeek.confirmationPrompt.pendingQuestions?.map((q, idx) => (
+                    <li key={idx}>{q}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {(() => {
         const fallbackWarnings = diagnostics.filter((diag) => diag.status === "fallback_used");
@@ -214,97 +243,125 @@ export function PlanningProposalReviewFooter({
           justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",
-          gap: "10px",
+          gap: "12px",
         }}
       >
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          <button
-            type="button"
-            className="secondary"
-            aria-label="Volver a revisar la selección de elementos"
-            disabled={isConfirming}
-            onClick={handleAdjustElements}
-            data-testid="adjust-elements-button"
+        <details className="calm-details" data-testid="proposal-more-actions-details">
+          <summary
+            style={{
+              cursor: "pointer",
+              fontWeight: 500,
+              fontSize: "0.88rem",
+              padding: "6px 10px",
+              borderRadius: "6px",
+              background: "#f3f4f6",
+              border: "1px solid #d1d5db",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              userSelect: "none",
+            }}
+            data-testid="proposal-more-actions-summary"
           >
-            ✏️ Ajustar elementos
-          </button>
-          <button
-            type="button"
-            className="secondary"
-            aria-label="Añadir más ideas o tareas a esta propuesta"
-            disabled={isConfirming}
-            onClick={() => setIsReviewingSelection(true)}
-            data-testid="add-more-ideas-button"
-          >
-            ➕ Añadir más ideas
-          </button>
-          <button
-            type="button"
-            className="secondary"
-            style={{ color: "#8c8273" }}
-            aria-label="Comenzar otra semana desde cero"
-            disabled={isConfirming}
-            onClick={handleStartFreshWeek}
-            data-testid="start-fresh-week-button"
-          >
-            ✨ Planificar otra semana
-          </button>
-        </div>
-
-        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-          <button
-            type="button"
-            className="secondary"
-            data-testid="proposal-export-to-gcal"
-            style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-            onClick={() => {
-              const exportItems = [
-                ...proposedWeek.foci.map((f) => ({
-                  title: f.title,
-                  day: activeTargetWeek.startDate,
-                  durationHours: f.estimatedHours || 2,
-                  description: `Foco: ${f.desiredOutcome}`,
-                })),
-                ...proposedWeek.obligations.map((o) => ({
-                  title: o.title,
-                  day: o.dueDate || activeTargetWeek.startDate,
-                  durationHours: o.estimatedHours || 1,
-                  description: `Compromiso (${formatCommitmentType(o.commitmentType)})`,
-                })),
-                ...proposedWeek.flexibleOptions.map((fl) => ({
-                  title: fl.title,
-                  day: activeTargetWeek.startDate,
-                  durationHours: fl.estimatedHours || 1,
-                  description: fl.condition ? `Condición: ${fl.condition}` : "Opción flexible",
-                })),
-              ];
-              const ics = generateIcsCalendarExport(exportItems, "Conscious Tech — Propuesta");
-              const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `conscious-tech-propuesta-${activeTargetWeek.startDate}.ics`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
+            ⚙️ Más acciones
+          </summary>
+          <div
+            style={{
+              marginTop: "8px",
+              display: "flex",
+              gap: "8px",
+              flexWrap: "wrap",
+              padding: "10px",
+              background: "#faf9f6",
+              border: "1px solid var(--border-color, #e6ded1)",
+              borderRadius: "6px",
             }}
           >
-            <span>📅</span>
-            <span>Exportar propuesta (.ics / Google Cal)</span>
-          </button>
+            <button
+              type="button"
+              className="secondary small"
+              aria-label="Volver a revisar la selección de elementos"
+              disabled={isConfirming}
+              onClick={handleAdjustElements}
+              data-testid="adjust-elements-button"
+            >
+              ✏️ Ajustar elementos
+            </button>
+            <button
+              type="button"
+              className="secondary small"
+              aria-label="Añadir más ideas o tareas a esta propuesta"
+              disabled={isConfirming}
+              onClick={() => setIsReviewingSelection(true)}
+              data-testid="add-more-ideas-button"
+            >
+              ➕ Añadir más ideas
+            </button>
+            <button
+              type="button"
+              className="secondary small"
+              style={{ color: "#8c8273" }}
+              aria-label="Comenzar otra semana desde cero"
+              disabled={isConfirming}
+              onClick={handleStartFreshWeek}
+              data-testid="start-fresh-week-button"
+            >
+              ✨ Planificar otra semana
+            </button>
+            <button
+              type="button"
+              className="secondary small"
+              data-testid="proposal-export-to-gcal"
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+              onClick={() => {
+                const exportItems = [
+                  ...proposedWeek.foci.map((f) => ({
+                    title: f.title,
+                    day: activeTargetWeek.startDate,
+                    durationHours: f.estimatedHours || 2,
+                    description: `Foco: ${f.desiredOutcome}`,
+                  })),
+                  ...proposedWeek.obligations.map((o) => ({
+                    title: o.title,
+                    day: o.dueDate || activeTargetWeek.startDate,
+                    durationHours: o.estimatedHours || 1,
+                    description: `Compromiso (${formatCommitmentType(o.commitmentType)})`,
+                  })),
+                  ...proposedWeek.flexibleOptions.map((fl) => ({
+                    title: fl.title,
+                    day: activeTargetWeek.startDate,
+                    durationHours: fl.estimatedHours || 1,
+                    description: fl.condition ? `Condición: ${fl.condition}` : "Opción flexible",
+                  })),
+                ];
+                const ics = generateIcsCalendarExport(exportItems, "Conscious Tech — Propuesta");
+                const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `conscious-tech-propuesta-${activeTargetWeek.startDate}.ics`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }}
+            >
+              <span>📅</span>
+              <span>Exportar propuesta (.ics / Google Cal)</span>
+            </button>
+          </div>
+        </details>
 
-          <button
-            type="button"
-            className="primary"
-            aria-label="Confirmar y activar semana"
-            disabled={isConfirming}
-            onClick={handleConfirmPlan}
-            data-testid="confirm-plan-button"
-          >
-            {isConfirming ? "Guardando semana..." : "✓ Confirmar y activar semana"}
-          </button>
-        </div>
+        <button
+          type="button"
+          className="primary"
+          aria-label="Confirmar y activar semana"
+          disabled={isConfirming}
+          onClick={handleConfirmPlan}
+          data-testid="confirm-plan-button"
+        >
+          {isConfirming ? "Guardando semana..." : "✓ Confirmar y activar semana"}
+        </button>
       </div>
     </>
   );

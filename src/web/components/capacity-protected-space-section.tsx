@@ -53,7 +53,7 @@ export function CapacityProtectedSpaceSection({ capacity }: CapacityProtectedSpa
           gap: "8px",
         }}
       >
-        {/* Fila superior: Resumen HUD */}
+        {/* Fila superior: Resumen HUD de una sola frase */}
         <div
           style={{
             display: "flex",
@@ -66,6 +66,20 @@ export function CapacityProtectedSpaceSection({ capacity }: CapacityProtectedSpa
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
             <span style={{ fontWeight: 600, fontSize: "0.88rem" }}>Balance de tu semana:</span>
             <span
+              data-testid="capacity-sentence-summary"
+              style={{ fontSize: "0.88rem", color: "var(--text-main)", fontWeight: 500 }}
+            >
+              {capacity.totalAvailableHours != null && capacity.totalAvailableHours > 0
+                ? `Tienes ${Math.max(
+                    0,
+                    capacity.totalAvailableHours -
+                      (capacity.plannedHours ?? capacity.knownEstimatedHours ?? 0)
+                  )} h libres y has planificado ${
+                    capacity.plannedHours ?? capacity.knownEstimatedHours ?? 0
+                  } h`
+                : "Aún no has configurado tu capacidad"}
+            </span>
+            <span
               className={`badge ${capacityStatusBadgeClass}`}
               data-testid="compact-capacity-status"
               style={{ fontSize: "0.78rem" }}
@@ -73,54 +87,6 @@ export function CapacityProtectedSpaceSection({ capacity }: CapacityProtectedSpa
               {isCapacityConfigured && capacity.capacityStatus === "unknown"
                 ? "Tareas sin estimar"
                 : formatCapacityStatus(capacity.capacityStatus)}
-            </span>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "6px",
-              fontSize: "0.82rem",
-            }}
-          >
-            <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
-              <span className="calm-muted">Disponibles:</span>{" "}
-              <strong>{formatHours(capacity.totalAvailableHours, "No disponible")}</strong>
-            </span>
-            <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
-              <span className="calm-muted">Planificadas:</span>{" "}
-              <strong>
-                {capacity.plannedHours != null
-                  ? formatHours(capacity.plannedHours)
-                  : formatHours(capacity.knownEstimatedHours, "Sin estimar")}
-              </strong>
-            </span>
-            <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
-              <span className="calm-muted">Planificables:</span>{" "}
-              <strong>{formatHours(capacity.plannableHours, "Desconocido")}</strong>
-            </span>
-            <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
-              <span className="calm-muted">Protegidas:</span>{" "}
-              <strong>{formatHours(capacity.protectedSpaceHours, "Desconocido")}</strong>
-            </span>
-            <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
-              <span className="calm-muted">Restantes:</span>{" "}
-              <strong>
-                {capacity.plannableHours != null &&
-                (capacity.plannedHours != null || capacity.knownEstimatedHours != null)
-                  ? formatHours(
-                      Math.max(
-                        0,
-                        capacity.plannableHours -
-                          (capacity.plannedHours ?? capacity.knownEstimatedHours!)
-                      )
-                    )
-                  : capacity.plannableHours != null
-                    ? `Hasta ${formatHours(capacity.plannableHours)}`
-                    : "Desconocido"}
-              </strong>
             </span>
           </div>
         </div>
@@ -186,6 +152,55 @@ export function CapacityProtectedSpaceSection({ capacity }: CapacityProtectedSpa
             Ver desglose completo de cálculos y límites
           </summary>
           <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "6px",
+                fontSize: "0.82rem",
+                paddingBottom: "8px",
+                borderBottom: "1px solid #f0f0f0",
+              }}
+            >
+              <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
+                <span className="calm-muted">Disponibles:</span>{" "}
+                <strong>{formatHours(capacity.totalAvailableHours, "No disponible")}</strong>
+              </span>
+              <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
+                <span className="calm-muted">Planificadas:</span>{" "}
+                <strong>
+                  {capacity.plannedHours != null
+                    ? formatHours(capacity.plannedHours)
+                    : formatHours(capacity.knownEstimatedHours, "Sin estimar")}
+                </strong>
+              </span>
+              <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
+                <span className="calm-muted">Planificables:</span>{" "}
+                <strong>{formatHours(capacity.plannableHours, "Desconocido")}</strong>
+              </span>
+              <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
+                <span className="calm-muted">Protegidas:</span>{" "}
+                <strong>{formatHours(capacity.protectedSpaceHours, "Desconocido")}</strong>
+              </span>
+              <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
+                <span className="calm-muted">Restantes:</span>{" "}
+                <strong>
+                  {capacity.plannableHours != null &&
+                  (capacity.plannedHours != null || capacity.knownEstimatedHours != null)
+                    ? formatHours(
+                        Math.max(
+                          0,
+                          capacity.plannableHours -
+                            (capacity.plannedHours ?? capacity.knownEstimatedHours!)
+                        )
+                      )
+                    : capacity.plannableHours != null
+                      ? `Hasta ${formatHours(capacity.plannableHours)}`
+                      : "Desconocido"}
+                </strong>
+              </span>
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <span
                 className="calm-muted"
