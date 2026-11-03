@@ -361,6 +361,7 @@ function AppContent({
         <div className="config-row">
           <span className="config-label">Proveedor IA:</span>
           <select
+            data-testid="provider-select"
             value={providerType}
             onChange={(e) => setProviderType(e.target.value as "mock" | "groq" | "gemini")}
           >
@@ -374,7 +375,11 @@ function AppContent({
               <span className="config-label" style={{ marginLeft: "auto" }}>
                 Caso de ejemplo:
               </span>
-              <select value={selectedCaseId} onChange={(e) => handleCaseSelect(e.target.value)}>
+              <select
+                data-testid="sample-case-select"
+                value={selectedCaseId}
+                onChange={(e) => handleCaseSelect(e.target.value)}
+              >
                 <option value="">-- Escribe tus ideas o elige un ejemplo --</option>
                 {sampleDumpsData.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -460,6 +465,7 @@ function AppContent({
                   className="primary"
                   disabled={loading || !text.trim()}
                   onClick={handleExtract}
+                  data-testid="extract-dump-button"
                 >
                   {loading ? "Entendiendo..." : "Extraer"}
                 </button>

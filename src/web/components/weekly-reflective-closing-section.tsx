@@ -109,6 +109,7 @@ export function WeeklyReflectiveClosingSection({
       className="calm-box"
       style={{ marginTop: "24px" }}
       aria-label="Sección de cierre de semana"
+      data-testid="weekly-reflective-closing-section"
     >
       <div
         style={{

@@ -62,6 +62,7 @@ export function ActiveWeekScheduleSection({
       className="results-section"
       style={{ marginTop: "24px" }}
       aria-label="Agenda y bloques"
+      data-testid="active-week-schedule-section"
     >
       <div
         style={{

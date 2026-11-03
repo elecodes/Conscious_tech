@@ -480,6 +480,7 @@ export function PlanningExtractedItemsReview({
           aria-label="Generar propuesta semanal con los elementos aceptados"
           disabled={isPlanning || (acceptedCount === 0 && selectedCarryOverItemIds.size === 0)}
           onClick={handleGenerateProposal}
+          data-testid="generate-proposal-button"
         >
           {isPlanning
             ? "Estructurando propuesta semanal..."

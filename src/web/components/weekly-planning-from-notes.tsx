@@ -1404,6 +1404,7 @@ export function WeeklyPlanningFromNotes({
             borderTop: "1px solid var(--border-color, #e0e0e0)",
           }}
           aria-label="Revisión de propuesta semanal"
+          data-testid="weekly-proposal-screen"
         >
           <div
             style={{
