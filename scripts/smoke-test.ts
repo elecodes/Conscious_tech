@@ -54,7 +54,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
   }
 
-  const outputDir = path.resolve(process.cwd(), "docs/ui-pr-b");
+  const outputDir = path.resolve(process.cwd(), "docs/ui-pr-c");
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
@@ -144,6 +144,19 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
     console.log("  ✓ Provider select hidden for normal users");
 
+    // 5. PR C: Verify initial Next Step bar
+    const nextStepBar = page.locator('[data-testid="next-step-bar"]');
+    await nextStepBar.waitFor({ state: "visible", timeout: 5000 });
+    const initialNextStepMsg = (
+      await page.locator('[data-testid="next-step-message"]').innerText()
+    ).trim();
+    if (!initialNextStepMsg.includes("Escribe lo que tienes en la cabeza")) {
+      throw new Error(
+        `Expected initial next step message "Escribe lo que tienes en la cabeza", got "${initialNextStepMsg}"`
+      );
+    }
+    console.log("  ✓ Initial next step bar verified: 'Escribe lo que tienes en la cabeza'");
+
     // --- STEP 1: Assert empty states on all 4 tabs & capture screenshots ---
     console.log("\nVerifying 4 main tabs navigation and empty states...");
 
@@ -171,16 +184,33 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
     console.log("  ✓ Tab 2 (Planificar) rendered without errors");
 
-    // 3. Tab 3: Mi semana
+    // 3. Tab 3: Mi semana (Verify PR C 3-line empty layout)
     await tabActive.click();
     await tabActive.waitFor({ state: "visible", timeout: 5000 });
+    const emptyCard = page.locator('[data-testid="empty-active-week-card"]');
+    await emptyCard.waitFor({ state: "visible", timeout: 5000 });
+    const emptyCardText = await emptyCard.innerText();
+    if (
+      !emptyCardText.includes("Escribe") ||
+      !emptyCardText.includes("Revisa") ||
+      !emptyCardText.includes("Vive tu semana")
+    ) {
+      throw new Error(
+        `Expected empty Mi semana card to contain 3 lines (Escribe, Revisa, Vive tu semana), got: ${emptyCardText}`
+      );
+    }
+    await page
+      .locator('[data-testid="nav-to-prepare-from-active-button"]')
+      .waitFor({ state: "visible", timeout: 5000 });
     if (mode === "preview") {
       await page.screenshot({
         path: path.join(outputDir, "03-tab-active-empty.png"),
         fullPage: true,
       });
     }
-    console.log("  ✓ Tab 3 (Mi semana) rendered without errors");
+    console.log(
+      "  ✓ Tab 3 (Mi semana) empty state verified: 3 lines + big 'Comenzar mi semana' button"
+    );
 
     // 4. Tab 4: Cierre
     await tabReview.click();
@@ -246,8 +276,60 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
     console.log("  ✓ Extraction completed with items");
 
+    // PR C: Verify next step updated to planning with extracted ideas
+    const extractedNextStepMsg = (
+      await page.locator('[data-testid="next-step-message"]').innerText()
+    ).trim();
+    if (!extractedNextStepMsg.includes("Planifica tu semana con estas")) {
+      throw new Error(
+        `Expected next step message to contain "Planifica tu semana con estas...", got "${extractedNextStepMsg}"`
+      );
+    }
+    console.log("  ✓ Next step bar updated after extraction: " + extractedNextStepMsg);
+
     // Click "Preparar semana"
     await prepareWeekBtn.click();
+
+    // PR C: Verify collapsed sections in Planificar
+    // 1. Collapsed "Añadir más ideas"
+    const addMoreIdeas = page.locator('[data-testid="add-more-ideas-details"]');
+    await addMoreIdeas.waitFor({ state: "visible", timeout: 5000 });
+    await addMoreIdeas.locator("> summary").click();
+    await page
+      .locator('[data-testid="extract-append-button"]')
+      .waitFor({ state: "visible", timeout: 5000 });
+    console.log("  ✓ Collapsed 'Añadir más ideas' details opened and verified");
+
+    // 2. Compact voice options popover inside open 'Añadir más ideas'
+    const voicePopover = addMoreIdeas.locator('[data-testid="voice-options-popover"]');
+    if ((await voicePopover.count()) > 0) {
+      await voicePopover.locator("> summary").click();
+      await page
+        .locator('[data-testid="voice-lang-select"]')
+        .first()
+        .waitFor({ state: "visible", timeout: 5000 });
+      console.log("  ✓ Voice options popover opened and verified");
+      await voicePopover.locator("> summary").click();
+    }
+    await addMoreIdeas.locator("> summary").click();
+
+    // 3. Collapsed "Opciones" (dates, fresh week, calendar sync)
+    const planningOptions = page.locator('[data-testid="planning-options-details"]');
+    await planningOptions.waitFor({ state: "visible", timeout: 5000 });
+    await planningOptions.locator("> summary").click();
+    await page
+      .locator('[data-testid="target-week-start-input"]')
+      .waitFor({ state: "visible", timeout: 5000 });
+    await page
+      .locator('[data-testid="start-fresh-week-top-button"]')
+      .waitFor({ state: "visible", timeout: 5000 });
+    await page
+      .locator('[data-testid="calendar-sync-card"]')
+      .waitFor({ state: "visible", timeout: 5000 });
+    console.log(
+      "  ✓ Collapsed 'Opciones' (dates, fresh week, Google Calendar sync) opened and verified"
+    );
+    await planningOptions.locator("> summary").click();
 
     // Wait for Tab 2 to open and the proposal button to be visible
     const generateProposalBtn = page.locator('[data-testid="generate-proposal-button"]');
@@ -270,6 +352,17 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     const proposalScreen = page.locator('[data-testid="weekly-proposal-screen"]');
     await proposalScreen.waitFor({ state: "visible", timeout: 15000 });
 
+    // PR C: Verify next step during proposal
+    const proposalNextStepMsg = (
+      await page.locator('[data-testid="next-step-message"]').innerText()
+    ).trim();
+    if (!proposalNextStepMsg.includes("Revisa y confirma la propuesta")) {
+      throw new Error(
+        `Expected proposal next step message "Revisa y confirma la propuesta", got "${proposalNextStepMsg}"`
+      );
+    }
+    console.log("  ✓ Next step bar updated during proposal review");
+
     if (mode === "preview") {
       await page.screenshot({
         path: path.join(outputDir, "08-proposal-screen.png"),
@@ -287,6 +380,17 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
 
     const statusBadge = page.locator('[data-testid="process-status-badge"]');
     await statusBadge.waitFor({ state: "visible", timeout: 10000 });
+
+    // PR C: Verify next step during active week
+    const activeNextStepMsg = (
+      await page.locator('[data-testid="next-step-message"]').innerText()
+    ).trim();
+    if (!activeNextStepMsg.includes("Esta es tu semana")) {
+      throw new Error(
+        `Expected active week next step message "Esta es tu semana", got "${activeNextStepMsg}"`
+      );
+    }
+    console.log("  ✓ Next step bar updated during active week: 'Esta es tu semana'");
 
     // Assert PR B renamed jargon in active week
     await page.locator("text=Lo que he aprendido").waitFor({ state: "visible", timeout: 5000 });

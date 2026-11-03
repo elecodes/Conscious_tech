@@ -45,6 +45,72 @@ function ProcessStatusBadge() {
   );
 }
 
+export interface NextStepInfo {
+  message: string;
+  targetSpace: NavigationSpace;
+  buttonText: string;
+}
+
+export function resolveNextStep({
+  state,
+  extractedCount,
+  hasPendingProposal = false,
+}: {
+  state: {
+    activePlan: { status: string; targetWeek: { endDate: string } } | null;
+    draftPlan?: unknown;
+    draftPlans?: unknown[];
+  };
+  extractedCount: number;
+  hasPendingProposal?: boolean;
+}): NextStepInfo {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const activePlan = state.activePlan;
+
+  // 1. Week ending
+  if (activePlan && activePlan.status === "active" && activePlan.targetWeek.endDate <= todayStr) {
+    return {
+      message: "Cierra la semana y apunta lo aprendido",
+      targetSpace: "review",
+      buttonText: "Cerrar semana",
+    };
+  }
+
+  // 2. Active week
+  if (activePlan && activePlan.status === "active") {
+    return {
+      message: "Esta es tu semana",
+      targetSpace: "active",
+      buttonText: "Ver mi semana",
+    };
+  }
+
+  // 3. Proposal pending
+  if (hasPendingProposal || state.draftPlan || (state.draftPlans && state.draftPlans.length > 0)) {
+    return {
+      message: "Revisa y confirma la propuesta",
+      targetSpace: "prepare",
+      buttonText: "Revisar propuesta",
+    };
+  }
+
+  // 4. Items extracted, no plan
+  if (extractedCount > 0) {
+    return {
+      message: `Planifica tu semana con estas ${extractedCount} ideas`,
+      targetSpace: "prepare",
+      buttonText: "Planificar semana",
+    };
+  }
+
+  // 5. Nothing captured (default)
+  return {
+    message: "Escribe lo que tienes en la cabeza",
+    targetSpace: "capture",
+    buttonText: "Ir a Ideas",
+  };
+}
+
 function AppContent({
   initialTab = "active",
 }: {
@@ -81,10 +147,14 @@ function AppContent({
   const [selectedCaseId, setSelectedCaseId] = useState("");
   const [showRawJson, setShowRawJson] = useState(false);
   const [planningItems, setPlanningItems] = useState<ExtractedItem[] | null>(null);
+  const [hasPendingProposal, setHasPendingProposal] = useState(false);
   const [backupStatus, setBackupStatus] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
+
+  const extractedCount = planningItems?.length ?? result?.items?.length ?? 0;
+  const nextStep = resolveNextStep({ state, extractedCount, hasPendingProposal });
 
   // Autosave mental dump text
   useEffect(() => {
@@ -116,6 +186,7 @@ function AppContent({
     setText("");
     setResult(null);
     setSelectedCaseId("");
+    setHasPendingProposal(false);
     try {
       localStorage.removeItem(STORAGE_KEY_CAPTURE_TEXT);
       localStorage.removeItem(STORAGE_KEY_CAPTURE_RESULT);
@@ -392,6 +463,57 @@ function AppContent({
             Cierre
           </button>
         </nav>
+
+        {/* Barra de siguiente paso guiado */}
+        <div
+          className="next-step-bar"
+          data-testid="next-step-bar"
+          style={{
+            marginTop: "12px",
+            padding: "8px 14px",
+            background: "#fcfbf9",
+            border: "1px solid var(--border-color, #e0ded9)",
+            borderRadius: "8px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "10px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span
+              style={{
+                fontSize: "0.72rem",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                fontWeight: 700,
+                color: "var(--accent-color, #2b6cb0)",
+                background: "#eef6ff",
+                padding: "2px 6px",
+                borderRadius: "4px",
+              }}
+            >
+              Paso sugerido
+            </span>
+            <span
+              data-testid="next-step-message"
+              style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-main, #333)" }}
+            >
+              {nextStep.message}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="primary small"
+            data-testid="next-step-button"
+            onClick={() => setActiveSpace(nextStep.targetSpace)}
+            style={{ fontSize: "0.82rem", padding: "4px 10px", fontWeight: 600 }}
+          >
+            {nextStep.buttonText} →
+          </button>
+        </div>
       </header>
 
       {(isDev || activeSpace === "capture") && (
@@ -606,8 +728,12 @@ function AppContent({
             provider={getProviderInstance()}
             activeSpace="prepare"
             initialPlanningItems={planningItems ?? undefined}
-            onClearPlanningItems={() => setPlanningItems(null)}
+            onClearPlanningItems={() => {
+              setPlanningItems(null);
+              setHasPendingProposal(false);
+            }}
             onNavigateSpace={(space) => setActiveSpace(space)}
+            onProposalStatusChange={setHasPendingProposal}
           />
         </main>
       )}

@@ -38,6 +38,7 @@ export interface WeeklyPlanningFromNotesProps {
   hasActivePlan?: boolean;
   initialItems?: ExtractedItem[];
   initialProposedWeek?: ProposedWeek;
+  onProposalStatusChange?: (hasProposal: boolean) => void;
 }
 
 export function WeeklyPlanningFromNotes({
@@ -47,6 +48,7 @@ export function WeeklyPlanningFromNotes({
   hasActivePlan = false,
   initialItems,
   initialProposedWeek,
+  onProposalStatusChange,
 }: WeeklyPlanningFromNotesProps) {
   const { createOrSavePlan, service, state } = useWeeklySession();
 
@@ -127,6 +129,10 @@ export function WeeklyPlanningFromNotes({
     initialProposedWeek ?? null
   );
   const [isReviewingSelection, setIsReviewingSelection] = useState(false);
+
+  useEffect(() => {
+    onProposalStatusChange?.(Boolean(proposedWeek && !isReviewingSelection));
+  }, [proposedWeek, isReviewingSelection, onProposalStatusChange]);
   const [overdueDecisions, setOverdueDecisions] = useState<
     Record<
       string,

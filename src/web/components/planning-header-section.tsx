@@ -112,106 +112,146 @@ export function PlanningHeaderSection({
         </div>
       )}
 
-      {/* Selector de semana objetivo a planificar */}
-      <div
-        className="config-box"
+      {/* Opciones colapsadas: fechas de semana objetivo, limpiar semana, sincronización de Google Calendar */}
+      <details
+        className="calm-details"
+        data-testid="planning-options-details"
         style={{
           marginTop: "12px",
-          padding: "10px 14px",
-          background: "#fdfdfd",
-          border: "1px solid var(--border-color, #e0e0e0)",
-          borderRadius: "6px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "12px",
-          flexWrap: "wrap",
+          padding: "8px 12px",
+          background: "#fafaf8",
+          border: "1px solid var(--border-color, #e0ded9)",
+          borderRadius: "8px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-          <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>Semana objetivo a planificar:</span>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <label htmlFor="target-week-start-input" style={{ fontSize: "0.85rem", color: "#666" }}>
-              Desde:
-            </label>
-            <input
-              id="target-week-start-input"
-              data-testid="target-week-start-input"
-              type="date"
-              value={targetWeekStart}
-              onChange={(e) => setTargetWeekStart(e.target.value)}
-              style={{ padding: "4px 8px", fontSize: "0.85rem" }}
-            />
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <label htmlFor="target-week-end-input" style={{ fontSize: "0.85rem", color: "#666" }}>
-              Hasta:
-            </label>
-            <input
-              id="target-week-end-input"
-              data-testid="target-week-end-input"
-              type="date"
-              value={targetWeekEnd}
-              onChange={(e) => setTargetWeekEnd(e.target.value)}
-              style={{ padding: "4px 8px", fontSize: "0.85rem" }}
-            />
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="secondary small"
-          style={{ fontSize: "0.82rem", padding: "4px 8px" }}
-          onClick={handleStartFreshWeek}
-          data-testid="start-fresh-week-top-button"
-          title="Despeja el cuaderno para iniciar la planificación de una nueva semana sin datos previos"
-        >
-          ✨ Limpiar y empezar nueva semana
-        </button>
-      </div>
-
-      {/* Lista de borradores guardados si existen en el estado */}
-      {draftPlans && draftPlans.length > 0 && (
-        <div
-          className="calm-box"
+        <summary
           style={{
-            marginTop: "10px",
-            padding: "8px 12px",
-            background: "#fcfbf9",
-            border: "1px dashed var(--border-color, #e0ded9)",
-            borderRadius: "6px",
-            fontSize: "0.85rem",
+            cursor: "pointer",
+            fontWeight: 600,
+            fontSize: "0.88rem",
+            color: "var(--text-main, #333)",
+            userSelect: "none",
           }}
-          data-testid="saved-drafts-selector"
         >
-          <span style={{ fontWeight: 600, color: "var(--text-main, #333)", marginRight: "8px" }}>
-            📂 Borradores guardados:
-          </span>
-          <div style={{ display: "inline-flex", gap: "6px", flexWrap: "wrap", marginTop: "4px" }}>
-            {draftPlans.map((draft) => {
-              const isSelected =
-                draft.targetWeek.startDate === targetWeekStart &&
-                draft.targetWeek.endDate === targetWeekEnd;
-              return (
-                <button
-                  key={draft.planId}
-                  type="button"
-                  className={isSelected ? "primary small" : "secondary small"}
-                  style={{ fontSize: "0.8rem", padding: "2px 8px" }}
-                  onClick={() => {
-                    setTargetWeekStart(draft.targetWeek.startDate);
-                    setTargetWeekEnd(draft.targetWeek.endDate);
-                  }}
-                  data-testid={`select-draft-${draft.targetWeek.startDate}`}
+          ⚙️ Opciones (fechas, calendario, limpiar)
+        </summary>
+        <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "10px" }}>
+          {/* Selector de semana objetivo a planificar */}
+          <div
+            className="config-box"
+            style={{
+              padding: "8px 12px",
+              background: "#ffffff",
+              border: "1px solid var(--border-color, #e0e0e0)",
+              borderRadius: "6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+              <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>Semana objetivo:</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <label
+                  htmlFor="target-week-start-input"
+                  style={{ fontSize: "0.85rem", color: "#666" }}
                 >
-                  Semana {draft.targetWeek.startDate} al {draft.targetWeek.endDate}
-                  {isSelected ? " (Activo)" : ""}
-                </button>
-              );
-            })}
+                  Desde:
+                </label>
+                <input
+                  id="target-week-start-input"
+                  data-testid="target-week-start-input"
+                  type="date"
+                  value={targetWeekStart}
+                  onChange={(e) => setTargetWeekStart(e.target.value)}
+                  style={{ padding: "4px 8px", fontSize: "0.85rem" }}
+                />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <label
+                  htmlFor="target-week-end-input"
+                  style={{ fontSize: "0.85rem", color: "#666" }}
+                >
+                  Hasta:
+                </label>
+                <input
+                  id="target-week-end-input"
+                  data-testid="target-week-end-input"
+                  type="date"
+                  value={targetWeekEnd}
+                  onChange={(e) => setTargetWeekEnd(e.target.value)}
+                  style={{ padding: "4px 8px", fontSize: "0.85rem" }}
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="secondary small"
+              style={{ fontSize: "0.82rem", padding: "4px 8px" }}
+              onClick={handleStartFreshWeek}
+              data-testid="start-fresh-week-top-button"
+              title="Despeja el cuaderno para iniciar la planificación de una nueva semana sin datos previos"
+            >
+              ✨ Limpiar y empezar nueva semana
+            </button>
           </div>
+
+          {/* Lista de borradores guardados si existen en el estado */}
+          {draftPlans && draftPlans.length > 0 && (
+            <div
+              className="calm-box"
+              style={{
+                padding: "8px 12px",
+                background: "#fcfbf9",
+                border: "1px dashed var(--border-color, #e0ded9)",
+                borderRadius: "6px",
+                fontSize: "0.85rem",
+              }}
+              data-testid="saved-drafts-selector"
+            >
+              <span
+                style={{ fontWeight: 600, color: "var(--text-main, #333)", marginRight: "8px" }}
+              >
+                📂 Borradores guardados:
+              </span>
+              <div
+                style={{ display: "inline-flex", gap: "6px", flexWrap: "wrap", marginTop: "4px" }}
+              >
+                {draftPlans.map((draft) => {
+                  const isSelected =
+                    draft.targetWeek.startDate === targetWeekStart &&
+                    draft.targetWeek.endDate === targetWeekEnd;
+                  return (
+                    <button
+                      key={draft.planId}
+                      type="button"
+                      className={isSelected ? "primary small" : "secondary small"}
+                      style={{ fontSize: "0.8rem", padding: "2px 8px" }}
+                      onClick={() => {
+                        setTargetWeekStart(draft.targetWeek.startDate);
+                        setTargetWeekEnd(draft.targetWeek.endDate);
+                      }}
+                      data-testid={`select-draft-${draft.targetWeek.startDate}`}
+                    >
+                      Semana {draft.targetWeek.startDate} al {draft.targetWeek.endDate}
+                      {isSelected ? " (Activo)" : ""}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Calendar Integration (Inside options section) */}
+          <CalendarSyncCard
+            targetWeek={activeTargetWeek}
+            onCalendarApplied={handleCalendarApplied}
+          />
         </div>
-      )}
+      </details>
 
       {/* Aviso de propuesta previa ya disponible si el usuario está revisando o ajustando */}
       {proposedWeek && isReviewingSelection && (
@@ -275,9 +315,6 @@ export function PlanningHeaderSection({
           hasExtractedItems={Boolean(extractedItems && extractedItems.length > 0)}
         />
       )}
-
-      {/* Calendar Integration (Always available in planning) */}
-      <CalendarSyncCard targetWeek={activeTargetWeek} onCalendarApplied={handleCalendarApplied} />
     </>
   );
 }

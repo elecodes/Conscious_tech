@@ -37,7 +37,8 @@ export function VoiceDictationButton({
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: "6px",
+        gap: "4px",
+        position: "relative",
       }}
     >
       <button
@@ -48,12 +49,12 @@ export function VoiceDictationButton({
         disabled={disabled}
         aria-pressed={isListening}
         aria-label={isListening ? "Detener dictado por voz" : "Iniciar dictado por voz"}
-        title="Dictado por voz mediante Web Speech API de tu navegador"
+        title="Dictar por voz (Web Speech API)"
         style={{
           display: "inline-flex",
           alignItems: "center",
-          gap: "6px",
-          padding: "4px 10px",
+          gap: "4px",
+          padding: "3px 8px",
           fontSize: "0.82rem",
           borderRadius: "6px",
           background: isListening ? "#dc2626" : undefined,
@@ -75,36 +76,89 @@ export function VoiceDictationButton({
         <span>{isListening ? "Escuchando... (Parar)" : "Dictar por voz"}</span>
       </button>
 
-      {/* Language switcher */}
-      <select
-        data-testid="voice-lang-select"
-        value={lang}
-        onChange={(e) => setLang(e.target.value)}
-        aria-label="Idioma del dictado por voz"
-        disabled={disabled || isListening}
+      {/* Language selector and privacy notice inside compact options popover/details */}
+      <details
+        data-testid="voice-options-popover"
         style={{
-          fontSize: "0.78rem",
-          padding: "3px 6px",
-          borderRadius: "4px",
-          border: "1px solid #cbd5e1",
-          background: "#ffffff",
-          cursor: isListening ? "not-allowed" : "pointer",
+          display: "inline-block",
+          position: "relative",
+          margin: 0,
         }}
       >
-        <option value="es-ES">ES</option>
-        <option value="en-US">EN</option>
-      </select>
-
-      <span
-        data-testid="voice-dictation-privacy-notice"
-        style={{
-          fontSize: "0.72rem",
-          color: "var(--text-muted, #64748b)",
-          marginLeft: "2px",
-        }}
-      >
-        (El audio puede ser procesado por el proveedor de tu navegador)
-      </span>
+        <summary
+          style={{
+            cursor: "pointer",
+            fontSize: "0.78rem",
+            listStyle: "none",
+            padding: "3px 5px",
+            borderRadius: "4px",
+            border: "1px solid var(--border-color, #cbd5e1)",
+            background: "#ffffff",
+            color: "var(--text-muted, #64748b)",
+            lineHeight: 1,
+            userSelect: "none",
+          }}
+          title="Opciones e idioma de dictado"
+          aria-label="Opciones de dictado por voz"
+        >
+          ⚙️
+        </summary>
+        <div
+          style={{
+            position: "absolute",
+            right: 0,
+            top: "calc(100% + 4px)",
+            zIndex: 30,
+            background: "#ffffff",
+            border: "1px solid var(--border-color, #cbd5e1)",
+            borderRadius: "6px",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.12)",
+            padding: "8px 10px",
+            minWidth: "220px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "6px",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <label
+              htmlFor="voice-lang-select"
+              style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-main)" }}
+            >
+              Idioma:
+            </label>
+            <select
+              id="voice-lang-select"
+              data-testid="voice-lang-select"
+              value={lang}
+              onChange={(e) => setLang(e.target.value)}
+              aria-label="Idioma del dictado por voz"
+              disabled={disabled || isListening}
+              style={{
+                fontSize: "0.78rem",
+                padding: "2px 6px",
+                borderRadius: "4px",
+                border: "1px solid #cbd5e1",
+                background: "#ffffff",
+                cursor: isListening ? "not-allowed" : "pointer",
+              }}
+            >
+              <option value="es-ES">es-ES</option>
+              <option value="en-US">en-US</option>
+            </select>
+          </div>
+          <span
+            data-testid="voice-dictation-privacy-notice"
+            style={{
+              fontSize: "0.72rem",
+              color: "var(--text-muted, #64748b)",
+              lineHeight: 1.3,
+            }}
+          >
+            (El audio puede ser procesado por el proveedor de tu navegador)
+          </span>
+        </div>
+      </details>
 
       {errorMessage && (
         <span

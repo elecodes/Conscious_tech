@@ -12,7 +12,7 @@ import {
   WeeklySessionReactContext,
   WeeklySessionContextValue,
 } from "../src/web/context/weekly-session-context";
-import { App } from "../src/web/App";
+import { App, resolveNextStep } from "../src/web/App";
 import {
   WeeklySessionView,
   formatUnscheduledCategory,
@@ -88,9 +88,13 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     // Indicador de estado del proceso
     expect(html).toContain("process-status-badge");
     expect(html).toContain("Borrador / Sin semana activa");
+
+    // Barra de siguiente paso guiado (inicial: nada capturado)
+    expect(html).toContain("next-step-bar");
+    expect(html).toContain("Escribe lo que tienes en la cabeza");
   });
 
-  it("2. Espacio 'Mi semana' sin semana activa ofrece acción clara para preparar", async () => {
+  it("2. Espacio 'Mi semana' sin semana activa muestra las 3 líneas claras y el botón principal", async () => {
     await controller.reloadSession();
     expect(controller.getSnapshot().status).toBe("no_active_session");
 
@@ -101,11 +105,13 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
       </WeeklySessionReactContext.Provider>
     );
 
-    expect(html).toContain(
-      "Tu cuaderno está despejado. No hay ninguna semana activa en este momento."
-    );
+    // 3 líneas del estado vacío: Escribe -> Revisa -> Vive tu semana
+    expect(html).toContain("empty-active-week-card");
+    expect(html).toContain("Escribe");
+    expect(html).toContain("Revisa");
+    expect(html).toContain("Vive tu semana");
     expect(html).toContain("nav-to-prepare-from-active-button");
-    expect(html).toContain("🗓️ Preparar una semana");
+    expect(html).toContain("Comenzar mi semana →");
   });
 
   it("3. Espacio 'Preparar semana' permite configurar sin cerrar la semana activa", async () => {
@@ -437,5 +443,100 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     expect(html).toContain("✨ Limpiar y empezar nueva semana");
     expect(html).toContain("clear-extracted-items-button");
     expect(html).toContain("✨ Limpiar elementos");
+  });
+
+  it("10. resolveNextStep deriva el siguiente paso único a partir del estado existente", () => {
+    // 1. Nada capturado
+    const step1 = resolveNextStep({
+      state: { activePlan: null },
+      extractedCount: 0,
+    });
+    expect(step1.message).toBe("Escribe lo que tienes en la cabeza");
+    expect(step1.targetSpace).toBe("capture");
+
+    // 2. Elementos extraídos, sin plan
+    const step2 = resolveNextStep({
+      state: { activePlan: null },
+      extractedCount: 4,
+    });
+    expect(step2.message).toBe("Planifica tu semana con estas 4 ideas");
+    expect(step2.targetSpace).toBe("prepare");
+
+    // 3. Propuesta pendiente (borrador o propuesta activa en memoria)
+    const step3 = resolveNextStep({
+      state: {
+        activePlan: null,
+        draftPlan: { planId: "draft-1" } as any,
+      },
+      extractedCount: 4,
+    });
+    expect(step3.message).toBe("Revisa y confirma la propuesta");
+    expect(step3.targetSpace).toBe("prepare");
+
+    const step3b = resolveNextStep({
+      state: { activePlan: null },
+      extractedCount: 4,
+      hasPendingProposal: true,
+    });
+    expect(step3b.message).toBe("Revisa y confirma la propuesta");
+    expect(step3b.targetSpace).toBe("prepare");
+
+    // 4. Semana activa en curso
+    const step4 = resolveNextStep({
+      state: {
+        activePlan: {
+          status: "active",
+          targetWeek: { endDate: "2099-12-31" },
+        },
+      },
+      extractedCount: 0,
+    });
+    expect(step4.message).toBe("Esta es tu semana");
+    expect(step4.targetSpace).toBe("active");
+
+    // 5. Semana terminando o terminada
+    const step5 = resolveNextStep({
+      state: {
+        activePlan: {
+          status: "active",
+          targetWeek: { endDate: "2020-01-01" },
+        },
+      },
+      extractedCount: 0,
+    });
+    expect(step5.message).toBe("Cierra la semana y apunta lo aprendido");
+    expect(step5.targetSpace).toBe("review");
+  });
+
+  it("11. Planificar colapsa las opciones avanzadas y la adición opcional de ideas", async () => {
+    await controller.reloadSession();
+    const contextVal = createMockContextValue();
+    const html = renderToStaticMarkup(
+      <WeeklySessionReactContext.Provider value={contextVal}>
+        <WeeklySessionView
+          provider={mockProvider}
+          activeSpace="prepare"
+          initialPlanningItems={[
+            {
+              id: "item-1",
+              title: "Tarea 1",
+              rawText: "Tarea 1",
+              type: "task",
+              status: "pending",
+            },
+          ]}
+        />
+      </WeeklySessionReactContext.Provider>
+    );
+
+    // Opciones colapsadas presentes en el DOM/HTML
+    expect(html).toContain("planning-options-details");
+    expect(html).toContain("target-week-start-input");
+    expect(html).toContain("start-fresh-week-top-button");
+    expect(html).toContain("calendar-sync-card");
+
+    // Adición de ideas colapsada presente en el DOM/HTML
+    expect(html).toContain("add-more-ideas-details");
+    expect(html).toContain("extract-append-button");
   });
 });

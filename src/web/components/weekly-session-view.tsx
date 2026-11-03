@@ -57,6 +57,7 @@ export interface WeeklySessionViewProps {
   onClearPlanningItems?: () => void;
   activeSpace?: "prepare" | "active" | "review";
   onNavigateSpace?: (space: "capture" | "prepare" | "active" | "review") => void;
+  onProposalStatusChange?: (hasProposal: boolean) => void;
 }
 
 export function WeeklySessionView({
@@ -65,6 +66,7 @@ export function WeeklySessionView({
   onClearPlanningItems,
   activeSpace,
   onNavigateSpace,
+  onProposalStatusChange,
 }: WeeklySessionViewProps = {}) {
   const {
     state,
@@ -858,7 +860,9 @@ export function WeeklySessionView({
             provider={provider}
             initialItems={initialPlanningItems}
             hasActivePlan={state.status === "session_resumed"}
+            onProposalStatusChange={onProposalStatusChange}
             onPlanCreated={() => {
+              onProposalStatusChange?.(false);
               onClearPlanningItems?.();
               reloadSession();
               if (onNavigateSpace && state.status !== "session_resumed") {
@@ -912,28 +916,59 @@ export function WeeklySessionView({
             </button>
           </div>
         )}
-        <section className="plan-summary-card" aria-label="Espacio de mi semana activa">
-          <h2>Mi semana</h2>
-          <p className="calm-text" style={{ marginTop: "8px" }}>
-            Tu cuaderno está despejado. No hay ninguna semana activa en este momento.
-          </p>
+        <section
+          className="plan-summary-card"
+          aria-label="Espacio de mi semana activa"
+          data-testid="empty-active-week-card"
+          style={{ textAlign: "center", padding: "28px 20px" }}
+        >
+          <h2 style={{ marginBottom: "16px" }}>Mi semana</h2>
+          <div
+            style={{
+              maxWidth: "420px",
+              margin: "0 auto",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+              textAlign: "left",
+            }}
+          >
+            <div
+              style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.95rem" }}
+            >
+              <span style={{ fontSize: "1.2rem" }}>✍️</span>
+              <span>
+                <strong>Escribe</strong> lo que tienes en la cabeza.
+              </span>
+            </div>
+            <div
+              style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.95rem" }}
+            >
+              <span style={{ fontSize: "1.2rem" }}>🔍</span>
+              <span>
+                <strong>Revisa</strong> la propuesta sin sobrecargarte.
+              </span>
+            </div>
+            <div
+              style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.95rem" }}
+            >
+              <span style={{ fontSize: "1.2rem" }}>🌱</span>
+              <span>
+                <strong>Vive tu semana</strong> con foco y espacio protegido.
+              </span>
+            </div>
+          </div>
           <div
             className="actions"
-            style={{ marginTop: "16px", display: "flex", gap: "10px", flexWrap: "wrap" }}
+            style={{ marginTop: "24px", display: "flex", justifyContent: "center" }}
           >
             <button
               className="primary"
+              style={{ padding: "12px 28px", fontSize: "1rem", fontWeight: 600 }}
               data-testid="nav-to-prepare-from-active-button"
-              onClick={() => onNavigateSpace?.("prepare")}
-            >
-              🗓️ Preparar una semana
-            </button>
-            <button
-              className="secondary"
-              data-testid="nav-to-capture-from-active-button"
               onClick={() => onNavigateSpace?.("capture")}
             >
-              ✍️ Capturar ideas
+              Comenzar mi semana →
             </button>
           </div>
         </section>

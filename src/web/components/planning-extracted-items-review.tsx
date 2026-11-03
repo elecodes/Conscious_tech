@@ -285,84 +285,99 @@ export function PlanningExtractedItemsReview({
         </ul>
       )}
 
-      {/* Añadir más ideas o tareas a la lista */}
-      <div
+      {/* Añadir más ideas o tareas a la lista (colapsado opcional) */}
+      <details
+        className="calm-details"
+        data-testid="add-more-ideas-details"
         style={{
           marginTop: "16px",
-          padding: "12px 14px",
+          padding: "10px 14px",
           background: "#fafaf8",
           border: "1px solid var(--border-color, #e6ded1)",
           borderRadius: "8px",
         }}
       >
-        <div
+        <summary
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "6px",
-            flexWrap: "wrap",
-            gap: "8px",
+            cursor: "pointer",
+            fontWeight: 600,
+            fontSize: "0.88rem",
+            color: "var(--text-main)",
+            userSelect: "none",
           }}
         >
-          <label
-            htmlFor="planning-notes-input"
-            style={{ fontWeight: 600, fontSize: "0.88rem", color: "var(--text-main)" }}
+          ➕ Añadir más ideas
+        </summary>
+        <div style={{ marginTop: "10px" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "6px",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
           >
-            ➕ ¿Quieres añadir más ideas o tareas a esta semana? (opcional)
-          </label>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
-              {noteText.length} caracteres
-            </span>
-            <VoiceDictationButton getText={() => noteText} onTranscript={(t) => setNoteText(t)} />
+            <label
+              htmlFor="planning-notes-input"
+              style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}
+            >
+              Escribe tareas o ideas adicionales:
+            </label>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                {noteText.length} caracteres
+              </span>
+              <VoiceDictationButton getText={() => noteText} onTranscript={(t) => setNoteText(t)} />
+            </div>
+          </div>
+          <textarea
+            id="planning-notes-input"
+            rows={3}
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            placeholder="Escribe tareas o ideas adicionales que quieras sumar a la lista de arriba..."
+            style={{
+              width: "100%",
+              padding: "8px 10px",
+              fontSize: "0.88rem",
+              boxSizing: "border-box",
+            }}
+            disabled={isExtracting}
+          />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "8px",
+              marginTop: "8px",
+              flexWrap: "wrap",
+            }}
+          >
+            <button
+              type="button"
+              className="secondary small"
+              aria-label="Añadir nuevas ideas a la lista existente"
+              disabled={isExtracting || !noteText.trim()}
+              onClick={() => handleExtract("append")}
+              data-testid="extract-append-button"
+            >
+              {isExtracting ? "Entendiendo notas..." : "➕ Añadir a la lista existente"}
+            </button>
+            <button
+              type="button"
+              className="secondary small"
+              aria-label="Analizar y extraer elementos de las notas"
+              disabled={isExtracting || !noteText.trim()}
+              onClick={() => handleExtract("replace")}
+              data-testid="extract-replace-button"
+            >
+              🔄 Reemplazar lista actual
+            </button>
           </div>
         </div>
-        <textarea
-          id="planning-notes-input"
-          rows={3}
-          value={noteText}
-          onChange={(e) => setNoteText(e.target.value)}
-          placeholder="Escribe tareas o ideas adicionales que quieras sumar a la lista de arriba..."
-          style={{
-            width: "100%",
-            padding: "8px 10px",
-            fontSize: "0.88rem",
-            boxSizing: "border-box",
-          }}
-          disabled={isExtracting}
-        />
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: "8px",
-            marginTop: "8px",
-            flexWrap: "wrap",
-          }}
-        >
-          <button
-            type="button"
-            className="secondary small"
-            aria-label="Añadir nuevas ideas a la lista existente"
-            disabled={isExtracting || !noteText.trim()}
-            onClick={() => handleExtract("append")}
-            data-testid="extract-append-button"
-          >
-            {isExtracting ? "Entendiendo notas..." : "➕ Añadir a la lista existente"}
-          </button>
-          <button
-            type="button"
-            className="secondary small"
-            aria-label="Analizar y extraer elementos de las notas"
-            disabled={isExtracting || !noteText.trim()}
-            onClick={() => handleExtract("replace")}
-            data-testid="extract-replace-button"
-          >
-            🔄 Reemplazar lista actual
-          </button>
-        </div>
-      </div>
+      </details>
 
       {/* User Intent Input */}
       <div style={{ marginTop: "16px" }}>
