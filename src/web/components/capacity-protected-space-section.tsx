@@ -79,15 +79,17 @@ export function CapacityProtectedSpaceSection({ capacity }: CapacityProtectedSpa
                   } h`
                 : "Aún no has configurado tu capacidad"}
             </span>
-            <span
-              className={`badge ${capacityStatusBadgeClass}`}
-              data-testid="compact-capacity-status"
-              style={{ fontSize: "0.78rem" }}
-            >
-              {isCapacityConfigured && capacity.capacityStatus === "unknown"
-                ? "Tareas sin estimar"
-                : formatCapacityStatus(capacity.capacityStatus)}
-            </span>
+            {isCapacityConfigured && (
+              <span
+                className={`badge ${capacityStatusBadgeClass}`}
+                data-testid="compact-capacity-status"
+                style={{ fontSize: "0.78rem" }}
+              >
+                {capacity.capacityStatus === "unknown"
+                  ? "Tareas sin estimar"
+                  : formatCapacityStatus(capacity.capacityStatus)}
+              </span>
+            )}
           </div>
         </div>
 
@@ -225,10 +227,10 @@ export function CapacityProtectedSpaceSection({ capacity }: CapacityProtectedSpa
                       return "Se ha reservado espacio protegido en el plan (margen de calma). La carga estimada actual supera el tiempo planificable disponible.";
                     }
                     const remaining = Math.max(0, capacity.plannableHours - currentEstimated);
-                    return `Se ha reservado espacio protegido en el plan (margen de calma). Disponés de hasta ${formatHours(remaining)} para tareas adicionales o pendientes de estimar.`;
+                    return `Se ha reservado espacio protegido en el plan (margen de calma). Dispones de hasta ${formatHours(remaining)} para tareas adicionales o pendientes de estimar.`;
                   }
                   if (currentEstimated == null && capacity.plannableHours != null) {
-                    return `Se ha reservado espacio protegido en el plan (margen de calma). Disponés de hasta ${formatHours(capacity.plannableHours)} para tareas sin estimar.`;
+                    return `Se ha reservado espacio protegido en el plan (margen de calma). Dispones de hasta ${formatHours(capacity.plannableHours)} para tareas sin estimar.`;
                   }
                   return "Se ha reservado espacio protegido en el plan (margen de calma) para asegurar equilibrio y evitar sobrecarga.";
                 })()}

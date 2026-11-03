@@ -89,13 +89,18 @@ export const initialWeeklySessionState: WeeklySessionUIState = {
 // ============================================================================
 
 export class WeeklySessionController {
-  private state: WeeklySessionUIState = { ...initialWeeklySessionState };
+  private state: WeeklySessionUIState;
   private listeners = new Set<() => void>();
   private currentResumeId = 0;
   private isClosing = false;
   private isSavingPlan = false;
 
-  constructor(private readonly service: WeeklySessionService) {}
+  constructor(
+    private readonly service: WeeklySessionService,
+    initialState?: WeeklySessionUIState
+  ) {
+    this.state = initialState ? { ...initialState } : { ...initialWeeklySessionState };
+  }
 
   public getSnapshot = (): WeeklySessionUIState => {
     return this.state;
@@ -658,12 +663,14 @@ export interface WeeklySessionProviderProps {
   children: React.ReactNode;
   service?: WeeklySessionService;
   autoResume?: boolean;
+  initialState?: WeeklySessionUIState;
 }
 
 export function WeeklySessionProvider({
   children,
   service,
   autoResume = true,
+  initialState,
 }: WeeklySessionProviderProps) {
   const [activeService, setActiveService] = useState<WeeklySessionService | null>(service ?? null);
 
@@ -688,7 +695,11 @@ export function WeeklySessionProvider({
   }
 
   return (
-    <WeeklySessionProviderWithService service={activeService} autoResume={autoResume}>
+    <WeeklySessionProviderWithService
+      service={activeService}
+      autoResume={autoResume}
+      initialState={initialState}
+    >
       {children}
     </WeeklySessionProviderWithService>
   );
@@ -698,12 +709,17 @@ function WeeklySessionProviderWithService({
   children,
   service,
   autoResume,
+  initialState,
 }: {
   children: React.ReactNode;
   service: WeeklySessionService;
   autoResume: boolean;
+  initialState?: WeeklySessionUIState;
 }) {
-  const controller = useMemo(() => new WeeklySessionController(service), [service]);
+  const controller = useMemo(
+    () => new WeeklySessionController(service, initialState),
+    [service, initialState]
+  );
 
   const state = useSyncExternalStore(
     controller.subscribe,

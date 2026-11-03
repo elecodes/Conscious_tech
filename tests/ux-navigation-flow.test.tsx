@@ -11,12 +11,15 @@ import {
   WeeklySessionController,
   WeeklySessionReactContext,
   WeeklySessionContextValue,
+  initialWeeklySessionState,
 } from "../src/web/context/weekly-session-context";
 import { App, resolveNextStep } from "../src/web/App";
 import {
   WeeklySessionView,
   formatUnscheduledCategory,
 } from "../src/web/components/weekly-session-view";
+import { PlanningCapacityHud } from "../src/web/components/planning-capacity-hud";
+import { ProposedWeek } from "../src/domain/week";
 import { MockProvider } from "../src/providers/mock-provider";
 import { StoredWeeklyPlan } from "../src/domain/repositories/types";
 import { WeeklySchedule } from "../src/domain/schedule";
@@ -551,5 +554,207 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
 
     // Config bar en Ideas solo contiene el selector de casos de ejemplo
     expect(html).toContain('data-testid="sample-case-select"');
+  });
+
+  it("13. Landing tab se elige según el estado (vacío -> Ideas, activa -> Mi semana, borrador -> Planificar)", () => {
+    // A) Estado vacío -> aterriza en Ideas (capture)
+    const emptyState = {
+      ...initialWeeklySessionState,
+      status: "no_active_session" as const,
+      activePlan: null,
+      draftPlan: null,
+    };
+    const htmlEmpty = renderToStaticMarkup(<App service={service} initialState={emptyState} />);
+    expect(htmlEmpty).toContain('data-testid="nav-tab-capture"');
+    // Tab Ideas está resaltado (primary)
+    expect(htmlEmpty).toMatch(
+      /<button[^>]*class="[^"]*primary[^"]*"[^>]*data-testid="nav-tab-capture"/
+    );
+    // Barra de siguiente paso y pestaña coinciden en Ideas, sin botón redundante
+    expect(htmlEmpty).toContain("Escribe lo que tienes en la cabeza");
+    expect(htmlEmpty).not.toContain('data-testid="next-step-button"');
+
+    // B) Semana activa -> aterriza en Mi semana (active)
+    const activeState = {
+      ...initialWeeklySessionState,
+      status: "session_resumed" as const,
+      activePlan: {
+        planId: "plan-act-1",
+        status: "active" as const,
+        targetWeek: { startDate: "2026-12-01", endDate: "2026-12-31" },
+        proposal: {
+          weekSummary: {
+            targetWeek: { startDate: "2026-12-01", endDate: "2026-12-31" },
+            capacity: {
+              totalAvailableHours: 30,
+              plannableHours: 22,
+              plannedHours: 10,
+              knownEstimatedHours: 10,
+              estimationCompleteness: "complete" as const,
+              protectedSpaceHours: 8,
+              capacityStatus: "within_capacity" as const,
+              protectedSpaceStatus: "respected" as const,
+            },
+            intent: "Foco activo",
+          },
+          foci: [],
+          obligations: [],
+          flexibleOptions: [],
+          deferredItems: [],
+          unplannedSpace: { rationale: "margen", recommendedHours: 8 },
+          confirmationPrompt: { question: "¿Activar?", keyTradeoffs: [], pendingQuestions: [] },
+        },
+        createdAt: "2026-10-19T08:00:00Z",
+        updatedAt: "2026-10-19T08:00:00Z",
+      },
+    };
+    const htmlActive = renderToStaticMarkup(<App service={service} initialState={activeState} />);
+    expect(htmlActive).toMatch(
+      /<button[^>]*class="[^"]*primary[^"]*"[^>]*data-testid="nav-tab-active"/
+    );
+    expect(htmlActive).toContain("Esta es tu semana");
+    expect(htmlActive).not.toContain('data-testid="next-step-button"');
+
+    // C) Borrador pendiente -> aterriza en Planificar (prepare)
+    const draftState = {
+      ...initialWeeklySessionState,
+      status: "no_active_session" as const,
+      activePlan: null,
+      draftPlan: {
+        planId: "plan-draft-1",
+        status: "draft" as const,
+        targetWeek: { startDate: "2026-10-26", endDate: "2026-11-01" },
+        proposal: {
+          weekSummary: {
+            targetWeek: { startDate: "2026-10-26", endDate: "2026-11-01" },
+            capacity: {
+              totalAvailableHours: 30,
+              plannableHours: 22,
+              plannedHours: 10,
+              knownEstimatedHours: 10,
+              estimationCompleteness: "complete" as const,
+              protectedSpaceHours: 8,
+              capacityStatus: "within_capacity" as const,
+              protectedSpaceStatus: "respected" as const,
+            },
+            intent: "Borrador",
+          },
+          foci: [],
+          obligations: [],
+          flexibleOptions: [],
+          deferredItems: [],
+          unplannedSpace: { rationale: "margen", recommendedHours: 8 },
+          confirmationPrompt: { question: "¿Activar?", keyTradeoffs: [], pendingQuestions: [] },
+        },
+        createdAt: "2026-10-26T08:00:00Z",
+        updatedAt: "2026-10-26T08:00:00Z",
+      },
+    };
+    const htmlDraft = renderToStaticMarkup(<App service={service} initialState={draftState} />);
+    expect(htmlDraft).toMatch(
+      /<button[^>]*class="[^"]*primary[^"]*"[^>]*data-testid="nav-tab-prepare"/
+    );
+    expect(htmlDraft).toContain("Revisa y confirma la propuesta");
+    expect(htmlDraft).not.toContain('data-testid="next-step-button"');
+
+    // D) initialTab explícito no es sobreescrito por el estado
+    const htmlExplicit = renderToStaticMarkup(
+      <App service={service} initialState={emptyState} initialTab="active" />
+    );
+    expect(htmlExplicit).toMatch(
+      /<button[^>]*class="[^"]*primary[^"]*"[^>]*data-testid="nav-tab-active"/
+    );
+  });
+
+  it("14. Botón de siguiente paso se oculta cuando apunta a la pestaña actual y se muestra cuando navega a otra", () => {
+    const emptyState = {
+      ...initialWeeklySessionState,
+      status: "no_active_session" as const,
+      activePlan: null,
+      draftPlan: null,
+    };
+
+    // En Ideas con target Ideas -> botón oculto
+    const htmlCapture = renderToStaticMarkup(
+      <App service={service} initialState={emptyState} initialTab="capture" />
+    );
+    expect(htmlCapture).toContain("Escribe lo que tienes en la cabeza");
+    expect(htmlCapture).not.toContain('data-testid="next-step-button"');
+
+    // En Planificar con target Ideas -> botón visible para volver a Ideas
+    const htmlPrepare = renderToStaticMarkup(
+      <App service={service} initialState={emptyState} initialTab="prepare" />
+    );
+    expect(htmlPrepare).toContain("Escribe lo que tienes en la cabeza");
+    expect(htmlPrepare).toContain('data-testid="next-step-button"');
+    expect(htmlPrepare).toContain("Ir a Ideas →");
+  });
+
+  it("15. Balance de capacidad oculta la chapa redundante cuando la capacidad no está configurada", () => {
+    const unconfiguredWeek: ProposedWeek = {
+      weekSummary: {
+        targetWeek: { startDate: "2026-10-19", endDate: "2026-10-25" },
+        capacity: {
+          totalAvailableHours: null,
+          plannableHours: null,
+          plannedHours: null,
+          knownEstimatedHours: 0,
+          estimationCompleteness: "none",
+          protectedSpaceHours: null,
+          capacityStatus: "unknown",
+          protectedSpaceStatus: "unknown",
+        },
+        intent: "Semana sin capacidad",
+      },
+      foci: [],
+      obligations: [],
+      flexibleOptions: [],
+      deferredItems: [],
+      unplannedSpace: { rationale: "margen", recommendedHours: null },
+      confirmationPrompt: { question: "¿Activar?", keyTradeoffs: [], pendingQuestions: [] },
+    };
+
+    const html = renderToStaticMarkup(
+      <PlanningCapacityHud
+        proposedWeek={unconfiguredWeek}
+        isEditingCapacity={false}
+        setIsEditingCapacity={() => {}}
+        availableHoursInput=""
+        setAvailableHoursInput={() => {}}
+        protectedSpacePercentInput=""
+        setProtectedSpacePercentInput={() => {}}
+        capacityFeedbackMessage={null}
+        onStartEditCapacity={() => {}}
+        onCancelEditCapacity={() => {}}
+        onVerifyCapacity={() => {}}
+      />
+    );
+
+    // Muestra la frase limpia
+    expect(html).toContain("Aún no has configurado tu capacidad");
+    // NO muestra la chapa redundante de Capacidad no configurada
+    expect(html).not.toContain('data-testid="planning-capacity-status-summary-badge"');
+    expect(html).not.toContain("Capacidad no configurada");
+  });
+
+  it("16. Textos actualizados: Volver a Ideas y Elige qué entra en tu semana", async () => {
+    await controller.reloadSession();
+    const contextVal = createMockContextValue();
+    const html = renderToStaticMarkup(
+      <WeeklySessionReactContext.Provider value={contextVal}>
+        <WeeklySessionView
+          provider={mockProvider}
+          activeSpace="prepare"
+          onNavigateSpace={() => {}}
+        />
+      </WeeklySessionReactContext.Provider>
+    );
+
+    expect(html).toContain("Volver a Ideas");
+    expect(html).not.toContain("Volver a Capturar");
+    expect(html).toContain("Elige qué entra en tu semana.");
+    expect(html).not.toContain(
+      "Configura tu semana objetivo, capacidad y foco a partir de tus notas o elementos extraídos."
+    );
   });
 });

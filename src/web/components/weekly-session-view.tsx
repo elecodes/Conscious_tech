@@ -829,7 +829,7 @@ export function WeeklySessionView({
           <p className="calm-muted" style={{ marginTop: "6px" }}>
             {state.status === "session_resumed"
               ? "Tienes una semana activa en curso. Aquí puedes estructurar un borrador para la próxima semana e incorporar tareas postergadas sin alterar la semana activa."
-              : "Configura tu semana objetivo, capacidad y foco a partir de tus notas o elementos extraídos."}
+              : "Elige qué entra en tu semana."}
           </p>
           {onNavigateSpace && (
             <div style={{ marginTop: "12px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -839,7 +839,7 @@ export function WeeklySessionView({
                 data-testid="nav-back-to-capture-button"
                 onClick={() => onNavigateSpace("capture")}
               >
-                ← Volver a Capturar
+                ← Volver a Ideas
               </button>
               {state.status === "session_resumed" && (
                 <button

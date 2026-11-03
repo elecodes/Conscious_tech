@@ -83,24 +83,24 @@ export function PlanningCapacityHud({
                 } h`
               : "Aún no has configurado tu capacidad"}
           </span>
-          <span
-            className={`badge ${
-              proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity"
-                ? "badge-success"
-                : proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity"
-                  ? "badge-error"
-                  : "badge-warning"
-            }`}
-            data-testid="planning-capacity-status-summary-badge"
-          >
-            {proposedWeek.weekSummary.capacity.totalAvailableHours == null
-              ? "Capacidad no configurada"
-              : proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity"
+          {isCapacityConfigured && (
+            <span
+              className={`badge ${
+                proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity"
+                  ? "badge-success"
+                  : proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity"
+                    ? "badge-error"
+                    : "badge-warning"
+              }`}
+              data-testid="planning-capacity-status-summary-badge"
+            >
+              {proposedWeek.weekSummary.capacity.capacityStatus === "over_capacity"
                 ? "Por encima de la capacidad"
                 : proposedWeek.weekSummary.capacity.capacityStatus === "within_capacity"
                   ? "Dentro de la capacidad"
                   : "Estimación parcial"}
-          </span>
+            </span>
+          )}
         </div>
       </div>
 

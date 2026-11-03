@@ -192,7 +192,7 @@ describe("Conectar Extracción y volcado con la planificación semanal", () => {
 
     // 1. Debe mostrar el banner de elementos transferidos
     expect(htmlWithTransferred).toContain("transferred-items-notice");
-    expect(htmlWithTransferred).toContain("Se cargaron 3 elemento(s) extraídos");
+    expect(htmlWithTransferred).toContain("Se han cargado 3 ideas de tu captura");
 
     // 2. Debe permitir seleccionar la semana objetivo
     expect(htmlWithTransferred).toContain("target-week-start-input");

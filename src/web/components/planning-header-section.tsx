@@ -62,13 +62,13 @@ export function PlanningHeaderSection({
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: "flex-end",
           alignItems: "baseline",
           flexWrap: "wrap",
           gap: "8px",
+          marginBottom: "4px",
         }}
       >
-        <h3>Planificar semana a partir de ideas</h3>
         <span className="badge badge-idea">IA propone · Tú decides</span>
       </div>
 
@@ -100,9 +100,12 @@ export function PlanningHeaderSection({
           }}
           data-testid="transferred-items-notice"
         >
-          📋 <strong>Elementos transferidos:</strong> Se cargaron {initialItems.length} elemento(s)
-          extraídos del volcado mental. Puedes ajustar la semana objetivo y seleccionar cuáles
-          incluir antes de generar la propuesta.
+          📋 <strong>Elementos transferidos:</strong> Se{" "}
+          {initialItems.length === 1
+            ? "ha cargado 1 idea"
+            : `han cargado ${initialItems.length} ideas`}{" "}
+          de tu captura. Puedes ajustar la semana y elegir cuáles incluir antes de generar la
+          propuesta.
         </div>
       )}
 

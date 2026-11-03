@@ -431,7 +431,6 @@ describe("Fase P5.5 — Auditoría de seguridad y preparación para pruebas con 
         </WeeklySessionReactContext.Provider>
       );
 
-      expect(html).toContain("Planificar semana a partir de ideas");
       expect(html).toContain("IA propone · Tú decides");
       expect(html).toContain("¿Qué tienes en mente para planificar?");
     });

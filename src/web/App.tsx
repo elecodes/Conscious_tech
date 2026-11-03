@@ -4,7 +4,11 @@ import { MockProvider } from "../providers/mock-provider";
 import { RemoteAIProvider } from "../providers/remote-ai-provider";
 import { extractItems } from "../skills/extract-items";
 import sampleDumpsData from "../../cases/sample-dumps.json";
-import { WeeklySessionProvider, useWeeklySession } from "./context/weekly-session-context";
+import {
+  WeeklySessionProvider,
+  useWeeklySession,
+  WeeklySessionUIState,
+} from "./context/weekly-session-context";
 import { WeeklySessionView } from "./components/weekly-session-view";
 import { WeeklySessionService } from "../application/weekly-session-service";
 import { formatItemType, formatItemStatus, formatCommitmentType, formatImportance } from "./labels";
@@ -16,6 +20,7 @@ export type NavigationSpace = "capture" | "prepare" | "active" | "review";
 export interface AppProps {
   service?: WeeklySessionService;
   initialTab?: "dump" | "weekly" | NavigationSpace;
+  initialState?: WeeklySessionUIState;
 }
 
 const STORAGE_KEY_CAPTURE_TEXT = "conscious_tech_transient_dump_text";
@@ -111,20 +116,46 @@ export function resolveNextStep({
   };
 }
 
-function AppContent({
-  initialTab = "active",
-}: {
-  initialTab?: "dump" | "weekly" | NavigationSpace;
-}) {
+export function resolveLandingTab(
+  state: {
+    status?: string;
+    activePlan: { status: string } | null;
+    draftPlan?: unknown;
+    draftPlans?: unknown[];
+  },
+  hasPendingProposal: boolean = false
+): NavigationSpace {
+  if (state.activePlan && state.activePlan.status === "active") {
+    return "active";
+  }
+  if (hasPendingProposal || state.draftPlan || (state.draftPlans && state.draftPlans.length > 0)) {
+    return "prepare";
+  }
+  return "capture";
+}
+
+function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | NavigationSpace }) {
   const { state, exportBackup, importBackup } = useWeeklySession();
   const isDev = isDevMode();
-  const resolveInitialSpace = (): NavigationSpace => {
-    if (initialTab === "dump") return "capture";
-    if (initialTab === "weekly") return "active";
-    return initialTab;
+  const [userSelectedTab, setUserSelectedTab] = useState<NavigationSpace | null>(null);
+
+  const resolveExplicitSpace = (tab: "dump" | "weekly" | NavigationSpace): NavigationSpace => {
+    if (tab === "dump") return "capture";
+    if (tab === "weekly") return "active";
+    return tab;
   };
 
-  const [activeSpace, setActiveSpace] = useState<NavigationSpace>(resolveInitialSpace);
+  const [hasPendingProposal, setHasPendingProposal] = useState(false);
+
+  const activeSpace: NavigationSpace =
+    userSelectedTab ??
+    (initialTab !== undefined
+      ? resolveExplicitSpace(initialTab)
+      : resolveLandingTab(state, hasPendingProposal));
+
+  const setActiveSpace = (space: NavigationSpace) => {
+    setUserSelectedTab(space);
+  };
   const [providerType, setProviderType] = useState<"mock" | "groq" | "gemini">("mock");
   const [text, setText] = useState<string>(() => {
     try {
@@ -147,7 +178,6 @@ function AppContent({
   const [selectedCaseId, setSelectedCaseId] = useState("");
   const [showRawJson, setShowRawJson] = useState(false);
   const [planningItems, setPlanningItems] = useState<ExtractedItem[] | null>(null);
-  const [hasPendingProposal, setHasPendingProposal] = useState(false);
   const [backupStatus, setBackupStatus] = useState<{
     type: "success" | "error";
     message: string;
@@ -288,11 +318,44 @@ function AppContent({
       });
       setResult(data);
     } catch (err) {
-      setError((err as Error).message || "Error procesando el volcado mental");
+      setError((err as Error).message || "Error procesando la captura de ideas");
     } finally {
       setLoading(false);
     }
   };
+
+  if (initialTab === undefined && state.status === "loading" && userSelectedTab === null) {
+    return (
+      <div className="container" data-testid="app-loading-screen">
+        <header>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              flexWrap: "wrap",
+              gap: "10px",
+            }}
+          >
+            <div>
+              <h1>Tecnología Consciente</h1>
+              <p className="subtitle">
+                Cuaderno de claridad y ciclo semanal · AI propone, tú decides
+              </p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+              <span className="badge badge-muted">Iniciando...</span>
+            </div>
+          </div>
+        </header>
+        <main style={{ marginTop: "32px", textAlign: "center" }}>
+          <div className="calm-box" role="status" aria-live="polite">
+            <p className="calm-text">Revisando tu cuaderno y agenda...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="container">
@@ -558,15 +621,17 @@ function AppContent({
             </span>
           </div>
 
-          <button
-            type="button"
-            className="primary small"
-            data-testid="next-step-button"
-            onClick={() => setActiveSpace(nextStep.targetSpace)}
-            style={{ fontSize: "0.82rem", padding: "4px 10px", fontWeight: 600 }}
-          >
-            {nextStep.buttonText} →
-          </button>
+          {activeSpace !== nextStep.targetSpace && (
+            <button
+              type="button"
+              className="primary small"
+              data-testid="next-step-button"
+              onClick={() => setActiveSpace(nextStep.targetSpace)}
+              style={{ fontSize: "0.82rem", padding: "4px 10px", fontWeight: 600 }}
+            >
+              {nextStep.buttonText} →
+            </button>
+          )}
         </div>
       </header>
 
@@ -776,9 +841,9 @@ function AppContent({
   );
 }
 
-export function App({ service, initialTab = "weekly" }: AppProps = {}) {
+export function App({ service, initialTab, initialState }: AppProps = {}) {
   return (
-    <WeeklySessionProvider service={service}>
+    <WeeklySessionProvider service={service} initialState={initialState}>
       <AppContent initialTab={initialTab} />
     </WeeklySessionProvider>
   );

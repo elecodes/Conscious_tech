@@ -339,7 +339,7 @@ describe("Fase P5.6 — Conectar tareas postergadas con la planificación de la 
       );
 
       // Debe contener la sección de entrada de notas y la estructura lista para tareas
-      expect(html).toContain("Planificar semana a partir de ideas");
+      expect(html).toContain("IA propone · Tú decides");
       expect(html).toContain("planning-notes-input");
     });
 

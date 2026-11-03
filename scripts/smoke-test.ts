@@ -160,7 +160,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
       throw new Error(`Tab 4 label expected "Cierre", got "${tabReviewText}"`);
     console.log("  ✓ Simplified tab labels: Ideas, Planificar, Mi semana, Cierre");
 
-    // 4. PR C: Verify initial Next Step bar
+    // 4. PR C & PR F: Verify initial Next Step bar and landing tab
     const nextStepBar = page.locator('[data-testid="next-step-bar"]');
     await nextStepBar.waitFor({ state: "visible", timeout: 5000 });
     const initialNextStepMsg = (
@@ -172,6 +172,25 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
       );
     }
     console.log("  ✓ Initial next step bar verified: 'Escribe lo que tienes en la cabeza'");
+
+    // PR F: Fresh load lands on Ideas (capture) with no redundant next-step button
+    const isCapturePrimary = await tabCapture.evaluate((el: HTMLElement) =>
+      el.classList.contains("primary")
+    );
+    if (!isCapturePrimary) {
+      throw new Error(
+        "Fresh load should land on Ideas (nav-tab-capture should have class primary)"
+      );
+    }
+    const isRedundantInitialBtnVisible = await page
+      .locator('[data-testid="next-step-button"]')
+      .isVisible();
+    if (isRedundantInitialBtnVisible) {
+      throw new Error(
+        "Initial next-step button should be hidden because target space is the current space (Ideas)"
+      );
+    }
+    console.log("  ✓ Fresh load landed on Ideas with no redundant next-step button");
 
     // --- STEP 1: Assert empty states on all 4 tabs & capture screenshots ---
     console.log("\nVerifying 4 main tabs navigation and empty states...");
@@ -244,12 +263,14 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
 
     // Activate dev mode via URL parameter
     await page.goto(`${url}?dev=1`, { waitUntil: "networkidle", timeout: 15000 });
+    await page.locator('[data-testid="nav-tab-active"]').click();
     const devOptions = page.locator('[data-testid="dev-options-section"]');
     await devOptions.waitFor({ state: "visible", timeout: 5000 });
     console.log("  ✓ Dev options visible with ?dev=1");
 
     // Reload without ?dev=1 to assert sessionStorage persistence
     await page.goto(url, { waitUntil: "networkidle", timeout: 15000 });
+    await page.locator('[data-testid="nav-tab-active"]').click();
     await devOptions.waitFor({ state: "visible", timeout: 5000 });
     console.log("  ✓ Dev mode persisted across page reloads via sessionStorage");
 
@@ -561,6 +582,30 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
       });
     }
     console.log("  ✓ Active week confirmed and populated in Mi semana");
+
+    // PR F: After confirming a week, a reload lands on Mi semana (active)
+    console.log("Testing reload landing tab with active week...");
+    await page.reload({ waitUntil: "networkidle" });
+    await page.waitForFunction(() => {
+      const activeTab = document.querySelector('[data-testid="nav-tab-active"]');
+      const captureTab = document.querySelector('[data-testid="nav-tab-capture"]');
+      return Boolean(
+        activeTab?.classList.contains("primary") && !captureTab?.classList.contains("primary")
+      );
+    });
+    const reloadedActiveSchedule = page.locator('[data-testid="active-week-schedule-section"]');
+    await reloadedActiveSchedule.waitFor({ state: "visible", timeout: 15000 });
+    const isReloadedNextStepBtnVisible = await page
+      .locator('[data-testid="next-step-button"]')
+      .isVisible();
+    if (isReloadedNextStepBtnVisible) {
+      throw new Error(
+        "Next-step button should be hidden on reload because user is already on Mi semana"
+      );
+    }
+    console.log(
+      "  ✓ Reload with active week landed on Mi semana with no redundant next-step button"
+    );
 
     // Open Tab 4: Cierre with active week
     await page.locator('[data-testid="nav-tab-review"]').click();
