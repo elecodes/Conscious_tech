@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { indexedDB as fakeIDB, IDBKeyRange as fakeKeyRange } from "fake-indexeddb";
 import {
@@ -183,6 +185,46 @@ describe("FIX 3: Spanish labels for enum badges", () => {
       expect(html).not.toContain(">task<");
       expect(html).not.toContain("estado: pending");
       expect(html).not.toContain("compromiso external");
+    });
+  });
+
+  describe("PR D: Sentence case for badges and CSS guard", () => {
+    it("ensures .badge CSS rule does NOT use text-transform: capitalize", () => {
+      const cssPath = path.resolve(__dirname, "../src/web/style.css");
+      const css = fs.readFileSync(cssPath, "utf-8");
+      const badgeMatch = css.match(/\.badge\s*\{([^}]+)\}/);
+      expect(badgeMatch).not.toBeNull();
+      const badgeRules = badgeMatch![1];
+      expect(badgeRules).not.toContain("text-transform: capitalize");
+    });
+
+    it("ensures badge helper strings and labels use sentence case, not Title Case", () => {
+      const titleCaseDenylist = [
+        "Borrador En Cuaderno Local",
+        "Sin Programar En La Semana",
+        "Capacidad No Configurada",
+        "Pendiente De Decisión",
+        "Pendiente De Información",
+      ];
+
+      const filesToCheck = [
+        "../src/web/components/weekly-session-formatters.tsx",
+        "../src/web/components/capacity-protected-space-section.tsx",
+        "../src/web/components/planning-capacity-hud.tsx",
+        "../src/web/components/weekly-planning-from-notes.tsx",
+        "../src/web/components/planning-deferred-items-section.tsx",
+      ];
+
+      for (const relPath of filesToCheck) {
+        const fullPath = path.resolve(__dirname, relPath);
+        if (fs.existsSync(fullPath)) {
+          const content = fs.readFileSync(fullPath, "utf-8");
+          for (const forbidden of titleCaseDenylist) {
+            expect(content).not.toContain(`"${forbidden}"`);
+            expect(content).not.toContain(`>${forbidden}<`);
+          }
+        }
+      }
     });
   });
 });

@@ -401,7 +401,6 @@ button:disabled {
   border-radius: 999px;
   font-weight: 500;
   font-size: 0.76rem;
-  text-transform: capitalize;
 }
 
 .badge-task {

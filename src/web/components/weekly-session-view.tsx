@@ -865,7 +865,7 @@ export function WeeklySessionView({
               onProposalStatusChange?.(false);
               onClearPlanningItems?.();
               reloadSession();
-              if (onNavigateSpace && state.status !== "session_resumed") {
+              if (onNavigateSpace) {
                 onNavigateSpace("active");
               }
             }}

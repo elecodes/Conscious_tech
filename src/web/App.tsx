@@ -392,6 +392,60 @@ function AppContent({
                     {backupStatus.message}
                   </div>
                 )}
+
+                <div
+                  style={{
+                    marginTop: "14px",
+                    paddingTop: "12px",
+                    borderTop: "1px solid var(--border-color)",
+                  }}
+                  data-testid="settings-ai-assistant-section"
+                >
+                  <h4 style={{ margin: "0 0 6px 0", fontSize: "0.9rem" }}>🤖 Asistente de IA</h4>
+                  <p
+                    className="calm-muted"
+                    style={{ margin: "0 0 8px 0", fontSize: "0.8rem", lineHeight: 1.4 }}
+                  >
+                    Mock realiza pruebas locales sin enviar datos fuera; Groq y Gemini conectan con
+                    modelos reales mediante el servidor local.
+                  </p>
+                  <label
+                    htmlFor="settings-provider-select"
+                    style={{
+                      display: "block",
+                      fontSize: "0.8rem",
+                      fontWeight: 500,
+                      marginBottom: "4px",
+                    }}
+                  >
+                    Proveedor:
+                  </label>
+                  <select
+                    id="settings-provider-select"
+                    data-testid="provider-select"
+                    value={providerType}
+                    onChange={(e) => setProviderType(e.target.value as "mock" | "groq" | "gemini")}
+                    style={{ width: "100%", fontSize: "0.82rem", padding: "4px 8px" }}
+                  >
+                    <option value="mock">Mock (Prueba local determinista)</option>
+                    <option value="groq">Groq (Servidor local / Qwen 2.5 32B)</option>
+                    <option value="gemini">Gemini (Servidor local / Gemini 2.5 Flash)</option>
+                  </select>
+                  {providerType !== "mock" && (
+                    <div
+                      style={{
+                        marginTop: "8px",
+                        padding: "6px 8px",
+                        fontSize: "0.76rem",
+                        color: "#92400e",
+                        background: "#fef3c7",
+                        borderRadius: "4px",
+                      }}
+                    >
+                      ⚠️ Utiliza credenciales locales del servidor (proxy local).
+                    </div>
+                  )}
+                </div>
               </div>
             </details>
           </div>
@@ -516,62 +570,23 @@ function AppContent({
         </div>
       </header>
 
-      {(isDev || activeSpace === "capture") && (
+      {activeSpace === "capture" && (
         <section className="config-bar" style={{ marginTop: "16px" }}>
           <div className="config-row">
-            {isDev && (
-              <>
-                <span className="config-label">Proveedor IA:</span>
-                <select
-                  data-testid="provider-select"
-                  value={providerType}
-                  onChange={(e) => setProviderType(e.target.value as "mock" | "groq" | "gemini")}
-                >
-                  <option value="mock">Mock (Prueba local determinista)</option>
-                  <option value="groq">Groq (Servidor local / Qwen 2.5 32B)</option>
-                  <option value="gemini">Gemini (Servidor local / Gemini 2.5 Flash)</option>
-                </select>
-              </>
-            )}
-
-            {activeSpace === "capture" && (
-              <>
-                <span className="config-label" style={isDev ? { marginLeft: "auto" } : undefined}>
-                  Caso de ejemplo:
-                </span>
-                <select
-                  data-testid="sample-case-select"
-                  value={selectedCaseId}
-                  onChange={(e) => handleCaseSelect(e.target.value)}
-                >
-                  <option value="">-- Escribe tus ideas o elige un ejemplo --</option>
-                  {sampleDumpsData.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.id} - {c.title}
-                    </option>
-                  ))}
-                </select>
-              </>
-            )}
-          </div>
-
-          {isDev && providerType !== "mock" && (
-            <div
-              className="calm-box"
-              style={{
-                marginTop: "8px",
-                fontSize: "0.85rem",
-                background: "#f7f9fa",
-                borderColor: "#e1e4e8",
-                color: "#444",
-              }}
+            <span className="config-label">Caso de ejemplo:</span>
+            <select
+              data-testid="sample-case-select"
+              value={selectedCaseId}
+              onChange={(e) => handleCaseSelect(e.target.value)}
             >
-              🔒 <strong>Aislamiento seguro de credenciales:</strong> Las llamadas con IA real se
-              procesan a través del proxy local del servidor. Las claves API nunca se almacenan en
-              el navegador ni se transmiten al cliente; se leen exclusivamente desde las variables
-              de entorno del servidor (<code>GROQ_API_KEY</code> o <code>GEMINI_API_KEY</code>).
-            </div>
-          )}
+              <option value="">-- Escribe tus ideas o elige un ejemplo --</option>
+              {sampleDumpsData.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.id} - {c.title}
+                </option>
+              ))}
+            </select>
+          </div>
         </section>
       )}
 

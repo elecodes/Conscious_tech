@@ -54,7 +54,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
   }
 
-  const outputDir = path.resolve(process.cwd(), "docs/ui-pr-c");
+  const outputDir = path.resolve(process.cwd(), process.env.SMOKE_OUTPUT_DIR || ".smoke-output");
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
@@ -98,16 +98,31 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
     console.log("  ✓ No presence pill in header");
 
-    // 2. Verify Ajustes dropdown exists in header
+    // 2. Verify Ajustes dropdown exists in header and provider selector is NOT visible on main screen
     const settingsDetails = page.locator('[data-testid="settings-dropdown"]');
     await settingsDetails.waitFor({ state: "visible", timeout: 5000 });
     console.log("  ✓ Ajustes dropdown visible in header");
 
-    // Open Ajustes dropdown and take screenshot
+    // Provider selector must NOT be visible when Ajustes is closed
+    const isProviderInitiallyVisible = await page
+      .locator('[data-testid="provider-select"]')
+      .isVisible();
+    if (isProviderInitiallyVisible) {
+      throw new Error(
+        "Provider selector should NOT be visible on main screen when Ajustes is closed"
+      );
+    }
+    console.log("  ✓ Provider selector is hidden on main screen");
+
+    // Open Ajustes dropdown, assert provider selector is reachable, and take screenshot
     await page.locator('[data-testid="settings-dropdown"] summary').click();
     await page
       .locator('[data-testid="export-backup-button"]')
       .waitFor({ state: "visible", timeout: 5000 });
+    const providerSelectInSettings = page.locator('[data-testid="provider-select"]');
+    await providerSelectInSettings.waitFor({ state: "visible", timeout: 5000 });
+    console.log("  ✓ Provider selector reachable inside Ajustes dropdown");
+
     if (mode === "preview") {
       await page.screenshot({
         path: path.join(outputDir, "00-settings-open.png"),
@@ -116,6 +131,14 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
     // Close Ajustes dropdown
     await page.locator('[data-testid="settings-dropdown"] summary').click();
+
+    // Verify provider select is hidden again after closing
+    const isProviderHiddenAfterClose = !(await page
+      .locator('[data-testid="provider-select"]')
+      .isVisible());
+    if (!isProviderHiddenAfterClose) {
+      throw new Error("Provider selector should be hidden when Ajustes is closed");
+    }
 
     // 3. Verify plain tab labels without numbers
     const tabCapture = page.locator('[data-testid="nav-tab-capture"]');
@@ -137,14 +160,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
       throw new Error(`Tab 4 label expected "Cierre", got "${tabReviewText}"`);
     console.log("  ✓ Simplified tab labels: Ideas, Planificar, Mi semana, Cierre");
 
-    // 4. Verify provider select is NOT visible for normal user
-    const normalProviderCount = await page.locator('[data-testid="provider-select"]').count();
-    if (normalProviderCount > 0) {
-      throw new Error("Provider selector should NOT be visible in normal mode without ?dev=1");
-    }
-    console.log("  ✓ Provider select hidden for normal users");
-
-    // 5. PR C: Verify initial Next Step bar
+    // 4. PR C: Verify initial Next Step bar
     const nextStepBar = page.locator('[data-testid="next-step-bar"]');
     await nextStepBar.waitFor({ state: "visible", timeout: 5000 });
     const initialNextStepMsg = (
@@ -228,20 +244,24 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
 
     // Activate dev mode via URL parameter
     await page.goto(`${url}?dev=1`, { waitUntil: "networkidle", timeout: 15000 });
-    const providerSelect = page.locator('[data-testid="provider-select"]');
-    await providerSelect.waitFor({ state: "visible", timeout: 5000 });
-    console.log("  ✓ Provider select visible with ?dev=1");
+    const devOptions = page.locator('[data-testid="dev-options-section"]');
+    await devOptions.waitFor({ state: "visible", timeout: 5000 });
+    console.log("  ✓ Dev options visible with ?dev=1");
 
     // Reload without ?dev=1 to assert sessionStorage persistence
     await page.goto(url, { waitUntil: "networkidle", timeout: 15000 });
-    await providerSelect.waitFor({ state: "visible", timeout: 5000 });
+    await devOptions.waitFor({ state: "visible", timeout: 5000 });
     console.log("  ✓ Dev mode persisted across page reloads via sessionStorage");
 
     // Go to Tab 1 (Ideas)
     await page.locator('[data-testid="nav-tab-capture"]').click();
 
-    // Ensure Mock provider is selected
+    // Verify provider selection in Ajustes (defaults to mock)
+    await page.locator('[data-testid="settings-dropdown"] summary').click();
+    const providerSelect = page.locator('[data-testid="provider-select"]');
+    await providerSelect.waitFor({ state: "visible", timeout: 5000 });
     await providerSelect.selectOption("mock");
+    await page.locator('[data-testid="settings-dropdown"] summary').click();
 
     // Pick sample case (case-01)
     const sampleCaseSelect = page.locator('[data-testid="sample-case-select"]');
@@ -392,6 +412,18 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
     console.log("  ✓ Next step bar updated during active week: 'Esta es tu semana'");
 
+    // PR D: Settle tab highlight: ensure "Mi semana" is primary and "Planificar" is secondary
+    await page.waitForFunction(() => {
+      const activeTab = document.querySelector('[data-testid="nav-tab-active"]');
+      const prepareTab = document.querySelector('[data-testid="nav-tab-prepare"]');
+      return Boolean(
+        activeTab?.classList.contains("primary") && !prepareTab?.classList.contains("primary")
+      );
+    });
+    // Wait for CSS transitions (0.15s ease) to fully complete
+    await page.waitForTimeout(300);
+    console.log("  ✓ Tab highlight settled on 'Mi semana' (primary)");
+
     // Assert PR B renamed jargon in active week
     await page.locator("text=Lo que he aprendido").waitFor({ state: "visible", timeout: 5000 });
     await page
@@ -404,7 +436,6 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
         path: path.join(outputDir, "09-active-week-populated.png"),
         fullPage: true,
       });
-      await page.screenshot({ path: "screenshot.png", fullPage: true });
     }
     console.log("  ✓ Active week confirmed and populated in Mi semana");
 

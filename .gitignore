@@ -6,6 +6,5 @@ dist/
 coverage/
 *.png
 !docs/ui-baseline/*.png
-!docs/ui-pr-b/*.png
-!docs/ui-pr-c/*.png
+.smoke-output/
 

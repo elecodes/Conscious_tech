@@ -539,4 +539,17 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     expect(html).toContain("add-more-ideas-details");
     expect(html).toContain("extract-append-button");
   });
+
+  it("12. Selector de proveedor IA reside dentro de Ajustes y no en la superficie principal", () => {
+    const html = renderToStaticMarkup(<App service={service} initialTab="capture" />);
+
+    // Selector de proveedor está dentro de Ajustes
+    expect(html).toContain('data-testid="settings-dropdown"');
+    expect(html).toContain('data-testid="settings-ai-assistant-section"');
+    expect(html).toContain('data-testid="provider-select"');
+    expect(html).toContain("Asistente de IA");
+
+    // Config bar en Ideas solo contiene el selector de casos de ejemplo
+    expect(html).toContain('data-testid="sample-case-select"');
+  });
 });
