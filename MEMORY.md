@@ -344,6 +344,18 @@ Implemented and calibrated skills:
   - Los errores planos (`Error`) o nativos del runtime (`TypeError`, `SyntaxError`) se redactan a `[REDACTED_ERROR_MESSAGE]`, impidiendo que notas o entradas privadas del usuario se filtren a través de mensajes de error cortos en la consola.
   - Errores confiables de la aplicación (`StorageError`, validaciones) conservan su mensaje técnico diagnóstico. Suite ampliada a 909 tests passing.
 
+18. **Simplificación de la interfaz y divulgación progresiva (ADR 0025)**:
+
+- **Paso sugerido único**: Barra bajo las pestañas que guía a la persona según el estado actual (Ideas, Planificar, Propuesta, Semana activa o Cierre), ocultando el botón cuando ya se encuentra en el espacio destino.
+- **Pestaña inicial reactiva**: Carga en «Ideas» si no hay semana activa ni borrador, en «Planificar» si hay borrador/propuesta pendiente, y en «Mi semana» si hay semana activa, esperando la carga inicial sin parpadeos.
+- **Reducción de ruido técnico**: Opciones de desarrollo e inspección JSON contenidas tras `?dev=1`; selector de proveedor IA, copia de seguridad y soberanía agrupados en el menú «Ajustes» en la cabecera.
+- **Divulgación progresiva en pantallas con datos**:
+  - Propuesta: resumen de balance en una sola frase legible, menú contextual «••• Más» por elemento, diferidos colapsados con contador y botón principal único «Confirmar y activar semana».
+  - Semana activa: foco en tareas activas con menú contextual, secciones analíticas (Imprevistos, historial y aprendizajes) colapsadas por defecto con conteo.
+  - Planificar: parámetros avanzados (fechas, sincronización, limpieza) recogidos en «Opciones».
+- **Limpieza de lenguaje**: Reemplazo de jerga interna («Radar» $\rightarrow$ «Imprevistos», «Memorias activas confirmadas» $\rightarrow$ «Lo que he aprendido», «Cierre reflexivo» $\rightarrow$ «Cierre de semana», «volcado mental» $\rightarrow$ «ideas de tu captura»).
+- **Red de seguridad completa**: Validación exhaustiva en CI mediante Playwright (`test:smoke`) en Chromium real y pruebas de denegación de voseo (`voseo-denylist.test.ts`), con 918 pruebas pasando y 0 dependencias circulares.
+
 Detailed specifications for individual skills live separately from this file.
 
 ---
