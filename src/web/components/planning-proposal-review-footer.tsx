@@ -55,6 +55,7 @@ export function PlanningProposalReviewFooter({
         description: `Foco: ${f.desiredOutcome}`,
         isCommitment: true,
         hasDeadline: false,
+        allDay: true,
       })),
       ...proposedWeek.obligations.map((o) => ({
         id: o.itemId,
@@ -64,6 +65,7 @@ export function PlanningProposalReviewFooter({
         description: `Compromiso (${formatCommitmentType(o.commitmentType)})`,
         isCommitment: true,
         hasDeadline: Boolean(o.dueDate),
+        allDay: true,
       })),
       ...proposedWeek.flexibleOptions.map((fl) => ({
         id: fl.itemId,
@@ -73,12 +75,14 @@ export function PlanningProposalReviewFooter({
         description: fl.condition ? `Condición: ${fl.condition}` : "Opción flexible",
         isCommitment: false,
         hasDeadline: false,
+        allDay: true,
       })),
     ];
     const ics = generateIcsCalendarExport(exportItems, {
       calendarName: "Conscious Tech — Propuesta",
       reminderOffset: prefs.offset,
       includeTasksInAlarms: prefs.includeTasks,
+      timeZone: "Europe/Madrid",
     });
     const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
     const url = URL.createObjectURL(blob);

@@ -121,9 +121,8 @@ describe("FIX 2: Voseo denylist regression guard", () => {
     );
     const reminderSettingsContent = fs.readFileSync(reminderSettingsPath, "utf-8");
     expect(reminderSettingsContent).toContain("Tu calendario te avisará");
-    expect(reminderSettingsContent).toContain(
-      "Google Calendar te avisará con una notificación; puedes activar el aviso por correo en sus ajustes."
-    );
+    expect(reminderSettingsContent).toContain("puedes activar el aviso por correo");
+    expect(reminderSettingsContent).toContain("Para tareas de todo el día te avisamos a las 9:00.");
     expect(reminderSettingsContent).toContain("Incluir también tareas");
     expect(reminderSettingsContent).not.toContain("podés");
 

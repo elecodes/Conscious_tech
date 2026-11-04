@@ -167,10 +167,7 @@ export function WeeklyPlanningFromNotes({
   useEffect(() => {
     try {
       if (extractedItems && extractedItems.length > 0) {
-        localStorage.setItem(
-          STORAGE_KEY_CAPTURE_RESULT,
-          JSON.stringify({ items: extractedItems })
-        );
+        localStorage.setItem(STORAGE_KEY_CAPTURE_RESULT, JSON.stringify({ items: extractedItems }));
       } else {
         localStorage.removeItem(STORAGE_KEY_CAPTURE_RESULT);
       }
@@ -258,6 +255,30 @@ export function WeeklyPlanningFromNotes({
   };
   const [editingProposalItemId, setEditingProposalItemId] = useState<string | null>(null);
   const [proposalItemHoursInput, setProposalItemHoursInput] = useState<string>("");
+
+  const [lastGeneratedParams, setLastGeneratedParams] = useState<{
+    acceptedItemIds: string;
+    carryOverIds: string;
+    userIntent: string;
+    availableHours: string;
+    protectedSpace: string;
+  } | null>(null);
+
+  const currentAcceptedSignature = Array.from(acceptedItemIds).sort().join(",");
+  const currentCarryOverSignature = Array.from(selectedCarryOverItemIds).sort().join(",");
+  const currentUserIntent = userIntent.trim();
+  const currentAvailableHours = availableHoursInput.trim();
+  const currentProtectedSpace = protectedSpacePercentInput.trim();
+
+  const isProposalDirty = Boolean(
+    proposedWeek !== null &&
+    lastGeneratedParams !== null &&
+    (lastGeneratedParams.acceptedItemIds !== currentAcceptedSignature ||
+      lastGeneratedParams.carryOverIds !== currentCarryOverSignature ||
+      lastGeneratedParams.userIntent !== currentUserIntent ||
+      lastGeneratedParams.availableHours !== currentAvailableHours ||
+      lastGeneratedParams.protectedSpace !== currentProtectedSpace)
+  );
 
   useEffect(() => {
     if (initialProposedWeek?.weekSummary?.capacity?.totalAvailableHours != null) {
@@ -347,6 +368,23 @@ export function WeeklyPlanningFromNotes({
             if (draft.draftContext.isEditingCapacity !== undefined) {
               setIsEditingCapacity(draft.draftContext.isEditingCapacity);
             }
+            const draftAccepted = draft.draftContext?.acceptedItemIds
+              ? draft.draftContext.acceptedItemIds.slice().sort().join(",")
+              : "";
+            const draftCarryOver = draft.draftContext?.selectedCarryOverItemIds
+              ? draft.draftContext.selectedCarryOverItemIds.slice().sort().join(",")
+              : "";
+            setLastGeneratedParams({
+              acceptedItemIds: draftAccepted,
+              carryOverIds: draftCarryOver,
+              userIntent: draft.draftContext?.userIntent?.trim() || "",
+              availableHours:
+                draft.draftContext?.availableHoursInput?.trim() ||
+                (draft.proposal.weekSummary.capacity.totalAvailableHours != null
+                  ? String(draft.proposal.weekSummary.capacity.totalAvailableHours)
+                  : ""),
+              protectedSpace: draft.draftContext?.protectedSpacePercentInput?.trim() || "25",
+            });
           }
         } else {
           setProposedWeek((prev) => {
@@ -626,6 +664,13 @@ export function WeeklyPlanningFromNotes({
         acceptedItemIds: Array.from(newAcceptedIds),
         noteText: trimmed,
       });
+      setLastGeneratedParams({
+        acceptedItemIds: Array.from(newAcceptedIds).sort().join(","),
+        carryOverIds: Array.from(selectedCarryOverItemIds).sort().join(","),
+        userIntent: userIntent.trim(),
+        availableHours: availableHoursInput.trim(),
+        protectedSpace: protectedSpacePercentInput.trim(),
+      });
       setFlowStep("review");
     } catch (err) {
       if (reqId !== extractRequestIdRef.current) return;
@@ -841,6 +886,13 @@ export function WeeklyPlanningFromNotes({
       setDiagnostics(detailedResult.diagnostics);
       setIsReviewingSelection(false);
       await persistDraft(finalProposal);
+      setLastGeneratedParams({
+        acceptedItemIds: Array.from(acceptedItemIds).sort().join(","),
+        carryOverIds: Array.from(selectedCarryOverItemIds).sort().join(","),
+        userIntent: userIntent.trim(),
+        availableHours: availableHoursInput.trim(),
+        protectedSpace: protectedSpacePercentInput.trim(),
+      });
     } catch (err) {
       if (reqId !== planningRequestIdRef.current) return;
       setPlanningError(
@@ -851,6 +903,13 @@ export function WeeklyPlanningFromNotes({
         setIsPlanning(false);
       }
     }
+  };
+
+  const handleContinueToConfirm = async () => {
+    if (isProposalDirty) {
+      await handleGenerateProposal();
+    }
+    setFlowStep("confirm");
   };
 
   // --------------------------------------------------------------------------
@@ -1528,6 +1587,7 @@ export function WeeklyPlanningFromNotes({
           flexWrap: "wrap",
         }}
       >
+        {/* Paso 1: Escribir */}
         <button
           type="button"
           onClick={() => setFlowStep("write")}
@@ -1538,13 +1598,16 @@ export function WeeklyPlanningFromNotes({
             borderRadius: "14px",
             padding: "3px 12px",
             fontWeight: flowStep === "write" ? 700 : 500,
+            cursor: "pointer",
+            background: flowStep === "write" ? undefined : "#ffffff",
           }}
         >
-          1. Escribir
+          {flowStep !== "write" ? "✓ 1. Escribir" : "1. Escribir"}
         </button>
 
         <span style={{ color: "#aaa", userSelect: "none" }}>→</span>
 
+        {/* Paso 2: Revisar */}
         <button
           type="button"
           onClick={() => {
@@ -1560,14 +1623,21 @@ export function WeeklyPlanningFromNotes({
             borderRadius: "14px",
             padding: "3px 12px",
             fontWeight: flowStep === "review" ? 700 : 500,
-            opacity: proposedWeek || (extractedItems && extractedItems.length > 0) ? 1 : 0.5,
+            opacity:
+              flowStep === "review" || proposedWeek || (extractedItems && extractedItems.length > 0)
+                ? 1
+                : 0.5,
+            cursor:
+              proposedWeek || (extractedItems && extractedItems.length > 0) ? "pointer" : "default",
+            background: flowStep === "review" ? undefined : "#ffffff",
           }}
         >
-          2. Revisar
+          {flowStep === "confirm" ? "✓ 2. Revisar" : "2. Revisar"}
         </button>
 
         <span style={{ color: "#aaa", userSelect: "none" }}>→</span>
 
+        {/* Paso 3: Confirmar */}
         <button
           type="button"
           onClick={() => {
@@ -1583,7 +1653,9 @@ export function WeeklyPlanningFromNotes({
             borderRadius: "14px",
             padding: "3px 12px",
             fontWeight: flowStep === "confirm" ? 700 : 500,
-            opacity: proposedWeek ? 1 : 0.5,
+            opacity: flowStep === "confirm" || proposedWeek ? 1 : 0.5,
+            cursor: proposedWeek ? "pointer" : "default",
+            background: flowStep === "confirm" ? undefined : "#ffffff",
           }}
         >
           3. Confirmar
@@ -1728,35 +1800,6 @@ export function WeeklyPlanningFromNotes({
       {/* -------------------------------------------------------------------- */}
       {flowStep === "review" && (
         <div data-testid="flow-step-review">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "16px",
-              flexWrap: "wrap",
-              gap: "10px",
-            }}
-          >
-            <button
-              type="button"
-              className="secondary"
-              data-testid="flow-back-to-write"
-              onClick={() => setFlowStep("write")}
-            >
-              ← Volver a escribir
-            </button>
-            <button
-              type="button"
-              className="primary"
-              data-testid="flow-continue-to-confirm"
-              onClick={() => setFlowStep("confirm")}
-              disabled={!proposedWeek}
-            >
-              Continuar a confirmar →
-            </button>
-          </div>
-
           <PlanningHeaderSection
             hasActivePlan={hasActivePlan}
             initialItems={initialItems}
@@ -1807,6 +1850,7 @@ export function WeeklyPlanningFromNotes({
               planningError={planningError}
               selectedCarryOverItemIds={selectedCarryOverItemIds}
               handleGenerateProposal={handleGenerateProposal}
+              isProposalDirty={isProposalDirty}
             />
           )}
 
@@ -1847,7 +1891,9 @@ export function WeeklyPlanningFromNotes({
                       : "Plan de la semana"}
                   </h2>
                 </div>
-                <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                <div
+                  style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}
+                >
                   <span className="badge badge-task">
                     {proposedWeek.weekSummary.targetWeek.startDate} al{" "}
                     {proposedWeek.weekSummary.targetWeek.endDate}
@@ -1911,7 +1957,7 @@ export function WeeklyPlanningFromNotes({
             <button
               type="button"
               className="secondary"
-              data-testid="flow-back-to-write-bottom"
+              data-testid="flow-back-to-write"
               onClick={() => setFlowStep("write")}
             >
               ← Volver a escribir
@@ -1919,8 +1965,8 @@ export function WeeklyPlanningFromNotes({
             <button
               type="button"
               className="primary"
-              data-testid="flow-continue-to-confirm-bottom"
-              onClick={() => setFlowStep("confirm")}
+              data-testid="flow-continue-to-confirm"
+              onClick={handleContinueToConfirm}
               disabled={!proposedWeek}
             >
               Continuar a confirmar →

@@ -478,9 +478,7 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
                   }}
                   data-testid="settings-welcome-section"
                 >
-                  <h4 style={{ margin: "0 0 6px 0", fontSize: "0.9rem" }}>
-                    🌱 Guía de bienvenida
-                  </h4>
+                  <h4 style={{ margin: "0 0 6px 0", fontSize: "0.9rem" }}>🌱 Guía de bienvenida</h4>
                   <p
                     className="calm-muted"
                     style={{ margin: "0 0 8px 0", fontSize: "0.8rem", lineHeight: 1.4 }}
@@ -509,7 +507,9 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
         >
           <button
             type="button"
-            className={activeSpace === "active" || activeSpace === "review" ? "primary" : "secondary"}
+            className={
+              activeSpace === "active" || activeSpace === "review" ? "primary" : "secondary"
+            }
             onClick={() => setActiveSpace("active")}
             data-testid="nav-tab-active"
           >
@@ -535,9 +535,15 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
           </button>
           <button
             type="button"
-            className={activeSpace === "capture" || activeSpace === "prepare" ? "primary" : "secondary"}
+            className={
+              activeSpace === "capture" || activeSpace === "prepare" ? "primary" : "secondary"
+            }
             onClick={() => {
-              if (hasPendingProposal || state.draftPlan || (state.draftPlans && state.draftPlans.length > 0)) {
+              if (
+                hasPendingProposal ||
+                state.draftPlan ||
+                (state.draftPlans && state.draftPlans.length > 0)
+              ) {
                 setActiveSpace("prepare");
               } else {
                 setActiveSpace("capture");
@@ -586,7 +592,13 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
             }}
           >
             <div>
-              <h3 style={{ margin: "0 0 8px 0", fontSize: "0.98rem", color: "var(--text-main, #333)" }}>
+              <h3
+                style={{
+                  margin: "0 0 8px 0",
+                  fontSize: "0.98rem",
+                  color: "var(--text-main, #333)",
+                }}
+              >
                 Escribe → Revisa → Vive tu semana
               </h3>
               <p
@@ -597,11 +609,14 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
                   lineHeight: 1.5,
                 }}
               >
-                <strong>1. Escribe:</strong> Vuelca lo que tienes en la cabeza sin preocuparte por ordenar.
+                <strong>1. Escribe:</strong> Vuelca lo que tienes en la cabeza sin preocuparte por
+                ordenar.
                 <br />
-                <strong>2. Revisa:</strong> Ajusta la propuesta con tus ideas y espacio protegido reservado.
+                <strong>2. Revisa:</strong> Ajusta la propuesta con tus ideas y espacio protegido
+                reservado.
                 <br />
-                <strong>3. Vive tu semana:</strong> Avanza con calma y foco día a día en tu cuaderno.
+                <strong>3. Vive tu semana:</strong> Avanza con calma y foco día a día en tu
+                cuaderno.
               </p>
             </div>
             <button
@@ -658,7 +673,14 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
               </span>
             </div>
 
-            {activeSpace !== nextStep.targetSpace && (
+            {/* No mostrar botón si apunta al mismo espacio o pestaña en la que ya se encuentra */}
+            {!(
+              activeSpace === nextStep.targetSpace ||
+              ((activeSpace === "capture" || activeSpace === "prepare") &&
+                (nextStep.targetSpace === "capture" || nextStep.targetSpace === "prepare")) ||
+              ((activeSpace === "active" || activeSpace === "review") &&
+                (nextStep.targetSpace === "active" || nextStep.targetSpace === "review"))
+            ) && (
               <button
                 type="button"
                 className="primary small"

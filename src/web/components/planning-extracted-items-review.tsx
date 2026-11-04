@@ -26,6 +26,7 @@ export interface PlanningExtractedItemsReviewProps {
   planningError: string | null;
   selectedCarryOverItemIds: Set<string>;
   handleGenerateProposal: () => void;
+  isProposalDirty?: boolean;
 }
 
 export function PlanningExtractedItemsReview({
@@ -50,8 +51,9 @@ export function PlanningExtractedItemsReview({
   setProtectedSpacePercentInput,
   isPlanning,
   planningError,
-  selectedCarryOverItemIds,
+  selectedCarryOverItemIds: _selectedCarryOverItemIds,
   handleGenerateProposal,
+  isProposalDirty,
 }: PlanningExtractedItemsReviewProps) {
   return (
     <div
@@ -234,131 +236,192 @@ export function PlanningExtractedItemsReview({
         </div>
       </details>
 
-      {/* User Intent Input */}
-      <div style={{ marginTop: "16px" }}>
-        <label
-          htmlFor="weekly-intent-input"
-          style={{ display: "block", fontSize: "0.9rem", fontWeight: 600, marginBottom: "4px" }}
-        >
-          Intención o foco prioritario para la semana (opcional):
-        </label>
-        <input
-          id="weekly-intent-input"
-          type="text"
-          value={userIntent}
-          onChange={(e) => setUserIntent(e.target.value)}
-          placeholder="Ej: Foco en cerrar entregables críticos y reservar espacio para imprevistos"
-          style={{ width: "100%", padding: "8px", boxSizing: "border-box" }}
-          disabled={isPlanning}
-        />
-      </div>
-
-      {/* Capacity & Protected Space Configuration (Optional, for verifying viability) */}
-      <div
+      {/* Ajustes de la semana (opcional) - Colapsado */}
+      <details
+        className="calm-details"
+        data-testid="week-settings-details"
         style={{
           marginTop: "16px",
-          padding: "12px 14px",
-          background: "#f9fafb",
-          border: "1px solid #e5e7eb",
-          borderRadius: "6px",
+          padding: "10px 14px",
+          background: "#fafaf8",
+          border: "1px solid var(--border-color, #e6ded1)",
+          borderRadius: "8px",
         }}
-        data-testid="planning-capacity-pre-config"
       >
-        <div style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: "4px", color: "#374151" }}>
-          Límites de capacidad y espacio protegido (opcional)
-        </div>
-        <p className="calm-muted" style={{ fontSize: "0.82rem", margin: "0 0 10px 0" }}>
-          Registra cuántas horas tienes disponibles y cuánto margen quieres proteger para comprobar
-          la viabilidad real.
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
-          <div style={{ flex: "1 1 200px" }}>
+        <summary
+          style={{
+            cursor: "pointer",
+            fontWeight: 600,
+            fontSize: "0.88rem",
+            color: "var(--text-main)",
+          }}
+          data-testid="week-settings-summary"
+        >
+          ⚙️ Ajustes de la semana (opcional)
+        </summary>
+        <div style={{ marginTop: "12px" }}>
+          {/* User Intent Input */}
+          <div>
             <label
-              htmlFor="planning-available-hours-input"
+              htmlFor="weekly-intent-input"
               style={{
                 display: "block",
-                fontSize: "0.82rem",
-                fontWeight: 500,
+                fontSize: "0.85rem",
+                fontWeight: 600,
                 marginBottom: "4px",
-                color: "#4b5563",
               }}
             >
-              Horas realmente disponibles:
+              Intención o foco prioritario para la semana (opcional):
             </label>
             <input
-              id="planning-available-hours-input"
-              type="number"
-              min="0"
-              step="0.5"
-              value={availableHoursInput}
-              onChange={(e) => setAvailableHoursInput(e.target.value)}
-              placeholder="Ej: 30 (deja vacío si es desconocida)"
-              style={{
-                width: "100%",
-                padding: "6px 10px",
-                fontSize: "0.88rem",
-                boxSizing: "border-box",
-              }}
+              id="weekly-intent-input"
+              type="text"
+              value={userIntent}
+              onChange={(e) => setUserIntent(e.target.value)}
+              placeholder="Ej: Foco en cerrar entregables críticos y reservar espacio para imprevistos"
+              style={{ width: "100%", padding: "8px", boxSizing: "border-box" }}
               disabled={isPlanning}
-              data-testid="planning-available-hours-input"
             />
           </div>
-          <div style={{ flex: "1 1 200px" }}>
-            <label
-              htmlFor="planning-protected-space-ratio-input"
+
+          {/* Capacity & Protected Space Configuration */}
+          <div
+            style={{
+              marginTop: "12px",
+              padding: "12px 14px",
+              background: "#ffffff",
+              border: "1px solid #e5e7eb",
+              borderRadius: "6px",
+            }}
+            data-testid="planning-capacity-pre-config"
+          >
+            <div
               style={{
-                display: "block",
-                fontSize: "0.82rem",
-                fontWeight: 500,
+                fontWeight: 600,
+                fontSize: "0.85rem",
                 marginBottom: "4px",
-                color: "#4b5563",
+                color: "#374151",
               }}
             >
-              Espacio a proteger (% margen):
-            </label>
-            <input
-              id="planning-protected-space-ratio-input"
-              type="number"
-              min="0"
-              max="100"
-              step="5"
-              value={protectedSpacePercentInput}
-              onChange={(e) => setProtectedSpacePercentInput(e.target.value)}
-              placeholder="25"
-              style={{
-                width: "100%",
-                padding: "6px 10px",
-                fontSize: "0.88rem",
-                boxSizing: "border-box",
-              }}
-              disabled={isPlanning}
-              data-testid="planning-protected-space-input"
-            />
+              Límites de capacidad y espacio protegido (opcional)
+            </div>
+            <p className="calm-muted" style={{ fontSize: "0.82rem", margin: "0 0 10px 0" }}>
+              Registra cuántas horas tienes disponibles y cuánto margen quieres proteger para
+              comprobar la viabilidad real.
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+              <div style={{ flex: "1 1 200px" }}>
+                <label
+                  htmlFor="planning-available-hours-input"
+                  style={{
+                    display: "block",
+                    fontSize: "0.82rem",
+                    fontWeight: 500,
+                    marginBottom: "4px",
+                    color: "#4b5563",
+                  }}
+                >
+                  Horas realmente disponibles:
+                </label>
+                <input
+                  id="planning-available-hours-input"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={availableHoursInput}
+                  onChange={(e) => setAvailableHoursInput(e.target.value)}
+                  placeholder="Ej: 30 (deja vacío si es desconocida)"
+                  style={{
+                    width: "100%",
+                    padding: "6px 10px",
+                    fontSize: "0.88rem",
+                    boxSizing: "border-box",
+                  }}
+                  disabled={isPlanning}
+                  data-testid="planning-available-hours-input"
+                />
+              </div>
+              <div style={{ flex: "1 1 200px" }}>
+                <label
+                  htmlFor="planning-protected-space-ratio-input"
+                  style={{
+                    display: "block",
+                    fontSize: "0.82rem",
+                    fontWeight: 500,
+                    marginBottom: "4px",
+                    color: "#4b5563",
+                  }}
+                >
+                  Espacio a proteger (% margen):
+                </label>
+                <input
+                  id="planning-protected-space-ratio-input"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={protectedSpacePercentInput}
+                  onChange={(e) => setProtectedSpacePercentInput(e.target.value)}
+                  placeholder="25"
+                  style={{
+                    width: "100%",
+                    padding: "6px 10px",
+                    fontSize: "0.88rem",
+                    boxSizing: "border-box",
+                  }}
+                  disabled={isPlanning}
+                  data-testid="planning-protected-space-input"
+                />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </details>
+
+      {/* Actualizar propuesta link/button when inputs have changed */}
+      {isProposalDirty && (
+        <div
+          style={{
+            marginTop: "12px",
+            padding: "8px 12px",
+            background: "#fef9c3",
+            border: "1px solid #fde047",
+            borderRadius: "6px",
+            fontSize: "0.85rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "10px",
+            flexWrap: "wrap",
+          }}
+          data-testid="proposal-dirty-banner"
+        >
+          <span style={{ color: "#854d0e" }}>
+            Hay cambios en los elementos o ajustes de la semana.
+          </span>
+          <button
+            type="button"
+            className="secondary small"
+            onClick={handleGenerateProposal}
+            disabled={isPlanning}
+            data-testid="update-proposal-button"
+            style={{
+              fontSize: "0.82rem",
+              padding: "3px 10px",
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+          >
+            {isPlanning ? "Actualizando..." : "🔄 Actualizar propuesta"}
+          </button>
+        </div>
+      )}
 
       {planningError && (
         <div className="status-message status-error" style={{ marginTop: "12px" }} role="alert">
           <strong>Error de planificación:</strong> {planningError}
         </div>
       )}
-
-      <div style={{ marginTop: "16px", display: "flex", justifyContent: "flex-end" }}>
-        <button
-          className="primary"
-          aria-label="Generar propuesta semanal con los elementos aceptados"
-          disabled={isPlanning || (acceptedCount === 0 && selectedCarryOverItemIds.size === 0)}
-          onClick={handleGenerateProposal}
-          data-testid="generate-proposal-button"
-        >
-          {isPlanning
-            ? "Estructurando propuesta semanal..."
-            : selectedCarryOverItemIds.size > 0
-              ? `Generar propuesta semanal (${acceptedCount} notas + ${selectedCarryOverItemIds.size} postergadas)`
-              : `Generar propuesta semanal (${acceptedCount} elementos)`}
-        </button>
-      </div>
     </div>
   );
 }

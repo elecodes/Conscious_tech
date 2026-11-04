@@ -155,10 +155,14 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     const tabNewWeekText = (await tabNewWeek.innerText()).trim();
 
     if (!tabActiveText.startsWith("Mi semana")) {
-      throw new Error(`Tab Active label expected to start with "Mi semana", got "${tabActiveText}"`);
+      throw new Error(
+        `Tab Active label expected to start with "Mi semana", got "${tabActiveText}"`
+      );
     }
     if (!tabNewWeekText.startsWith("Nueva semana")) {
-      throw new Error(`Tab New Week label expected to start with "Nueva semana", got "${tabNewWeekText}"`);
+      throw new Error(
+        `Tab New Week label expected to start with "Nueva semana", got "${tabNewWeekText}"`
+      );
     }
     console.log("  ✓ 2 tabs verified: Mi semana, Nueva semana");
 
@@ -167,17 +171,28 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
       el.classList.contains("primary")
     );
     if (!isNewWeekPrimary) {
-      throw new Error("Fresh load should land on Nueva semana (nav-tab-new-week should have class primary)");
+      throw new Error(
+        "Fresh load should land on Nueva semana (nav-tab-new-week should have class primary)"
+      );
     }
     const writeStep = page.locator('[data-testid="flow-step-write"]');
     await writeStep.waitFor({ state: "visible", timeout: 5000 });
     console.log("  ✓ Fresh load landed on Nueva semana at step 'Escribir'");
 
     // Check progress indicators
-    await page.locator('[data-testid="step-indicator-write"]').waitFor({ state: "visible", timeout: 5000 });
-    await page.locator('[data-testid="step-indicator-review"]').waitFor({ state: "visible", timeout: 5000 });
-    await page.locator('[data-testid="step-indicator-confirm"]').waitFor({ state: "visible", timeout: 5000 });
-    console.log("  ✓ Visible progress line with 3 steps verified");
+    const stepWriteIndicator = page.locator('[data-testid="step-indicator-write"]');
+    const stepReviewIndicator = page.locator('[data-testid="step-indicator-review"]');
+    const stepConfirmIndicator = page.locator('[data-testid="step-indicator-confirm"]');
+    await stepWriteIndicator.waitFor({ state: "visible", timeout: 5000 });
+    await stepReviewIndicator.waitFor({ state: "visible", timeout: 5000 });
+    await stepConfirmIndicator.waitFor({ state: "visible", timeout: 5000 });
+    if ((await stepWriteIndicator.getAttribute("aria-current")) !== "step") {
+      throw new Error("Step 1 (Escribir) indicator must have aria-current='step'");
+    }
+    if ((await stepReviewIndicator.getAttribute("aria-current")) !== null) {
+      throw new Error("Step 2 (Revisar) indicator should not have aria-current during step 1");
+    }
+    console.log("  ✓ Visible progress line with 3 steps verified (step 1 active)");
 
     // 6. Assert empty state on "Mi semana"
     await tabActive.click();
@@ -222,7 +237,9 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     // --- STEP 8: Guided flow Nueva semana with Mock provider ---
     console.log("\nExecuting guided flow (Escribir → Revisar → Confirmar)...");
     await page.locator('[data-testid="nav-tab-new-week"]').click();
-    await page.locator('[data-testid="flow-step-write"]').waitFor({ state: "visible", timeout: 5000 });
+    await page
+      .locator('[data-testid="flow-step-write"]')
+      .waitFor({ state: "visible", timeout: 5000 });
 
     // Ensure mock provider in Ajustes
     await page.locator('[data-testid="settings-dropdown"] summary').click();
@@ -235,7 +252,9 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     const sampleCaseSelect = page.locator('[data-testid="sample-case-select"]');
     await sampleCaseSelect.selectOption("case-01");
     await page.waitForFunction(() => {
-      const textarea = document.querySelector('[data-testid="flow-textarea"]') as HTMLTextAreaElement | null;
+      const textarea = document.querySelector(
+        '[data-testid="flow-textarea"]'
+      ) as HTMLTextAreaElement | null;
       return textarea && textarea.value.length > 0;
     });
 
@@ -262,6 +281,41 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
     console.log("  ✓ Step 2 (Revisar): Extraction and proposal generated");
 
+    // Progress line: verify step 1 marked completed with checkmark, step 2 active with aria-current="step"
+    const step1ReviewText = (await stepWriteIndicator.innerText()).trim();
+    if (!step1ReviewText.startsWith("✓")) {
+      throw new Error(
+        `Step 1 indicator should show checkmark (✓) when completed, got: ${step1ReviewText}`
+      );
+    }
+    if ((await stepReviewIndicator.getAttribute("aria-current")) !== "step") {
+      throw new Error("Step 2 indicator must have aria-current='step' in Revisar");
+    }
+    if ((await stepConfirmIndicator.getAttribute("aria-current")) !== null) {
+      throw new Error("Step 3 indicator should not have aria-current in Revisar");
+    }
+    console.log(
+      "  ✓ Progress line updated: Step 1 checked (✓), Step 2 active (aria-current='step')"
+    );
+
+    // Verify exactly ONE "Continuar a confirmar" button (no top duplicate)
+    const continueBtnCount = await page.locator('[data-testid="flow-continue-to-confirm"]').count();
+    if (continueBtnCount !== 1) {
+      throw new Error(`Expected exactly 1 "Continuar a confirmar" button, got ${continueBtnCount}`);
+    }
+    console.log("  ✓ Exactly 1 'Continuar a confirmar' button verified (no top duplicate)");
+
+    // Verify collapsed "Ajustes de la semana (opcional)"
+    const weekSettingsDetails = page.locator('[data-testid="week-settings-details"]');
+    await weekSettingsDetails.waitFor({ state: "visible", timeout: 5000 });
+    const isWeekSettingsOpen = await weekSettingsDetails.evaluate(
+      (el: HTMLDetailsElement) => el.open
+    );
+    if (isWeekSettingsOpen) {
+      throw new Error("Week settings details should be collapsed by default");
+    }
+    console.log("  ✓ Collapsed 'Ajustes de la semana (opcional)' verified in Revisar");
+
     // Verify calm idea cards and details toggle
     const detailsToggle = page.locator('[data-testid^="details-toggle-"]').first();
     await detailsToggle.waitFor({ state: "visible", timeout: 5000 });
@@ -280,7 +334,9 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     // Test back button from Revisar to Escribir (preserving text)
     const backToWriteBtn = page.locator('[data-testid="flow-back-to-write"]');
     await backToWriteBtn.click();
-    await page.locator('[data-testid="flow-step-write"]').waitFor({ state: "visible", timeout: 5000 });
+    await page
+      .locator('[data-testid="flow-step-write"]')
+      .waitFor({ state: "visible", timeout: 5000 });
     const preservedText = await page.locator('[data-testid="flow-textarea"]').inputValue();
     if (!preservedText || preservedText.length === 0) {
       throw new Error("Text in textarea should be preserved after navigating back to Escribir");
@@ -319,6 +375,20 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
     console.log("  ✓ Step 3 (Confirmar) reached");
 
+    // Progress line: verify step 1 & 2 marked completed with checkmark, step 3 active with aria-current="step"
+    const step2ConfirmText = (await stepReviewIndicator.innerText()).trim();
+    if (!step2ConfirmText.startsWith("✓")) {
+      throw new Error(
+        `Step 2 indicator should show checkmark (✓) when completed, got: ${step2ConfirmText}`
+      );
+    }
+    if ((await stepConfirmIndicator.getAttribute("aria-current")) !== "step") {
+      throw new Error("Step 3 indicator must have aria-current='step' in Confirmar");
+    }
+    console.log(
+      "  ✓ Progress line updated: Step 2 checked (✓), Step 3 active (aria-current='step')"
+    );
+
     // Test back button from Confirmar to Revisar
     const backToReviewBtn = page.locator('[data-testid="flow-back-to-review"]');
     await backToReviewBtn.click();
@@ -350,9 +420,13 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     console.log("  ✓ Navigated to 'Mi semana' with active week populated");
 
     // Verify next-step bar is hidden on Mi semana with active week and nothing pending
-    const isNextStepBarVisibleOnActive = await page.locator('[data-testid="next-step-bar"]').isVisible();
+    const isNextStepBarVisibleOnActive = await page
+      .locator('[data-testid="next-step-bar"]')
+      .isVisible();
     if (isNextStepBarVisibleOnActive) {
-      throw new Error("Next step bar should be hidden on Mi semana with active week and nothing pending");
+      throw new Error(
+        "Next step bar should be hidden on Mi semana with active week and nothing pending"
+      );
     }
     console.log("  ✓ Next-step bar hidden on Mi semana with active week");
 
@@ -391,10 +465,20 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
     const downloadedIcs = Buffer.concat(chunks).toString("utf-8");
 
-    if (!downloadedIcs.includes("BEGIN:VALARM") || !downloadedIcs.includes("TRIGGER:-PT1H")) {
-      throw new Error("Downloaded ICS does not contain expected VALARM with TRIGGER:-PT1H");
+    if (
+      !downloadedIcs.includes("BEGIN:VTIMEZONE") ||
+      !downloadedIcs.includes("TZID:Europe/Madrid")
+    ) {
+      throw new Error("Downloaded ICS does not contain VTIMEZONE definition for Europe/Madrid");
     }
-    console.log("  ✓ Downloaded ICS captured and verified: contains VALARM with -PT1H");
+    if (!downloadedIcs.includes("BEGIN:VALARM") || !downloadedIcs.includes("TRIGGER:+PT9H")) {
+      throw new Error(
+        "Downloaded ICS does not contain expected all-day VALARM with TRIGGER:+PT9H (09:00 trigger)"
+      );
+    }
+    console.log(
+      "  ✓ Downloaded ICS captured and verified: contains VTIMEZONE and all-day VALARM with +PT9H (09:00 trigger)"
+    );
 
     // Verify Email summary button opens Gmail compose without recipient
     const emailButton = remindersDetails.locator('[data-testid="open-gmail-summary-button"]');
@@ -500,10 +584,14 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
 
     // Go to Nueva semana, populate text and continue to review to establish a draft
     await page.locator('[data-testid="nav-tab-new-week"]').click();
-    await page.locator('[data-testid="flow-step-write"]').waitFor({ state: "visible", timeout: 5000 });
+    await page
+      .locator('[data-testid="flow-step-write"]')
+      .waitFor({ state: "visible", timeout: 5000 });
     await page.locator('[data-testid="sample-case-select"]').selectOption("case-01");
     await page.waitForFunction(() => {
-      const textarea = document.querySelector('[data-testid="flow-textarea"]') as HTMLTextAreaElement | null;
+      const textarea = document.querySelector(
+        '[data-testid="flow-textarea"]'
+      ) as HTMLTextAreaElement | null;
       return textarea && textarea.value.length > 0;
     });
     await page.locator('[data-testid="flow-continue-to-review"]').click();

@@ -130,9 +130,8 @@ export function CalendarReminderSettings({
               lineHeight: 1.35,
             }}
           >
-            {
-              "Google Calendar te avisará con una notificación; puedes activar el aviso por correo en sus ajustes."
-            }
+            Google Calendar te avisará con una notificación; puedes activar el aviso por correo en
+            sus ajustes. Para tareas de todo el día te avisamos a las 9:00.
           </p>
         </div>
       )}

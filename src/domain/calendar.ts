@@ -232,12 +232,11 @@ export function foldIcalLine(line: string): string {
  * Supported capabilities:
  * - Deterministic, stable UID per item to ensure updating existing events rather than duplicating.
  * - CRLF line endings and RFC 5545 75-octet line folding.
- * - Timezone support (Europe/Madrid) and all-day items (VALUE=DATE).
+ * - Timezone support (Europe/Madrid with valid VTIMEZONE) and all-day items (VALUE=DATE).
  * - Optional VALARM generation based on user preferences.
- * - For all-day events with VALUE=DATE, relative triggers (-PT15M, -PT1H, -P1D) are calculated relative
- *   to the start of the day (00:00:00 local time). A -P1D trigger fires at 00:00 on the preceding day,
- *   while -PT1H / -PT15M fire the evening before, adhering to standard RFC 5545 calendar client alarm
- *   behavior without assuming arbitrary morning times.
+ * - For events with VALUE=DATE, reminders are mapped to clock times: "15 minutos antes" and "1 hora antes"
+ *   fire at 09:00 on the same day (+PT9H from the start of the day), while "1 día antes" fires at 09:00 on the
+ *   previous day (-PT15H from the start of the event day). Relative triggers (-PT15M, -PT1H, -P1D) apply to timed events.
  */
 export function generateIcsCalendarExport(
   items: PlanItemExportInput[],
@@ -262,6 +261,29 @@ export function generateIcsCalendarExport(
     `X-WR-CALNAME:${escapeIcalText(calendarName)}`,
     "METHOD:PUBLISH",
   ];
+
+  if (timeZone === "Europe/Madrid") {
+    rawLines.push(
+      "BEGIN:VTIMEZONE",
+      "TZID:Europe/Madrid",
+      "X-LIC-LOCATION:Europe/Madrid",
+      "BEGIN:DAYLIGHT",
+      "TZOFFSETFROM:+0100",
+      "TZOFFSETTO:+0200",
+      "TZNAME:CEST",
+      "DTSTART:19700329T020000",
+      "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU",
+      "END:DAYLIGHT",
+      "BEGIN:STANDARD",
+      "TZOFFSETFROM:+0200",
+      "TZOFFSETTO:+0100",
+      "TZNAME:CET",
+      "DTSTART:19701025T030000",
+      "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU",
+      "END:STANDARD",
+      "END:VTIMEZONE"
+    );
+  }
 
   for (let i = 0; i < items.length; i++) {
     const it = items[i]!;
@@ -333,8 +355,13 @@ export function generateIcsCalendarExport(
     if (reminderOffset !== "none") {
       const shouldAlarm = Boolean(it.isCommitment || it.hasDeadline || includeTasks);
       if (shouldAlarm) {
-        const trigger =
-          reminderOffset === "15m" ? "-PT15M" : reminderOffset === "1h" ? "-PT1H" : "-P1D";
+        let trigger = "";
+        if (isAllDay) {
+          trigger = reminderOffset === "1d" ? "-PT15H" : "+PT9H";
+        } else {
+          trigger =
+            reminderOffset === "15m" ? "-PT15M" : reminderOffset === "1h" ? "-PT1H" : "-P1D";
+        }
         rawLines.push("BEGIN:VALARM");
         rawLines.push("ACTION:DISPLAY");
         rawLines.push("DESCRIPTION:Recordatorio de Conscious Tech");

@@ -117,17 +117,18 @@ describe("Calendar ICS reminders and RFC 5545 compliance", () => {
 
     expect(ics1h).toContain("BEGIN:VALARM");
     expect(ics1h).toContain("TRIGGER:-PT1H");
+    expect(ics1h).toContain("TRIGGER:+PT9H");
     expect(ics1h).toContain("ACTION:DISPLAY");
 
     const events = parseIcalContent(ics1h);
     expect(events.length).toBe(3);
 
-    // Focus 1 (commitment + deadline): has alarm
+    // Focus 1 (timed commitment + deadline): has -PT1H alarm
     expect(events[0]?.alarmTrigger).toBe("-PT1H");
     // Task 2 (task without deadline): no alarm when includeTasksInAlarms is false
     expect(events[1]?.alarmTrigger).toBeUndefined();
-    // All-day 3 (commitment): has alarm
-    expect(events[2]?.alarmTrigger).toBe("-PT1H");
+    // All-day 3 (all-day commitment): mapped to same day at 09:00 (+PT9H)
+    expect(events[2]?.alarmTrigger).toBe("+PT9H");
   });
 
   it("adds VALARM to ordinary tasks when includeTasksInAlarms is true", () => {
@@ -137,19 +138,69 @@ describe("Calendar ICS reminders and RFC 5545 compliance", () => {
     });
 
     const events = parseIcalContent(ics15m);
+    // Timed tasks: -PT15M
     expect(events[0]?.alarmTrigger).toBe("-PT15M");
     expect(events[1]?.alarmTrigger).toBe("-PT15M");
-    expect(events[2]?.alarmTrigger).toBe("-PT15M");
+    // All-day task: +PT9H (same day at 09:00)
+    expect(events[2]?.alarmTrigger).toBe("+PT9H");
   });
 
-  it("handles 1 day before alarm (-P1D)", () => {
+  it("handles 1 day before alarm: -P1D for timed events and -PT15H for all-day events", () => {
     const ics1d = generateIcsCalendarExport(sampleItems, {
       reminderOffset: "1d",
       includeTasksInAlarms: true,
     });
 
     const events = parseIcalContent(ics1d);
+    // Timed events: 1 day before start (-P1D)
     expect(events[0]?.alarmTrigger).toBe("-P1D");
+    expect(events[1]?.alarmTrigger).toBe("-P1D");
+    // All-day events: previous day at 09:00 (-PT15H)
+    expect(events[2]?.alarmTrigger).toBe("-PT15H");
+  });
+
+  it("includes valid VTIMEZONE for Europe/Madrid and ensures all used TZIDs have matching VTIMEZONE", () => {
+    const icsWithTz = generateIcsCalendarExport(sampleItems, {
+      timeZone: "Europe/Madrid",
+    });
+
+    // Check VTIMEZONE component presence and EU DST rules
+    expect(icsWithTz).toContain("BEGIN:VTIMEZONE\r\n");
+    expect(icsWithTz).toContain("TZID:Europe/Madrid\r\n");
+    expect(icsWithTz).toContain("BEGIN:DAYLIGHT\r\n");
+    expect(icsWithTz).toContain("TZNAME:CEST\r\n");
+    expect(icsWithTz).toContain("RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU\r\n");
+    expect(icsWithTz).toContain("BEGIN:STANDARD\r\n");
+    expect(icsWithTz).toContain("TZNAME:CET\r\n");
+    expect(icsWithTz).toContain("RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU\r\n");
+    expect(icsWithTz).toContain("END:VTIMEZONE\r\n");
+
+    // Helper: Verify that every TZID referenced in DTSTART/DTEND has a corresponding VTIMEZONE
+    function assertEveryTzidHasVtimezone(ics: string) {
+      const definedTimezones = new Set<string>();
+      const tzMatches = ics.matchAll(
+        /BEGIN:VTIMEZONE[\s\S]*?TZID:([^\r\n;]+)[\s\S]*?END:VTIMEZONE/g
+      );
+      for (const m of tzMatches) {
+        if (m[1]) definedTimezones.add(m[1].trim());
+      }
+
+      const tzidUsages = ics.matchAll(/DT(?:START|END);(?:[^:\r\n]*;)?TZID=([^:\r\n;]+):/g);
+      for (const u of tzidUsages) {
+        const usedTzid = u[1]?.trim();
+        if (usedTzid) {
+          expect(definedTimezones.has(usedTzid)).toBe(true);
+        }
+      }
+    }
+
+    assertEveryTzidHasVtimezone(icsWithTz);
+
+    // Also verify when timeZone is not passed: no orphan TZID is used
+    const icsWithoutTz = generateIcsCalendarExport(sampleItems);
+    assertEveryTzidHasVtimezone(icsWithoutTz);
+    expect(icsWithoutTz).not.toContain("TZID=");
+    expect(icsWithoutTz).not.toContain("BEGIN:VTIMEZONE");
   });
 
   it("formats all-day events with VALUE=DATE", () => {

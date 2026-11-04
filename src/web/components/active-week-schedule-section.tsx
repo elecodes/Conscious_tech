@@ -67,6 +67,7 @@ export function ActiveWeekScheduleSection({
     const prefs = getStoredReminderPreferences();
     const exportItems = planItems.map((item) => {
       const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
+      const timeBlock = schedule.timeBlocks.find((tb) => tb.itemId === item.itemId);
       const day = alloc ? alloc.day : item.dueDate || plan?.targetWeek.startDate || "2026-10-19";
       const isObligation =
         item.source === "Obligación" || item.source?.toLowerCase().includes("obligaci");
@@ -74,16 +75,19 @@ export function ActiveWeekScheduleSection({
         id: item.itemId,
         title: item.title,
         day,
+        startTime: timeBlock?.startTime,
         durationHours: item.estimatedHours || 1,
         description: `Categoría: ${item.source}${item.rationale ? `\nMotivo: ${item.rationale}` : ""}`,
         isCommitment: isObligation,
         hasDeadline: Boolean(item.dueDate),
+        allDay: !timeBlock,
       };
     });
     const icsContent = generateIcsCalendarExport(exportItems, {
       calendarName: "Conscious Tech — Semana Activa",
       reminderOffset: prefs.offset,
       includeTasksInAlarms: prefs.includeTasks,
+      timeZone: "Europe/Madrid",
     });
     const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
     const url = URL.createObjectURL(blob);
