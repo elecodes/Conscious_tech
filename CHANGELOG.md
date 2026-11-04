@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.25.1] - 2026-11-04
+
+### Polish, Copy & Test Coverage
+
+- **UI Copy & Clarity**:
+  - Removed duplicate labels in the guided planning flow: "IA propone · Tú decides" and "Borrador en cuaderno local" appear exactly once per step on Revisar, and verified no duplicate labels on Confirmar and Mi semana.
+  - Added dynamic explanation on Revisar step under identified elements ("De tus 5 ideas, 2 entran en la semana y 3 quedan pendientes de decidir") with proper singular/plural grammar, hidden when all selected ideas are scheduled.
+  - Clarified Mock provider status in Ajustes under the AI assistant selector without modifying the default provider ("Ahora usas el modo de prueba (Mock): no se envía nada a ningún servicio. Elige Groq o Gemini para propuestas con IA real.").
+- **Automated Coverage & Test Gates**:
+  - Added unit and integration tests for calendar reminder preferences (restoring preferences from localStorage across reloads and clean profile defaults).
+  - Added unit tests for email summary edge cases with long weeks (>1,500 characters), ensuring body truncation with "… (ver el resto en la app)", safe URL lengths (< 3500 characters) for Gmail compose and mailto, proper encoding of special characters (accents, &, #, newlines), absence of recipients, and full non-truncated copy to clipboard.
+  - Extended browser smoke test (`scripts/smoke-test.ts`) covering long week email summary limits, full clipboard copy, and reminder preference persistence.
+- **Verification Checklist**:
+  - Added manual release verification checklist in `README.md`.
+
 ## [0.25.0] - 2026-11-04
 
 ### Guided Flow "Nueva semana" & Card Simplification (ADR 0027)

@@ -332,6 +332,16 @@ npm run test:smoke
 
 ---
 
+## Verification Checklist
+
+Manual checks for release verification:
+
+- [ ] First CI run on the merged branch.
+- [ ] Import the downloaded .ics into Google Calendar and confirm 09:00 for all-day items and 1 hour before for timed items.
+- [ ] Usability test with 2-3 people who have not seen the app.
+
+---
+
 ## Documentation & Decisions
 
 - **Architectural Decisions:** See [ADR 0001: Conservative Semantic Extraction and AI Provider Abstraction](docs/adr/0001-conservative-semantic-extraction-and-provider-architecture.md).
