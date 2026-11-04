@@ -1559,11 +1559,6 @@ export function WeeklyPlanningFromNotes({
               Actualmente ya tienes una semana activa en curso
             </span>
           )}
-          {proposedWeek && (
-            <span className="badge badge-idea" data-testid="draft-notebook-status-badge">
-              📒 Borrador en cuaderno local
-            </span>
-          )}
         </div>
       </div>
 

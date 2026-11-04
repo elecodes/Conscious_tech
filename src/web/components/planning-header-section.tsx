@@ -59,19 +59,6 @@ export function PlanningHeaderSection({
 }: PlanningHeaderSectionProps) {
   return (
     <>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          alignItems: "baseline",
-          flexWrap: "wrap",
-          gap: "8px",
-          marginBottom: "4px",
-        }}
-      >
-        <span className="badge badge-idea">IA propone · Tú decides</span>
-      </div>
-
       {hasActivePlan && (
         <div
           className="calm-box"
