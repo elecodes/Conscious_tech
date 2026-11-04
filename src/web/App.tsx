@@ -12,6 +12,7 @@ import {
 import { WeeklySessionView } from "./components/weekly-session-view";
 import { WeeklySessionService } from "../application/weekly-session-service";
 import { formatItemType, formatItemStatus, formatCommitmentType, formatImportance } from "./labels";
+import { CalendarReminderSettings } from "./components/calendar-reminder-settings";
 
 import { isDevMode } from "./dev-mode";
 
@@ -508,6 +509,27 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
                       ⚠️ Utiliza credenciales locales del servidor (proxy local).
                     </div>
                   )}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: "14px",
+                    paddingTop: "12px",
+                    borderTop: "1px solid var(--border-color)",
+                  }}
+                  data-testid="settings-reminders-section"
+                >
+                  <h4 style={{ margin: "0 0 6px 0", fontSize: "0.9rem" }}>
+                    🔔 Recordatorios de calendario
+                  </h4>
+                  <p
+                    className="calm-muted"
+                    style={{ margin: "0 0 8px 0", fontSize: "0.8rem", lineHeight: 1.4 }}
+                  >
+                    Avisos automáticos que se incluirán en el archivo .ics al exportar a Google
+                    Calendar.
+                  </p>
+                  <CalendarReminderSettings compact />
                 </div>
               </div>
             </details>

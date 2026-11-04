@@ -12,6 +12,7 @@ interface RawVEvent {
   rrule?: string;
   location?: string;
   description?: string;
+  alarmTrigger?: string;
 }
 
 /**
@@ -181,6 +182,7 @@ export function parseIcalContent(
   const events: CalendarEvent[] = [];
 
   let inVevent = false;
+  let inValarm = false;
   let currentEvent: RawVEvent = {};
 
   for (const line of lines) {
@@ -189,12 +191,24 @@ export function parseIcalContent(
 
     if (trimmed === "BEGIN:VEVENT") {
       inVevent = true;
+      inValarm = false;
       currentEvent = {};
+      continue;
+    }
+
+    if (trimmed === "BEGIN:VALARM") {
+      inValarm = true;
+      continue;
+    }
+
+    if (trimmed === "END:VALARM") {
+      inValarm = false;
       continue;
     }
 
     if (trimmed === "END:VEVENT") {
       inVevent = false;
+      inValarm = false;
       if (currentEvent.status?.toUpperCase() === "CANCELLED") {
         continue;
       }
@@ -287,6 +301,7 @@ export function parseIcalContent(
         description: currentEvent.description
           ? unescapeIcalText(currentEvent.description)
           : undefined,
+        alarmTrigger: currentEvent.alarmTrigger,
       };
 
       // Filter by date range if provided
@@ -341,6 +356,11 @@ export function parseIcalContent(
         break;
       case "DESCRIPTION":
         currentEvent.description = propValue;
+        break;
+      case "TRIGGER":
+        if (inValarm) {
+          currentEvent.alarmTrigger = propValue;
+        }
         break;
     }
   }

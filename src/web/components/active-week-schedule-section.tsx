@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { WeeklySchedule } from "../../domain/schedule";
 import { StoredWeeklyPlan } from "../../domain/repositories/types";
 import { buildGoogleCalendarTemplateUrl, generateIcsCalendarExport } from "../../domain/calendar";
+import { getStoredReminderPreferences } from "../../domain/reminders";
 import { PlanItemSummary } from "./weekly-reflective-closing-section";
 import { ActiveWeekAdjustmentPanel } from "./active-week-adjustment-panel";
+import { CalendarReminderSettings } from "./calendar-reminder-settings";
+import { EmailSummaryCard } from "./email-summary-card";
 
 export interface ActiveWeekScheduleSectionProps {
   schedule: WeeklySchedule;
@@ -57,6 +61,44 @@ export function ActiveWeekScheduleSection({
   applyAdjustment,
   setFeedbackMessage,
 }: ActiveWeekScheduleSectionProps) {
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
+
+  const handleDownloadWeekIcs = () => {
+    const prefs = getStoredReminderPreferences();
+    const exportItems = planItems.map((item) => {
+      const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
+      const day = alloc ? alloc.day : item.dueDate || plan?.targetWeek.startDate || "2026-10-19";
+      const isObligation =
+        item.source === "Obligación" || item.source?.toLowerCase().includes("obligaci");
+      return {
+        id: item.itemId,
+        title: item.title,
+        day,
+        durationHours: item.estimatedHours || 1,
+        description: `Categoría: ${item.source}${item.rationale ? `\nMotivo: ${item.rationale}` : ""}`,
+        isCommitment: isObligation,
+        hasDeadline: Boolean(item.dueDate),
+      };
+    });
+    const icsContent = generateIcsCalendarExport(exportItems, {
+      calendarName: "Conscious Tech — Semana Activa",
+      reminderOffset: prefs.offset,
+      includeTasksInAlarms: prefs.includeTasks,
+    });
+    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `conscious-tech-semana-${plan?.targetWeek.startDate || "activa"}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setExportNotice(
+      "Archivo .ics descargado con recordatorios. Para importarlo en Google Calendar: entra en Ajustes → Importar y exportar → Selecciona el archivo descargado."
+    );
+  };
+
   return (
     <section
       className="results-section"
@@ -81,50 +123,52 @@ export function ActiveWeekScheduleSection({
           </span>
         </div>
         {planItems.length > 0 && (
-          <button
-            type="button"
-            className="secondary small"
-            data-testid="export-week-to-gcal"
-            style={{
-              fontSize: "0.8rem",
-              padding: "4px 10px",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "5px",
-            }}
-            onClick={() => {
-              const exportItems = planItems.map((item) => {
-                const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
-                const day = alloc
-                  ? alloc.day
-                  : item.dueDate || plan?.targetWeek.startDate || "2026-10-19";
-                return {
-                  title: item.title,
-                  day,
-                  durationHours: item.estimatedHours || 1,
-                  description: `Categoría: ${item.source}${item.rationale ? `\nMotivo: ${item.rationale}` : ""}`,
-                };
-              });
-              const icsContent = generateIcsCalendarExport(
-                exportItems,
-                "Conscious Tech — Semana Activa"
-              );
-              const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `conscious-tech-semana-${plan?.targetWeek.startDate || "activa"}.ics`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-            }}
-          >
-            <span>📅</span>
-            <span>Exportar semana (.ics / Google Cal)</span>
-          </button>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="primary small"
+              data-testid="add-week-to-gcal-button"
+              style={{
+                fontSize: "0.8rem",
+                padding: "4px 10px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+              }}
+              onClick={handleDownloadWeekIcs}
+            >
+              <span>📅</span>
+              <span>Añadir semana a Google Calendar</span>
+            </button>
+            <button
+              type="button"
+              className="secondary small"
+              data-testid="export-week-to-gcal"
+              style={{
+                fontSize: "0.8rem",
+                padding: "4px 10px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+              }}
+              onClick={handleDownloadWeekIcs}
+            >
+              <span>Exportar (.ics)</span>
+            </button>
+          </div>
         )}
       </div>
+
+      {exportNotice && (
+        <div
+          className="status-message status-success"
+          style={{ marginBottom: "12px", fontSize: "0.82rem" }}
+          role="status"
+          data-testid="gcal-import-note"
+        >
+          {exportNotice}
+        </div>
+      )}
 
       <div className="items-list" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {planItems.length === 0 ? (
@@ -266,7 +310,7 @@ export function ActiveWeekScheduleSection({
           })
         )}
 
-        {schedule.timeBlocks.length > 0 && (
+        {schedule.timeBlocks && schedule.timeBlocks.length > 0 && (
           <div style={{ marginTop: "16px" }}>
             <h4 style={{ margin: "0 0 8px 0" }}>Bloques de horario específico</h4>
             {schedule.timeBlocks.map((block, idx) => (
@@ -283,6 +327,85 @@ export function ActiveWeekScheduleSection({
           </div>
         )}
       </div>
+
+      {planItems.length > 0 && (
+        <details
+          className="calm-details"
+          data-testid="reminders-and-alerts-details"
+          style={{
+            marginTop: "16px",
+            background: "var(--surface-warm, #fcfbf8)",
+            border: "1px solid var(--border-color, #e6ded1)",
+            borderRadius: "8px",
+            padding: "10px 14px",
+          }}
+        >
+          <summary
+            style={{
+              cursor: "pointer",
+              fontWeight: 500,
+              fontSize: "0.88rem",
+              userSelect: "none",
+            }}
+            data-testid="reminders-and-alerts-summary"
+          >
+            🔔 Recordatorios y avisos
+          </summary>
+          <div
+            style={{
+              marginTop: "12px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+            }}
+          >
+            <div
+              style={{
+                background: "#ffffff",
+                padding: "12px",
+                border: "1px solid var(--border-color, #e6ded1)",
+                borderRadius: "6px",
+              }}
+            >
+              <h4 style={{ margin: "0 0 6px 0", fontSize: "0.9rem" }}>
+                Recordatorios de calendario
+              </h4>
+              <p className="calm-muted" style={{ margin: "0 0 8px 0", fontSize: "0.78rem" }}>
+                Avisos para eventos con fecha y hora al exportar a Google Calendar o Apple Calendar.
+              </p>
+              <CalendarReminderSettings compact />
+              <button
+                type="button"
+                className="secondary small"
+                data-testid="download-ics-from-reminders-button"
+                style={{
+                  marginTop: "10px",
+                  fontSize: "0.8rem",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+                onClick={handleDownloadWeekIcs}
+              >
+                <span>📅</span>
+                <span>Añadir semana a Google Calendar</span>
+              </button>
+            </div>
+
+            <EmailSummaryCard
+              targetWeek={plan?.targetWeek || { startDate: "2026-10-19", endDate: "2026-10-25" }}
+              items={planItems.map((item) => {
+                const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
+                return {
+                  title: item.title,
+                  day: alloc ? alloc.day : item.dueDate,
+                  source: item.source,
+                };
+              })}
+            />
+          </div>
+        </details>
+      )}
 
       <ActiveWeekAdjustmentPanel
         schedule={schedule}

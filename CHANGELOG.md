@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.24.0] - 2026-11-04
+
+### Reminders in Calendar Export & Client-Side Email Summary (ADR 0026)
+
+- **Deterministic Reminders in Calendar Export (.ics / RFC 5545)**:
+  - Added "Recordatorios" preference section in "Ajustes" and inside the export menu, off by default ("Sin recordatorio").
+  - Options: sin recordatorio (`none`), 15 minutos antes (`15m`), 1 hora antes (`1h`), and 1 día antes (`1d`), persisted locally in `localStorage` without server contact.
+  - Generates RFC 5545 `VALARM` components (`ACTION:DISPLAY`, `TRIGGER:-PT15M` / `-PT1H` / `-P1D`) for events with date or time.
+  - Alarms apply by default only to commitments and deadline-bearing items, with an optional "Incluir también tareas" checkbox for flexible tasks.
+  - Supported all-day events (`VALUE=DATE`) with standard RFC 5545 start-of-day relative triggers.
+  - RFC 5545 conformance: CRLF line endings, 75-octet line folding with UTF-8 character boundary safety, text escaping (`\`, `;`, `,`, newlines), stable deterministic UIDs per item to update rather than duplicate on re-export, `DTSTAMP`, and `Europe/Madrid` timezone handling.
+  - Added prominent "Añadir semana a Google Calendar" button in "Mi semana" and proposal footer with import instructions note ("Google Calendar → Ajustes → Importar"), preserving per-item links.
+  - Honest copy: "Tu calendario te avisará" with help text "Google Calendar te avisará con una notificación; puedes activar el aviso por correo en sus ajustes."
+- **Client-Side Email Summary ("Enviarme el resumen por correo")**:
+  - Added email summary buttons in "Mi semana" and "Cierre".
+  - Opens Gmail compose (`https://mail.google.com/mail/?view=cm&fs=1&su=...&body=...`) in a new tab with `rel="noopener,noreferrer"` and fallback to `mailto:` ("Usar mi programa de correo").
+  - Recipient is strictly left empty: the person inputs their own email; no email address is ever requested, stored, or logged.
+  - Subject formatted as `Mi semana · <rango de fechas>`, with clean plain-text body excluding internal IDs or JSON.
+  - Includes personal reflections and learned lessons in "Cierre".
+  - URL length capping: bodies exceeding ~1,500 characters are gracefully truncated with `… (ver el resto en la app)` accompanied by a "Copiar resumen" button to copy the complete text to the clipboard.
+  - Explicit privacy notice displayed before opening the link.
+- **Calm Interface Integration**:
+  - Grouped reminders and email summary under a collapsed "Recordatorios y avisos" details block in "Mi semana", avoiding clutter or new tabs.
+- **Comprehensive Quality Gates & Testing**:
+  - Unit tests for RFC 5545 validity, stable UIDs, alarms, line folding, round-trip parsing via `ical-parser.ts`, and email body builder with length capping and truncation.
+  - Component integration tests for reminder settings, email summary card, and UI export buttons.
+  - Extended browser smoke test (`scripts/smoke-test.ts`) validating reminder offset selection, capturing downloaded `.ics` to verify `VALARM`, and asserting the Gmail compose URL with empty recipient.
+  - Spain Spanish copy checked against `tests/voseo-denylist.test.ts`.
+
 ## [0.23.0] - 2026-11-03
 
 ### UI Simplification & Progressive Disclosure (ADR 0025)

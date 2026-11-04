@@ -568,6 +568,76 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     await adjBox.waitFor({ state: "visible", timeout: 5000 });
     console.log("  ✓ 'Abrir ajustes' panel reachable in active week");
 
+    // 12. Recordatorios y avisos: open, pick 1 hora antes, capture download, assert VALARM present, click email button
+    const remindersDetails = page.locator('[data-testid="reminders-and-alerts-details"]');
+    await remindersDetails.waitFor({ state: "visible", timeout: 5000 });
+    const isRemindersOpen = await remindersDetails.evaluate((el: HTMLDetailsElement) => el.open);
+    if (isRemindersOpen) {
+      throw new Error("Recordatorios y avisos should be collapsed by default");
+    }
+    await remindersDetails.locator("> summary").click();
+
+    // Pick 1 hora antes
+    const reminderSelect = remindersDetails.locator('[data-testid="reminder-offset-select"]');
+    await reminderSelect.waitFor({ state: "visible", timeout: 5000 });
+    await reminderSelect.selectOption("1h");
+
+    // Click "Añadir semana a Google Calendar" and capture download
+    const downloadPromise = page.waitForEvent("download");
+    await page.locator('[data-testid="add-week-to-gcal-button"]').first().click();
+    const download = await downloadPromise;
+    const downloadStream = await download.createReadStream();
+    const chunks: Buffer[] = [];
+    for await (const chunk of downloadStream) {
+      chunks.push(Buffer.from(chunk));
+    }
+    const downloadedIcs = Buffer.concat(chunks).toString("utf-8");
+
+    if (!downloadedIcs.includes("BEGIN:VALARM") || !downloadedIcs.includes("TRIGGER:-PT1H")) {
+      throw new Error("Downloaded ICS does not contain expected VALARM with TRIGGER:-PT1H");
+    }
+    console.log("  ✓ Downloaded ICS captured and verified: contains VALARM with -PT1H");
+
+    // Click Email summary button, verify popup opens Gmail compose with no recipient
+    const emailButton = remindersDetails.locator('[data-testid="open-gmail-summary-button"]');
+    await emailButton.waitFor({ state: "visible", timeout: 5000 });
+
+    const emailHref = await emailButton.getAttribute("href");
+    if (!emailHref || !emailHref.startsWith("https://mail.google.com/mail/?view=cm&fs=1")) {
+      throw new Error(
+        `Email button href expected to start with Gmail compose URL, got: ${emailHref}`
+      );
+    }
+    if (emailHref.includes("&to=") || emailHref.includes("?to=")) {
+      throw new Error("Gmail compose URL must not contain recipient (to=)");
+    }
+
+    // Intercept mail.google.com to avoid Google account login redirects in headless tests
+    await context.route("https://mail.google.com/**", (route: any) => {
+      route.fulfill({
+        status: 200,
+        contentType: "text/html",
+        body: "<html><body>Gmail Compose Mock</body></html>",
+      });
+    });
+
+    const pagePromise = context.waitForEvent("page");
+    await emailButton.click();
+    const newPage = await pagePromise;
+    const openedUrl = newPage.url();
+    if (!openedUrl.startsWith("https://mail.google.com/mail/?view=cm&fs=1")) {
+      throw new Error(`Opened URL expected to start with Gmail compose URL, got: ${openedUrl}`);
+    }
+    if (openedUrl.includes("&to=") || openedUrl.includes("?to=")) {
+      throw new Error("Gmail compose URL must not contain recipient (to=)");
+    }
+    await newPage.close();
+    await context.unroute("https://mail.google.com/**");
+    console.log("  ✓ Email summary button clicked: opened Gmail compose URL with no recipient");
+
+    // Close reminders details
+    await remindersDetails.locator("> summary").click();
+
     // Assert PR B renamed jargon in active week
     await page.locator("text=Lo que he aprendido").waitFor({ state: "visible", timeout: 5000 });
     await page
