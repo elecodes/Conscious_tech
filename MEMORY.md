@@ -356,6 +356,25 @@ Implemented and calibrated skills:
 - **Limpieza de lenguaje**: Reemplazo de jerga interna («Radar» $\rightarrow$ «Imprevistos», «Memorias activas confirmadas» $\rightarrow$ «Lo que he aprendido», «Cierre reflexivo» $\rightarrow$ «Cierre de semana», «volcado mental» $\rightarrow$ «ideas de tu captura»).
 - **Red de seguridad completa**: Validación exhaustiva en CI mediante Playwright (`test:smoke`) en Chromium real y pruebas de denegación de voseo (`voseo-denylist.test.ts`), con 918 pruebas pasando y 0 dependencias circulares.
 
+19. **Flujo Guiado «Nueva semana», Simplificación de Tarjetas y Pulido (v0.25.0 - v0.25.1 / ADR 0027)**:
+
+- **Flujo Guiado Unificado (Escribir → Revisar → Confirmar)**: Reemplazo de las pestañas fragmentadas de Ideas y Planificar por una línea de progreso visible en 3 etapas. Conservación total de notas y selecciones en navegaciones hacia atrás.
+- **CalmIdeaCard**: Tarjetas limpias con título, fecha límite y casilla visible; detalles técnicos secundarios agrupados tras botón accesible «Detalles» (`aria-expanded`).
+- **Navegación a 2 Espacios**: Reducción de la navegación principal a «Mi semana» y «Nueva semana». Integración del cierre de ciclo en Mi semana.
+- **Pulido Visual y Redundancias**: Eliminación de insignias duplicadas («IA propone · Tú decides» y «Borrador en cuaderno local») en Revisar, Confirmar y Mi semana.
+- **Reparto 5 → 2 + 3**: Explicación contextual de división de ideas bajo elementos identificados con flexión singular/plural correcta, oculta si todo está programado.
+- **Títulos Limpios sin IDs**: Corrección en `extractPlanItems` para resolver títulos limpios de tareas a partir de `draftContext.extractedItems` o el foco a secas, eliminando la interpolación de IDs técnicos `(${itemId})` en la agenda y resumen de correo.
+- **Claridad de Proveedor en Ajustes**: Mensaje informativo explicativo bajo el selector cuando el modo Mock determinista está activo, preservando el proveedor predeterminado.
+- **Cobertura Automatizada Exhaustiva**: Tests para persistencia de recordatorios (`localStorage`), límites seguros de URL en resumen por correo (< 3.500 caracteres), codificación de caracteres especiales, ausencia de destinatario, copia íntegra al portapapeles y prueba de humo ampliada en Chromium real (953 tests en 70 suites).
+
+20. **Pendiente para la próxima sesión (Investigación de Calendario y Gmail)**:
+
+- **Revisión de Exportación e Importación de Calendario (`.ics` / Google Calendar)**:
+  - Verificar en entorno real cómo Google Calendar interpreta los disparadores de alarma (`VALARM`): las tareas de día completo configuradas a las 09:00 (`+PT9H`) vs tareas horarias con alarma 1 hora antes (`-PT1H`).
+- **Revisión de "Enviarme el resumen por correo" a Gmail**:
+  - Investigar por qué no está funcionando adecuadamente según el reporte de la persona usuaria.
+  - Comprobar la URL de redacción de Gmail (`https://mail.google.com/mail/?view=cm&fs=1&su=...&body=...`), parámetros requeridos/conflictivos, decodificación en cliente de escritorio y comportamiento ante enlaces y saltos de línea.
+
 Detailed specifications for individual skills live separately from this file.
 
 ---
