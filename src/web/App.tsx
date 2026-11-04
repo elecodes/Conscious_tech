@@ -433,6 +433,16 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
                     <option value="groq">Groq (Servidor local / Qwen 2.5 32B)</option>
                     <option value="gemini">Gemini (Servidor local / Gemini 2.5 Flash)</option>
                   </select>
+                  {providerType === "mock" && (
+                    <p
+                      className="calm-muted"
+                      data-testid="mock-provider-explanation"
+                      style={{ margin: "6px 0 0 0", fontSize: "0.78rem", lineHeight: 1.4 }}
+                    >
+                      Ahora usas el modo de prueba (Mock): no se envía nada a ningún servicio. Elige
+                      Groq o Gemini para propuestas con IA real.
+                    </p>
+                  )}
                   {providerType !== "mock" && (
                     <div
                       style={{
