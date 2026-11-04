@@ -39,3 +39,17 @@ El objetivo de esta fase fue unificar las pestañas de entrada en un único fluj
 6. **Verificación y calidad**:
    - Cobertura de pruebas unitarias y de integración actualizada para transiciones de etapas, navegación hacia atrás con preservación de texto, retención en caso de error y reglas de aterrizaje.
    - Prueba de humo completa en navegador real (`scripts/smoke-test.ts`) ejecutada y validada en modos `preview` y `dev`.
+
+## Adenda (v0.25.1): Refinamiento visual, claridad de proveedor y cobertura extendida
+
+1. **Eliminación de redundancias en Revisar**:
+   - «IA propone · Tú decides» se mantiene como subtítulo descriptivo único y se retira la chapa repetida.
+   - «Borrador en cuaderno local» se conserva exclusivamente junto a la cabecera de la propuesta.
+2. **Explicación dinámica del reparto de ideas en Revisar**:
+   - Inclusión de una frase contextual bajo la cabecera de elementos identificados (ej. _«De tus 5 ideas, 2 entran en la semana y 3 quedan pendientes de decidir»_), con concordancia gramatical singular/plural y ocultación cuando todas las ideas seleccionadas están programadas.
+3. **Claridad del proveedor en Ajustes**:
+   - Texto informativo bajo el selector de IA cuando el modo Mock está seleccionado (_«Ahora usas el modo de prueba (Mock): no se envía nada a ningún servicio. Elige Groq o Gemini para propuestas con IA real.»_), manteniendo intacto el proveedor por defecto.
+4. **Cobertura automatizada exhaustiva**:
+   - Persistencia y restauración de preferencias de recordatorios en `localStorage` (perfil limpio y configurado).
+   - Resumen de correo en semanas extensas (>1.500 caracteres): truncamiento seguro de URLs (< 3.500 caracteres), codificación de caracteres especiales, enlaces sin destinatario y copia íntegra al portapapeles.
+   - Extensión de la prueba de humo en navegador real para comprobar límites de URL, portapapeles y retención de recordatorios tras recarga.
