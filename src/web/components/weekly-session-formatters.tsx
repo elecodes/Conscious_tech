@@ -355,9 +355,11 @@ export function extractPlanItems(
     for (const itemId of focus.contributingItemIds) {
       if (!map.has(itemId)) {
         const alloc = schedule?.dailyAllocations.find((a) => a.itemId === itemId);
+        const extracted = plan.draftContext?.extractedItems?.find((i) => i.id === itemId);
+        const title = extracted?.title?.trim() || focus.title;
         map.set(itemId, {
           itemId,
-          title: `${focus.title} (${itemId})`,
+          title,
           source: "Foco",
           estimatedHours: focus.estimatedHours ?? alloc?.allocatedHours ?? null,
           rationale: focus.rationale,
@@ -383,18 +385,20 @@ export function extractPlanItems(
   if (schedule) {
     for (const a of schedule.dailyAllocations) {
       if (!map.has(a.itemId)) {
+        const extracted = plan.draftContext?.extractedItems?.find((i) => i.id === a.itemId);
         map.set(a.itemId, {
           itemId: a.itemId,
-          title: `Tarea asignada (${a.itemId})`,
+          title: extracted?.title?.trim() || "Tarea asignada",
           source: "Agenda",
         });
       }
     }
     for (const b of schedule.timeBlocks) {
       if (!map.has(b.itemId)) {
+        const extracted = plan.draftContext?.extractedItems?.find((i) => i.id === b.itemId);
         map.set(b.itemId, {
           itemId: b.itemId,
-          title: `Bloque (${b.itemId})`,
+          title: extracted?.title?.trim() || "Bloque de tiempo",
           source: "Agenda",
         });
       }

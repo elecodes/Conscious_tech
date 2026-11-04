@@ -492,6 +492,30 @@ describe("Fase P5.1 — Continuidad del cierre y disposiciones honestas", () => 
       // Verificar que task-reporte (presente en foco, allocations y timeblocks) aparece solo UNA vez
       const reporteOccurrences = items.filter((i) => i.itemId === "task-reporte");
       expect(reporteOccurrences).toHaveLength(1);
+
+      // Verificar que el título no filtra identificadores técnicos entre paréntesis
+      const reporteItem = items.find((i) => i.itemId === "task-reporte");
+      expect(reporteItem?.title).toBe("Entrega de Cierre");
+      expect(reporteItem?.title).not.toContain("(task-reporte)");
+
+      // Con extractedItems en draftContext, utiliza el título del elemento extraído
+      const planWithDraftContext: StoredWeeklyPlan = {
+        ...samplePlan,
+        draftContext: {
+          extractedItems: [
+            {
+              id: "task-reporte",
+              title: "Escribir reporte de progreso",
+              type: "task",
+              rawText: "Escribir reporte de progreso",
+            },
+          ],
+        },
+      };
+      const itemsWithExtracted = extractPlanItems(planWithDraftContext, sampleSchedule);
+      const extractedReporte = itemsWithExtracted.find((i) => i.itemId === "task-reporte");
+      expect(extractedReporte?.title).toBe("Escribir reporte de progreso");
+      expect(extractedReporte?.title).not.toContain("(task-reporte)");
     });
 
     it("2.2. Ítems no revisados (unreviewed): no se envían en itemOutcomes y closeWeek trata como no informados", async () => {
