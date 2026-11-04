@@ -90,6 +90,53 @@ describe("Email summary builder", () => {
     expect(summary.isTruncated).toBe(true);
     expect(summary.truncatedBody.length).toBeLessThanOrEqual(1550);
     expect(summary.truncatedBody).toContain("… (ver el resto en la app)");
-    expect(summary.gmailUrl.length).toBeLessThan(3000);
+    expect(summary.gmailUrl.length).toBeLessThan(3500);
+    expect(summary.mailtoUrl.length).toBeLessThan(3500);
+  });
+
+  it("encodes special characters (accents, &, #, newlines) correctly and includes no recipient", () => {
+    const specialInput: EmailSummaryInput = {
+      targetWeek: {
+        startDate: "2026-10-19",
+        endDate: "2026-10-25",
+      },
+      items: [
+        {
+          title: "I&D & innovación con #roadmap, acentos: áéíóú ñ y salto\nde línea",
+          day: "2026-10-20",
+          source: "Foco",
+        },
+      ],
+    };
+
+    const summary = buildEmailSummary(specialInput);
+
+    // & must be percent-encoded as %26 to prevent rogue query parameters
+    expect(summary.gmailUrl).toContain("%26");
+    expect(summary.mailtoUrl).toContain("%26");
+    // Only two query params in mailto: ?subject= and &body=
+    const mailtoBodyParam = summary.mailtoUrl.split("&body=")[1]!;
+    expect(mailtoBodyParam).toBeDefined();
+    expect(mailtoBodyParam).toContain("%26");
+
+    // # must be percent-encoded as %23 to avoid hash collisions
+    expect(summary.gmailUrl).toContain("%23");
+    expect(summary.mailtoUrl).toContain("%23");
+    expect(summary.gmailUrl).not.toContain("#roadmap");
+    expect(summary.mailtoUrl).not.toContain("#roadmap");
+
+    // Accents (á, é, í, ó, ú, ñ) must be percent-encoded UTF-8
+    expect(summary.gmailUrl).toContain(encodeURIComponent("áéíóú"));
+    expect(summary.gmailUrl).toContain(encodeURIComponent("ñ"));
+
+    // Newlines must be encoded as %0A
+    expect(summary.gmailUrl).toContain("%0A");
+    expect(summary.mailtoUrl).toContain("%0A");
+
+    // No recipient in either URL
+    expect(summary.gmailUrl).not.toContain("&to=");
+    expect(summary.gmailUrl).not.toContain("?to=");
+    expect(summary.mailtoUrl.startsWith("mailto:?subject=")).toBe(true);
+    expect(summary.mailtoUrl).not.toMatch(/^mailto:[^?]/);
   });
 });

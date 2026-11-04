@@ -1,3 +1,4 @@
+import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { CalendarReminderSettings } from "../src/web/components/calendar-reminder-settings";
@@ -7,6 +8,12 @@ import { PlanningProposalReviewFooter } from "../src/web/components/planning-pro
 import { WeeklySchedule } from "../src/domain/schedule";
 import { StoredWeeklyPlan } from "../src/domain/repositories/types";
 import { ProposedWeek, TargetWeek } from "../src/domain/week";
+import {
+  getStoredReminderPreferences,
+  saveStoredReminderPreferences,
+  REMINDER_STORAGE_KEY_OFFSET,
+  REMINDER_STORAGE_KEY_INCLUDE_TASKS,
+} from "../src/domain/reminders";
 
 describe("Reminders and Email Summary UI Components", () => {
   describe("CalendarReminderSettings", () => {
@@ -33,9 +40,49 @@ describe("Reminders and Email Summary UI Components", () => {
       expect(html).toContain('data-testid="reminder-include-tasks-checkbox"');
       expect(html).toContain("Incluir también tareas");
       expect(html).toContain("Tu calendario te avisará");
-      expect(html).toContain(
-        "Google Calendar te avisará con una notificación; puedes activar el aviso por correo en sus ajustes."
-      );
+      expect(html).toContain("puedes activar el aviso por correo en sus ajustes");
+      expect(html).toContain("Para tareas de todo el día te avisamos a las 9:00");
+    });
+
+    it("restores reminder preferences from local storage on clean vs configured profiles", () => {
+      const store = new Map<string, string>();
+      const mockStorage = {
+        getItem: (key: string) => store.get(key) ?? null,
+        setItem: (key: string, val: string) => store.set(key, val),
+        removeItem: (key: string) => store.delete(key),
+        clear: () => store.clear(),
+        key: (i: number) => Array.from(store.keys())[i] ?? null,
+        length: 0,
+      };
+      const origStorage = globalThis.localStorage;
+      globalThis.localStorage = mockStorage as unknown as Storage;
+
+      try {
+        // 1. Clean profile defaults to "Sin recordatorio"
+        const cleanPrefs = getStoredReminderPreferences();
+        expect(cleanPrefs.offset).toBe("none");
+        expect(cleanPrefs.includeTasks).toBe(false);
+
+        const htmlClean = renderToStaticMarkup(<CalendarReminderSettings />);
+        expect(htmlClean).toContain('value="none"');
+        expect(htmlClean).not.toContain('data-testid="reminder-include-tasks-checkbox"');
+
+        // 2. Set preferences: 1h before, include tasks
+        saveStoredReminderPreferences({ offset: "1h", includeTasks: true });
+        expect(globalThis.localStorage.getItem(REMINDER_STORAGE_KEY_OFFSET)).toBe("1h");
+        expect(globalThis.localStorage.getItem(REMINDER_STORAGE_KEY_INCLUDE_TASKS)).toBe("true");
+
+        // 3. Simulate unmount and remount (reload): asserts choice is restored from same local storage
+        const restoredPrefs = getStoredReminderPreferences();
+        expect(restoredPrefs.offset).toBe("1h");
+        expect(restoredPrefs.includeTasks).toBe(true);
+
+        const htmlRestored = renderToStaticMarkup(<CalendarReminderSettings />);
+        expect(htmlRestored).toContain('value="1h"');
+        expect(htmlRestored).toContain('data-testid="reminder-include-tasks-checkbox"');
+      } finally {
+        globalThis.localStorage = origStorage;
+      }
     });
   });
 
@@ -69,6 +116,67 @@ describe("Reminders and Email Summary UI Components", () => {
       expect(html).toContain('data-testid="copy-email-summary-button"');
       expect(html).toContain("Copiar resumen");
       expect(html).toContain("Ningún dato se envía automáticamente");
+    });
+
+    it("copies the FULL non-truncated text to clipboard when 'Copiar resumen' is clicked", async () => {
+      const manyItems = Array.from({ length: 40 }, (_, i) => ({
+        title: `Tarea extendida ${i + 1} para verificar el contenido completo en el portapapeles`,
+        day: "2026-10-20",
+        source: "Foco",
+      }));
+
+      let copiedText = "";
+      Object.defineProperty(globalThis, "navigator", {
+        value: {
+          clipboard: {
+            writeText: async (val: string) => {
+              copiedText = val;
+            },
+          },
+        },
+        configurable: true,
+      });
+
+      function findByTestId(node: any, testId: string): any {
+        if (!node) return null;
+        if (node.props?.["data-testid"] === testId) return node;
+        if (Array.isArray(node.props?.children)) {
+          for (const child of node.props.children) {
+            const found = findByTestId(child, testId);
+            if (found) return found;
+          }
+        } else if (node.props?.children) {
+          return findByTestId(node.props.children, testId);
+        }
+        return null;
+      }
+
+      const internals = (React as any)
+        .__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+      const prevDispatcher = internals?.H;
+      internals.H = {
+        useState: (init: any) => [init, () => {}],
+      };
+
+      try {
+        const tree = EmailSummaryCard({
+          targetWeek,
+          items: manyItems,
+        });
+
+        const copyBtn = findByTestId(tree, "copy-email-summary-button");
+        expect(copyBtn).not.toBeNull();
+        await copyBtn.props.onClick();
+
+        expect(copiedText.length).toBeGreaterThan(1500);
+        expect(copiedText).not.toContain("… (ver el resto en la app)");
+        expect(copiedText).toContain("Tarea extendida 40");
+        expect(copiedText).toContain("Mi semana (2026-10-19 al 2026-10-25)");
+      } finally {
+        if (internals) {
+          internals.H = prevDispatcher;
+        }
+      }
     });
   });
 

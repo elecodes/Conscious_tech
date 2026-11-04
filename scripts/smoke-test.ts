@@ -66,7 +66,9 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
-    const context = await browser.newContext();
+    const context = await browser.newContext({
+      permissions: ["clipboard-read", "clipboard-write"],
+    });
     const page = await context.newPage();
 
     const pageErrors: string[] = [];
@@ -480,8 +482,78 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
       "  ✓ Downloaded ICS captured and verified: contains VTIMEZONE and all-day VALARM with +PT9H (09:00 trigger)"
     );
 
-    // Verify Email summary button opens Gmail compose without recipient
-    const emailButton = remindersDetails.locator('[data-testid="open-gmail-summary-button"]');
+    // Extend active week with extra tasks to verify long week behavior (>1500 chars)
+    console.log("  Extending active week with additional tasks to verify long week truncation...");
+    await page.evaluate(async () => {
+      return new Promise<void>((resolve, reject) => {
+        const req = indexedDB.open("conscious_tech_db", 1);
+        req.onsuccess = () => {
+          const db = req.result;
+          const tx = db.transaction("plans", "readwrite");
+          const store = tx.objectStore("plans");
+          const cursorReq = store.openCursor();
+          cursorReq.onsuccess = () => {
+            const cursor = cursorReq.result;
+            if (cursor) {
+              const plan = cursor.value;
+              if (plan.status === "active" && plan.proposal) {
+                const longItems = [];
+                for (let i = 1; i <= 25; i++) {
+                  longItems.push({
+                    itemId: `smoke-long-item-${i}`,
+                    title: `Tarea extendida número ${i} de la semana para evaluar la generación y el límite de resumen de correo`,
+                    estimatedHours: 1,
+                  });
+                }
+                plan.proposal.flexibleOptions = [
+                  ...(plan.proposal.flexibleOptions || []),
+                  ...longItems,
+                ];
+                cursor.update(plan);
+              }
+              cursor.continue();
+            } else {
+              resolve();
+            }
+          };
+          cursorReq.onerror = () => reject(cursorReq.error);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    });
+
+    // Reload with active week and assert the reminder option is still selected
+    await page.reload({ waitUntil: "networkidle" });
+    await activeScheduleSection.waitFor({ state: "visible", timeout: 10000 });
+
+    const reloadedRemindersDetails = page.locator('[data-testid="reminders-and-alerts-details"]');
+    await reloadedRemindersDetails.waitFor({ state: "visible", timeout: 5000 });
+    await reloadedRemindersDetails.locator("> summary").click();
+
+    const reloadedReminderSelect = reloadedRemindersDetails.locator(
+      '[data-testid="reminder-offset-select"]'
+    );
+    const selectedOffset = await reloadedReminderSelect.inputValue();
+    if (selectedOffset !== "1h") {
+      throw new Error(
+        `Expected reminder option '1h' to remain selected after reload, got: '${selectedOffset}'`
+      );
+    }
+    console.log("  ✓ Reload with active week preserved selected reminder preference ('1h')");
+
+    // Assert email summary preview shows truncation note for long week
+    const previewText = await page.locator('[data-testid="email-summary-preview"]').innerText();
+    if (!previewText.includes("… (ver el resto en la app)")) {
+      throw new Error("Long week email preview expected to contain '… (ver el resto en la app)'");
+    }
+    console.log(
+      "  ✓ Long week email summary preview is truncated with '… (ver el resto en la app)'"
+    );
+
+    // Verify Email summary button opens Gmail compose without recipient and under URL cap (< 3500)
+    const emailButton = reloadedRemindersDetails.locator(
+      '[data-testid="open-gmail-summary-button"]'
+    );
     await emailButton.waitFor({ state: "visible", timeout: 5000 });
 
     await context.route("https://mail.google.com/**", (route: any) => {
@@ -502,11 +574,41 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     if (openedUrl.includes("&to=") || openedUrl.includes("?to=")) {
       throw new Error("Gmail compose URL must not contain recipient (to=)");
     }
+    if (openedUrl.length >= 3500) {
+      throw new Error(
+        `Gmail compose URL length ${openedUrl.length} exceeds safe cap of 3500 characters`
+      );
+    }
     await newPage.close();
     await context.unroute("https://mail.google.com/**");
-    console.log("  ✓ Email summary button clicked: opened Gmail compose URL without recipient");
+    console.log(
+      `  ✓ Long week Gmail compose URL verified: length (${openedUrl.length}) under cap (< 3500) without recipient`
+    );
 
-    await remindersDetails.locator("> summary").click();
+    // Click "Copiar resumen" and assert clipboard text is the full summary (non-truncated, >1500 chars)
+    const copyBtn = reloadedRemindersDetails.locator('[data-testid="copy-email-summary-button"]');
+    await copyBtn.waitFor({ state: "visible", timeout: 5000 });
+    await copyBtn.click();
+
+    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+    if (clipboardText.length <= 1500) {
+      throw new Error(
+        `Clipboard text length ${clipboardText.length} expected to be > 1500 characters`
+      );
+    }
+    if (clipboardText.includes("… (ver el resto en la app)")) {
+      throw new Error(
+        "Full summary copied to clipboard must not be truncated with '… (ver el resto en la app)'"
+      );
+    }
+    if (!clipboardText.includes("Tarea extendida número 25")) {
+      throw new Error("Full summary copied to clipboard must contain all tasks");
+    }
+    console.log(
+      `  ✓ 'Copiar resumen' copied full text to clipboard (${clipboardText.length} chars, non-truncated)`
+    );
+
+    await reloadedRemindersDetails.locator("> summary").click();
 
     // Verify "Cerrar semana" button inside Mi semana
     const closeWeekBtn = page.locator('[data-testid="close-week-button"]');
