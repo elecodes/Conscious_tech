@@ -98,3 +98,34 @@ export function formatContextSignal(signal: string | null | undefined): string {
   if (!signal) return "";
   return CONTEXT_SIGNAL_LABELS[signal] || signal;
 }
+
+/**
+ * Builds an explanation of how selected ideas split between scheduled and pending in the week proposal.
+ * Returns null when all selected ideas are scheduled, or when counts are invalid.
+ * Examples:
+ * - (5, 2, 3) -> "De tus 5 ideas, 2 entran en la semana y 3 quedan pendientes de decidir."
+ * - (3, 1, 2) -> "De tus 3 ideas, 1 entra en la semana y 2 quedan pendientes de decidir."
+ * - (3, 2, 1) -> "De tus 3 ideas, 2 entran en la semana y 1 queda pendiente de decidir."
+ * - (2, 1, 1) -> "De tus 2 ideas, 1 entra en la semana y 1 queda pendiente de decidir."
+ * - (1, 0, 1) -> "De tu 1 idea, 0 entran en la semana y 1 queda pendiente de decidir."
+ * - (5, 5, 0) -> null (hidden when all selected ideas are scheduled)
+ */
+export function formatIdeasSplitExplanation(
+  selectedCount: number,
+  scheduledCount: number,
+  pendingCount: number
+): string | null {
+  if (selectedCount <= 0 || pendingCount <= 0 || scheduledCount >= selectedCount) {
+    return null;
+  }
+
+  const ideasPrefix = selectedCount === 1 ? "De tu 1 idea" : `De tus ${selectedCount} ideas`;
+  const scheduledPart =
+    scheduledCount === 1 ? "1 entra en la semana" : `${scheduledCount} entran en la semana`;
+  const pendingPart =
+    pendingCount === 1
+      ? "1 queda pendiente de decidir"
+      : `${pendingCount} quedan pendientes de decidir`;
+
+  return `${ideasPrefix}, ${scheduledPart} y ${pendingPart}.`;
+}

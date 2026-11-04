@@ -1846,6 +1846,7 @@ export function WeeklyPlanningFromNotes({
               selectedCarryOverItemIds={selectedCarryOverItemIds}
               handleGenerateProposal={handleGenerateProposal}
               isProposalDirty={isProposalDirty}
+              proposedWeek={proposedWeek}
             />
           )}
 

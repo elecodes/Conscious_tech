@@ -26,6 +26,7 @@ import {
   formatRelationshipType,
   formatDeadlineKind,
   formatContextSignal,
+  formatIdeasSplitExplanation,
 } from "../src/web/labels";
 import {
   createIndexedDbStorage,
@@ -34,6 +35,8 @@ import {
 } from "../src/infrastructure/storage/indexeddb";
 import { WeeklySessionService } from "../src/application/weekly-session-service";
 import { App } from "../src/web/App";
+import { PlanningExtractedItemsReview } from "../src/web/components/planning-extracted-items-review";
+import { ProposedWeek } from "../src/domain/week";
 
 describe("FIX 3: Spanish labels for enum badges", () => {
   describe("Label maps completeness and fallbacks", () => {
@@ -225,6 +228,159 @@ describe("FIX 3: Spanish labels for enum badges", () => {
           }
         }
       }
+    });
+  });
+
+  describe("Ideas split explanation on Revisar (formatIdeasSplitExplanation)", () => {
+    it("formats plural ideas, plural scheduled, plural pending correctly", () => {
+      const text = formatIdeasSplitExplanation(5, 2, 3);
+      expect(text).toBe("De tus 5 ideas, 2 entran en la semana y 3 quedan pendientes de decidir.");
+    });
+
+    it("formats singular scheduled and plural pending correctly", () => {
+      const text = formatIdeasSplitExplanation(3, 1, 2);
+      expect(text).toBe("De tus 3 ideas, 1 entra en la semana y 2 quedan pendientes de decidir.");
+    });
+
+    it("formats plural scheduled and singular pending correctly", () => {
+      const text = formatIdeasSplitExplanation(3, 2, 1);
+      expect(text).toBe("De tus 3 ideas, 2 entran en la semana y 1 queda pendiente de decidir.");
+    });
+
+    it("formats singular idea correctly", () => {
+      const text = formatIdeasSplitExplanation(1, 0, 1);
+      expect(text).toBe("De tu 1 idea, 0 entran en la semana y 1 queda pendiente de decidir.");
+    });
+
+    it("formats singular scheduled and singular pending correctly", () => {
+      const text = formatIdeasSplitExplanation(2, 1, 1);
+      expect(text).toBe("De tus 2 ideas, 1 entra en la semana y 1 queda pendiente de decidir.");
+    });
+
+    it("returns null (hidden) when all selected ideas are scheduled", () => {
+      expect(formatIdeasSplitExplanation(5, 5, 0)).toBeNull();
+      expect(formatIdeasSplitExplanation(2, 2, 0)).toBeNull();
+      expect(formatIdeasSplitExplanation(1, 1, 0)).toBeNull();
+    });
+
+    it("returns null when selectedCount <= 0 or pendingCount <= 0", () => {
+      expect(formatIdeasSplitExplanation(0, 0, 0)).toBeNull();
+      expect(formatIdeasSplitExplanation(3, 3, -1)).toBeNull();
+    });
+
+    it("renders split explanation inside PlanningExtractedItemsReview when split exists and hides it when all scheduled", () => {
+      const mockExtractedItems = [
+        { id: "item-1", title: "Idea 1", rawText: "Idea 1", type: "task" as const },
+        { id: "item-2", title: "Idea 2", rawText: "Idea 2", type: "task" as const },
+        { id: "item-3", title: "Idea 3", rawText: "Idea 3", type: "task" as const },
+      ];
+      const acceptedIds = new Set(["item-1", "item-2", "item-3"]);
+
+      const mockProposalWithSplit = {
+        foci: [
+          {
+            id: "f-1",
+            title: "Foco",
+            desiredOutcome: "Res",
+            contributingItemIds: ["item-1"],
+            rationale: "r",
+          },
+        ],
+        obligations: [],
+        flexibleOptions: [],
+        deferredItems: [
+          { itemId: "item-2", title: "Idea 2", reason: "low_attention" as const, rationale: "r" },
+          { itemId: "item-3", title: "Idea 3", reason: "not_scheduled" as const, rationale: "r" },
+        ],
+        weekSummary: {
+          targetWeek: { startDate: "2026-10-19", endDate: "2026-10-25" },
+        },
+      } as unknown as ProposedWeek;
+
+      // 1. With split: 3 ideas, 1 scheduled, 2 pending -> rendered
+      const htmlWithSplit = renderToStaticMarkup(
+        <PlanningExtractedItemsReview
+          extractedItems={mockExtractedItems}
+          acceptedItemIds={acceptedIds}
+          acceptedCount={3}
+          handleAcceptAll={() => {}}
+          handleDiscardAll={() => {}}
+          handleStartFreshWeek={() => {}}
+          handleToggleItem={() => {}}
+          handleUpdateItemEffort={() => {}}
+          handleUpdateItemDeadline={() => {}}
+          noteText=""
+          setNoteText={() => {}}
+          isExtracting={false}
+          handleExtract={() => {}}
+          userIntent=""
+          setUserIntent={() => {}}
+          availableHoursInput="20"
+          setAvailableHoursInput={() => {}}
+          protectedSpacePercentInput="20"
+          setProtectedSpacePercentInput={() => {}}
+          isPlanning={false}
+          planningError={null}
+          selectedCarryOverItemIds={new Set()}
+          handleGenerateProposal={() => {}}
+          proposedWeek={mockProposalWithSplit}
+        />
+      );
+
+      expect(htmlWithSplit).toContain('data-testid="ideas-split-explanation"');
+      expect(htmlWithSplit).toContain(
+        "De tus 3 ideas, 1 entra en la semana y 2 quedan pendientes de decidir."
+      );
+
+      // 2. All scheduled: 3 ideas, 3 scheduled -> hidden
+      const mockProposalAllScheduled = {
+        foci: [
+          {
+            id: "f-1",
+            title: "Foco",
+            desiredOutcome: "Res",
+            contributingItemIds: ["item-1", "item-2", "item-3"],
+            rationale: "r",
+          },
+        ],
+        obligations: [],
+        flexibleOptions: [],
+        deferredItems: [],
+        weekSummary: {
+          targetWeek: { startDate: "2026-10-19", endDate: "2026-10-25" },
+        },
+      } as unknown as ProposedWeek;
+
+      const htmlAllScheduled = renderToStaticMarkup(
+        <PlanningExtractedItemsReview
+          extractedItems={mockExtractedItems}
+          acceptedItemIds={acceptedIds}
+          acceptedCount={3}
+          handleAcceptAll={() => {}}
+          handleDiscardAll={() => {}}
+          handleStartFreshWeek={() => {}}
+          handleToggleItem={() => {}}
+          handleUpdateItemEffort={() => {}}
+          handleUpdateItemDeadline={() => {}}
+          noteText=""
+          setNoteText={() => {}}
+          isExtracting={false}
+          handleExtract={() => {}}
+          userIntent=""
+          setUserIntent={() => {}}
+          availableHoursInput="20"
+          setAvailableHoursInput={() => {}}
+          protectedSpacePercentInput="20"
+          setProtectedSpacePercentInput={() => {}}
+          isPlanning={false}
+          planningError={null}
+          selectedCarryOverItemIds={new Set()}
+          handleGenerateProposal={() => {}}
+          proposedWeek={mockProposalAllScheduled}
+        />
+      );
+
+      expect(htmlAllScheduled).not.toContain('data-testid="ideas-split-explanation"');
     });
   });
 });

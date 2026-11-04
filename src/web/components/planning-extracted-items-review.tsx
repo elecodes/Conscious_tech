@@ -1,6 +1,9 @@
+import { useMemo } from "react";
 import { ExtractedItem } from "../../domain/items";
+import { ProposedWeek } from "../../domain/week";
 import { VoiceDictationButton } from "./voice-dictation-button";
 import { CalmIdeaCard } from "./calm-idea-card";
+import { formatIdeasSplitExplanation } from "../labels";
 
 export interface PlanningExtractedItemsReviewProps {
   extractedItems: ExtractedItem[];
@@ -27,6 +30,7 @@ export interface PlanningExtractedItemsReviewProps {
   selectedCarryOverItemIds: Set<string>;
   handleGenerateProposal: () => void;
   isProposalDirty?: boolean;
+  proposedWeek?: ProposedWeek | null;
 }
 
 export function PlanningExtractedItemsReview({
@@ -54,7 +58,24 @@ export function PlanningExtractedItemsReview({
   selectedCarryOverItemIds: _selectedCarryOverItemIds,
   handleGenerateProposal,
   isProposalDirty,
+  proposedWeek,
 }: PlanningExtractedItemsReviewProps) {
+  const scheduledCount = useMemo(() => {
+    if (!proposedWeek) return 0;
+    const scheduledIds = new Set<string>([
+      ...proposedWeek.foci.flatMap((f) =>
+        f.contributingItemIds && f.contributingItemIds.length > 0 ? f.contributingItemIds : [f.id]
+      ),
+      ...proposedWeek.obligations.map((o) => o.itemId),
+      ...proposedWeek.flexibleOptions.map((fl) => fl.itemId),
+    ]);
+    return Array.from(acceptedItemIds).filter((id) => scheduledIds.has(id)).length;
+  }, [proposedWeek, acceptedItemIds]);
+
+  const pendingCount = Math.max(0, acceptedCount - scheduledCount);
+  const splitExplanation = proposedWeek
+    ? formatIdeasSplitExplanation(acceptedCount, scheduledCount, pendingCount)
+    : null;
   return (
     <div
       style={{
@@ -105,6 +126,21 @@ export function PlanningExtractedItemsReview({
           </button>
         </div>
       </div>
+
+      {splitExplanation && (
+        <p
+          className="calm-text"
+          data-testid="ideas-split-explanation"
+          style={{
+            margin: "0 0 10px 0",
+            fontSize: "0.85rem",
+            color: "var(--accent-color, #2b6cb0)",
+            fontWeight: 500,
+          }}
+        >
+          {splitExplanation}
+        </p>
+      )}
 
       <p className="calm-muted" style={{ fontSize: "0.85rem", margin: "0 0 10px 0" }}>
         Selecciona qué elementos deseas incluir en la propuesta semanal. Los no seleccionados se
