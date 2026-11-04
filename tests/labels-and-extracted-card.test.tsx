@@ -168,7 +168,7 @@ describe("FIX 3: Spanish labels for enum badges", () => {
     });
 
     it("shows 'Tarea' and 'Pendiente' on the extracted-items card while preserving badge-task CSS class", () => {
-      const html = renderToStaticMarkup(<App service={service} initialTab="capture" />);
+      const html = renderToStaticMarkup(<App service={service} initialTab="prepare" />);
 
       // CSS class badge-task preserved
       expect(html).toContain('class="badge badge-task"');

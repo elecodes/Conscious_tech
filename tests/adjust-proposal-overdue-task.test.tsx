@@ -128,9 +128,8 @@ describe("Corregir el ajuste de una propuesta semanal y manejo de tareas vencida
     expect(html).toContain('data-testid="decision-recovery-item-mock-1"');
     expect(html).toContain('data-testid="decision-postpone-item-mock-1"');
 
-    // Botones de ajuste y confirmación
-    expect(html).toContain('data-testid="adjust-elements-button"');
-    expect(html).toContain('data-testid="confirm-plan-button"');
+    // Botón para continuar a la confirmación en el flujo guiado
+    expect(html).toContain('data-testid="flow-continue-to-confirm"');
   });
 
   it("3. Al incluir como prioridad de recuperación: agrega el foco, mantiene fecha original y avisa viabilidad no verificada", async () => {
@@ -333,7 +332,7 @@ describe("Corregir el ajuste de una propuesta semanal y manejo de tareas vencida
     // La propuesta contiene la intención original
     expect(html).toContain("Priorizar foco de recuperación y reuniones");
 
-    // El botón para ajustar elementos está presente
-    expect(html).toContain('data-testid="adjust-elements-button"');
+    // En el flujo guiado, el botón para continuar a la confirmación está presente
+    expect(html).toContain('data-testid="flow-continue-to-confirm"');
   });
 });

@@ -237,7 +237,22 @@ describe("Prioridad: Continuidad de la propuesta semanal (Borradores, recarga y 
     // Botones de acción y estado
     expect(html).toContain('data-testid="modify-capacity-button"');
     expect(html).toContain("Modificar capacidad");
-    expect(html).toContain("Confirmar y activar semana");
+    expect(html).toContain('data-testid="flow-continue-to-confirm"');
+    expect(html).toContain("Continuar a confirmar");
+
+    // Y en el paso de confirmación, se muestra el botón de confirmar y activar semana
+    const htmlConfirm = renderToStaticMarkup(
+      <WeeklySessionReactContext.Provider value={mockContext}>
+        <WeeklyPlanningFromNotes
+          provider={provider}
+          currentDate={currentDate}
+          initialItems={extractionResult.items}
+          initialProposedWeek={proposalWithRecovery}
+          initialStep="confirm"
+        />
+      </WeeklySessionReactContext.Provider>
+    );
+    expect(htmlConfirm).toContain("Confirmar y activar semana");
   });
 
   it("4. Confirmar y activar semana: promueve el borrador a 'active', elimina el borrador y crea exactamente un plan activo", async () => {

@@ -208,8 +208,8 @@ describe("Fase P5.4 — Conectar la entrada de ideas con la planificación seman
         </WeeklySessionReactContext.Provider>
       );
 
-      expect(html).toContain("¿Qué tienes en mente para planificar?");
-      expect(html).toContain("Analizar y extraer elementos");
+      expect(html).toContain("¿Qué tienes en la cabeza?");
+      expect(html).toContain("Continuar");
       expect(html).toContain("IA propone · Tú decides");
     });
 
@@ -223,8 +223,8 @@ describe("Fase P5.4 — Conectar la entrada de ideas con la planificación seman
           <WeeklySessionView provider={mockProvider} />
         </WeeklySessionReactContext.Provider>
       );
-      expect(html).toContain("¿Qué tienes en mente para planificar?");
-      expect(html).toContain("Analizar y extraer elementos");
+      expect(html).toContain("¿Qué tienes en la cabeza?");
+      expect(html).toContain("Continuar");
     });
 
     it("debe advertir si se planifica mientras existe una semana activa", () => {

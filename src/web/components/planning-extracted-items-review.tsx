@@ -1,6 +1,6 @@
 import { ExtractedItem } from "../../domain/items";
-import { formatItemType } from "../labels";
 import { VoiceDictationButton } from "./voice-dictation-button";
+import { CalmIdeaCard } from "./calm-idea-card";
 
 export interface PlanningExtractedItemsReviewProps {
   extractedItems: ExtractedItem[];
@@ -127,161 +127,16 @@ export function PlanningExtractedItemsReview({
           }}
           aria-label="Lista de elementos identificados"
         >
-          {extractedItems.map((item) => {
-            const isAccepted = acceptedItemIds.has(item.id);
-            return (
-              <li
-                key={item.id}
-                className="item-card"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "8px 12px",
-                  background: isAccepted ? "var(--bg-highlight, #fdfdfd)" : "#fafafa",
-                  opacity: isAccepted ? 1 : 0.6,
-                  border: isAccepted
-                    ? "1px solid var(--border-color, #e0ded9)"
-                    : "1px dashed #d1d5db",
-                  borderRadius: "6px",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  id={`item-check-${item.id}`}
-                  checked={isAccepted}
-                  onChange={() => handleToggleItem(item.id)}
-                  aria-label={`Incluir elemento ${item.title}`}
-                  style={{ cursor: "pointer", flexShrink: 0 }}
-                />
-                <div
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "6px",
-                    minWidth: 0,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: "8px",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <strong
-                      style={{
-                        fontSize: "0.92rem",
-                        textDecoration: isAccepted ? "none" : "line-through",
-                        color: isAccepted ? "inherit" : "var(--text-muted, #888)",
-                      }}
-                    >
-                      {item.title}
-                    </strong>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <span className={`badge badge-${item.type}`}>
-                        {formatItemType(item.type)}
-                      </span>
-                      {item.project && <span className="badge badge-muted">📁 {item.project}</span>}
-                      {item.estimatedEffort && (
-                        <span className="badge badge-muted">
-                          ⏱ {item.estimatedEffort.value} {item.estimatedEffort.unit}
-                        </span>
-                      )}
-                      {item.deadline && (
-                        <span className="badge badge-muted" style={{ color: "#b45309" }}>
-                          📅 {item.deadline.raw}{" "}
-                          {item.deadline.resolved ? `(${item.deadline.resolved})` : ""}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {isAccepted && (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "14px",
-                        flexWrap: "wrap",
-                        fontSize: "0.82rem",
-                        color: "var(--text-muted, #666)",
-                        marginTop: "2px",
-                      }}
-                    >
-                      <label
-                        htmlFor={`item-effort-${item.id}`}
-                        style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
-                      >
-                        <span>⏱️ Horas:</span>
-                        <input
-                          id={`item-effort-${item.id}`}
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.5"
-                          placeholder="Sin estimar"
-                          value={item.estimatedEffort?.value ?? ""}
-                          onChange={(e) => {
-                            const val = e.target.value === "" ? null : Number(e.target.value);
-                            handleUpdateItemEffort(item.id, val);
-                          }}
-                          style={{
-                            width: "80px",
-                            padding: "2px 6px",
-                            fontSize: "0.82rem",
-                            borderRadius: "4px",
-                            border: "1px solid var(--border-color, #ccc)",
-                            background: "var(--bg-card, #fff)",
-                          }}
-                          aria-label={`Horas estimadas para ${item.title}`}
-                        />
-                        <span>h</span>
-                      </label>
-
-                      <label
-                        htmlFor={`item-deadline-${item.id}`}
-                        style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
-                      >
-                        <span>📅 Límite / Fecha:</span>
-                        <input
-                          id={`item-deadline-${item.id}`}
-                          type="date"
-                          value={
-                            item.deadline?.resolved ||
-                            (item.deadline?.raw && /^\d{4}-\d{2}-\d{2}$/.test(item.deadline.raw)
-                              ? item.deadline.raw
-                              : "")
-                          }
-                          onChange={(e) => {
-                            handleUpdateItemDeadline(item.id, e.target.value || null);
-                          }}
-                          style={{
-                            padding: "2px 6px",
-                            fontSize: "0.82rem",
-                            borderRadius: "4px",
-                            border: "1px solid var(--border-color, #ccc)",
-                            background: "var(--bg-card, #fff)",
-                          }}
-                          aria-label={`Fecha límite para ${item.title}`}
-                        />
-                      </label>
-                    </div>
-                  )}
-                </div>
-              </li>
-            );
-          })}
+          {extractedItems.map((item) => (
+            <CalmIdeaCard
+              key={item.id}
+              item={item}
+              isAccepted={acceptedItemIds.has(item.id)}
+              onToggle={() => handleToggleItem(item.id)}
+              onUpdateEffort={handleUpdateItemEffort}
+              onUpdateDeadline={handleUpdateItemDeadline}
+            />
+          ))}
         </ul>
       )}
 

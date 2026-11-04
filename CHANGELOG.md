@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.25.0] - 2026-11-04
+
+### Guided Flow "Nueva semana" & Card Simplification (ADR 0027)
+
+- **Guided Flow "Nueva semana" (Escribir → Revisar → Confirmar)**:
+  - Replaced the fragmented "Ideas" and "Planificar" tabs with a unified three-step guided progression with a visible step indicator line (`step-indicator-write`, `step-indicator-review`, `step-indicator-confirm`).
+  - **Escribir**: Single clean textarea with sample case selector and "Continuar →" button. Clicking "Continuar" runs item extraction and weekly proposal generation using existing domain functions and contracts. In case of error, the user stays on the step with entered notes completely preserved.
+  - **Revisar**: Presents extracted items as calm idea cards with checkboxes alongside the generated proposal (capacity one-sentence summary, scheduled items, and collapsed deferred items). Kept "Añadir más ideas", "Opciones" (target dates, calendar sync, clean start), and voice dictation compact/collapsed. Includes a visible "← Volver a escribir" button preserving text and selections.
+  - **Confirmar**: Dedicated final confirmation view with the primary "Confirmar y activar semana" action and collapsed "Más acciones" menu. Includes a visible "← Volver a revisar" button. After confirming, automatically transitions to "Mi semana".
+- **Calm Idea Cards (CalmIdeaCard)**:
+  - Simplified extracted idea cards to show only title, deadline badge (if present), and the selection checkbox by default.
+  - Moved secondary metadata (type, project, status badges, effort estimation, and source quote) behind a per-card accessible "Detalles" toggle button (`aria-expanded`, keyboard navigable).
+- **Navigation Simplified to 2 Tabs**:
+  - Reduced main tabs to "Mi semana" and "Nueva semana".
+  - Moved cycle closing into a clear "Cerrar semana →" button inside "Mi semana" that opens the reflective closing view without changing component logic.
+  - Next-step suggestion bar only appears when a decision or action is pending; automatically hidden on "Mi semana" when an active week is ongoing with nothing pending.
+  - Preserved ADR 0025 landing tab rule: no active week and no draft opens "Nueva semana" at Escribir; pending draft opens "Nueva semana" at Revisar; active week opens "Mi semana".
+- **First-Run Welcome & Contextual Help**:
+  - Added a dismissible three-line welcome card ("Escribe → Revisa → Vive tu semana"), shown once via local storage flag (`conscious_tech_welcome_dismissed`) and re-openable at any time from "Ajustes".
+  - Added "¿Qué es esto?" contextual help details on "Imprevistos" and "Lo que he aprendido".
+- **Strict Backward Compatibility & Quality Gates**:
+  - Preserved all `NavigationSpace` values (`capture`, `prepare`, `active`, `review`) and localStorage keys; mapped legacy spaces seamlessly to the new guided UI.
+  - Zero changes to business logic, domain entities, AI skills, or persistence layer.
+  - Full automated test suite (70 test files, 941 tests) passing.
+  - Extended browser smoke test (`scripts/smoke-test.ts`) validating end-to-end guided flow, step back navigation with note preservation, calm card toggle, and reload tests with draft and active week across both `preview` and `dev` environments.
+
 ## [0.24.0] - 2026-11-04
 
 ### Reminders in Calendar Export & Client-Side Email Summary (ADR 0026)

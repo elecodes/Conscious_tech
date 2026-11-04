@@ -122,7 +122,18 @@ export function WeeklyReflectiveClosingSection({
         }}
       >
         <h3>Cierre de semana</h3>
-        <div style={{ display: "flex", gap: "6px" }}>
+        <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+          {onNavigateSpace && (
+            <button
+              type="button"
+              className="secondary small"
+              onClick={() => onNavigateSpace("active")}
+              data-testid="back-to-active-week-button"
+              style={{ fontSize: "0.8rem", padding: "3px 8px" }}
+            >
+              ← Volver a Mi semana
+            </button>
+          )}
           <button
             type="button"
             className={closeStep === "dispositions" ? "primary" : "secondary"}

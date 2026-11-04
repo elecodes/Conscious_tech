@@ -18,6 +18,7 @@ import {
   WeeklySessionView,
   formatUnscheduledCategory,
 } from "../src/web/components/weekly-session-view";
+import { WeeklyPlanningFromNotes } from "../src/web/components/weekly-planning-from-notes";
 import { PlanningCapacityHud } from "../src/web/components/planning-capacity-hud";
 import { ProposedWeek } from "../src/domain/week";
 import { MockProvider } from "../src/providers/mock-provider";
@@ -79,18 +80,23 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     };
   }
 
-  it("1. App renderiza los 4 espacios de navegación guiada e indicador de proceso", () => {
+  it("1. App renderiza los 2 espacios de navegación guiada, bienvenida e indicador de proceso", () => {
     const html = renderToStaticMarkup(<App service={service} initialTab="active" />);
 
-    // 4 pestañas de navegación
-    expect(html).toContain("Ideas");
-    expect(html).toContain("Planificar");
+    // 2 pestañas de navegación principales: Mi semana y Nueva semana
     expect(html).toContain("Mi semana");
-    expect(html).toContain("Cierre");
+    expect(html).toContain("Nueva semana");
+    expect(html).not.toContain('data-testid="nav-tab-capture"');
+    expect(html).not.toContain('data-testid="nav-tab-prepare"');
+    expect(html).not.toContain('data-testid="nav-tab-review"');
 
     // Indicador de estado del proceso
     expect(html).toContain("process-status-badge");
     expect(html).toContain("Borrador / Sin semana activa");
+
+    // Tarjeta de bienvenida de primer uso
+    expect(html).toContain("welcome-card");
+    expect(html).toContain("Escribe → Revisa → Vive tu semana");
 
     // Barra de siguiente paso guiado (inicial: nada capturado)
     expect(html).toContain("next-step-bar");
@@ -185,9 +191,8 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     );
 
     // Debe indicar claramente que la semana activa continúa protegida
-    expect(htmlPrepare).toContain("Planificar");
-    expect(htmlPrepare).toContain("Semana activa: 2026-10-12 al 2026-10-18");
-    expect(htmlPrepare).toContain("sin alterar la semana activa");
+    expect(htmlPrepare).toContain("Nueva semana");
+    expect(htmlPrepare).toContain("Actualmente ya tienes una semana activa en curso");
   });
 
   it("4. Categorías de elementos no programados reflejan estados honestos", () => {
@@ -556,8 +561,8 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     expect(html).toContain('data-testid="sample-case-select"');
   });
 
-  it("13. Landing tab se elige según el estado (vacío -> Ideas, activa -> Mi semana, borrador -> Planificar)", () => {
-    // A) Estado vacío -> aterriza en Ideas (capture)
+  it("13. Landing tab se elige según el estado (vacío -> Nueva semana at Escribir, activa -> Mi semana, borrador -> Nueva semana at Revisar)", () => {
+    // A) Estado vacío -> aterriza en Nueva semana (nav-tab-new-week) en el paso Escribir
     const emptyState = {
       ...initialWeeklySessionState,
       status: "no_active_session" as const,
@@ -565,12 +570,11 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
       draftPlan: null,
     };
     const htmlEmpty = renderToStaticMarkup(<App service={service} initialState={emptyState} />);
-    expect(htmlEmpty).toContain('data-testid="nav-tab-capture"');
-    // Tab Ideas está resaltado (primary)
+    expect(htmlEmpty).toContain('data-testid="nav-tab-new-week"');
     expect(htmlEmpty).toMatch(
-      /<button[^>]*class="[^"]*primary[^"]*"[^>]*data-testid="nav-tab-capture"/
+      /<button[^>]*class="[^"]*primary[^"]*"[^>]*data-testid="nav-tab-new-week"/
     );
-    // Barra de siguiente paso y pestaña coinciden en Ideas, sin botón redundante
+    expect(htmlEmpty).toContain('data-testid="flow-step-write"');
     expect(htmlEmpty).toContain("Escribe lo que tienes en la cabeza");
     expect(htmlEmpty).not.toContain('data-testid="next-step-button"');
 
@@ -612,10 +616,10 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     expect(htmlActive).toMatch(
       /<button[^>]*class="[^"]*primary[^"]*"[^>]*data-testid="nav-tab-active"/
     );
-    expect(htmlActive).toContain("Esta es tu semana");
-    expect(htmlActive).not.toContain('data-testid="next-step-button"');
+    // En Mi semana con semana activa y nada pendiente, la barra de siguiente paso está oculta
+    expect(htmlActive).not.toContain('data-testid="next-step-bar"');
 
-    // C) Borrador pendiente -> aterriza en Planificar (prepare)
+    // C) Borrador pendiente -> aterriza en Nueva semana (nav-tab-new-week) en el paso Revisar
     const draftState = {
       ...initialWeeklySessionState,
       status: "no_active_session" as const,
@@ -652,7 +656,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     };
     const htmlDraft = renderToStaticMarkup(<App service={service} initialState={draftState} />);
     expect(htmlDraft).toMatch(
-      /<button[^>]*class="[^"]*primary[^"]*"[^>]*data-testid="nav-tab-prepare"/
+      /<button[^>]*class="[^"]*primary[^"]*"[^>]*data-testid="nav-tab-new-week"/
     );
     expect(htmlDraft).toContain("Revisa y confirma la propuesta");
     expect(htmlDraft).not.toContain('data-testid="next-step-button"');
@@ -674,20 +678,20 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
       draftPlan: null,
     };
 
-    // En Ideas con target Ideas -> botón oculto
+    // En Nueva semana (capture) con target capture -> botón oculto
     const htmlCapture = renderToStaticMarkup(
       <App service={service} initialState={emptyState} initialTab="capture" />
     );
     expect(htmlCapture).toContain("Escribe lo que tienes en la cabeza");
     expect(htmlCapture).not.toContain('data-testid="next-step-button"');
 
-    // En Planificar con target Ideas -> botón visible para volver a Ideas
-    const htmlPrepare = renderToStaticMarkup(
-      <App service={service} initialState={emptyState} initialTab="prepare" />
+    // En Mi semana con target capture -> botón visible para comenzar semana
+    const htmlActiveEmpty = renderToStaticMarkup(
+      <App service={service} initialState={emptyState} initialTab="active" />
     );
-    expect(htmlPrepare).toContain("Escribe lo que tienes en la cabeza");
-    expect(htmlPrepare).toContain('data-testid="next-step-button"');
-    expect(htmlPrepare).toContain("Ir a Ideas →");
+    expect(htmlActiveEmpty).toContain("Escribe lo que tienes en la cabeza");
+    expect(htmlActiveEmpty).toContain('data-testid="next-step-button"');
+    expect(htmlActiveEmpty).toContain("Nueva semana →");
   });
 
   it("15. Balance de capacidad oculta la chapa redundante cuando la capacidad no está configurada", () => {
@@ -737,7 +741,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     expect(html).not.toContain("Capacidad no configurada");
   });
 
-  it("16. Textos actualizados: Volver a Ideas y Elige qué entra en tu semana", async () => {
+  it("16. Textos actualizados y navegación visible de vuelta en el flujo guiado", async () => {
     await controller.reloadSession();
     const contextVal = createMockContextValue();
     const html = renderToStaticMarkup(
@@ -750,11 +754,116 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
       </WeeklySessionReactContext.Provider>
     );
 
-    expect(html).toContain("Volver a Ideas");
-    expect(html).not.toContain("Volver a Capturar");
-    expect(html).toContain("Elige qué entra en tu semana.");
-    expect(html).not.toContain(
-      "Configura tu semana objetivo, capacidad y foco a partir de tus notas o elementos extraídos."
+    // En Revisar tiene botón para volver a escribir
+    expect(html).toContain("← Volver a escribir");
+    expect(html).toContain("Elige qué entra en tu semana con calma");
+  });
+
+  it("17. Flujo guiado Nueva semana: línea de progreso visible y botones 'Volver' en cada paso", async () => {
+    await controller.reloadSession();
+    const contextVal = createMockContextValue();
+
+    // Paso 1: Escribir
+    const htmlStep1 = renderToStaticMarkup(
+      <WeeklySessionReactContext.Provider value={contextVal}>
+        <WeeklyPlanningFromNotes provider={mockProvider} initialStep="write" />
+      </WeeklySessionReactContext.Provider>
     );
+    expect(htmlStep1).toContain("guided-flow-progress");
+    expect(htmlStep1).toContain("step-indicator-write");
+    expect(htmlStep1).toContain("step-indicator-review");
+    expect(htmlStep1).toContain("step-indicator-confirm");
+    expect(htmlStep1).toContain("flow-step-write");
+    expect(htmlStep1).toContain("flow-continue-to-review");
+
+    // Paso 2: Revisar
+    const htmlStep2 = renderToStaticMarkup(
+      <WeeklySessionReactContext.Provider value={contextVal}>
+        <WeeklyPlanningFromNotes
+          provider={mockProvider}
+          initialStep="review"
+          initialItems={[
+            {
+              id: "item-1",
+              title: "Tarea de prueba",
+              rawText: "Hacer tarea",
+              type: "task",
+              status: "pending",
+            },
+          ]}
+        />
+      </WeeklySessionReactContext.Provider>
+    );
+    expect(htmlStep2).toContain("flow-step-review");
+    expect(htmlStep2).toContain("flow-back-to-write");
+    expect(htmlStep2).toContain("flow-continue-to-confirm");
+    expect(htmlStep2).toContain("idea-card-item-1");
+    expect(htmlStep2).toContain("details-toggle-item-1");
+
+    // Paso 3: Confirmar
+    const sampleWeek: ProposedWeek = {
+      weekSummary: {
+        targetWeek: { startDate: "2026-10-19", endDate: "2026-10-25" },
+        capacity: {
+          totalAvailableHours: 20,
+          plannableHours: 15,
+          plannedHours: 10,
+          knownEstimatedHours: 10,
+          estimationCompleteness: "complete",
+          protectedSpaceHours: 5,
+          capacityStatus: "within_capacity",
+          protectedSpaceStatus: "respected",
+        },
+        intent: "Semana guiada",
+      },
+      foci: [],
+      obligations: [],
+      flexibleOptions: [],
+      deferredItems: [],
+      unplannedSpace: { rationale: "margen", recommendedHours: 5 },
+      confirmationPrompt: { question: "¿Activar?", keyTradeoffs: [], pendingQuestions: [] },
+    };
+    const htmlStep3 = renderToStaticMarkup(
+      <WeeklySessionReactContext.Provider value={contextVal}>
+        <WeeklyPlanningFromNotes
+          provider={mockProvider}
+          initialStep="confirm"
+          initialProposedWeek={sampleWeek}
+        />
+      </WeeklySessionReactContext.Provider>
+    );
+    expect(htmlStep3).toContain("flow-step-confirm");
+    expect(htmlStep3).toContain("flow-back-to-review");
+    expect(htmlStep3).toContain("confirm-plan-button");
+    expect(htmlStep3).toContain("proposal-more-actions-details");
+  });
+
+  it("18. Tarjeta de bienvenida de primer uso y reapertura desde Ajustes", () => {
+    const html = renderToStaticMarkup(<App service={service} initialTab="active" />);
+
+    // Tarjeta presente por defecto (primer uso)
+    expect(html).toContain('data-testid="welcome-card"');
+    expect(html).toContain('data-testid="dismiss-welcome-button"');
+    expect(html).toContain("Escribe → Revisa → Vive tu semana");
+
+    // Opción para reabrir en Ajustes
+    expect(html).toContain('data-testid="settings-welcome-section"');
+    expect(html).toContain('data-testid="reopen-welcome-button"');
+    expect(html).toContain("Mostrar bienvenida");
+  });
+
+  it("19. Ayuda contextual '¿Qué es esto?' en Imprevistos y Recuerdos confirmados", async () => {
+    await controller.reloadSession();
+    const contextVal = createMockContextValue();
+    const htmlActive = renderToStaticMarkup(
+      <WeeklySessionReactContext.Provider value={contextVal}>
+        <WeeklySessionView provider={mockProvider} activeSpace="active" />
+      </WeeklySessionReactContext.Provider>
+    );
+
+    // Ayuda en Recuerdos confirmados
+    expect(htmlActive).toContain('data-testid="help-memories"');
+    expect(htmlActive).toContain("¿Qué es esto?");
+    expect(htmlActive).toContain("Patrones, preferencias y aprendizajes confirmados");
   });
 });

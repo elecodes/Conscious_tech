@@ -432,7 +432,7 @@ describe("Fase P5.5 — Auditoría de seguridad y preparación para pruebas con 
       );
 
       expect(html).toContain("IA propone · Tú decides");
-      expect(html).toContain("¿Qué tienes en mente para planificar?");
+      expect(html).toContain("¿Qué tienes en la cabeza?");
     });
 
     it("auditoría estática confirma que no se almacenan secretos en localStorage en el código fuente", () => {

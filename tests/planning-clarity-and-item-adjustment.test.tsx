@@ -150,7 +150,7 @@ describe("Claridad de Navegación y Ajuste de Elementos en Preparación", () => 
   it("WeeklyPlanningFromNotes calcula la semana siguiente por defecto cuando existe una semana activa", () => {
     const html = renderToStaticMarkup(
       <WeeklySessionReactContext.Provider value={dummyContext}>
-        <WeeklyPlanningFromNotes provider={mockProvider} />
+        <WeeklyPlanningFromNotes provider={mockProvider} initialStep="review" />
       </WeeklySessionReactContext.Provider>
     );
 
