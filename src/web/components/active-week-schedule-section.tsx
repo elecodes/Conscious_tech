@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { WeeklySchedule } from "../../domain/schedule";
 import { StoredWeeklyPlan } from "../../domain/repositories/types";
 import { buildGoogleCalendarTemplateUrl, generateIcsCalendarExport } from "../../domain/calendar";
+import { getStoredReminderPreferences } from "../../domain/reminders";
 import { PlanItemSummary } from "./weekly-reflective-closing-section";
 import { ActiveWeekAdjustmentPanel } from "./active-week-adjustment-panel";
+import { CalendarReminderSettings } from "./calendar-reminder-settings";
+import { EmailSummaryCard } from "./email-summary-card";
 
 export interface ActiveWeekScheduleSectionProps {
   schedule: WeeklySchedule;
@@ -57,6 +61,49 @@ export function ActiveWeekScheduleSection({
   applyAdjustment,
   setFeedbackMessage,
 }: ActiveWeekScheduleSectionProps) {
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+
+  const handleDownloadWeekIcs = () => {
+    const prefs = getStoredReminderPreferences();
+    const exportItems = planItems.map((item) => {
+      const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
+      const timeBlock = schedule.timeBlocks.find((tb) => tb.itemId === item.itemId);
+      const day = alloc ? alloc.day : item.dueDate || plan?.targetWeek.startDate || "2026-10-19";
+      const isObligation =
+        item.source === "Obligación" || item.source?.toLowerCase().includes("obligaci");
+      return {
+        id: item.itemId,
+        title: item.title,
+        day,
+        startTime: timeBlock?.startTime,
+        durationHours: item.estimatedHours || 1,
+        description: `Categoría: ${item.source}${item.rationale ? `\nMotivo: ${item.rationale}` : ""}`,
+        isCommitment: isObligation,
+        hasDeadline: Boolean(item.dueDate),
+        allDay: !timeBlock,
+      };
+    });
+    const icsContent = generateIcsCalendarExport(exportItems, {
+      calendarName: "Conscious Tech — Semana Activa",
+      reminderOffset: prefs.offset,
+      includeTasksInAlarms: prefs.includeTasks,
+      timeZone: "Europe/Madrid",
+    });
+    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `conscious-tech-semana-${plan?.targetWeek.startDate || "activa"}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setExportNotice(
+      "Archivo .ics descargado con recordatorios. Para importarlo en Google Calendar: entra en Ajustes → Importar y exportar → Selecciona el archivo descargado."
+    );
+  };
+
   return (
     <section
       className="results-section"
@@ -81,50 +128,131 @@ export function ActiveWeekScheduleSection({
           </span>
         </div>
         {planItems.length > 0 && (
-          <button
-            type="button"
-            className="secondary small"
-            data-testid="export-week-to-gcal"
-            style={{
-              fontSize: "0.8rem",
-              padding: "4px 10px",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "5px",
-            }}
-            onClick={() => {
-              const exportItems = planItems.map((item) => {
-                const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
-                const day = alloc
-                  ? alloc.day
-                  : item.dueDate || plan?.targetWeek.startDate || "2026-10-19";
-                return {
-                  title: item.title,
-                  day,
-                  durationHours: item.estimatedHours || 1,
-                  description: `Categoría: ${item.source}${item.rationale ? `\nMotivo: ${item.rationale}` : ""}`,
-                };
-              });
-              const icsContent = generateIcsCalendarExport(
-                exportItems,
-                "Conscious Tech — Semana Activa"
-              );
-              const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `conscious-tech-semana-${plan?.targetWeek.startDate || "activa"}.ics`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-            }}
-          >
-            <span>📅</span>
-            <span>Exportar semana (.ics / Google Cal)</span>
-          </button>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="primary small"
+              data-testid="add-week-to-gcal-button"
+              style={{
+                fontSize: "0.8rem",
+                padding: "4px 10px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+              }}
+              title="Descarga el archivo .ics con tus tareas y recordatorios para importar en Google Calendar"
+              onClick={handleDownloadWeekIcs}
+            >
+              <span>📅</span>
+              <span>Añadir semana a Google Calendar (.ics)</span>
+            </button>
+            <button
+              type="button"
+              className="secondary small"
+              data-testid="open-email-summary-top-button"
+              style={{
+                fontSize: "0.8rem",
+                padding: "4px 10px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+              }}
+              onClick={() => {
+                setIsExportOpen(true);
+                setTimeout(() => {
+                  const el = document.getElementById("email-summary-card-wrapper");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }, 50);
+              }}
+            >
+              <span>✉️</span>
+              <span>Enviar a Gmail / Correo</span>
+            </button>
+            <button
+              type="button"
+              className="secondary small"
+              data-testid="export-week-to-gcal"
+              style={{
+                fontSize: "0.8rem",
+                padding: "4px 10px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+              }}
+              onClick={handleDownloadWeekIcs}
+            >
+              <span>Exportar (.ics)</span>
+            </button>
+          </div>
         )}
       </div>
+
+      {exportNotice && (
+        <div
+          className="status-message status-success"
+          style={{
+            marginBottom: "14px",
+            fontSize: "0.84rem",
+            padding: "12px 14px",
+            background: "#f0fdf4",
+            border: "1px solid #bbf7d0",
+            borderRadius: "6px",
+          }}
+          role="status"
+          data-testid="gcal-import-note"
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: "10px",
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 600, color: "#166534", marginBottom: "4px" }}>
+                ✓ Archivo .ics descargado en tu equipo
+              </div>
+              <p style={{ margin: "2px 0 8px 0", fontSize: "0.8rem", color: "#1e3a5f" }}>
+                Para que aparezca en tu Google Calendar y sincronice con tu móvil, impórtalo en la
+                web de Google Calendar:
+              </p>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                <a
+                  href="https://calendar.google.com/calendar/u/0/r/settings/export"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="button primary small"
+                  style={{
+                    fontSize: "0.8rem",
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    padding: "4px 10px",
+                  }}
+                  data-testid="open-gcal-import-web-button"
+                >
+                  <span>📅</span>
+                  <span>Abrir importador de Google Calendar</span>
+                </a>
+                <span className="calm-muted" style={{ fontSize: "0.76rem" }}>
+                  (En Ajustes → Importar y exportar, selecciona el archivo descargado)
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="secondary small"
+              onClick={() => setExportNotice(null)}
+              style={{ padding: "2px 6px", fontSize: "0.75rem", minWidth: "auto" }}
+              aria-label="Cerrar aviso"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="items-list" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {planItems.length === 0 ? (
@@ -242,7 +370,7 @@ export function ActiveWeekScheduleSection({
                         alignItems: "center",
                         gap: "4px",
                       }}
-                      title="Abrir y guardar en Google Calendar con 1 clic"
+                      title="Abrir y guardar en Google Calendar en 1 clic (sincroniza directo con tu móvil)"
                       onClick={() => {
                         const day = alloc
                           ? alloc.day
@@ -257,7 +385,7 @@ export function ActiveWeekScheduleSection({
                       }}
                     >
                       <span>📅</span>
-                      <span>Google Cal</span>
+                      <span>Google Cal (1 clic)</span>
                     </button>
                   </div>
                 </details>
@@ -266,7 +394,7 @@ export function ActiveWeekScheduleSection({
           })
         )}
 
-        {schedule.timeBlocks.length > 0 && (
+        {schedule.timeBlocks && schedule.timeBlocks.length > 0 && (
           <div style={{ marginTop: "16px" }}>
             <h4 style={{ margin: "0 0 8px 0" }}>Bloques de horario específico</h4>
             {schedule.timeBlocks.map((block, idx) => (
@@ -283,6 +411,115 @@ export function ActiveWeekScheduleSection({
           </div>
         )}
       </div>
+
+      {planItems.length > 0 && (
+        <details
+          className="calm-details"
+          data-testid="reminders-and-alerts-details"
+          open={isExportOpen}
+          onToggle={(e) => setIsExportOpen((e.target as HTMLDetailsElement).open)}
+          style={{
+            marginTop: "16px",
+            background: "var(--surface-warm, #fcfbf8)",
+            border: "1px solid var(--border-color, #e6ded1)",
+            borderRadius: "8px",
+            padding: "10px 14px",
+          }}
+        >
+          <summary
+            style={{
+              cursor: "pointer",
+              fontWeight: 500,
+              fontSize: "0.88rem",
+              userSelect: "none",
+            }}
+            data-testid="reminders-and-alerts-summary"
+          >
+            📤 Exportar y compartir semana (Google Calendar, Gmail y recordatorios y avisos)
+          </summary>
+          <div
+            style={{
+              marginTop: "12px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+            }}
+          >
+            <div id="email-summary-card-wrapper">
+              <EmailSummaryCard
+                targetWeek={plan?.targetWeek || { startDate: "2026-10-19", endDate: "2026-10-25" }}
+                items={planItems.map((item) => {
+                  const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
+                  return {
+                    title: item.title,
+                    day: alloc ? alloc.day : item.dueDate,
+                    source: item.source,
+                  };
+                })}
+              />
+            </div>
+
+            <div
+              style={{
+                background: "#ffffff",
+                padding: "12px",
+                border: "1px solid var(--border-color, #e6ded1)",
+                borderRadius: "6px",
+              }}
+            >
+              <h4 style={{ margin: "0 0 6px 0", fontSize: "0.9rem" }}>
+                Recordatorios y avisos de calendario
+              </h4>
+              <p className="calm-muted" style={{ margin: "0 0 8px 0", fontSize: "0.78rem" }}>
+                Configura los avisos para eventos con fecha y hora al exportar a Google Calendar o Apple Calendar.
+              </p>
+              <CalendarReminderSettings compact />
+              <div
+                style={{
+                  marginTop: "10px",
+                  display: "flex",
+                  gap: "8px",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <button
+                  type="button"
+                  className="secondary small"
+                  data-testid="download-ics-from-reminders-button"
+                  style={{
+                    fontSize: "0.8rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                  }}
+                  onClick={handleDownloadWeekIcs}
+                >
+                  <span>📅</span>
+                  <span>Añadir semana a Google Calendar (.ics)</span>
+                </button>
+                <a
+                  href="https://calendar.google.com/calendar/u/0/r/settings/export"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="button secondary small"
+                  style={{
+                    fontSize: "0.8rem",
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                  }}
+                  data-testid="link-gcal-settings-export"
+                >
+                  <span>↗</span>
+                  <span>Importar en Google Calendar Web</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </details>
+      )}
 
       <ActiveWeekAdjustmentPanel
         schedule={schedule}

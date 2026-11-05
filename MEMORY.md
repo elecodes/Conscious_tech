@@ -356,6 +356,32 @@ Implemented and calibrated skills:
 - **Limpieza de lenguaje**: Reemplazo de jerga interna («Radar» $\rightarrow$ «Imprevistos», «Memorias activas confirmadas» $\rightarrow$ «Lo que he aprendido», «Cierre reflexivo» $\rightarrow$ «Cierre de semana», «volcado mental» $\rightarrow$ «ideas de tu captura»).
 - **Red de seguridad completa**: Validación exhaustiva en CI mediante Playwright (`test:smoke`) en Chromium real y pruebas de denegación de voseo (`voseo-denylist.test.ts`), con 918 pruebas pasando y 0 dependencias circulares.
 
+19. **Flujo Guiado «Nueva semana», Simplificación de Tarjetas y Pulido (v0.25.0 - v0.25.1 / ADR 0027)**:
+
+- **Flujo Guiado Unificado (Escribir → Revisar → Confirmar)**: Reemplazo de las pestañas fragmentadas de Ideas y Planificar por una línea de progreso visible en 3 etapas. Conservación total de notas y selecciones en navegaciones hacia atrás.
+- **CalmIdeaCard**: Tarjetas limpias con título, fecha límite y casilla visible; detalles técnicos secundarios agrupados tras botón accesible «Detalles» (`aria-expanded`).
+- **Navegación a 2 Espacios**: Reducción de la navegación principal a «Mi semana» y «Nueva semana». Integración del cierre de ciclo en Mi semana.
+- **Pulido Visual y Redundancias**: Eliminación de insignias duplicadas («IA propone · Tú decides» y «Borrador en cuaderno local») en Revisar, Confirmar y Mi semana.
+- **Reparto 5 → 2 + 3**: Explicación contextual de división de ideas bajo elementos identificados con flexión singular/plural correcta, oculta si todo está programado.
+- **Títulos Limpios sin IDs**: Corrección en `extractPlanItems` para resolver títulos limpios de tareas a partir de `draftContext.extractedItems` o el foco a secas, eliminando la interpolación de IDs técnicos `(${itemId})` en la agenda y resumen de correo.
+- **Claridad de Proveedor en Ajustes**: Mensaje informativo explicativo bajo el selector cuando el modo Mock determinista está activo, preservando el proveedor predeterminado.
+- **Cobertura Automatizada Exhaustiva**: Tests para persistencia de recordatorios (`localStorage`), límites seguros de URL en resumen por correo (< 3.500 caracteres), codificación de caracteres especiales, ausencia de destinatario, copia íntegra al portapapeles y prueba de humo ampliada en Chromium real (953 tests en 70 suites).
+
+20. **Resolución de Exportación a Calendario y «Enviarme el resumen por correo» (Gmail y Calendario)**:
+
+- **Descubrimiento y Acceso Inmediato en «Mi semana»**:
+  - Se añadió el botón superior `✉️ Enviar a Gmail / Correo` junto a los accesos directos de la cabecera de la agenda activa.
+  - Se renombró el contenedor inferior colapsado a `📤 Exportar y compartir semana (Google Calendar, Gmail y recordatorios y avisos)` y se sincronizó su apertura automática (`open={isExportOpen}`) al pulsar el botón superior, posicionando el scroll directo sobre la tarjeta de correo.
+- **Blindaje de Longitud de URL y Prevención de HTTP 400**:
+  - Se acotó la longitud codificada de la URL a un techo estricto de < 1.800 caracteres en `src/domain/email-summary.ts` mediante truncado por búsqueda binaria sobre caracteres seguros, impidiendo que Google Frontend rechace peticiones por URI excesiva (`400 Bad Request` / `414 URI Too Long`).
+  - Se corrigió la sintaxis HTML del atributo `rel` en el enlace a Gmail de `rel="noopener,noreferrer"` a `rel="noopener noreferrer"`.
+  - El botón «Copiar resumen» sigue copiando el 100% del texto íntegro sin truncar al portapapeles.
+  - Se corrigió el alcance de estilos CSS en `style.css` para `a.button`, dotando de silueta de botón píldora y jerarquía visual nítida a `[✉️ Abrir en Gmail]` (primario verde salvia), `[📬 Usar mi programa de correo]` (secundario con borde) y `[📋 Copiar resumen]`.
+- **Transparencia en Calendario y Puente Asistido a Google Calendar Web**:
+  - Botón renombrado a `Añadir semana a Google Calendar (.ics)` en Mi semana y Confirmar propuesta, explicitando que la exportación semanal se realiza mediante archivo `.ics`.
+  - Tarjeta de aviso enriquecida con botón directo `Abrir importador de Google Calendar` (`https://calendar.google.com/calendar/u/0/r/settings/export`) para facilitar la subida a la nube de Google y sincronización automática con el móvil.
+  - Visibilización del botón `Google Cal (1 clic)` en las acciones de cada tarea (`••• Más`), permitiendo guardar eventos individuales en la nube sin descargar archivos.
+
 Detailed specifications for individual skills live separately from this file.
 
 ---

@@ -55,9 +55,10 @@ export interface WeeklySessionViewProps {
   provider?: AIProvider;
   initialPlanningItems?: ExtractedItem[];
   onClearPlanningItems?: () => void;
-  activeSpace?: "prepare" | "active" | "review";
+  activeSpace?: "capture" | "prepare" | "active" | "review";
   onNavigateSpace?: (space: "capture" | "prepare" | "active" | "review") => void;
   onProposalStatusChange?: (hasProposal: boolean) => void;
+  initialStep?: "write" | "review" | "confirm";
 }
 
 export function WeeklySessionView({
@@ -67,6 +68,7 @@ export function WeeklySessionView({
   activeSpace,
   onNavigateSpace,
   onProposalStatusChange,
+  initialStep,
 }: WeeklySessionViewProps = {}) {
   const {
     state,
@@ -538,105 +540,6 @@ export function WeeklySessionView({
   };
 
   // --------------------------------------------------------------------------
-  // Loading State
-  // --------------------------------------------------------------------------
-  if (state.status === "loading") {
-    return (
-      <div className="session-container calm-box" role="status" aria-live="polite">
-        <p className="calm-text">Revisando tu cuaderno y agenda...</p>
-      </div>
-    );
-  }
-
-  // --------------------------------------------------------------------------
-  // Error State
-  // --------------------------------------------------------------------------
-  if (state.status === "error") {
-    return (
-      <div className="session-container status-message status-error" role="alert">
-        <h3>Se produjo una interrupción en el almacenamiento</h3>
-        <p>{state.errorMessage}</p>
-        <button
-          className="primary"
-          aria-label="Reintentar conexión con la base de datos"
-          onClick={() => reloadSession()}
-        >
-          Reintentar conexión
-        </button>
-      </div>
-    );
-  }
-
-  // --------------------------------------------------------------------------
-  // Inconsistent References State
-  // --------------------------------------------------------------------------
-  if (state.status === "inconsistent_references") {
-    return (
-      <div className="session-container calm-box warning-box" role="alert">
-        <h3>Incoherencia detectada en las referencias del plan</h3>
-        <p className="calm-text">
-          La agenda o informe guardado no coincide exactamente con el plan activo:
-        </p>
-        <blockquote className="raw-json-box">{state.inconsistencyReason}</blockquote>
-        <p className="calm-muted">
-          Para preservar la integridad de tus datos, no realizamos mutaciones automáticas.
-        </p>
-        <div className="actions">
-          <button
-            className="secondary"
-            aria-label="Recargar sesión para verificar estado"
-            onClick={() => reloadSession()}
-          >
-            Recargar
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // --------------------------------------------------------------------------
-  // Ambiguous Active Plans State
-  // --------------------------------------------------------------------------
-  if (state.status === "ambiguous_active_plans") {
-    return (
-      <div className="session-container calm-box warning-box" role="alert">
-        <h3>Múltiples planes activos detectados</h3>
-        <p className="calm-text">
-          Existen varios planes marcados simultáneamente como activos. Tú decides cuál conservar
-          como el plan de esta semana:
-        </p>
-        <ul className="items-list" aria-label="Lista de planes activos ambiguos">
-          {state.ambiguousPlanIds.map((id) => (
-            <li
-              key={id}
-              className="item-card"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span>
-                Plan ID: <strong>{id}</strong>
-              </span>
-              <button
-                className="primary"
-                aria-label={`Mantener plan ${id} como activo`}
-                onClick={async () => {
-                  await resolveAmbiguity(id);
-                  setFeedbackMessage(`Se seleccionó el plan ${id} como activo.`);
-                }}
-              >
-                Mantener este plan
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
-  }
-
-  // --------------------------------------------------------------------------
   // Helper: Latest Closed Week Section (Reused across views)
   // --------------------------------------------------------------------------
   const renderLatestClosedWeekSection = () => {
@@ -786,11 +689,11 @@ export function WeeklySessionView({
   };
 
   // --------------------------------------------------------------------------
-  // Space 2: Preparar semana (Dedicated space view)
+  // Space 1 & 2: Nueva semana (Guided flow: Escribir -> Revisar -> Confirmar)
   // --------------------------------------------------------------------------
-  if (activeSpace === "prepare") {
+  if (activeSpace === "capture" || activeSpace === "prepare") {
     return (
-      <div className="session-container calm-box">
+      <div className="session-container">
         {feedbackMessage && (
           <div className="status-message status-info" role="status">
             {feedbackMessage}
@@ -808,69 +711,23 @@ export function WeeklySessionView({
             </button>
           </div>
         )}
-        <section className="plan-summary-card" aria-label="Espacio de preparación de semana">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "baseline",
-              flexWrap: "wrap",
-              gap: "8px",
-            }}
-          >
-            <h2>Planificar</h2>
-            {state.status === "session_resumed" && state.activePlan && (
-              <span className="badge badge-task">
-                Semana activa: {state.activePlan.targetWeek.startDate} al{" "}
-                {state.activePlan.targetWeek.endDate}
-              </span>
-            )}
-          </div>
-          <p className="calm-muted" style={{ marginTop: "6px" }}>
-            {state.status === "session_resumed"
-              ? "Tienes una semana activa en curso. Aquí puedes estructurar un borrador para la próxima semana e incorporar tareas postergadas sin alterar la semana activa."
-              : "Elige qué entra en tu semana."}
-          </p>
-          {onNavigateSpace && (
-            <div style={{ marginTop: "12px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              <button
-                type="button"
-                className="secondary"
-                data-testid="nav-back-to-capture-button"
-                onClick={() => onNavigateSpace("capture")}
-              >
-                ← Volver a Ideas
-              </button>
-              {state.status === "session_resumed" && (
-                <button
-                  type="button"
-                  className="secondary"
-                  data-testid="nav-to-active-from-prepare-button"
-                  onClick={() => onNavigateSpace("active")}
-                >
-                  Ver Mi semana activa →
-                </button>
-              )}
-            </div>
-          )}
-        </section>
 
-        <div style={{ marginTop: "16px" }}>
-          <WeeklyPlanningFromNotes
-            provider={provider}
-            initialItems={initialPlanningItems}
-            hasActivePlan={state.status === "session_resumed"}
-            onProposalStatusChange={onProposalStatusChange}
-            onPlanCreated={() => {
-              onProposalStatusChange?.(false);
-              onClearPlanningItems?.();
-              reloadSession();
-              if (onNavigateSpace) {
-                onNavigateSpace("active");
-              }
-            }}
-          />
-        </div>
+        <WeeklyPlanningFromNotes
+          provider={provider}
+          initialItems={initialPlanningItems}
+          initialStep={initialStep ?? (activeSpace === "capture" ? "write" : "review")}
+          hasActivePlan={state.status === "session_resumed"}
+          onProposalStatusChange={onProposalStatusChange}
+          onNavigateSpace={onNavigateSpace}
+          onPlanCreated={() => {
+            onProposalStatusChange?.(false);
+            onClearPlanningItems?.();
+            reloadSession();
+            if (onNavigateSpace) {
+              onNavigateSpace("active");
+            }
+          }}
+        />
 
         {state.latestClosedWeek && (
           <details className="calm-details" style={{ marginTop: "24px" }}>
@@ -889,6 +746,105 @@ export function WeeklySessionView({
         )}
 
         {renderDevOptions()}
+      </div>
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // Loading State
+  // --------------------------------------------------------------------------
+  if (state.status === "loading") {
+    return (
+      <div className="session-container calm-box" role="status" aria-live="polite">
+        <p className="calm-text">Revisando tu cuaderno y agenda...</p>
+      </div>
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // Error State
+  // --------------------------------------------------------------------------
+  if (state.status === "error") {
+    return (
+      <div className="session-container status-message status-error" role="alert">
+        <h3>Se produjo una interrupción en el almacenamiento</h3>
+        <p>{state.errorMessage}</p>
+        <button
+          className="primary"
+          aria-label="Reintentar conexión con la base de datos"
+          onClick={() => reloadSession()}
+        >
+          Reintentar conexión
+        </button>
+      </div>
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // Inconsistent References State
+  // --------------------------------------------------------------------------
+  if (state.status === "inconsistent_references") {
+    return (
+      <div className="session-container calm-box warning-box" role="alert">
+        <h3>Incoherencia detectada en las referencias del plan</h3>
+        <p className="calm-text">
+          La agenda o informe guardado no coincide exactamente con el plan activo:
+        </p>
+        <blockquote className="raw-json-box">{state.inconsistencyReason}</blockquote>
+        <p className="calm-muted">
+          Para preservar la integridad de tus datos, no realizamos mutaciones automáticas.
+        </p>
+        <div className="actions">
+          <button
+            className="secondary"
+            aria-label="Recargar sesión para verificar estado"
+            onClick={() => reloadSession()}
+          >
+            Recargar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // Ambiguous Active Plans State
+  // --------------------------------------------------------------------------
+  if (state.status === "ambiguous_active_plans") {
+    return (
+      <div className="session-container calm-box warning-box" role="alert">
+        <h3>Múltiples planes activos detectados</h3>
+        <p className="calm-text">
+          Existen varios planes marcados simultáneamente como activos. Tú decides cuál conservar
+          como el plan de esta semana:
+        </p>
+        <ul className="items-list" aria-label="Lista de planes activos ambiguos">
+          {state.ambiguousPlanIds.map((id) => (
+            <li
+              key={id}
+              className="item-card"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span>
+                Plan ID: <strong>{id}</strong>
+              </span>
+              <button
+                className="primary"
+                aria-label={`Mantener plan ${id} como activo`}
+                onClick={async () => {
+                  await resolveAmbiguity(id);
+                  setFeedbackMessage(`Se seleccionó el plan ${id} como activo.`);
+                }}
+              >
+                Mantener este plan
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
     );
   }
@@ -1208,11 +1164,11 @@ export function WeeklySessionView({
                 <button
                   type="button"
                   className="primary"
-                  data-testid="nav-to-review-button"
-                  aria-label="Ir a revisar y cerrar semana"
+                  data-testid="close-week-button"
+                  aria-label="Cerrar semana"
                   onClick={() => onNavigateSpace?.("review")}
                 >
-                  Revisar y cerrar semana →
+                  Cerrar semana →
                 </button>
               )}
             </div>

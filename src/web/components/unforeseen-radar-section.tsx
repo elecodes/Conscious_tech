@@ -53,11 +53,34 @@ export function UnforeseenRadarSection({
       <div style={{ marginTop: "12px" }}>
         <p
           className="calm-text"
-          style={{ fontSize: "0.88rem", marginTop: "8px", marginBottom: "12px" }}
+          style={{ fontSize: "0.88rem", marginTop: "8px", marginBottom: "8px" }}
         >
           Expresa lo que surgió o cambió en tu semana. Evalúa el impacto en tu capacidad y
           compromisos sin alterar tu semana automáticamente.
         </p>
+
+        <details
+          className="calm-details"
+          data-testid="help-unforeseen"
+          style={{ marginBottom: "12px", fontSize: "0.82rem" }}
+        >
+          <summary
+            style={{
+              cursor: "pointer",
+              color: "var(--accent-color, #2b6cb0)",
+              fontWeight: 500,
+            }}
+          >
+            ¿Qué es esto?
+          </summary>
+          <p
+            className="calm-muted"
+            style={{ margin: "4px 0 0 0", fontSize: "0.8rem", lineHeight: 1.4 }}
+          >
+            Apunta eventos o urgencias que surjan a mitad de semana para evaluar su impacto en tu
+            capacidad sin perder el foco.
+          </p>
+        </details>
 
         <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
           <div

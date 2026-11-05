@@ -1,9 +1,6 @@
-import { useState, useEffect } from "react";
-import { ExtractedItem, ExtractedItems } from "../domain/items";
+import { useState } from "react";
 import { MockProvider } from "../providers/mock-provider";
 import { RemoteAIProvider } from "../providers/remote-ai-provider";
-import { extractItems } from "../skills/extract-items";
-import sampleDumpsData from "../../cases/sample-dumps.json";
 import {
   WeeklySessionProvider,
   useWeeklySession,
@@ -11,9 +8,7 @@ import {
 } from "./context/weekly-session-context";
 import { WeeklySessionView } from "./components/weekly-session-view";
 import { WeeklySessionService } from "../application/weekly-session-service";
-import { formatItemType, formatItemStatus, formatCommitmentType, formatImportance } from "./labels";
-
-import { isDevMode } from "./dev-mode";
+import { CalendarReminderSettings } from "./components/calendar-reminder-settings";
 
 export type NavigationSpace = "capture" | "prepare" | "active" | "review";
 
@@ -23,8 +18,9 @@ export interface AppProps {
   initialState?: WeeklySessionUIState;
 }
 
-const STORAGE_KEY_CAPTURE_TEXT = "conscious_tech_transient_dump_text";
-const STORAGE_KEY_CAPTURE_RESULT = "conscious_tech_transient_dump_result";
+export const STORAGE_KEY_CAPTURE_TEXT = "conscious_tech_transient_dump_text";
+export const STORAGE_KEY_CAPTURE_RESULT = "conscious_tech_transient_dump_result";
+export const STORAGE_KEY_WELCOME_DISMISSED = "conscious_tech_welcome_dismissed";
 
 function ProcessStatusBadge() {
   const { state } = useWeeklySession();
@@ -112,7 +108,7 @@ export function resolveNextStep({
   return {
     message: "Escribe lo que tienes en la cabeza",
     targetSpace: "capture",
-    buttonText: "Ir a Ideas",
+    buttonText: "Nueva semana",
   };
 }
 
@@ -136,7 +132,6 @@ export function resolveLandingTab(
 
 function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | NavigationSpace }) {
   const { state, exportBackup, importBackup } = useWeeklySession();
-  const isDev = isDevMode();
   const [userSelectedTab, setUserSelectedTab] = useState<NavigationSpace | null>(null);
 
   const resolveExplicitSpace = (tab: "dump" | "weekly" | NavigationSpace): NavigationSpace => {
@@ -157,73 +152,58 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
     setUserSelectedTab(space);
   };
   const [providerType, setProviderType] = useState<"mock" | "groq" | "gemini">("mock");
-  const [text, setText] = useState<string>(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEY_CAPTURE_TEXT) || "";
-    } catch {
-      return "";
-    }
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<ExtractedItems | null>(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY_CAPTURE_RESULT);
-      if (raw) return JSON.parse(raw);
-    } catch {
-      // ignore
-    }
-    return null;
-  });
-  const [selectedCaseId, setSelectedCaseId] = useState("");
-  const [showRawJson, setShowRawJson] = useState(false);
-  const [planningItems, setPlanningItems] = useState<ExtractedItem[] | null>(null);
   const [backupStatus, setBackupStatus] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
 
-  const extractedCount = planningItems?.length ?? result?.items?.length ?? 0;
-  const nextStep = resolveNextStep({ state, extractedCount, hasPendingProposal });
-
-  // Autosave mental dump text
-  useEffect(() => {
+  const [showWelcome, setShowWelcome] = useState<boolean>(() => {
     try {
-      if (text) {
-        localStorage.setItem(STORAGE_KEY_CAPTURE_TEXT, text);
-      } else {
-        localStorage.removeItem(STORAGE_KEY_CAPTURE_TEXT);
-      }
+      return localStorage.getItem(STORAGE_KEY_WELCOME_DISMISSED) !== "true";
     } catch {
-      // ignore
+      return true;
     }
-  }, [text]);
+  });
 
-  // Autosave extracted result
-  useEffect(() => {
+  const handleDismissWelcome = () => {
+    setShowWelcome(false);
     try {
-      if (result) {
-        localStorage.setItem(STORAGE_KEY_CAPTURE_RESULT, JSON.stringify(result));
-      } else {
-        localStorage.removeItem(STORAGE_KEY_CAPTURE_RESULT);
-      }
-    } catch {
-      // ignore
-    }
-  }, [result]);
-
-  const handleClearDump = () => {
-    setText("");
-    setResult(null);
-    setSelectedCaseId("");
-    setHasPendingProposal(false);
-    try {
-      localStorage.removeItem(STORAGE_KEY_CAPTURE_TEXT);
-      localStorage.removeItem(STORAGE_KEY_CAPTURE_RESULT);
+      localStorage.setItem(STORAGE_KEY_WELCOME_DISMISSED, "true");
     } catch {
       // ignore
     }
   };
+
+  const handleReopenWelcome = () => {
+    setShowWelcome(true);
+    try {
+      localStorage.removeItem(STORAGE_KEY_WELCOME_DISMISSED);
+    } catch {
+      // ignore
+    }
+  };
+
+  const getStoredExtractedCount = (): number => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_CAPTURE_RESULT);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.items && Array.isArray(parsed.items)) return parsed.items.length;
+      }
+    } catch {
+      // ignore
+    }
+    return 0;
+  };
+
+  const extractedCount = getStoredExtractedCount();
+  const nextStep = resolveNextStep({ state, extractedCount, hasPendingProposal });
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const hasActiveWeek = Boolean(state.activePlan && state.activePlan.status === "active");
+  const isEnding = Boolean(hasActiveWeek && state.activePlan!.targetWeek.endDate <= todayStr);
+  const isMiSemana = activeSpace === "active";
+  const hideNextStepBar = isMiSemana && hasActiveWeek && !isEnding;
 
   const handleExportBackup = async () => {
     if (!exportBackup) return;
@@ -274,24 +254,6 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
     }
   };
 
-  const handlePrepareWeekFromExtracted = () => {
-    if (!result || !result.items || result.items.length === 0) return;
-    setPlanningItems(result.items);
-    setActiveSpace("prepare");
-  };
-
-  const handleCaseSelect = (caseId: string) => {
-    setSelectedCaseId(caseId);
-    if (!caseId) {
-      handleClearDump();
-      return;
-    }
-    const found = sampleDumpsData.find((c) => c.id === caseId);
-    if (found) {
-      setText(found.text);
-    }
-  };
-
   const getProviderInstance = () => {
     if (providerType === "groq") {
       return new RemoteAIProvider({ id: "groq" });
@@ -299,29 +261,6 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
       return new RemoteAIProvider({ id: "gemini" });
     }
     return new MockProvider();
-  };
-
-  const handleExtract = async () => {
-    if (!text.trim()) return;
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
-    try {
-      const providerInstance = getProviderInstance();
-
-      const currentDate = new Date().toISOString().split("T")[0] || "2026-10-06";
-      const data = await extractItems(providerInstance, {
-        text,
-        currentDate,
-        locale: "es-ES",
-      });
-      setResult(data);
-    } catch (err) {
-      setError((err as Error).message || "Error procesando la captura de ideas");
-    } finally {
-      setLoading(false);
-    }
   };
 
   if (initialTab === undefined && state.status === "loading" && userSelectedTab === null) {
@@ -494,6 +433,16 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
                     <option value="groq">Groq (Servidor local / Qwen 2.5 32B)</option>
                     <option value="gemini">Gemini (Servidor local / Gemini 2.5 Flash)</option>
                   </select>
+                  {providerType === "mock" && (
+                    <p
+                      className="calm-muted"
+                      data-testid="mock-provider-explanation"
+                      style={{ margin: "6px 0 0 0", fontSize: "0.78rem", lineHeight: 1.4 }}
+                    >
+                      Ahora usas el modo de prueba (Mock): no se envía nada a ningún servicio. Elige
+                      Groq o Gemini para propuestas con IA real.
+                    </p>
+                  )}
                   {providerType !== "mock" && (
                     <div
                       style={{
@@ -509,6 +458,53 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
                     </div>
                   )}
                 </div>
+
+                <div
+                  style={{
+                    marginTop: "14px",
+                    paddingTop: "12px",
+                    borderTop: "1px solid var(--border-color)",
+                  }}
+                  data-testid="settings-reminders-section"
+                >
+                  <h4 style={{ margin: "0 0 6px 0", fontSize: "0.9rem" }}>
+                    🔔 Recordatorios de calendario
+                  </h4>
+                  <p
+                    className="calm-muted"
+                    style={{ margin: "0 0 8px 0", fontSize: "0.8rem", lineHeight: 1.4 }}
+                  >
+                    Avisos automáticos que se incluirán en el archivo .ics al exportar a Google
+                    Calendar.
+                  </p>
+                  <CalendarReminderSettings compact />
+                </div>
+
+                <div
+                  style={{
+                    marginTop: "14px",
+                    paddingTop: "12px",
+                    borderTop: "1px solid var(--border-color)",
+                  }}
+                  data-testid="settings-welcome-section"
+                >
+                  <h4 style={{ margin: "0 0 6px 0", fontSize: "0.9rem" }}>🌱 Guía de bienvenida</h4>
+                  <p
+                    className="calm-muted"
+                    style={{ margin: "0 0 8px 0", fontSize: "0.8rem", lineHeight: 1.4 }}
+                  >
+                    Vuelve a mostrar la introducción con el ritmo del ciclo semanal.
+                  </p>
+                  <button
+                    type="button"
+                    className="secondary small"
+                    style={{ fontSize: "0.8rem" }}
+                    onClick={handleReopenWelcome}
+                    data-testid="reopen-welcome-button"
+                  >
+                    Mostrar bienvenida
+                  </button>
+                </div>
               </div>
             </details>
           </div>
@@ -521,37 +517,9 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
         >
           <button
             type="button"
-            className={activeSpace === "capture" ? "primary" : "secondary"}
-            onClick={() => setActiveSpace("capture")}
-            data-testid="nav-tab-capture"
-          >
-            Ideas
-          </button>
-          <button
-            type="button"
-            className={activeSpace === "prepare" ? "primary" : "secondary"}
-            onClick={() => setActiveSpace("prepare")}
-            data-testid="nav-tab-prepare"
-          >
-            Planificar
-            {(state.draftPlan || (state.draftPlans && state.draftPlans.length > 0)) && (
-              <span
-                style={{
-                  marginLeft: "6px",
-                  fontSize: "0.75rem",
-                  padding: "1px 6px",
-                  borderRadius: "10px",
-                  background: activeSpace === "prepare" ? "rgba(255,255,255,0.25)" : "#fef3c7",
-                  color: activeSpace === "prepare" ? "inherit" : "#92400e",
-                }}
-              >
-                Borrador
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            className={activeSpace === "active" ? "primary" : "secondary"}
+            className={
+              activeSpace === "active" || activeSpace === "review" ? "primary" : "secondary"
+            }
             onClick={() => setActiveSpace("active")}
             data-testid="nav-tab-active"
           >
@@ -563,8 +531,12 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
                   fontSize: "0.75rem",
                   padding: "1px 6px",
                   borderRadius: "10px",
-                  background: activeSpace === "active" ? "rgba(255,255,255,0.25)" : "#e6f4ea",
-                  color: activeSpace === "active" ? "inherit" : "#137333",
+                  background:
+                    activeSpace === "active" || activeSpace === "review"
+                      ? "rgba(255,255,255,0.25)"
+                      : "#e6f4ea",
+                  color:
+                    activeSpace === "active" || activeSpace === "review" ? "inherit" : "#137333",
                 }}
               >
                 Activa
@@ -573,247 +545,175 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
           </button>
           <button
             type="button"
-            className={activeSpace === "review" ? "primary" : "secondary"}
-            onClick={() => setActiveSpace("review")}
-            data-testid="nav-tab-review"
+            className={
+              activeSpace === "capture" || activeSpace === "prepare" ? "primary" : "secondary"
+            }
+            onClick={() => {
+              if (
+                hasPendingProposal ||
+                state.draftPlan ||
+                (state.draftPlans && state.draftPlans.length > 0)
+              ) {
+                setActiveSpace("prepare");
+              } else {
+                setActiveSpace("capture");
+              }
+            }}
+            data-testid="nav-tab-new-week"
           >
-            Cierre
+            Nueva semana
+            {(state.draftPlan || (state.draftPlans && state.draftPlans.length > 0)) && (
+              <span
+                style={{
+                  marginLeft: "6px",
+                  fontSize: "0.75rem",
+                  padding: "1px 6px",
+                  borderRadius: "10px",
+                  background:
+                    activeSpace === "capture" || activeSpace === "prepare"
+                      ? "rgba(255,255,255,0.25)"
+                      : "#fef3c7",
+                  color:
+                    activeSpace === "capture" || activeSpace === "prepare" ? "inherit" : "#92400e",
+                }}
+              >
+                Borrador
+              </span>
+            )}
           </button>
         </nav>
 
-        {/* Barra de siguiente paso guiado */}
-        <div
-          className="next-step-bar"
-          data-testid="next-step-bar"
-          style={{
-            marginTop: "12px",
-            padding: "8px 14px",
-            background: "#fcfbf9",
-            border: "1px solid var(--border-color, #e0ded9)",
-            borderRadius: "8px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "10px",
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span
-              style={{
-                fontSize: "0.72rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                fontWeight: 700,
-                color: "var(--accent-color, #2b6cb0)",
-                background: "#eef6ff",
-                padding: "2px 6px",
-                borderRadius: "4px",
-              }}
-            >
-              Paso sugerido
-            </span>
-            <span
-              data-testid="next-step-message"
-              style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-main, #333)" }}
-            >
-              {nextStep.message}
-            </span>
-          </div>
-
-          {activeSpace !== nextStep.targetSpace && (
-            <button
-              type="button"
-              className="primary small"
-              data-testid="next-step-button"
-              onClick={() => setActiveSpace(nextStep.targetSpace)}
-              style={{ fontSize: "0.82rem", padding: "4px 10px", fontWeight: 600 }}
-            >
-              {nextStep.buttonText} →
-            </button>
-          )}
-        </div>
-      </header>
-
-      {activeSpace === "capture" && (
-        <section className="config-bar" style={{ marginTop: "16px" }}>
-          <div className="config-row">
-            <span className="config-label">Caso de ejemplo:</span>
-            <select
-              data-testid="sample-case-select"
-              value={selectedCaseId}
-              onChange={(e) => handleCaseSelect(e.target.value)}
-            >
-              <option value="">-- Escribe tus ideas o elige un ejemplo --</option>
-              {sampleDumpsData.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.id} - {c.title}
-                </option>
-              ))}
-            </select>
-          </div>
-        </section>
-      )}
-
-      {/* Render active space */}
-      {activeSpace === "capture" && (
-        <main>
-          <section className="input-section">
-            <label className="textarea-label">¿Qué tienes en la cabeza?</label>
-            <textarea
-              rows={5}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Escribe todo lo que te venga a la mente sin preocuparte por ordenar..."
-            />
-            <div
-              className="actions"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "8px",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                <span style={{ fontSize: "0.85rem", color: "#8c8273" }}>
-                  {text.length} caracteres
-                </span>
-                {text.trim().length > 0 && (
-                  <span
-                    className="calm-muted"
-                    style={{
-                      fontSize: "0.8rem",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
-                    data-testid="dump-autosave-indicator"
-                  >
-                    💾 Borrador guardado automáticamente
-                  </span>
-                )}
-              </div>
-              <div style={{ display: "flex", gap: "8px" }}>
-                {text.trim().length > 0 && (
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={handleClearDump}
-                    data-testid="clear-dump-button"
-                  >
-                    ✨ Limpiar volcado
-                  </button>
-                )}
-                <button
-                  className="primary"
-                  disabled={loading || !text.trim()}
-                  onClick={handleExtract}
-                  data-testid="extract-dump-button"
-                >
-                  {loading ? "Entendiendo..." : "Extraer"}
-                </button>
-              </div>
-            </div>
-          </section>
-
-          {error && <div className="status-message status-error">{error}</div>}
-
-          {result && (
-            <section className="results-section">
-              <h2 className="results-heading">Esto es lo que he entendido</h2>
-              <div className="items-list">
-                {result.items.map((item: ExtractedItem) => (
-                  <div key={item.id} className="item-card">
-                    <input type="checkbox" className="item-checkbox" readOnly />
-                    <div className="item-content">
-                      <div className="item-title">{item.title}</div>
-                      <div className="item-tags">
-                        <span className={`badge badge-${item.type}`}>
-                          {formatItemType(item.type)}
-                        </span>
-                        {item.project && (
-                          <span className="badge badge-muted">📁 {item.project}</span>
-                        )}
-                        {item.status && (
-                          <span className="badge badge-muted">
-                            Estado: {formatItemStatus(item.status)}
-                          </span>
-                        )}
-                        {item.commitment && item.commitment !== "none" && (
-                          <span className="badge badge-muted">
-                            Compromiso {formatCommitmentType(item.commitment).toLowerCase()}
-                          </span>
-                        )}
-                        {item.estimatedEffort && (
-                          <span className="badge badge-muted">
-                            ⏱ {item.estimatedEffort.value} {item.estimatedEffort.unit}
-                          </span>
-                        )}
-                        {item.deadline && (
-                          <span className="badge badge-muted">
-                            📅 {item.deadline.raw}{" "}
-                            {item.deadline.resolved ? `(${item.deadline.resolved})` : ""}
-                          </span>
-                        )}
-                        {item.importance && (
-                          <span className="badge badge-muted">
-                            ⭐ {formatImportance(item.importance)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="item-raw">"{item.rawText}"</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div
+        {/* First-run welcome card */}
+        {showWelcome && (
+          <div
+            className="calm-box"
+            data-testid="welcome-card"
+            style={{
+              marginTop: "16px",
+              padding: "16px 20px",
+              background: "#fdfcf9",
+              border: "1px solid var(--border-color, #e0ded9)",
+              borderRadius: "8px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: "16px",
+              boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
+            }}
+          >
+            <div>
+              <h3
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginTop: "16px",
-                  flexWrap: "wrap",
-                  gap: "10px",
+                  margin: "0 0 8px 0",
+                  fontSize: "0.98rem",
+                  color: "var(--text-main, #333)",
                 }}
               >
-                <button
-                  className="primary"
-                  data-testid="prepare-week-from-extracted-button"
-                  aria-label="Preparar semana con estos elementos"
-                  onClick={handlePrepareWeekFromExtracted}
-                >
-                  🗓️ Preparar semana con estos elementos ({result.items.length})
-                </button>
-                {isDev && (
-                  <button className="inspector-toggle" onClick={() => setShowRawJson(!showRawJson)}>
-                    {showRawJson ? "Ocultar datos JSON" : "Inspeccionar estructura JSON completa"}
-                  </button>
-                )}
-              </div>
+                Escribe → Revisa → Vive tu semana
+              </h3>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "0.88rem",
+                  color: "var(--text-muted, #555)",
+                  lineHeight: 1.5,
+                }}
+              >
+                <strong>1. Escribe:</strong> Vuelca lo que tienes en la cabeza sin preocuparte por
+                ordenar.
+                <br />
+                <strong>2. Revisa:</strong> Ajusta la propuesta con tus ideas y espacio protegido
+                reservado.
+                <br />
+                <strong>3. Vive tu semana:</strong> Avanza con calma y foco día a día en tu
+                cuaderno.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="secondary small"
+              data-testid="dismiss-welcome-button"
+              aria-label="Cerrar bienvenida"
+              onClick={handleDismissWelcome}
+              style={{ fontSize: "0.8rem", whiteSpace: "nowrap" }}
+            >
+              Entendido ✕
+            </button>
+          </div>
+        )}
 
-              {isDev && showRawJson && (
-                <pre className="raw-json-box">{JSON.stringify(result, null, 2)}</pre>
-              )}
-            </section>
-          )}
-        </main>
-      )}
+        {/* Barra de siguiente paso guiado (oculta en Mi semana con semana activa y sin pendientes) */}
+        {!hideNextStepBar && (
+          <div
+            className="next-step-bar"
+            data-testid="next-step-bar"
+            style={{
+              marginTop: "12px",
+              padding: "8px 14px",
+              background: "#fcfbf9",
+              border: "1px solid var(--border-color, #e0ded9)",
+              borderRadius: "8px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "10px",
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span
+                style={{
+                  fontSize: "0.72rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  fontWeight: 700,
+                  color: "var(--accent-color, #2b6cb0)",
+                  background: "#eef6ff",
+                  padding: "2px 6px",
+                  borderRadius: "4px",
+                }}
+              >
+                Paso sugerido
+              </span>
+              <span
+                data-testid="next-step-message"
+                style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-main, #333)" }}
+              >
+                {nextStep.message}
+              </span>
+            </div>
 
-      {activeSpace === "prepare" && (
+            {/* No mostrar botón si apunta al mismo espacio o pestaña en la que ya se encuentra */}
+            {!(
+              activeSpace === nextStep.targetSpace ||
+              ((activeSpace === "capture" || activeSpace === "prepare") &&
+                (nextStep.targetSpace === "capture" || nextStep.targetSpace === "prepare")) ||
+              ((activeSpace === "active" || activeSpace === "review") &&
+                (nextStep.targetSpace === "active" || nextStep.targetSpace === "review"))
+            ) && (
+              <button
+                type="button"
+                className="primary small"
+                data-testid="next-step-button"
+                onClick={() => setActiveSpace(nextStep.targetSpace)}
+                style={{ fontSize: "0.82rem", padding: "4px 10px", fontWeight: 600 }}
+              >
+                {nextStep.buttonText} →
+              </button>
+            )}
+          </div>
+        )}
+      </header>
+
+      {/* Render active space */}
+      {(activeSpace === "capture" || activeSpace === "prepare") && (
         <main>
           <WeeklySessionView
             provider={getProviderInstance()}
-            activeSpace="prepare"
-            initialPlanningItems={planningItems ?? undefined}
-            onClearPlanningItems={() => {
-              setPlanningItems(null);
-              setHasPendingProposal(false);
-            }}
-            onNavigateSpace={(space) => setActiveSpace(space)}
+            activeSpace={activeSpace}
+            initialStep={activeSpace === "capture" ? "write" : undefined}
             onProposalStatusChange={setHasPendingProposal}
+            onNavigateSpace={(space) => setActiveSpace(space)}
           />
         </main>
       )}

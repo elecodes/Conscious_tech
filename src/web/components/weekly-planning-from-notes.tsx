@@ -30,6 +30,7 @@ import { PlanningDeferredItemsSection } from "./planning-deferred-items-section"
 import { PlanningProposalReviewFooter } from "./planning-proposal-review-footer";
 import { logger } from "../../utils/logger";
 import { CalendarWeekSummary } from "../../domain/calendar";
+import sampleDumpsData from "../../../cases/sample-dumps.json";
 
 export interface WeeklyPlanningFromNotesProps {
   provider?: AIProvider;
@@ -39,7 +40,12 @@ export interface WeeklyPlanningFromNotesProps {
   initialItems?: ExtractedItem[];
   initialProposedWeek?: ProposedWeek;
   onProposalStatusChange?: (hasProposal: boolean) => void;
+  initialStep?: "write" | "review" | "confirm";
+  onNavigateSpace?: (space: "capture" | "prepare" | "active" | "review") => void;
 }
+
+const STORAGE_KEY_CAPTURE_TEXT = "conscious_tech_transient_dump_text";
+const STORAGE_KEY_CAPTURE_RESULT = "conscious_tech_transient_dump_result";
 
 export function WeeklyPlanningFromNotes({
   provider = new MockProvider(),
@@ -49,6 +55,8 @@ export function WeeklyPlanningFromNotes({
   initialItems,
   initialProposedWeek,
   onProposalStatusChange,
+  initialStep,
+  onNavigateSpace,
 }: WeeklyPlanningFromNotesProps) {
   const { createOrSavePlan, service, state } = useWeeklySession();
 
@@ -103,15 +111,73 @@ export function WeeklyPlanningFromNotes({
   const [carryOverTasks, setCarryOverTasks] = useState<PendingCarryOverTask[]>([]);
   const [selectedCarryOverItemIds, setSelectedCarryOverItemIds] = useState<Set<string>>(new Set());
 
+  // State: Guided flow step (1. Escribir -> 2. Revisar -> 3. Confirmar)
+  const [flowStep, setFlowStep] = useState<"write" | "review" | "confirm">(() => {
+    if (initialStep) return initialStep;
+    if (initialProposedWeek || (initialItems && initialItems.length > 0)) return "review";
+    return "write";
+  });
+
+  useEffect(() => {
+    if (initialStep) {
+      setFlowStep(initialStep);
+    }
+  }, [initialStep]);
+
   // State: Notes & Extraction
-  const [noteText, setNoteText] = useState("");
+  const [selectedCaseId, setSelectedCaseId] = useState("");
+  const [noteText, setNoteText] = useState<string>(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY_CAPTURE_TEXT) || "";
+    } catch {
+      return "";
+    }
+  });
+
+  // Autosave mental dump text
+  useEffect(() => {
+    try {
+      if (noteText) {
+        localStorage.setItem(STORAGE_KEY_CAPTURE_TEXT, noteText);
+      } else {
+        localStorage.removeItem(STORAGE_KEY_CAPTURE_TEXT);
+      }
+    } catch {
+      // ignore
+    }
+  }, [noteText]);
+
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
-  const [extractedItems, setExtractedItems] = useState<ExtractedItem[] | null>(
-    initialItems && initialItems.length > 0 ? initialItems : null
-  );
+  const [extractedItems, setExtractedItems] = useState<ExtractedItem[] | null>(() => {
+    if (initialItems && initialItems.length > 0) return initialItems;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_CAPTURE_RESULT);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.items && Array.isArray(parsed.items)) return parsed.items;
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  });
+
+  // Autosave extracted result
+  useEffect(() => {
+    try {
+      if (extractedItems && extractedItems.length > 0) {
+        localStorage.setItem(STORAGE_KEY_CAPTURE_RESULT, JSON.stringify({ items: extractedItems }));
+      } else {
+        localStorage.removeItem(STORAGE_KEY_CAPTURE_RESULT);
+      }
+    } catch {
+      // ignore
+    }
+  }, [extractedItems]);
+
   const [acceptedItemIds, setAcceptedItemIds] = useState<Set<string>>(
-    () => new Set((initialItems || []).map((i) => i.id))
+    () => new Set((initialItems || extractedItems || []).map((i) => i.id))
   );
 
   useEffect(() => {
@@ -119,6 +185,7 @@ export function WeeklyPlanningFromNotes({
       setExtractedItems(initialItems);
       setAcceptedItemIds(new Set(initialItems.map((i) => i.id)));
       setProposedWeek(null);
+      setFlowStep("review");
     }
   }, [initialItems]);
 
@@ -131,8 +198,8 @@ export function WeeklyPlanningFromNotes({
   const [isReviewingSelection, setIsReviewingSelection] = useState(false);
 
   useEffect(() => {
-    onProposalStatusChange?.(Boolean(proposedWeek && !isReviewingSelection));
-  }, [proposedWeek, isReviewingSelection, onProposalStatusChange]);
+    onProposalStatusChange?.(Boolean(proposedWeek));
+  }, [proposedWeek, onProposalStatusChange]);
   const [overdueDecisions, setOverdueDecisions] = useState<
     Record<
       string,
@@ -188,6 +255,30 @@ export function WeeklyPlanningFromNotes({
   };
   const [editingProposalItemId, setEditingProposalItemId] = useState<string | null>(null);
   const [proposalItemHoursInput, setProposalItemHoursInput] = useState<string>("");
+
+  const [lastGeneratedParams, setLastGeneratedParams] = useState<{
+    acceptedItemIds: string;
+    carryOverIds: string;
+    userIntent: string;
+    availableHours: string;
+    protectedSpace: string;
+  } | null>(null);
+
+  const currentAcceptedSignature = Array.from(acceptedItemIds).sort().join(",");
+  const currentCarryOverSignature = Array.from(selectedCarryOverItemIds).sort().join(",");
+  const currentUserIntent = userIntent.trim();
+  const currentAvailableHours = availableHoursInput.trim();
+  const currentProtectedSpace = protectedSpacePercentInput.trim();
+
+  const isProposalDirty = Boolean(
+    proposedWeek !== null &&
+    lastGeneratedParams !== null &&
+    (lastGeneratedParams.acceptedItemIds !== currentAcceptedSignature ||
+      lastGeneratedParams.carryOverIds !== currentCarryOverSignature ||
+      lastGeneratedParams.userIntent !== currentUserIntent ||
+      lastGeneratedParams.availableHours !== currentAvailableHours ||
+      lastGeneratedParams.protectedSpace !== currentProtectedSpace)
+  );
 
   useEffect(() => {
     if (initialProposedWeek?.weekSummary?.capacity?.totalAvailableHours != null) {
@@ -277,6 +368,23 @@ export function WeeklyPlanningFromNotes({
             if (draft.draftContext.isEditingCapacity !== undefined) {
               setIsEditingCapacity(draft.draftContext.isEditingCapacity);
             }
+            const draftAccepted = draft.draftContext?.acceptedItemIds
+              ? draft.draftContext.acceptedItemIds.slice().sort().join(",")
+              : "";
+            const draftCarryOver = draft.draftContext?.selectedCarryOverItemIds
+              ? draft.draftContext.selectedCarryOverItemIds.slice().sort().join(",")
+              : "";
+            setLastGeneratedParams({
+              acceptedItemIds: draftAccepted,
+              carryOverIds: draftCarryOver,
+              userIntent: draft.draftContext?.userIntent?.trim() || "",
+              availableHours:
+                draft.draftContext?.availableHoursInput?.trim() ||
+                (draft.proposal.weekSummary.capacity.totalAvailableHours != null
+                  ? String(draft.proposal.weekSummary.capacity.totalAvailableHours)
+                  : ""),
+              protectedSpace: draft.draftContext?.protectedSpacePercentInput?.trim() || "25",
+            });
           }
         } else {
           setProposedWeek((prev) => {
@@ -466,15 +574,137 @@ export function WeeklyPlanningFromNotes({
     }
   };
 
+  const handleCaseSelect = (caseId: string) => {
+    setSelectedCaseId(caseId);
+    if (!caseId) {
+      setNoteText("");
+      return;
+    }
+    const found = sampleDumpsData.find((c) => c.id === caseId);
+    if (found) {
+      setNoteText(found.text);
+    }
+  };
+
+  const handleClearText = () => {
+    setNoteText("");
+    setSelectedCaseId("");
+    try {
+      localStorage.removeItem(STORAGE_KEY_CAPTURE_TEXT);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleContinueFromWrite = async () => {
+    const trimmed = noteText.trim();
+    if (!trimmed || isExtracting || isPlanning) return;
+
+    const reqId = ++extractRequestIdRef.current;
+    setIsExtracting(true);
+    setExtractError(null);
+    setPlanningError(null);
+    setConfirmationError(null);
+    setSuccessMessage(null);
+
+    try {
+      // 1. Extraer elementos de las notas
+      const result: ExtractedItems = await extractItems(provider, {
+        text: trimmed,
+        currentDate: effectiveCurrentDate,
+        locale: "es-ES",
+      });
+
+      if (reqId !== extractRequestIdRef.current) return;
+
+      const newItems = result.items || [];
+      setExtractedItems(newItems);
+      const newAcceptedIds = new Set(newItems.map((it) => it.id));
+      setAcceptedItemIds(newAcceptedIds);
+
+      // 2. Construir propuesta semanal con estos elementos
+      setIsExtracting(false);
+      setIsPlanning(true);
+
+      const totalAvailableHours =
+        availableHoursInput.trim() !== "" ? Number(availableHoursInput) : undefined;
+      const minProtectedSpaceRatio =
+        protectedSpacePercentInput.trim() !== "" ? Number(protectedSpacePercentInput) / 100 : 0.25;
+
+      const currentCapacityConfig =
+        totalAvailableHours !== undefined &&
+        Number.isFinite(totalAvailableHours) &&
+        totalAvailableHours >= 0
+          ? {
+              totalAvailableHours,
+              minProtectedSpaceRatio:
+                Number.isFinite(minProtectedSpaceRatio) &&
+                minProtectedSpaceRatio >= 0 &&
+                minProtectedSpaceRatio <= 1
+                  ? minProtectedSpaceRatio
+                  : 0.25,
+            }
+          : undefined;
+
+      const detailedResult = await generateWeeklyProposalFromItemsDetailed(provider, {
+        items: newItems,
+        currentDate: effectiveCurrentDate,
+        targetWeek: activeTargetWeek,
+        userIntent: userIntent.trim() || undefined,
+        totalAvailableHours: currentCapacityConfig?.totalAvailableHours,
+        minProtectedSpaceRatio: currentCapacityConfig?.minProtectedSpaceRatio,
+      });
+
+      if (reqId !== extractRequestIdRef.current) return;
+
+      setProposedWeek(detailedResult.proposal);
+      setDiagnostics(detailedResult.diagnostics);
+      await persistDraft(detailedResult.proposal, {
+        extractedItems: newItems,
+        acceptedItemIds: Array.from(newAcceptedIds),
+        noteText: trimmed,
+      });
+      setLastGeneratedParams({
+        acceptedItemIds: Array.from(newAcceptedIds).sort().join(","),
+        carryOverIds: Array.from(selectedCarryOverItemIds).sort().join(","),
+        userIntent: userIntent.trim(),
+        availableHours: availableHoursInput.trim(),
+        protectedSpace: protectedSpacePercentInput.trim(),
+      });
+      setFlowStep("review");
+    } catch (err) {
+      if (reqId !== extractRequestIdRef.current) return;
+      setExtractError(
+        (err as Error).message ||
+          "No se pudieron extraer elementos ni preparar la propuesta. Verifica tus notas o el asistente."
+      );
+      // NOTE: noteText se conserva intacto
+    } finally {
+      if (reqId === extractRequestIdRef.current) {
+        setIsExtracting(false);
+        setIsPlanning(false);
+      }
+    }
+  };
+
   const handleStartFreshWeek = async () => {
     setExtractedItems(null);
     setAcceptedItemIds(new Set());
     setProposedWeek(null);
     setDiagnostics([]);
     setNoteText("");
+    setSelectedCaseId("");
     setUserIntent("");
     setExtractError(null);
+    setPlanningError(null);
     setConfirmationError(null);
+    setFlowStep("write");
+    try {
+      localStorage.removeItem(STORAGE_KEY_CAPTURE_TEXT);
+      localStorage.removeItem(STORAGE_KEY_CAPTURE_RESULT);
+    } catch {
+      // ignore
+    }
     if (service?.clearDraftPlan) {
       try {
         await service.clearDraftPlan(activeTargetWeek);
@@ -656,6 +886,13 @@ export function WeeklyPlanningFromNotes({
       setDiagnostics(detailedResult.diagnostics);
       setIsReviewingSelection(false);
       await persistDraft(finalProposal);
+      setLastGeneratedParams({
+        acceptedItemIds: Array.from(acceptedItemIds).sort().join(","),
+        carryOverIds: Array.from(selectedCarryOverItemIds).sort().join(","),
+        userIntent: userIntent.trim(),
+        availableHours: availableHoursInput.trim(),
+        protectedSpace: protectedSpacePercentInput.trim(),
+      });
     } catch (err) {
       if (reqId !== planningRequestIdRef.current) return;
       setPlanningError(
@@ -666,6 +903,13 @@ export function WeeklyPlanningFromNotes({
         setIsPlanning(false);
       }
     }
+  };
+
+  const handleContinueToConfirm = async () => {
+    if (isProposalDirty) {
+      await handleGenerateProposal();
+    }
+    setFlowStep("confirm");
   };
 
   // --------------------------------------------------------------------------
@@ -725,8 +969,19 @@ export function WeeklyPlanningFromNotes({
         setDiagnostics([]);
         setExtractedItems(null);
         setNoteText("");
+        setSelectedCaseId("");
+        setFlowStep("write");
+        try {
+          localStorage.removeItem(STORAGE_KEY_CAPTURE_TEXT);
+          localStorage.removeItem(STORAGE_KEY_CAPTURE_RESULT);
+        } catch {
+          // ignore
+        }
         if (onPlanCreated) {
           onPlanCreated();
+        }
+        if (onNavigateSpace) {
+          onNavigateSpace("active");
         }
       } else if (result.status === "conflict_active_plan_exists") {
         await persistDraft(proposedWeek);
@@ -1281,214 +1536,466 @@ export function WeeklyPlanningFromNotes({
       }}
       aria-label="Cuaderno de ideas y planificación semanal"
     >
-      <PlanningHeaderSection
-        hasActivePlan={hasActivePlan}
-        initialItems={initialItems}
-        successMessage={successMessage}
-        targetWeekStart={targetWeekStart}
-        setTargetWeekStart={setTargetWeekStart}
-        targetWeekEnd={targetWeekEnd}
-        setTargetWeekEnd={setTargetWeekEnd}
-        handleStartFreshWeek={handleStartFreshWeek}
-        draftPlans={state.draftPlans}
-        proposedWeek={proposedWeek}
-        isReviewingSelection={isReviewingSelection}
-        handleReturnToProposal={handleReturnToProposal}
-        handleCancelProposal={handleCancelProposal}
-        carryOverTasks={carryOverTasks}
-        selectedCarryOverItemIds={selectedCarryOverItemIds}
-        handleToggleCarryOverItem={handleToggleCarryOverItem}
-        setSelectedCarryOverItemIds={setSelectedCarryOverItemIds}
-        isPlanning={isPlanning}
-        handleGenerateProposal={handleGenerateProposal}
-        extractedItems={extractedItems}
-        activeTargetWeek={activeTargetWeek}
-        handleCalendarApplied={handleCalendarApplied}
-      />
+      {/* Cabecera y barra de progreso del flujo guiado */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          flexWrap: "wrap",
+          gap: "8px",
+          marginBottom: "6px",
+        }}
+      >
+        <div>
+          <h2 style={{ margin: 0 }}>Nueva semana</h2>
+          <p className="calm-muted" style={{ margin: "4px 0 0 0", fontSize: "0.88rem" }}>
+            Elige qué entra en tu semana con calma · IA propone · Tú decides
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+          {hasActivePlan && (
+            <span className="badge badge-muted">
+              Actualmente ya tienes una semana activa en curso
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Línea de progreso visible: Escribir → Revisar → Confirmar */}
+      <div
+        className="guided-flow-progress"
+        data-testid="guided-flow-progress"
+        role="navigation"
+        aria-label="Progreso de nueva semana"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "10px",
+          margin: "14px 0 20px 0",
+          padding: "8px 16px",
+          background: "var(--surface-warm, #fdfbf7)",
+          border: "1px solid var(--border-color, #e6ded1)",
+          borderRadius: "20px",
+          fontSize: "0.85rem",
+          flexWrap: "wrap",
+        }}
+      >
+        {/* Paso 1: Escribir */}
+        <button
+          type="button"
+          onClick={() => setFlowStep("write")}
+          className={flowStep === "write" ? "primary small" : "secondary small"}
+          aria-current={flowStep === "write" ? "step" : undefined}
+          data-testid="step-indicator-write"
+          style={{
+            borderRadius: "14px",
+            padding: "3px 12px",
+            fontWeight: flowStep === "write" ? 700 : 500,
+            cursor: "pointer",
+            background: flowStep === "write" ? undefined : "#ffffff",
+          }}
+        >
+          {flowStep !== "write" ? "✓ 1. Escribir" : "1. Escribir"}
+        </button>
+
+        <span style={{ color: "#aaa", userSelect: "none" }}>→</span>
+
+        {/* Paso 2: Revisar */}
+        <button
+          type="button"
+          onClick={() => {
+            if (proposedWeek || (extractedItems && extractedItems.length > 0)) {
+              setFlowStep("review");
+            }
+          }}
+          disabled={!proposedWeek && (!extractedItems || extractedItems.length === 0)}
+          className={flowStep === "review" ? "primary small" : "secondary small"}
+          aria-current={flowStep === "review" ? "step" : undefined}
+          data-testid="step-indicator-review"
+          style={{
+            borderRadius: "14px",
+            padding: "3px 12px",
+            fontWeight: flowStep === "review" ? 700 : 500,
+            opacity:
+              flowStep === "review" || proposedWeek || (extractedItems && extractedItems.length > 0)
+                ? 1
+                : 0.5,
+            cursor:
+              proposedWeek || (extractedItems && extractedItems.length > 0) ? "pointer" : "default",
+            background: flowStep === "review" ? undefined : "#ffffff",
+          }}
+        >
+          {flowStep === "confirm" ? "✓ 2. Revisar" : "2. Revisar"}
+        </button>
+
+        <span style={{ color: "#aaa", userSelect: "none" }}>→</span>
+
+        {/* Paso 3: Confirmar */}
+        <button
+          type="button"
+          onClick={() => {
+            if (proposedWeek) {
+              setFlowStep("confirm");
+            }
+          }}
+          disabled={!proposedWeek}
+          className={flowStep === "confirm" ? "primary small" : "secondary small"}
+          aria-current={flowStep === "confirm" ? "step" : undefined}
+          data-testid="step-indicator-confirm"
+          style={{
+            borderRadius: "14px",
+            padding: "3px 12px",
+            fontWeight: flowStep === "confirm" ? 700 : 500,
+            opacity: flowStep === "confirm" || proposedWeek ? 1 : 0.5,
+            cursor: proposedWeek ? "pointer" : "default",
+            background: flowStep === "confirm" ? undefined : "#ffffff",
+          }}
+        >
+          3. Confirmar
+        </button>
+      </div>
+
+      {successMessage && (
+        <div className="status-message status-info" style={{ marginBottom: "16px" }} role="status">
+          {successMessage}
+        </div>
+      )}
 
       {/* -------------------------------------------------------------------- */}
-      {/* 1. Input Section when no items exist yet */}
+      {/* PASO 1: ESCRIBIR                                                    */}
       {/* -------------------------------------------------------------------- */}
-      {(!extractedItems || extractedItems.length === 0) && (
-        <div style={{ marginTop: "16px" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "6px",
-              flexWrap: "wrap",
-              gap: "8px",
-            }}
-          >
-            <label htmlFor="planning-notes-input" style={{ fontWeight: 600 }}>
-              ¿Qué tienes en mente para planificar?
-            </label>
-            <VoiceDictationButton getText={() => noteText} onTranscript={(t) => setNoteText(t)} />
-          </div>
-          <textarea
-            id="planning-notes-input"
-            rows={5}
-            value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
-            placeholder="Escribe libremente todo lo que tengas en la cabeza: tareas, compromisos con fechas, proyectos o ideas que quieras evaluar..."
-            style={{ width: "100%", padding: "10px", boxSizing: "border-box" }}
-            disabled={isExtracting}
+      {flowStep === "write" && (
+        <div data-testid="flow-step-write">
+          <section className="config-bar" style={{ marginBottom: "14px" }}>
+            <div className="config-row">
+              <span className="config-label">Caso de ejemplo:</span>
+              <select
+                data-testid="sample-case-select"
+                value={selectedCaseId}
+                onChange={(e) => handleCaseSelect(e.target.value)}
+              >
+                <option value="">-- Escribe tus ideas o elige un ejemplo --</option>
+                {sampleDumpsData.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.id} - {c.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </section>
+
+          <section className="input-section">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "8px",
+                flexWrap: "wrap",
+                gap: "8px",
+              }}
+            >
+              <label htmlFor="flow-textarea" className="textarea-label" style={{ margin: 0 }}>
+                ¿Qué tienes en la cabeza?
+              </label>
+              <VoiceDictationButton
+                getText={() => noteText}
+                onTranscript={(transcript) => {
+                  setNoteText((prev) => (prev ? `${prev}\n${transcript}` : transcript));
+                }}
+              />
+            </div>
+
+            <textarea
+              id="planning-notes-input"
+              data-testid="flow-textarea"
+              rows={6}
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="Escribe todo lo que te venga a la mente sin preocuparte por ordenar..."
+              style={{ width: "100%", padding: "10px", boxSizing: "border-box" }}
+              disabled={isExtracting || isPlanning}
+            />
+
+            <div
+              className="actions"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "8px",
+                marginTop: "8px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <span style={{ fontSize: "0.85rem", color: "#8c8273" }}>
+                  {noteText.length} caracteres
+                </span>
+                {noteText.trim().length > 0 && (
+                  <span
+                    className="calm-muted"
+                    style={{
+                      fontSize: "0.8rem",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                    data-testid="dump-autosave-indicator"
+                  >
+                    💾 Borrador guardado automáticamente
+                  </span>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {noteText.trim().length > 0 && (
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={handleClearText}
+                    data-testid="clear-dump-button"
+                  >
+                    ✨ Limpiar volcado
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="primary"
+                  disabled={isExtracting || isPlanning || !noteText.trim()}
+                  onClick={handleContinueFromWrite}
+                  data-testid="flow-continue-to-review"
+                >
+                  {isExtracting
+                    ? "Entendiendo notas..."
+                    : isPlanning
+                      ? "Preparando propuesta..."
+                      : "Continuar →"}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {extractError && (
+            <div
+              className="status-message status-error"
+              style={{ marginTop: "12px" }}
+              role="alert"
+              data-testid="flow-error"
+            >
+              <strong>Error al procesar:</strong> {extractError}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* -------------------------------------------------------------------- */}
+      {/* PASO 2: REVISAR                                                     */}
+      {/* -------------------------------------------------------------------- */}
+      {flowStep === "review" && (
+        <div data-testid="flow-step-review">
+          <PlanningHeaderSection
+            hasActivePlan={hasActivePlan}
+            initialItems={initialItems}
+            successMessage={null}
+            targetWeekStart={targetWeekStart}
+            setTargetWeekStart={setTargetWeekStart}
+            targetWeekEnd={targetWeekEnd}
+            setTargetWeekEnd={setTargetWeekEnd}
+            handleStartFreshWeek={handleStartFreshWeek}
+            draftPlans={state.draftPlans}
+            proposedWeek={proposedWeek}
+            isReviewingSelection={isReviewingSelection}
+            handleReturnToProposal={handleReturnToProposal}
+            handleCancelProposal={handleCancelProposal}
+            carryOverTasks={carryOverTasks}
+            selectedCarryOverItemIds={selectedCarryOverItemIds}
+            handleToggleCarryOverItem={handleToggleCarryOverItem}
+            setSelectedCarryOverItemIds={setSelectedCarryOverItemIds}
+            isPlanning={isPlanning}
+            handleGenerateProposal={handleGenerateProposal}
+            extractedItems={extractedItems}
+            activeTargetWeek={activeTargetWeek}
+            handleCalendarApplied={handleCalendarApplied}
           />
+
+          {extractedItems && (
+            <PlanningExtractedItemsReview
+              extractedItems={extractedItems}
+              acceptedItemIds={acceptedItemIds}
+              acceptedCount={acceptedCount}
+              handleAcceptAll={handleAcceptAll}
+              handleDiscardAll={handleDiscardAll}
+              handleStartFreshWeek={handleStartFreshWeek}
+              handleToggleItem={handleToggleItem}
+              handleUpdateItemEffort={handleUpdateItemEffort}
+              handleUpdateItemDeadline={handleUpdateItemDeadline}
+              noteText={noteText}
+              setNoteText={setNoteText}
+              isExtracting={isExtracting}
+              handleExtract={handleExtract}
+              userIntent={userIntent}
+              setUserIntent={setUserIntent}
+              availableHoursInput={availableHoursInput}
+              setAvailableHoursInput={setAvailableHoursInput}
+              protectedSpacePercentInput={protectedSpacePercentInput}
+              setProtectedSpacePercentInput={setProtectedSpacePercentInput}
+              isPlanning={isPlanning}
+              planningError={planningError}
+              selectedCarryOverItemIds={selectedCarryOverItemIds}
+              handleGenerateProposal={handleGenerateProposal}
+              isProposalDirty={isProposalDirty}
+              proposedWeek={proposedWeek}
+            />
+          )}
+
+          {proposedWeek && (
+            <div
+              style={{
+                marginTop: "24px",
+                paddingTop: "16px",
+                borderTop: "1px solid var(--border-color, #e0e0e0)",
+              }}
+              aria-label="Revisión de propuesta semanal"
+              data-testid="weekly-proposal-screen"
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  flexWrap: "wrap",
+                  gap: "8px",
+                }}
+              >
+                <div>
+                  <div
+                    className="calm-muted"
+                    style={{
+                      fontSize: "0.8rem",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Propuesta semanal
+                  </div>
+                  <h2 style={{ margin: "2px 0 0 0" }}>
+                    {proposedWeek.weekSummary.intent
+                      ? `«${proposedWeek.weekSummary.intent}»`
+                      : "Plan de la semana"}
+                  </h2>
+                </div>
+                <div
+                  style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}
+                >
+                  <span className="badge badge-task">
+                    {proposedWeek.weekSummary.targetWeek.startDate} al{" "}
+                    {proposedWeek.weekSummary.targetWeek.endDate}
+                  </span>
+                  <span className="badge badge-idea" data-testid="draft-notebook-status-badge">
+                    📒 Borrador en cuaderno local
+                  </span>
+                </div>
+              </div>
+
+              <PlanningCapacityHud
+                proposedWeek={proposedWeek}
+                calendarSummary={calendarSummary}
+                isEditingCapacity={isEditingCapacity}
+                setIsEditingCapacity={setIsEditingCapacity}
+                availableHoursInput={availableHoursInput}
+                setAvailableHoursInput={setAvailableHoursInput}
+                protectedSpacePercentInput={protectedSpacePercentInput}
+                setProtectedSpacePercentInput={setProtectedSpacePercentInput}
+                capacityFeedbackMessage={capacityFeedbackMessage}
+                onStartEditCapacity={handleStartEditCapacity}
+                onCancelEditCapacity={handleCancelEditCapacity}
+                onVerifyCapacity={handleVerifyCapacity}
+              />
+
+              <PlanningProposedItemsSection
+                proposedWeek={proposedWeek}
+                activeTargetWeek={activeTargetWeek}
+                extractedItems={extractedItems}
+                editingProposalItemId={editingProposalItemId}
+                proposalItemHoursInput={proposalItemHoursInput}
+                setEditingProposalItemId={setEditingProposalItemId}
+                setProposalItemHoursInput={setProposalItemHoursInput}
+                handleDemoteFocusToFlexible={handleDemoteFocusToFlexible}
+                handlePromoteFlexibleToFocus={handlePromoteFlexibleToFocus}
+                handleSaveProposalItemHours={handleSaveProposalItemHours}
+              />
+
+              <PlanningDeferredItemsSection
+                proposedWeek={proposedWeek}
+                extractedItems={extractedItems}
+                deferredDecisions={deferredDecisions}
+                handleDeferredDecisionChange={handleDeferredDecisionChange}
+                handleApplyOverdueDecision={handleApplyOverdueDecision}
+              />
+            </div>
+          )}
+
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              marginTop: "6px",
+              marginTop: "24px",
+              paddingTop: "16px",
+              borderTop: "1px solid var(--border-color, #e0e0e0)",
               flexWrap: "wrap",
-              gap: "8px",
+              gap: "10px",
             }}
           >
-            <span style={{ fontSize: "0.85rem", color: "#8c8273" }}>
-              {noteText.length} caracteres
-            </span>
+            <button
+              type="button"
+              className="secondary"
+              data-testid="flow-back-to-write"
+              onClick={() => setFlowStep("write")}
+            >
+              ← Volver a escribir
+            </button>
             <button
               type="button"
               className="primary"
-              aria-label="Analizar y extraer elementos de las notas"
-              disabled={isExtracting || !noteText.trim()}
-              onClick={() => handleExtract("replace")}
-              data-testid="extract-button"
+              data-testid="flow-continue-to-confirm"
+              onClick={handleContinueToConfirm}
+              disabled={!proposedWeek}
             >
-              {isExtracting ? "Entendiendo notas..." : "Analizar y extraer elementos"}
+              Continuar a confirmar →
             </button>
           </div>
         </div>
       )}
 
-      {extractError && (
-        <div className="status-message status-error" style={{ marginTop: "12px" }} role="alert">
-          <strong>Error de extracción:</strong> {extractError}
-        </div>
-      )}
-
       {/* -------------------------------------------------------------------- */}
-      {/* 2. Review Extracted Items */}
+      {/* PASO 3: CONFIRMAR                                                   */}
       {/* -------------------------------------------------------------------- */}
-      {extractedItems && (!proposedWeek || isReviewingSelection) && (
-        <PlanningExtractedItemsReview
-          extractedItems={extractedItems}
-          acceptedItemIds={acceptedItemIds}
-          acceptedCount={acceptedCount}
-          handleAcceptAll={handleAcceptAll}
-          handleDiscardAll={handleDiscardAll}
-          handleStartFreshWeek={handleStartFreshWeek}
-          handleToggleItem={handleToggleItem}
-          handleUpdateItemEffort={handleUpdateItemEffort}
-          handleUpdateItemDeadline={handleUpdateItemDeadline}
-          noteText={noteText}
-          setNoteText={setNoteText}
-          isExtracting={isExtracting}
-          handleExtract={handleExtract}
-          userIntent={userIntent}
-          setUserIntent={setUserIntent}
-          availableHoursInput={availableHoursInput}
-          setAvailableHoursInput={setAvailableHoursInput}
-          protectedSpacePercentInput={protectedSpacePercentInput}
-          setProtectedSpacePercentInput={setProtectedSpacePercentInput}
-          isPlanning={isPlanning}
-          planningError={planningError}
-          selectedCarryOverItemIds={selectedCarryOverItemIds}
-          handleGenerateProposal={handleGenerateProposal}
-        />
-      )}
-
-      {/* -------------------------------------------------------------------- */}
-      {/* 3. Review Generated Weekly Proposal (AI Proposes, Person Decides) */}
-      {/* -------------------------------------------------------------------- */}
-      {proposedWeek && !isReviewingSelection && (
-        <div
-          style={{
-            marginTop: "24px",
-            paddingTop: "16px",
-            borderTop: "1px solid var(--border-color, #e0e0e0)",
-          }}
-          aria-label="Revisión de propuesta semanal"
-          data-testid="weekly-proposal-screen"
-        >
+      {flowStep === "confirm" && proposedWeek && (
+        <div data-testid="flow-step-confirm">
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "baseline",
+              alignItems: "center",
+              marginBottom: "16px",
               flexWrap: "wrap",
-              gap: "8px",
+              gap: "10px",
             }}
           >
-            <div>
-              <div
-                className="calm-muted"
-                style={{
-                  fontSize: "0.8rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  fontWeight: 600,
-                }}
-              >
-                Propuesta semanal
-              </div>
-              <h2 style={{ margin: "2px 0 0 0" }}>
-                {proposedWeek.weekSummary.intent
-                  ? `«${proposedWeek.weekSummary.intent}»`
-                  : "Plan de la semana"}
-              </h2>
-            </div>
-            <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
-              <span className="badge badge-task">
-                {proposedWeek.weekSummary.targetWeek.startDate} al{" "}
-                {proposedWeek.weekSummary.targetWeek.endDate}
-              </span>
-              <span className="badge badge-idea" data-testid="draft-notebook-status-badge">
-                📒 Borrador en cuaderno local
-              </span>
-            </div>
+            <button
+              type="button"
+              className="secondary"
+              data-testid="flow-back-to-review"
+              onClick={() => setFlowStep("review")}
+            >
+              ← Volver a revisar
+            </button>
           </div>
 
-          {/* Capacity, Protected Space & Viability Overview */}
-          <PlanningCapacityHud
-            proposedWeek={proposedWeek}
-            calendarSummary={calendarSummary}
-            isEditingCapacity={isEditingCapacity}
-            setIsEditingCapacity={setIsEditingCapacity}
-            availableHoursInput={availableHoursInput}
-            setAvailableHoursInput={setAvailableHoursInput}
-            protectedSpacePercentInput={protectedSpacePercentInput}
-            setProtectedSpacePercentInput={setProtectedSpacePercentInput}
-            capacityFeedbackMessage={capacityFeedbackMessage}
-            onStartEditCapacity={handleStartEditCapacity}
-            onCancelEditCapacity={handleCancelEditCapacity}
-            onVerifyCapacity={handleVerifyCapacity}
-          />
-
-          {/* Weekly Foci, Obligations & Flexible Options */}
-          <PlanningProposedItemsSection
-            proposedWeek={proposedWeek}
-            activeTargetWeek={activeTargetWeek}
-            extractedItems={extractedItems}
-            editingProposalItemId={editingProposalItemId}
-            proposalItemHoursInput={proposalItemHoursInput}
-            setEditingProposalItemId={setEditingProposalItemId}
-            setProposalItemHoursInput={setProposalItemHoursInput}
-            handleDemoteFocusToFlexible={handleDemoteFocusToFlexible}
-            handlePromoteFlexibleToFocus={handlePromoteFlexibleToFocus}
-            handleSaveProposalItemHours={handleSaveProposalItemHours}
-          />
-
-          {/* Deferred / Unscheduled / Overdue Items */}
-          <PlanningDeferredItemsSection
-            proposedWeek={proposedWeek}
-            extractedItems={extractedItems}
-            deferredDecisions={deferredDecisions}
-            handleDeferredDecisionChange={handleDeferredDecisionChange}
-            handleApplyOverdueDecision={handleApplyOverdueDecision}
-          />
-          {/* Footer: Tradeoffs, diagnostics, conflict alert, notes, export and confirmation */}
           <PlanningProposalReviewFooter
             proposedWeek={proposedWeek}
             activeTargetWeek={activeTargetWeek}
@@ -1500,8 +2007,11 @@ export function WeeklyPlanningFromNotes({
             userIntent={userIntent}
             setUserIntent={setUserIntent}
             isConfirming={isConfirming}
-            handleAdjustElements={handleAdjustElements}
-            setIsReviewingSelection={setIsReviewingSelection}
+            handleAdjustElements={() => {
+              handleAdjustElements();
+              setFlowStep("review");
+            }}
+            setIsReviewingSelection={() => setFlowStep("review")}
             handleStartFreshWeek={handleStartFreshWeek}
             handleConfirmPlan={handleConfirmPlan}
           />

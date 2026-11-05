@@ -44,10 +44,33 @@ export function ConfirmedActiveMemoriesSection({
         <div style={{ marginTop: "12px" }}>
           <span
             className="calm-muted"
-            style={{ fontSize: "0.85rem", display: "block", marginBottom: "12px" }}
+            style={{ fontSize: "0.85rem", display: "block", marginBottom: "8px" }}
           >
             Influyen con prudencia en futuras sugerencias · AI propone, tú decides
           </span>
+
+          <details
+            className="calm-details"
+            data-testid="help-memories"
+            style={{ marginBottom: "12px", fontSize: "0.82rem" }}
+          >
+            <summary
+              style={{
+                cursor: "pointer",
+                color: "var(--accent-color, #2b6cb0)",
+                fontWeight: 500,
+              }}
+            >
+              ¿Qué es esto?
+            </summary>
+            <p
+              className="calm-muted"
+              style={{ margin: "4px 0 0 0", fontSize: "0.8rem", lineHeight: 1.4 }}
+            >
+              Patrones, preferencias y aprendizajes confirmados que el cuaderno recuerda para
+              sugerirte mejores semanas en el futuro.
+            </p>
+          </details>
 
           {memories.length === 0 ? (
             <div

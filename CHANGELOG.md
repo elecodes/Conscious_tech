@@ -7,6 +7,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.25.1] - 2026-11-04
+
+### Polish, Copy & Test Coverage
+
+- **UI Copy & Clarity**:
+  - Removed duplicate labels in the guided planning flow: "IA propone · Tú decides" and "Borrador en cuaderno local" appear exactly once per step on Revisar, and verified no duplicate labels on Confirmar and Mi semana.
+  - Added dynamic explanation on Revisar step under identified elements ("De tus 5 ideas, 2 entran en la semana y 3 quedan pendientes de decidir") with proper singular/plural grammar, hidden when all selected ideas are scheduled.
+  - Clarified Mock provider status in Ajustes under the AI assistant selector without modifying the default provider ("Ahora usas el modo de prueba (Mock): no se envía nada a ningún servicio. Elige Groq o Gemini para propuestas con IA real.").
+  - Fixed task titles in active week agenda and email summary by removing technical ID interpolation (`${itemId}`) from focus tasks, resolving clean human titles from notebook draft items.
+  - Made email summary discoverable in «Mi semana» with a direct top action button (`✉️ Enviar a Gmail / Correo`) and explicit section header (`📤 Exportar y compartir semana`), resolving hidden accordion friction.
+  - Bounded final encoded Gmail/mailto URL length strictly below 1,800 characters via binary search trimming to prevent HTTP 400 (`Request-URI Too Large`) on Google Frontend servers, while keeping 100% full text copy to clipboard.
+  - Corrected HTML `rel` attribute in Gmail compose link from comma-separated `rel="noopener,noreferrer"` to standard space-separated `rel="noopener noreferrer"`.
+  - Clarified calendar export buttons across «Mi semana» and Proposal Confirmation to explicitly state `.ics` download (`Añadir semana a Google Calendar (.ics)`), eliminating confusion with direct cloud sync.
+  - Added guided post-download bridge in active week and proposal footer with 1-click action button (`Abrir importador de Google Calendar` $\rightarrow$ `calendar.google.com/calendar/u/0/r/settings/export`) to easily upload the `.ics` so it syncs to mobile and external devices.
+  - Highlighted 1-click cloud sync on individual tasks under `••• Más` (`📅 Google Cal (1 clic)`), which saves directly to Google Calendar without downloading files.
+  - Resolved CSS selector scoping in `style.css` for `a.button` elements, providing distinct visual hierarchy and pill-button shapes for `[✉️ Abrir en Gmail]` (solid sage green primary), `[📬 Usar mi programa de correo]` (bordered white secondary), and `[📋 Copiar resumen]` (utility).
+- **Automated Coverage & Test Gates**:
+  - Added unit and integration tests for calendar reminder preferences (restoring preferences from localStorage across reloads and clean profile defaults).
+  - Added unit tests for email summary edge cases with long weeks (>1,500 characters), ensuring body truncation with "… (ver el resto en la app)", safe URL lengths (< 3500 characters) for Gmail compose and mailto, proper encoding of special characters (accents, &, #, newlines), absence of recipients, and full non-truncated copy to clipboard.
+  - Extended browser smoke test (`scripts/smoke-test.ts`) covering long week email summary limits, full clipboard copy, and reminder preference persistence.
+- **Verification Checklist**:
+  - Added manual release verification checklist in `README.md`.
+
+## [0.25.0] - 2026-11-04
+
+### Guided Flow "Nueva semana" & Card Simplification (ADR 0027)
+
+- **Guided Flow "Nueva semana" (Escribir → Revisar → Confirmar)**:
+  - Replaced the fragmented "Ideas" and "Planificar" tabs with a unified three-step guided progression with a visible step indicator line (`step-indicator-write`, `step-indicator-review`, `step-indicator-confirm`).
+  - **Escribir**: Single clean textarea with sample case selector and "Continuar →" button. Clicking "Continuar" runs item extraction and weekly proposal generation using existing domain functions and contracts. In case of error, the user stays on the step with entered notes completely preserved.
+  - **Revisar**: Presents extracted items as calm idea cards with checkboxes alongside the generated proposal (capacity one-sentence summary, scheduled items, and collapsed deferred items). Kept "Añadir más ideas", "Opciones" (target dates, calendar sync, clean start), and voice dictation compact/collapsed. Includes a visible "← Volver a escribir" button preserving text and selections.
+  - **Confirmar**: Dedicated final confirmation view with the primary "Confirmar y activar semana" action and collapsed "Más acciones" menu. Includes a visible "← Volver a revisar" button. After confirming, automatically transitions to "Mi semana".
+- **Calm Idea Cards (CalmIdeaCard)**:
+  - Simplified extracted idea cards to show only title, deadline badge (if present), and the selection checkbox by default.
+  - Moved secondary metadata (type, project, status badges, effort estimation, and source quote) behind a per-card accessible "Detalles" toggle button (`aria-expanded`, keyboard navigable).
+- **Navigation Simplified to 2 Tabs**:
+  - Reduced main tabs to "Mi semana" and "Nueva semana".
+  - Moved cycle closing into a clear "Cerrar semana →" button inside "Mi semana" that opens the reflective closing view without changing component logic.
+  - Next-step suggestion bar only appears when a decision or action is pending; automatically hidden on "Mi semana" when an active week is ongoing with nothing pending.
+  - Preserved ADR 0025 landing tab rule: no active week and no draft opens "Nueva semana" at Escribir; pending draft opens "Nueva semana" at Revisar; active week opens "Mi semana".
+- **First-Run Welcome & Contextual Help**:
+  - Added a dismissible three-line welcome card ("Escribe → Revisa → Vive tu semana"), shown once via local storage flag (`conscious_tech_welcome_dismissed`) and re-openable at any time from "Ajustes".
+  - Added "¿Qué es esto?" contextual help details on "Imprevistos" and "Lo que he aprendido".
+- **Strict Backward Compatibility & Quality Gates**:
+  - Preserved all `NavigationSpace` values (`capture`, `prepare`, `active`, `review`) and localStorage keys; mapped legacy spaces seamlessly to the new guided UI.
+  - Zero changes to business logic, domain entities, AI skills, or persistence layer.
+  - Full automated test suite (70 test files, 941 tests) passing.
+  - Extended browser smoke test (`scripts/smoke-test.ts`) validating end-to-end guided flow, step back navigation with note preservation, calm card toggle, and reload tests with draft and active week across both `preview` and `dev` environments.
+
+## [0.24.0] - 2026-11-04
+
+### Reminders in Calendar Export & Client-Side Email Summary (ADR 0026)
+
+- **Deterministic Reminders in Calendar Export (.ics / RFC 5545)**:
+  - Added "Recordatorios" preference section in "Ajustes" and inside the export menu, off by default ("Sin recordatorio").
+  - Options: sin recordatorio (`none`), 15 minutos antes (`15m`), 1 hora antes (`1h`), and 1 día antes (`1d`), persisted locally in `localStorage` without server contact.
+  - Generates RFC 5545 `VALARM` components (`ACTION:DISPLAY`, `TRIGGER:-PT15M` / `-PT1H` / `-P1D`) for events with date or time.
+  - Alarms apply by default only to commitments and deadline-bearing items, with an optional "Incluir también tareas" checkbox for flexible tasks.
+  - Supported all-day events (`VALUE=DATE`) with standard RFC 5545 start-of-day relative triggers.
+  - RFC 5545 conformance: CRLF line endings, 75-octet line folding with UTF-8 character boundary safety, text escaping (`\`, `;`, `,`, newlines), stable deterministic UIDs per item to update rather than duplicate on re-export, `DTSTAMP`, and `Europe/Madrid` timezone handling.
+  - Added prominent "Añadir semana a Google Calendar" button in "Mi semana" and proposal footer with import instructions note ("Google Calendar → Ajustes → Importar"), preserving per-item links.
+  - Honest copy: "Tu calendario te avisará" with help text "Google Calendar te avisará con una notificación; puedes activar el aviso por correo en sus ajustes."
+- **Client-Side Email Summary ("Enviarme el resumen por correo")**:
+  - Added email summary buttons in "Mi semana" and "Cierre".
+  - Opens Gmail compose (`https://mail.google.com/mail/?view=cm&fs=1&su=...&body=...`) in a new tab with `rel="noopener,noreferrer"` and fallback to `mailto:` ("Usar mi programa de correo").
+  - Recipient is strictly left empty: the person inputs their own email; no email address is ever requested, stored, or logged.
+  - Subject formatted as `Mi semana · <rango de fechas>`, with clean plain-text body excluding internal IDs or JSON.
+  - Includes personal reflections and learned lessons in "Cierre".
+  - URL length capping: bodies exceeding ~1,500 characters are gracefully truncated with `… (ver el resto en la app)` accompanied by a "Copiar resumen" button to copy the complete text to the clipboard.
+  - Explicit privacy notice displayed before opening the link.
+- **Calm Interface Integration**:
+  - Grouped reminders and email summary under a collapsed "Recordatorios y avisos" details block in "Mi semana", avoiding clutter or new tabs.
+- **Comprehensive Quality Gates & Testing**:
+  - Unit tests for RFC 5545 validity, stable UIDs, alarms, line folding, round-trip parsing via `ical-parser.ts`, and email body builder with length capping and truncation.
+  - Component integration tests for reminder settings, email summary card, and UI export buttons.
+  - Extended browser smoke test (`scripts/smoke-test.ts`) validating reminder offset selection, capturing downloaded `.ics` to verify `VALARM`, and asserting the Gmail compose URL with empty recipient.
+  - Spain Spanish copy checked against `tests/voseo-denylist.test.ts`.
+
 ## [0.23.0] - 2026-11-03
 
 ### UI Simplification & Progressive Disclosure (ADR 0025)

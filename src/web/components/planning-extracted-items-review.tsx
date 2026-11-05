@@ -1,6 +1,9 @@
+import { useMemo } from "react";
 import { ExtractedItem } from "../../domain/items";
-import { formatItemType } from "../labels";
+import { ProposedWeek } from "../../domain/week";
 import { VoiceDictationButton } from "./voice-dictation-button";
+import { CalmIdeaCard } from "./calm-idea-card";
+import { formatIdeasSplitExplanation } from "../labels";
 
 export interface PlanningExtractedItemsReviewProps {
   extractedItems: ExtractedItem[];
@@ -26,6 +29,8 @@ export interface PlanningExtractedItemsReviewProps {
   planningError: string | null;
   selectedCarryOverItemIds: Set<string>;
   handleGenerateProposal: () => void;
+  isProposalDirty?: boolean;
+  proposedWeek?: ProposedWeek | null;
 }
 
 export function PlanningExtractedItemsReview({
@@ -50,9 +55,27 @@ export function PlanningExtractedItemsReview({
   setProtectedSpacePercentInput,
   isPlanning,
   planningError,
-  selectedCarryOverItemIds,
+  selectedCarryOverItemIds: _selectedCarryOverItemIds,
   handleGenerateProposal,
+  isProposalDirty,
+  proposedWeek,
 }: PlanningExtractedItemsReviewProps) {
+  const scheduledCount = useMemo(() => {
+    if (!proposedWeek) return 0;
+    const scheduledIds = new Set<string>([
+      ...proposedWeek.foci.flatMap((f) =>
+        f.contributingItemIds && f.contributingItemIds.length > 0 ? f.contributingItemIds : [f.id]
+      ),
+      ...proposedWeek.obligations.map((o) => o.itemId),
+      ...proposedWeek.flexibleOptions.map((fl) => fl.itemId),
+    ]);
+    return Array.from(acceptedItemIds).filter((id) => scheduledIds.has(id)).length;
+  }, [proposedWeek, acceptedItemIds]);
+
+  const pendingCount = Math.max(0, acceptedCount - scheduledCount);
+  const splitExplanation = proposedWeek
+    ? formatIdeasSplitExplanation(acceptedCount, scheduledCount, pendingCount)
+    : null;
   return (
     <div
       style={{
@@ -104,6 +127,21 @@ export function PlanningExtractedItemsReview({
         </div>
       </div>
 
+      {splitExplanation && (
+        <p
+          className="calm-text"
+          data-testid="ideas-split-explanation"
+          style={{
+            margin: "0 0 10px 0",
+            fontSize: "0.85rem",
+            color: "var(--accent-color, #2b6cb0)",
+            fontWeight: 500,
+          }}
+        >
+          {splitExplanation}
+        </p>
+      )}
+
       <p className="calm-muted" style={{ fontSize: "0.85rem", margin: "0 0 10px 0" }}>
         Selecciona qué elementos deseas incluir en la propuesta semanal. Los no seleccionados se
         descartarán de esta planificación.
@@ -127,161 +165,16 @@ export function PlanningExtractedItemsReview({
           }}
           aria-label="Lista de elementos identificados"
         >
-          {extractedItems.map((item) => {
-            const isAccepted = acceptedItemIds.has(item.id);
-            return (
-              <li
-                key={item.id}
-                className="item-card"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "8px 12px",
-                  background: isAccepted ? "var(--bg-highlight, #fdfdfd)" : "#fafafa",
-                  opacity: isAccepted ? 1 : 0.6,
-                  border: isAccepted
-                    ? "1px solid var(--border-color, #e0ded9)"
-                    : "1px dashed #d1d5db",
-                  borderRadius: "6px",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  id={`item-check-${item.id}`}
-                  checked={isAccepted}
-                  onChange={() => handleToggleItem(item.id)}
-                  aria-label={`Incluir elemento ${item.title}`}
-                  style={{ cursor: "pointer", flexShrink: 0 }}
-                />
-                <div
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "6px",
-                    minWidth: 0,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: "8px",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <strong
-                      style={{
-                        fontSize: "0.92rem",
-                        textDecoration: isAccepted ? "none" : "line-through",
-                        color: isAccepted ? "inherit" : "var(--text-muted, #888)",
-                      }}
-                    >
-                      {item.title}
-                    </strong>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <span className={`badge badge-${item.type}`}>
-                        {formatItemType(item.type)}
-                      </span>
-                      {item.project && <span className="badge badge-muted">📁 {item.project}</span>}
-                      {item.estimatedEffort && (
-                        <span className="badge badge-muted">
-                          ⏱ {item.estimatedEffort.value} {item.estimatedEffort.unit}
-                        </span>
-                      )}
-                      {item.deadline && (
-                        <span className="badge badge-muted" style={{ color: "#b45309" }}>
-                          📅 {item.deadline.raw}{" "}
-                          {item.deadline.resolved ? `(${item.deadline.resolved})` : ""}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {isAccepted && (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "14px",
-                        flexWrap: "wrap",
-                        fontSize: "0.82rem",
-                        color: "var(--text-muted, #666)",
-                        marginTop: "2px",
-                      }}
-                    >
-                      <label
-                        htmlFor={`item-effort-${item.id}`}
-                        style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
-                      >
-                        <span>⏱️ Horas:</span>
-                        <input
-                          id={`item-effort-${item.id}`}
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.5"
-                          placeholder="Sin estimar"
-                          value={item.estimatedEffort?.value ?? ""}
-                          onChange={(e) => {
-                            const val = e.target.value === "" ? null : Number(e.target.value);
-                            handleUpdateItemEffort(item.id, val);
-                          }}
-                          style={{
-                            width: "80px",
-                            padding: "2px 6px",
-                            fontSize: "0.82rem",
-                            borderRadius: "4px",
-                            border: "1px solid var(--border-color, #ccc)",
-                            background: "var(--bg-card, #fff)",
-                          }}
-                          aria-label={`Horas estimadas para ${item.title}`}
-                        />
-                        <span>h</span>
-                      </label>
-
-                      <label
-                        htmlFor={`item-deadline-${item.id}`}
-                        style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
-                      >
-                        <span>📅 Límite / Fecha:</span>
-                        <input
-                          id={`item-deadline-${item.id}`}
-                          type="date"
-                          value={
-                            item.deadline?.resolved ||
-                            (item.deadline?.raw && /^\d{4}-\d{2}-\d{2}$/.test(item.deadline.raw)
-                              ? item.deadline.raw
-                              : "")
-                          }
-                          onChange={(e) => {
-                            handleUpdateItemDeadline(item.id, e.target.value || null);
-                          }}
-                          style={{
-                            padding: "2px 6px",
-                            fontSize: "0.82rem",
-                            borderRadius: "4px",
-                            border: "1px solid var(--border-color, #ccc)",
-                            background: "var(--bg-card, #fff)",
-                          }}
-                          aria-label={`Fecha límite para ${item.title}`}
-                        />
-                      </label>
-                    </div>
-                  )}
-                </div>
-              </li>
-            );
-          })}
+          {extractedItems.map((item) => (
+            <CalmIdeaCard
+              key={item.id}
+              item={item}
+              isAccepted={acceptedItemIds.has(item.id)}
+              onToggle={() => handleToggleItem(item.id)}
+              onUpdateEffort={handleUpdateItemEffort}
+              onUpdateDeadline={handleUpdateItemDeadline}
+            />
+          ))}
         </ul>
       )}
 
@@ -379,131 +272,192 @@ export function PlanningExtractedItemsReview({
         </div>
       </details>
 
-      {/* User Intent Input */}
-      <div style={{ marginTop: "16px" }}>
-        <label
-          htmlFor="weekly-intent-input"
-          style={{ display: "block", fontSize: "0.9rem", fontWeight: 600, marginBottom: "4px" }}
-        >
-          Intención o foco prioritario para la semana (opcional):
-        </label>
-        <input
-          id="weekly-intent-input"
-          type="text"
-          value={userIntent}
-          onChange={(e) => setUserIntent(e.target.value)}
-          placeholder="Ej: Foco en cerrar entregables críticos y reservar espacio para imprevistos"
-          style={{ width: "100%", padding: "8px", boxSizing: "border-box" }}
-          disabled={isPlanning}
-        />
-      </div>
-
-      {/* Capacity & Protected Space Configuration (Optional, for verifying viability) */}
-      <div
+      {/* Ajustes de la semana (opcional) - Colapsado */}
+      <details
+        className="calm-details"
+        data-testid="week-settings-details"
         style={{
           marginTop: "16px",
-          padding: "12px 14px",
-          background: "#f9fafb",
-          border: "1px solid #e5e7eb",
-          borderRadius: "6px",
+          padding: "10px 14px",
+          background: "#fafaf8",
+          border: "1px solid var(--border-color, #e6ded1)",
+          borderRadius: "8px",
         }}
-        data-testid="planning-capacity-pre-config"
       >
-        <div style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: "4px", color: "#374151" }}>
-          Límites de capacidad y espacio protegido (opcional)
-        </div>
-        <p className="calm-muted" style={{ fontSize: "0.82rem", margin: "0 0 10px 0" }}>
-          Registra cuántas horas tienes disponibles y cuánto margen quieres proteger para comprobar
-          la viabilidad real.
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
-          <div style={{ flex: "1 1 200px" }}>
+        <summary
+          style={{
+            cursor: "pointer",
+            fontWeight: 600,
+            fontSize: "0.88rem",
+            color: "var(--text-main)",
+          }}
+          data-testid="week-settings-summary"
+        >
+          ⚙️ Ajustes de la semana (opcional)
+        </summary>
+        <div style={{ marginTop: "12px" }}>
+          {/* User Intent Input */}
+          <div>
             <label
-              htmlFor="planning-available-hours-input"
+              htmlFor="weekly-intent-input"
               style={{
                 display: "block",
-                fontSize: "0.82rem",
-                fontWeight: 500,
+                fontSize: "0.85rem",
+                fontWeight: 600,
                 marginBottom: "4px",
-                color: "#4b5563",
               }}
             >
-              Horas realmente disponibles:
+              Intención o foco prioritario para la semana (opcional):
             </label>
             <input
-              id="planning-available-hours-input"
-              type="number"
-              min="0"
-              step="0.5"
-              value={availableHoursInput}
-              onChange={(e) => setAvailableHoursInput(e.target.value)}
-              placeholder="Ej: 30 (deja vacío si es desconocida)"
-              style={{
-                width: "100%",
-                padding: "6px 10px",
-                fontSize: "0.88rem",
-                boxSizing: "border-box",
-              }}
+              id="weekly-intent-input"
+              type="text"
+              value={userIntent}
+              onChange={(e) => setUserIntent(e.target.value)}
+              placeholder="Ej: Foco en cerrar entregables críticos y reservar espacio para imprevistos"
+              style={{ width: "100%", padding: "8px", boxSizing: "border-box" }}
               disabled={isPlanning}
-              data-testid="planning-available-hours-input"
             />
           </div>
-          <div style={{ flex: "1 1 200px" }}>
-            <label
-              htmlFor="planning-protected-space-ratio-input"
+
+          {/* Capacity & Protected Space Configuration */}
+          <div
+            style={{
+              marginTop: "12px",
+              padding: "12px 14px",
+              background: "#ffffff",
+              border: "1px solid #e5e7eb",
+              borderRadius: "6px",
+            }}
+            data-testid="planning-capacity-pre-config"
+          >
+            <div
               style={{
-                display: "block",
-                fontSize: "0.82rem",
-                fontWeight: 500,
+                fontWeight: 600,
+                fontSize: "0.85rem",
                 marginBottom: "4px",
-                color: "#4b5563",
+                color: "#374151",
               }}
             >
-              Espacio a proteger (% margen):
-            </label>
-            <input
-              id="planning-protected-space-ratio-input"
-              type="number"
-              min="0"
-              max="100"
-              step="5"
-              value={protectedSpacePercentInput}
-              onChange={(e) => setProtectedSpacePercentInput(e.target.value)}
-              placeholder="25"
-              style={{
-                width: "100%",
-                padding: "6px 10px",
-                fontSize: "0.88rem",
-                boxSizing: "border-box",
-              }}
-              disabled={isPlanning}
-              data-testid="planning-protected-space-input"
-            />
+              Límites de capacidad y espacio protegido (opcional)
+            </div>
+            <p className="calm-muted" style={{ fontSize: "0.82rem", margin: "0 0 10px 0" }}>
+              Registra cuántas horas tienes disponibles y cuánto margen quieres proteger para
+              comprobar la viabilidad real.
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+              <div style={{ flex: "1 1 200px" }}>
+                <label
+                  htmlFor="planning-available-hours-input"
+                  style={{
+                    display: "block",
+                    fontSize: "0.82rem",
+                    fontWeight: 500,
+                    marginBottom: "4px",
+                    color: "#4b5563",
+                  }}
+                >
+                  Horas realmente disponibles:
+                </label>
+                <input
+                  id="planning-available-hours-input"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={availableHoursInput}
+                  onChange={(e) => setAvailableHoursInput(e.target.value)}
+                  placeholder="Ej: 30 (deja vacío si es desconocida)"
+                  style={{
+                    width: "100%",
+                    padding: "6px 10px",
+                    fontSize: "0.88rem",
+                    boxSizing: "border-box",
+                  }}
+                  disabled={isPlanning}
+                  data-testid="planning-available-hours-input"
+                />
+              </div>
+              <div style={{ flex: "1 1 200px" }}>
+                <label
+                  htmlFor="planning-protected-space-ratio-input"
+                  style={{
+                    display: "block",
+                    fontSize: "0.82rem",
+                    fontWeight: 500,
+                    marginBottom: "4px",
+                    color: "#4b5563",
+                  }}
+                >
+                  Espacio a proteger (% margen):
+                </label>
+                <input
+                  id="planning-protected-space-ratio-input"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={protectedSpacePercentInput}
+                  onChange={(e) => setProtectedSpacePercentInput(e.target.value)}
+                  placeholder="25"
+                  style={{
+                    width: "100%",
+                    padding: "6px 10px",
+                    fontSize: "0.88rem",
+                    boxSizing: "border-box",
+                  }}
+                  disabled={isPlanning}
+                  data-testid="planning-protected-space-input"
+                />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </details>
+
+      {/* Actualizar propuesta link/button when inputs have changed */}
+      {isProposalDirty && (
+        <div
+          style={{
+            marginTop: "12px",
+            padding: "8px 12px",
+            background: "#fef9c3",
+            border: "1px solid #fde047",
+            borderRadius: "6px",
+            fontSize: "0.85rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "10px",
+            flexWrap: "wrap",
+          }}
+          data-testid="proposal-dirty-banner"
+        >
+          <span style={{ color: "#854d0e" }}>
+            Hay cambios en los elementos o ajustes de la semana.
+          </span>
+          <button
+            type="button"
+            className="secondary small"
+            onClick={handleGenerateProposal}
+            disabled={isPlanning}
+            data-testid="update-proposal-button"
+            style={{
+              fontSize: "0.82rem",
+              padding: "3px 10px",
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+          >
+            {isPlanning ? "Actualizando..." : "🔄 Actualizar propuesta"}
+          </button>
+        </div>
+      )}
 
       {planningError && (
         <div className="status-message status-error" style={{ marginTop: "12px" }} role="alert">
           <strong>Error de planificación:</strong> {planningError}
         </div>
       )}
-
-      <div style={{ marginTop: "16px", display: "flex", justifyContent: "flex-end" }}>
-        <button
-          className="primary"
-          aria-label="Generar propuesta semanal con los elementos aceptados"
-          disabled={isPlanning || (acceptedCount === 0 && selectedCarryOverItemIds.size === 0)}
-          onClick={handleGenerateProposal}
-          data-testid="generate-proposal-button"
-        >
-          {isPlanning
-            ? "Estructurando propuesta semanal..."
-            : selectedCarryOverItemIds.size > 0
-              ? `Generar propuesta semanal (${acceptedCount} notas + ${selectedCarryOverItemIds.size} postergadas)`
-              : `Generar propuesta semanal (${acceptedCount} elementos)`}
-        </button>
-      </div>
     </div>
   );
 }

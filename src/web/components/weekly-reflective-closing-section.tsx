@@ -1,5 +1,6 @@
 import { StoredWeeklyPlan } from "../../domain/repositories/types";
 import { ItemOutcomeInput } from "../../domain/close-week";
+import { EmailSummaryCard } from "./email-summary-card";
 
 export type ItemDispositionChoice =
   "unreviewed" | "completed" | "in_progress" | "not_started" | "consciously_postponed" | "dropped";
@@ -121,7 +122,18 @@ export function WeeklyReflectiveClosingSection({
         }}
       >
         <h3>Cierre de semana</h3>
-        <div style={{ display: "flex", gap: "6px" }}>
+        <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+          {onNavigateSpace && (
+            <button
+              type="button"
+              className="secondary small"
+              onClick={() => onNavigateSpace("active")}
+              data-testid="back-to-active-week-button"
+              style={{ fontSize: "0.8rem", padding: "3px 8px" }}
+            >
+              ← Volver a Mi semana
+            </button>
+          )}
           <button
             type="button"
             className={closeStep === "dispositions" ? "primary" : "secondary"}
@@ -304,6 +316,26 @@ export function WeeklyReflectiveClosingSection({
           placeholder="¿Cómo te sentiste con el ritmo y la carga?"
           style={{ width: "100%", marginTop: "6px" }}
         />
+
+        <div style={{ marginTop: "16px" }}>
+          <EmailSummaryCard
+            targetWeek={plan?.targetWeek || { startDate: "2026-10-19", endDate: "2026-10-25" }}
+            items={planItems.map((item) => ({
+              title: item.title,
+              day: item.dueDate,
+              source: item.source,
+            }))}
+            reflections={{
+              notes: reflectionNotes,
+              learned: Object.entries(dispositions)
+                .filter(([_, d]) => d.status === "consciously_postponed" && d.postponementReason)
+                .map(([id, d]) => {
+                  const it = planItems.find((p) => p.itemId === id);
+                  return `${it?.title || id}: ${d.postponementReason}`;
+                }),
+            }}
+          />
+        </div>
 
         <div className="actions" style={{ marginTop: "16px", display: "flex", gap: "10px" }}>
           <button

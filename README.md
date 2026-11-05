@@ -43,7 +43,11 @@ docs/
     ├── 0021-zod-advisory-mitigation-and-v4-migration-strategy.md
     ├── 0022-spanish-first-language-and-deferred-i18n.md
     ├── 0023-proxy-hardening-and-provider-decoupling.md
-    └── 0024-domain-decoupling-browser-smoke-tests-and-privacy-hardening.md
+    ├── 0024-domain-decoupling-browser-smoke-tests-and-privacy-hardening.md
+    ├── 0025-ui-simplification-and-progressive-disclosure.md
+    ├── 0026-reminders-and-email-summary.md
+    ├── 0027-guided-flow-and-card-simplification.md
+    └── 0028-calendar-bridge-and-email-summary-polish.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
 │   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
@@ -56,7 +60,9 @@ src/
 │   ├── conflict.ts          # ConflictType, DetectedConflict, TimeBlock, Evidence
 │   ├── adjustment.ts        # AdjustmentProposal, SuggestedAdjustmentAction, Partitions
 │   ├── memory.ts            # MemoryItem, MemoryOperation, CandidateMemoryInput, Invariants
-│   ├── calendar.ts          # CalendarEvent, CalendarWeekSummary, 1-click & ICS export
+│   ├── calendar.ts          # CalendarEvent, CalendarWeekSummary, 1-click & RFC 5545 ICS export
+│   ├── reminders.ts         # Local reminder preferences & VALARM offsets
+│   ├── email-summary.ts     # Client-side plain-text summary & mail compose URLs
 │   ├── schedule.ts          # WeeklySchedule re-export facade
 │   ├── schedule-types.ts    # Schedule types & schemas (no circular dependencies)
 │   ├── schedule-invariants.ts # Schedule invariant validators
@@ -325,6 +331,16 @@ npm test
 npm run build
 npm run test:smoke
 ```
+
+---
+
+## Verification Checklist
+
+Manual checks for release verification:
+
+- [ ] First CI run on the merged branch.
+- [ ] Import the downloaded .ics into Google Calendar and confirm 09:00 for all-day items and 1 hour before for timed items.
+- [ ] Usability test with 2-3 people who have not seen the app.
 
 ---
 

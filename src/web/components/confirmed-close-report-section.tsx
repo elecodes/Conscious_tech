@@ -1,4 +1,5 @@
 import { StoredCloseWeekReport } from "../../domain/repositories/types";
+import { EmailSummaryCard } from "./email-summary-card";
 
 export interface ConfirmedCloseReportSectionProps {
   closeReport: StoredCloseWeekReport;
@@ -52,6 +53,29 @@ export function ConfirmedCloseReportSection({ closeReport }: ConfirmedCloseRepor
           </p>
         </div>
       )}
+
+      <div style={{ marginTop: "16px" }}>
+        <EmailSummaryCard
+          targetWeek={{
+            startDate: closeReport.planId.includes("-") ? closeReport.planId : "Semana cerrada",
+            endDate: closeReport.closedAt.slice(0, 10),
+          }}
+          items={[
+            ...closeReport.output.itemDispositions.completed.map((id) => ({
+              title: id,
+              source: "Completada",
+              isCompleted: true,
+            })),
+            ...closeReport.output.reflectiveSummary.consciousPostponements.map((p) => ({
+              title: p,
+              source: "Postergada",
+            })),
+          ]}
+          reflections={{
+            notes: closeReport.output.reflectiveSummary.headline,
+          }}
+        />
+      </div>
     </section>
   );
 }

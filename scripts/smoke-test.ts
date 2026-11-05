@@ -66,7 +66,9 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
-    const context = await browser.newContext();
+    const context = await browser.newContext({
+      permissions: ["clipboard-read", "clipboard-write"],
+    });
     const page = await context.newPage();
 
     const pageErrors: string[] = [];
@@ -90,7 +92,6 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     await textLocator.waitFor({ state: "visible", timeout: 10000 });
     console.log(`Assertion passed: "Tecnología Consciente" is visible.`);
 
-    // PR B checks:
     // 1. Verify header is simplified: presence chip and avatar are absent
     const presenceCount = await page.locator("text=Presencia").count();
     if (presenceCount > 0) {
@@ -103,7 +104,6 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     await settingsDetails.waitFor({ state: "visible", timeout: 5000 });
     console.log("  ✓ Ajustes dropdown visible in header");
 
-    // Provider selector must NOT be visible when Ajustes is closed
     const isProviderInitiallyVisible = await page
       .locator('[data-testid="provider-select"]')
       .isVisible();
@@ -132,94 +132,71 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     // Close Ajustes dropdown
     await page.locator('[data-testid="settings-dropdown"] summary').click();
 
-    // Verify provider select is hidden again after closing
-    const isProviderHiddenAfterClose = !(await page
-      .locator('[data-testid="provider-select"]')
-      .isVisible());
-    if (!isProviderHiddenAfterClose) {
-      throw new Error("Provider selector should be hidden when Ajustes is closed");
+    // 3. First-run welcome card
+    const welcomeCard = page.locator('[data-testid="welcome-card"]');
+    await welcomeCard.waitFor({ state: "visible", timeout: 5000 });
+    const welcomeText = await welcomeCard.innerText();
+    if (!welcomeText.includes("Escribe → Revisa → Vive tu semana")) {
+      throw new Error(`Expected welcome card header, got ${welcomeText}`);
     }
+    console.log("  ✓ First-run welcome card visible");
 
-    // 3. Verify plain tab labels without numbers
-    const tabCapture = page.locator('[data-testid="nav-tab-capture"]');
-    const tabPrepare = page.locator('[data-testid="nav-tab-prepare"]');
+    // Dismiss welcome card
+    await page.locator('[data-testid="dismiss-welcome-button"]').click();
+    await page.waitForTimeout(200);
+    const isWelcomeDismissed = !(await welcomeCard.isVisible());
+    if (!isWelcomeDismissed) {
+      throw new Error("Welcome card should be hidden after dismissal");
+    }
+    console.log("  ✓ Welcome card dismissed successfully");
+
+    // 4. Verify 2 tabs: "Mi semana" and "Nueva semana"
     const tabActive = page.locator('[data-testid="nav-tab-active"]');
-    const tabReview = page.locator('[data-testid="nav-tab-review"]');
-    const tabCaptureText = (await tabCapture.innerText()).trim();
-    const tabPrepareText = (await tabPrepare.innerText()).trim();
+    const tabNewWeek = page.locator('[data-testid="nav-tab-new-week"]');
     const tabActiveText = (await tabActive.innerText()).trim();
-    const tabReviewText = (await tabReview.innerText()).trim();
+    const tabNewWeekText = (await tabNewWeek.innerText()).trim();
 
-    if (tabCaptureText !== "Ideas")
-      throw new Error(`Tab 1 label expected "Ideas", got "${tabCaptureText}"`);
-    if (tabPrepareText !== "Planificar")
-      throw new Error(`Tab 2 label expected "Planificar", got "${tabPrepareText}"`);
-    if (tabActiveText !== "Mi semana")
-      throw new Error(`Tab 3 label expected "Mi semana", got "${tabActiveText}"`);
-    if (tabReviewText !== "Cierre")
-      throw new Error(`Tab 4 label expected "Cierre", got "${tabReviewText}"`);
-    console.log("  ✓ Simplified tab labels: Ideas, Planificar, Mi semana, Cierre");
-
-    // 4. PR C & PR F: Verify initial Next Step bar and landing tab
-    const nextStepBar = page.locator('[data-testid="next-step-bar"]');
-    await nextStepBar.waitFor({ state: "visible", timeout: 5000 });
-    const initialNextStepMsg = (
-      await page.locator('[data-testid="next-step-message"]').innerText()
-    ).trim();
-    if (!initialNextStepMsg.includes("Escribe lo que tienes en la cabeza")) {
+    if (!tabActiveText.startsWith("Mi semana")) {
       throw new Error(
-        `Expected initial next step message "Escribe lo que tienes en la cabeza", got "${initialNextStepMsg}"`
+        `Tab Active label expected to start with "Mi semana", got "${tabActiveText}"`
       );
     }
-    console.log("  ✓ Initial next step bar verified: 'Escribe lo que tienes en la cabeza'");
+    if (!tabNewWeekText.startsWith("Nueva semana")) {
+      throw new Error(
+        `Tab New Week label expected to start with "Nueva semana", got "${tabNewWeekText}"`
+      );
+    }
+    console.log("  ✓ 2 tabs verified: Mi semana, Nueva semana");
 
-    // PR F: Fresh load lands on Ideas (capture) with no redundant next-step button
-    const isCapturePrimary = await tabCapture.evaluate((el: HTMLElement) =>
+    // 5. Landing rule on fresh load: no active week, no draft -> lands on Nueva semana at Escribir
+    const isNewWeekPrimary = await tabNewWeek.evaluate((el: HTMLElement) =>
       el.classList.contains("primary")
     );
-    if (!isCapturePrimary) {
+    if (!isNewWeekPrimary) {
       throw new Error(
-        "Fresh load should land on Ideas (nav-tab-capture should have class primary)"
+        "Fresh load should land on Nueva semana (nav-tab-new-week should have class primary)"
       );
     }
-    const isRedundantInitialBtnVisible = await page
-      .locator('[data-testid="next-step-button"]')
-      .isVisible();
-    if (isRedundantInitialBtnVisible) {
-      throw new Error(
-        "Initial next-step button should be hidden because target space is the current space (Ideas)"
-      );
+    const writeStep = page.locator('[data-testid="flow-step-write"]');
+    await writeStep.waitFor({ state: "visible", timeout: 5000 });
+    console.log("  ✓ Fresh load landed on Nueva semana at step 'Escribir'");
+
+    // Check progress indicators
+    const stepWriteIndicator = page.locator('[data-testid="step-indicator-write"]');
+    const stepReviewIndicator = page.locator('[data-testid="step-indicator-review"]');
+    const stepConfirmIndicator = page.locator('[data-testid="step-indicator-confirm"]');
+    await stepWriteIndicator.waitFor({ state: "visible", timeout: 5000 });
+    await stepReviewIndicator.waitFor({ state: "visible", timeout: 5000 });
+    await stepConfirmIndicator.waitFor({ state: "visible", timeout: 5000 });
+    if ((await stepWriteIndicator.getAttribute("aria-current")) !== "step") {
+      throw new Error("Step 1 (Escribir) indicator must have aria-current='step'");
     }
-    console.log("  ✓ Fresh load landed on Ideas with no redundant next-step button");
-
-    // --- STEP 1: Assert empty states on all 4 tabs & capture screenshots ---
-    console.log("\nVerifying 4 main tabs navigation and empty states...");
-
-    // 1. Tab 1: Ideas
-    await tabCapture.click();
-    await page
-      .locator('[data-testid="extract-dump-button"]')
-      .waitFor({ state: "visible", timeout: 5000 });
-    if (mode === "preview") {
-      await page.screenshot({
-        path: path.join(outputDir, "01-tab-capture-empty.png"),
-        fullPage: true,
-      });
+    if ((await stepReviewIndicator.getAttribute("aria-current")) !== null) {
+      throw new Error("Step 2 (Revisar) indicator should not have aria-current during step 1");
     }
-    console.log("  ✓ Tab 1 (Ideas) rendered without errors");
+    console.log("  ✓ Visible progress line with 3 steps verified (step 1 active)");
 
-    // 2. Tab 2: Planificar
-    await tabPrepare.click();
-    await tabPrepare.waitFor({ state: "visible", timeout: 5000 });
-    if (mode === "preview") {
-      await page.screenshot({
-        path: path.join(outputDir, "02-tab-prepare-empty.png"),
-        fullPage: true,
-      });
-    }
-    console.log("  ✓ Tab 2 (Planificar) rendered without errors");
-
-    // 3. Tab 3: Mi semana (Verify PR C 3-line empty layout)
+    // 6. Assert empty state on "Mi semana"
     await tabActive.click();
     await tabActive.waitFor({ state: "visible", timeout: 5000 });
     const emptyCard = page.locator('[data-testid="empty-active-week-card"]');
@@ -239,29 +216,14 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
       .waitFor({ state: "visible", timeout: 5000 });
     if (mode === "preview") {
       await page.screenshot({
-        path: path.join(outputDir, "03-tab-active-empty.png"),
+        path: path.join(outputDir, "01-tab-active-empty.png"),
         fullPage: true,
       });
     }
-    console.log(
-      "  ✓ Tab 3 (Mi semana) empty state verified: 3 lines + big 'Comenzar mi semana' button"
-    );
+    console.log("  ✓ Tab 'Mi semana' empty state verified: 3 lines + start button");
 
-    // 4. Tab 4: Cierre
-    await tabReview.click();
-    await tabReview.waitFor({ state: "visible", timeout: 5000 });
-    if (mode === "preview") {
-      await page.screenshot({
-        path: path.join(outputDir, "04-tab-review-empty.png"),
-        fullPage: true,
-      });
-    }
-    console.log("  ✓ Tab 4 (Cierre) rendered without errors");
-
-    // --- STEP 2: Dev mode query activation & Full flow with Mock provider ---
-    console.log("\nVerifying ?dev=1 parameter and executing Mock planning flow...");
-
-    // Activate dev mode via URL parameter
+    // 7. Dev mode query activation & sessionStorage persistence
+    console.log("\nVerifying ?dev=1 parameter...");
     await page.goto(`${url}?dev=1`, { waitUntil: "networkidle", timeout: 15000 });
     await page.locator('[data-testid="nav-tab-active"]').click();
     const devOptions = page.locator('[data-testid="dev-options-section"]');
@@ -274,355 +236,481 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     await devOptions.waitFor({ state: "visible", timeout: 5000 });
     console.log("  ✓ Dev mode persisted across page reloads via sessionStorage");
 
-    // Go to Tab 1 (Ideas)
-    await page.locator('[data-testid="nav-tab-capture"]').click();
+    // --- STEP 8: Guided flow Nueva semana with Mock provider ---
+    console.log("\nExecuting guided flow (Escribir → Revisar → Confirmar)...");
+    await page.locator('[data-testid="nav-tab-new-week"]').click();
+    await page
+      .locator('[data-testid="flow-step-write"]')
+      .waitFor({ state: "visible", timeout: 5000 });
 
-    // Verify provider selection in Ajustes (defaults to mock)
+    // Ensure mock provider in Ajustes
     await page.locator('[data-testid="settings-dropdown"] summary').click();
     const providerSelect = page.locator('[data-testid="provider-select"]');
     await providerSelect.waitFor({ state: "visible", timeout: 5000 });
     await providerSelect.selectOption("mock");
     await page.locator('[data-testid="settings-dropdown"] summary').click();
 
-    // Pick sample case (case-01)
+    // Select sample case (case-01)
     const sampleCaseSelect = page.locator('[data-testid="sample-case-select"]');
     await sampleCaseSelect.selectOption("case-01");
-    // Wait until text area has been populated
     await page.waitForFunction(() => {
-      const textarea = document.querySelector("textarea") as HTMLTextAreaElement | null;
+      const textarea = document.querySelector(
+        '[data-testid="flow-textarea"]'
+      ) as HTMLTextAreaElement | null;
       return textarea && textarea.value.length > 0;
     });
 
     if (mode === "preview") {
       await page.screenshot({
-        path: path.join(outputDir, "05-capture-sample-selected.png"),
+        path: path.join(outputDir, "02-step-write.png"),
         fullPage: true,
       });
     }
-    console.log("  ✓ Sample case selected");
+    console.log("  ✓ Step 1 (Escribir): Sample case selected and textarea populated");
 
-    // Click "Extraer"
-    const extractBtn = page.locator('[data-testid="extract-dump-button"]');
-    await extractBtn.click();
+    // Click "Continuar →" to extract and build proposal
+    const continueToReviewBtn = page.locator('[data-testid="flow-continue-to-review"]');
+    await continueToReviewBtn.click();
 
-    // Wait for extracted items and "Preparar semana con estos elementos" button
-    const prepareWeekBtn = page.locator('[data-testid="prepare-week-from-extracted-button"]');
-    await prepareWeekBtn.waitFor({ state: "visible", timeout: 15000 });
-
+    // Step 2: Revisar
+    const reviewStep = page.locator('[data-testid="flow-step-review"]');
+    await reviewStep.waitFor({ state: "visible", timeout: 15000 });
     if (mode === "preview") {
       await page.screenshot({
-        path: path.join(outputDir, "06-capture-extracted.png"),
+        path: path.join(outputDir, "03-step-review.png"),
         fullPage: true,
       });
     }
-    console.log("  ✓ Extraction completed with items");
+    console.log("  ✓ Step 2 (Revisar): Extraction and proposal generated");
 
-    // PR C: Verify next step updated to planning with extracted ideas
-    const extractedNextStepMsg = (
-      await page.locator('[data-testid="next-step-message"]').innerText()
-    ).trim();
-    if (!extractedNextStepMsg.includes("Planifica tu semana con estas")) {
+    // Progress line: verify step 1 marked completed with checkmark, step 2 active with aria-current="step"
+    const step1ReviewText = (await stepWriteIndicator.innerText()).trim();
+    if (!step1ReviewText.startsWith("✓")) {
       throw new Error(
-        `Expected next step message to contain "Planifica tu semana con estas...", got "${extractedNextStepMsg}"`
+        `Step 1 indicator should show checkmark (✓) when completed, got: ${step1ReviewText}`
       );
     }
-    console.log("  ✓ Next step bar updated after extraction: " + extractedNextStepMsg);
+    if ((await stepReviewIndicator.getAttribute("aria-current")) !== "step") {
+      throw new Error("Step 2 indicator must have aria-current='step' in Revisar");
+    }
+    if ((await stepConfirmIndicator.getAttribute("aria-current")) !== null) {
+      throw new Error("Step 3 indicator should not have aria-current in Revisar");
+    }
+    console.log(
+      "  ✓ Progress line updated: Step 1 checked (✓), Step 2 active (aria-current='step')"
+    );
 
-    // Click "Preparar semana"
-    await prepareWeekBtn.click();
+    // Verify exactly ONE "Continuar a confirmar" button (no top duplicate)
+    const continueBtnCount = await page.locator('[data-testid="flow-continue-to-confirm"]').count();
+    if (continueBtnCount !== 1) {
+      throw new Error(`Expected exactly 1 "Continuar a confirmar" button, got ${continueBtnCount}`);
+    }
+    console.log("  ✓ Exactly 1 'Continuar a confirmar' button verified (no top duplicate)");
 
-    // PR C: Verify collapsed sections in Planificar
-    // 1. Collapsed "Añadir más ideas"
+    // Verify collapsed "Ajustes de la semana (opcional)"
+    const weekSettingsDetails = page.locator('[data-testid="week-settings-details"]');
+    await weekSettingsDetails.waitFor({ state: "visible", timeout: 5000 });
+    const isWeekSettingsOpen = await weekSettingsDetails.evaluate(
+      (el: HTMLDetailsElement) => el.open
+    );
+    if (isWeekSettingsOpen) {
+      throw new Error("Week settings details should be collapsed by default");
+    }
+    console.log("  ✓ Collapsed 'Ajustes de la semana (opcional)' verified in Revisar");
+
+    // Verify calm idea cards and details toggle
+    const detailsToggle = page.locator('[data-testid^="details-toggle-"]').first();
+    await detailsToggle.waitFor({ state: "visible", timeout: 5000 });
+    const isExpandedInitial = (await detailsToggle.getAttribute("aria-expanded")) === "true";
+    if (isExpandedInitial) {
+      throw new Error("Details toggle should be collapsed (aria-expanded=false) by default");
+    }
+    await detailsToggle.click();
+    const isExpandedAfterClick = (await detailsToggle.getAttribute("aria-expanded")) === "true";
+    if (!isExpandedAfterClick) {
+      throw new Error("Details toggle should be expanded (aria-expanded=true) after click");
+    }
+    await detailsToggle.click();
+    console.log("  ✓ Calm cards and details toggle (aria-expanded) verified");
+
+    // Test back button from Revisar to Escribir (preserving text)
+    const backToWriteBtn = page.locator('[data-testid="flow-back-to-write"]');
+    await backToWriteBtn.click();
+    await page
+      .locator('[data-testid="flow-step-write"]')
+      .waitFor({ state: "visible", timeout: 5000 });
+    const preservedText = await page.locator('[data-testid="flow-textarea"]').inputValue();
+    if (!preservedText || preservedText.length === 0) {
+      throw new Error("Text in textarea should be preserved after navigating back to Escribir");
+    }
+    console.log("  ✓ Back to Escribir preserved text in textarea");
+
+    // Return to Revisar
+    await page.locator('[data-testid="flow-continue-to-review"]').click();
+    await reviewStep.waitFor({ state: "visible", timeout: 15000 });
+
+    // Verify collapsed "Añadir más ideas" and "Opciones"
     const addMoreIdeas = page.locator('[data-testid="add-more-ideas-details"]');
     await addMoreIdeas.waitFor({ state: "visible", timeout: 5000 });
-    await addMoreIdeas.locator("> summary").click();
-    await page
-      .locator('[data-testid="extract-append-button"]')
-      .waitFor({ state: "visible", timeout: 5000 });
-    console.log("  ✓ Collapsed 'Añadir más ideas' details opened and verified");
-
-    // 2. Compact voice options popover inside open 'Añadir más ideas'
-    const voicePopover = addMoreIdeas.locator('[data-testid="voice-options-popover"]');
-    if ((await voicePopover.count()) > 0) {
-      await voicePopover.locator("> summary").click();
-      await page
-        .locator('[data-testid="voice-lang-select"]')
-        .first()
-        .waitFor({ state: "visible", timeout: 5000 });
-      console.log("  ✓ Voice options popover opened and verified");
-      await voicePopover.locator("> summary").click();
-    }
-    await addMoreIdeas.locator("> summary").click();
-
-    // 3. Collapsed "Opciones" (dates, fresh week, calendar sync)
     const planningOptions = page.locator('[data-testid="planning-options-details"]');
     await planningOptions.waitFor({ state: "visible", timeout: 5000 });
-    await planningOptions.locator("> summary").click();
-    await page
-      .locator('[data-testid="target-week-start-input"]')
-      .waitFor({ state: "visible", timeout: 5000 });
-    await page
-      .locator('[data-testid="start-fresh-week-top-button"]')
-      .waitFor({ state: "visible", timeout: 5000 });
-    await page
-      .locator('[data-testid="calendar-sync-card"]')
-      .waitFor({ state: "visible", timeout: 5000 });
-    console.log(
-      "  ✓ Collapsed 'Opciones' (dates, fresh week, Google Calendar sync) opened and verified"
-    );
-    await planningOptions.locator("> summary").click();
+    console.log("  ✓ Collapsed 'Añadir más ideas' and 'Opciones' verified in Revisar");
 
-    // Wait for Tab 2 to open and the proposal button to be visible
-    const generateProposalBtn = page.locator('[data-testid="generate-proposal-button"]');
-    await generateProposalBtn.waitFor({ state: "visible", timeout: 15000 });
-
-    if (mode === "preview") {
-      await page.screenshot({
-        path: path.join(outputDir, "07-prepare-transferred-items.png"),
-        fullPage: true,
-      });
-    }
-    console.log("  ✓ Transferred to Planificar");
-
-    // Click "Analizar" / "Generar propuesta semanal"
-    await generateProposalBtn.click();
-
-    // Wait for proposal to be reached
-    const confirmPlanBtn = page.locator('[data-testid="confirm-plan-button"]');
-    await confirmPlanBtn.waitFor({ state: "visible", timeout: 15000 });
-    const proposalScreen = page.locator('[data-testid="weekly-proposal-screen"]');
-    await proposalScreen.waitFor({ state: "visible", timeout: 15000 });
-
-    // PR C: Verify next step during proposal
-    const proposalNextStepMsg = (
-      await page.locator('[data-testid="next-step-message"]').innerText()
-    ).trim();
-    if (!proposalNextStepMsg.includes("Revisa y confirma la propuesta")) {
-      throw new Error(
-        `Expected proposal next step message "Revisa y confirma la propuesta", got "${proposalNextStepMsg}"`
-      );
-    }
-    console.log("  ✓ Next step bar updated during proposal review");
-
-    // PR E checks on proposal screen:
-    // 1. Capacity one-sentence summary
+    // Capacity one-sentence summary
     await page
       .locator('[data-testid="capacity-sentence-summary"]')
       .first()
       .waitFor({ state: "visible", timeout: 5000 });
     console.log("  ✓ Capacity one-sentence summary visible in proposal");
 
-    // 2. Capacity details can be expanded
-    const capacityDetails = page.locator('[data-testid="planning-capacity-details"]');
-    if ((await capacityDetails.count()) > 0) {
-      await capacityDetails.locator("> summary").click();
-      await page.locator("text=Disponibles:").first().waitFor({ state: "visible", timeout: 5000 });
-      await capacityDetails.locator("> summary").click();
-      console.log("  ✓ Capacity details collapse verified in proposal screen");
-    }
+    // Step 3: Confirmar
+    const continueToConfirmBtn = page.locator('[data-testid="flow-continue-to-confirm"]');
+    await continueToConfirmBtn.click();
 
-    // 3. Item "••• Más" menu can be expanded
-    const itemMoreDetails = page.locator('[data-testid^="more-actions-"]').first();
-    if ((await itemMoreDetails.count()) > 0) {
-      await itemMoreDetails.locator("> summary").click();
-      await itemMoreDetails
-        .locator('button:has-text("Ajustar horas")')
-        .waitFor({ state: "visible", timeout: 5000 });
-      await itemMoreDetails.locator("> summary").click();
-      console.log("  ✓ Item '••• Más' menu verified in proposal items");
+    const confirmStep = page.locator('[data-testid="flow-step-confirm"]');
+    await confirmStep.waitFor({ state: "visible", timeout: 5000 });
+    if (mode === "preview") {
+      await page.screenshot({
+        path: path.join(outputDir, "04-step-confirm.png"),
+        fullPage: true,
+      });
     }
+    console.log("  ✓ Step 3 (Confirmar) reached");
 
-    // 4. "Elementos no programados o diferidos" collapsed by default
-    const deferredDetails = page.locator('[data-testid="proposed-deferred-items-section"]');
-    if ((await deferredDetails.count()) > 0) {
-      const isDeferredOpen = await deferredDetails.evaluate((el: HTMLDetailsElement) => el.open);
-      if (isDeferredOpen) {
-        throw new Error("Elementos no programados o diferidos should be collapsed by default");
-      }
-      await deferredDetails.locator("> summary").click();
-      await page
-        .locator('[data-testid="pending-decision-items-group"]')
-        .waitFor({ state: "visible", timeout: 5000 });
-      await deferredDetails.locator("> summary").click();
-      console.log("  ✓ Deferred items collapse verified in proposal screen");
+    // Progress line: verify step 1 & 2 marked completed with checkmark, step 3 active with aria-current="step"
+    const step2ConfirmText = (await stepReviewIndicator.innerText()).trim();
+    if (!step2ConfirmText.startsWith("✓")) {
+      throw new Error(
+        `Step 2 indicator should show checkmark (✓) when completed, got: ${step2ConfirmText}`
+      );
     }
+    if ((await stepConfirmIndicator.getAttribute("aria-current")) !== "step") {
+      throw new Error("Step 3 indicator must have aria-current='step' in Confirmar");
+    }
+    console.log(
+      "  ✓ Progress line updated: Step 2 checked (✓), Step 3 active (aria-current='step')"
+    );
 
-    // 5. Proposal footer secondary actions grouped under "Más acciones"
+    // Test back button from Confirmar to Revisar
+    const backToReviewBtn = page.locator('[data-testid="flow-back-to-review"]');
+    await backToReviewBtn.click();
+    await reviewStep.waitFor({ state: "visible", timeout: 5000 });
+    console.log("  ✓ Back to Revisar from Confirmar verified");
+
+    // Return to Confirmar
+    await page.locator('[data-testid="flow-continue-to-confirm"]').click();
+    await confirmStep.waitFor({ state: "visible", timeout: 5000 });
+
+    // Verify "Más acciones" menu in Step 3
     const proposalMoreActions = page.locator('[data-testid="proposal-more-actions-details"]');
     await proposalMoreActions.waitFor({ state: "visible", timeout: 5000 });
-    const isMoreOpen = await proposalMoreActions.evaluate((el: HTMLDetailsElement) => el.open);
-    if (isMoreOpen) {
-      throw new Error("Proposal 'Más acciones' should be collapsed by default");
-    }
-    await proposalMoreActions.locator("> summary").click();
-    await page
-      .locator('[data-testid="adjust-elements-button"]')
-      .waitFor({ state: "visible", timeout: 5000 });
-    await page
-      .locator('[data-testid="add-more-ideas-button"]')
-      .waitFor({ state: "visible", timeout: 5000 });
-    await page
-      .locator('[data-testid="start-fresh-week-button"]')
-      .waitFor({ state: "visible", timeout: 5000 });
-    await page
-      .locator('[data-testid="proposal-export-to-gcal"]')
-      .waitFor({ state: "visible", timeout: 5000 });
-    await proposalMoreActions.locator("> summary").click();
-    console.log("  ✓ Footer 'Más acciones' menu verified in proposal screen");
-
-    if (mode === "preview") {
-      await page.screenshot({
-        path: path.join(outputDir, "08-proposal-screen.png"),
-        fullPage: true,
-      });
-    }
-    console.log("  ✓ Weekly proposal reached and verified");
+    console.log("  ✓ Secondary actions grouped under 'Más acciones' in Confirmar");
 
     // Click "Confirmar y activar semana"
+    const confirmPlanBtn = page.locator('[data-testid="confirm-plan-button"]');
     await confirmPlanBtn.click();
 
-    // Wait for "Mi semana" to show the active week
+    // Navigates automatically to "Mi semana"
     const activeScheduleSection = page.locator('[data-testid="active-week-schedule-section"]');
     await activeScheduleSection.waitFor({ state: "visible", timeout: 15000 });
-
-    const statusBadge = page.locator('[data-testid="process-status-badge"]');
-    await statusBadge.waitFor({ state: "visible", timeout: 10000 });
-
-    // PR C: Verify next step during active week
-    const activeNextStepMsg = (
-      await page.locator('[data-testid="next-step-message"]').innerText()
-    ).trim();
-    if (!activeNextStepMsg.includes("Esta es tu semana")) {
-      throw new Error(
-        `Expected active week next step message "Esta es tu semana", got "${activeNextStepMsg}"`
-      );
-    }
-    console.log("  ✓ Next step bar updated during active week: 'Esta es tu semana'");
-
-    // PR D: Settle tab highlight: ensure "Mi semana" is primary and "Planificar" is secondary
-    await page.waitForFunction(() => {
-      const activeTab = document.querySelector('[data-testid="nav-tab-active"]');
-      const prepareTab = document.querySelector('[data-testid="nav-tab-prepare"]');
-      return Boolean(
-        activeTab?.classList.contains("primary") && !prepareTab?.classList.contains("primary")
-      );
-    });
-    // Wait for CSS transitions (0.15s ease) to fully complete
-    await page.waitForTimeout(300);
-    console.log("  ✓ Tab highlight settled on 'Mi semana' (primary)");
-
-    // PR E checks on active week:
-    // 6. Capacity one-sentence summary
-    await page
-      .locator('[data-testid="capacity-sentence-summary"]')
-      .first()
-      .waitFor({ state: "visible", timeout: 5000 });
-    console.log("  ✓ Capacity one-sentence summary visible in active week");
-
-    // 7. Task row "••• Más" menu
-    const taskMoreDetails = page.locator('[data-testid^="task-more-actions-"]').first();
-    if ((await taskMoreDetails.count()) > 0) {
-      await taskMoreDetails.locator("> summary").click();
-      await taskMoreDetails
-        .locator('[data-testid^="adjust-task-"]')
-        .waitFor({ state: "visible", timeout: 5000 });
-      await taskMoreDetails
-        .locator('[data-testid^="add-to-gcal-"]')
-        .waitFor({ state: "visible", timeout: 5000 });
-      await taskMoreDetails.locator("> summary").click();
-      console.log("  ✓ Task row '••• Más' menu verified in active week");
-    }
-
-    // 8. Imprevistos collapsed by default and expandable
-    const radarDetails = page.locator('[data-testid="radar-section"]');
-    await radarDetails.waitFor({ state: "visible", timeout: 5000 });
-    const isRadarOpen = await radarDetails.evaluate((el: HTMLDetailsElement) => el.open);
-    if (isRadarOpen) {
-      throw new Error("Imprevistos section should be collapsed by default");
-    }
-    await radarDetails.locator("> summary").click();
-    await page.locator('[data-testid="radar-input"]').waitFor({ state: "visible", timeout: 5000 });
-    await radarDetails.locator("> summary").click();
-    console.log("  ✓ Imprevistos collapsed section verified in active week");
-
-    // 9. Historial de ajustes collapsed by default
-    const histDetails = page.locator('[data-testid="schedule-adjustments-details"]');
-    await histDetails.waitFor({ state: "visible", timeout: 5000 });
-    const isHistOpen = await histDetails.evaluate((el: HTMLDetailsElement) => el.open);
-    if (isHistOpen) {
-      throw new Error("Historial de ajustes should be collapsed by default");
-    }
-    console.log("  ✓ Historial de ajustes collapsed by default verified");
-
-    // 10. Lo que he aprendido collapsed by default
-    const memoriesDetails = page.locator('[data-testid="confirmed-memories-details"]');
-    await memoriesDetails.waitFor({ state: "visible", timeout: 5000 });
-    const isMemoriesOpen = await memoriesDetails.evaluate((el: HTMLDetailsElement) => el.open);
-    if (isMemoriesOpen) {
-      throw new Error("Lo que he aprendido should be collapsed by default");
-    }
-    console.log("  ✓ Lo que he aprendido collapsed by default verified");
-
-    // 11. "Abrir ajustes" panel reachable
-    const adjBox = page.locator('[data-testid="adjustment-proposal-box"]');
-    await adjBox.waitFor({ state: "visible", timeout: 5000 });
-    console.log("  ✓ 'Abrir ajustes' panel reachable in active week");
-
-    // Assert PR B renamed jargon in active week
-    await page.locator("text=Lo que he aprendido").waitFor({ state: "visible", timeout: 5000 });
-    await page
-      .locator("text=Imprevistos: ¿Ha surgido algo nuevo?")
-      .waitFor({ state: "visible", timeout: 5000 });
-    console.log("  ✓ Jargon replacements verified: 'Lo que he aprendido' and 'Imprevistos'");
-
     if (mode === "preview") {
       await page.screenshot({
-        path: path.join(outputDir, "09-active-week-populated.png"),
+        path: path.join(outputDir, "05-active-week.png"),
         fullPage: true,
       });
     }
-    console.log("  ✓ Active week confirmed and populated in Mi semana");
+    console.log("  ✓ Navigated to 'Mi semana' with active week populated");
 
-    // PR F: After confirming a week, a reload lands on Mi semana (active)
-    console.log("Testing reload landing tab with active week...");
-    await page.reload({ waitUntil: "networkidle" });
-    await page.waitForFunction(() => {
-      const activeTab = document.querySelector('[data-testid="nav-tab-active"]');
-      const captureTab = document.querySelector('[data-testid="nav-tab-capture"]');
-      return Boolean(
-        activeTab?.classList.contains("primary") && !captureTab?.classList.contains("primary")
-      );
-    });
-    const reloadedActiveSchedule = page.locator('[data-testid="active-week-schedule-section"]');
-    await reloadedActiveSchedule.waitFor({ state: "visible", timeout: 15000 });
-    const isReloadedNextStepBtnVisible = await page
-      .locator('[data-testid="next-step-button"]')
+    // Verify next-step bar is hidden on Mi semana with active week and nothing pending
+    const isNextStepBarVisibleOnActive = await page
+      .locator('[data-testid="next-step-bar"]')
       .isVisible();
-    if (isReloadedNextStepBtnVisible) {
+    if (isNextStepBarVisibleOnActive) {
       throw new Error(
-        "Next-step button should be hidden on reload because user is already on Mi semana"
+        "Next step bar should be hidden on Mi semana with active week and nothing pending"
+      );
+    }
+    console.log("  ✓ Next-step bar hidden on Mi semana with active week");
+
+    // Verify contextual help on Imprevistos and Lo que he aprendido
+    const radarDetails = page.locator('[data-testid="radar-section"]');
+    await radarDetails.waitFor({ state: "visible", timeout: 5000 });
+    await radarDetails.locator("> summary").click();
+    const helpUnforeseen = page.locator('[data-testid="help-unforeseen"]');
+    await helpUnforeseen.waitFor({ state: "visible", timeout: 5000 });
+    await radarDetails.locator("> summary").click();
+
+    const memoriesDetails = page.locator('[data-testid="confirmed-memories-details"]');
+    await memoriesDetails.waitFor({ state: "visible", timeout: 5000 });
+    await memoriesDetails.locator("> summary").click();
+    const helpMemories = page.locator('[data-testid="help-memories"]');
+    await helpMemories.waitFor({ state: "visible", timeout: 5000 });
+    await memoriesDetails.locator("> summary").click();
+    console.log("  ✓ '¿Qué es esto?' help details verified on Imprevistos and Lo que he aprendido");
+
+    // Verify calendar reminders and alerts (.ics download with VALARM)
+    const remindersDetails = page.locator('[data-testid="reminders-and-alerts-details"]');
+    await remindersDetails.waitFor({ state: "visible", timeout: 5000 });
+    await remindersDetails.locator("> summary").click();
+
+    const reminderSelect = remindersDetails.locator('[data-testid="reminder-offset-select"]');
+    await reminderSelect.waitFor({ state: "visible", timeout: 5000 });
+    await reminderSelect.selectOption("1h");
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.locator('[data-testid="add-week-to-gcal-button"]').first().click();
+    const download = await downloadPromise;
+    const downloadStream = await download.createReadStream();
+    const chunks: Buffer[] = [];
+    for await (const chunk of downloadStream) {
+      chunks.push(Buffer.from(chunk));
+    }
+    const downloadedIcs = Buffer.concat(chunks).toString("utf-8");
+
+    if (
+      !downloadedIcs.includes("BEGIN:VTIMEZONE") ||
+      !downloadedIcs.includes("TZID:Europe/Madrid")
+    ) {
+      throw new Error("Downloaded ICS does not contain VTIMEZONE definition for Europe/Madrid");
+    }
+    if (!downloadedIcs.includes("BEGIN:VALARM") || !downloadedIcs.includes("TRIGGER:+PT9H")) {
+      throw new Error(
+        "Downloaded ICS does not contain expected all-day VALARM with TRIGGER:+PT9H (09:00 trigger)"
       );
     }
     console.log(
-      "  ✓ Reload with active week landed on Mi semana with no redundant next-step button"
+      "  ✓ Downloaded ICS captured and verified: contains VTIMEZONE and all-day VALARM with +PT9H (09:00 trigger)"
     );
 
-    // Open Tab 4: Cierre with active week
-    await page.locator('[data-testid="nav-tab-review"]').click();
+    // Extend active week with extra tasks to verify long week behavior (>1500 chars)
+    console.log("  Extending active week with additional tasks to verify long week truncation...");
+    await page.evaluate(async () => {
+      return new Promise<void>((resolve, reject) => {
+        const req = indexedDB.open("conscious_tech_db", 1);
+        req.onsuccess = () => {
+          const db = req.result;
+          const tx = db.transaction("plans", "readwrite");
+          const store = tx.objectStore("plans");
+          const cursorReq = store.openCursor();
+          cursorReq.onsuccess = () => {
+            const cursor = cursorReq.result;
+            if (cursor) {
+              const plan = cursor.value;
+              if (plan.status === "active" && plan.proposal) {
+                const longItems = [];
+                for (let i = 1; i <= 25; i++) {
+                  longItems.push({
+                    itemId: `smoke-long-item-${i}`,
+                    title: `Tarea extendida número ${i} de la semana para evaluar la generación y el límite de resumen de correo`,
+                    estimatedHours: 1,
+                  });
+                }
+                plan.proposal.flexibleOptions = [
+                  ...(plan.proposal.flexibleOptions || []),
+                  ...longItems,
+                ];
+                cursor.update(plan);
+              }
+              cursor.continue();
+            } else {
+              resolve();
+            }
+          };
+          cursorReq.onerror = () => reject(cursorReq.error);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    });
+
+    // Reload with active week and assert the reminder option is still selected
+    await page.reload({ waitUntil: "networkidle" });
+    await activeScheduleSection.waitFor({ state: "visible", timeout: 10000 });
+
+    const reloadedRemindersDetails = page.locator('[data-testid="reminders-and-alerts-details"]');
+    await reloadedRemindersDetails.waitFor({ state: "visible", timeout: 5000 });
+    await reloadedRemindersDetails.locator("> summary").click();
+
+    const reloadedReminderSelect = reloadedRemindersDetails.locator(
+      '[data-testid="reminder-offset-select"]'
+    );
+    const selectedOffset = await reloadedReminderSelect.inputValue();
+    if (selectedOffset !== "1h") {
+      throw new Error(
+        `Expected reminder option '1h' to remain selected after reload, got: '${selectedOffset}'`
+      );
+    }
+    console.log("  ✓ Reload with active week preserved selected reminder preference ('1h')");
+
+    // Assert email summary preview shows truncation note for long week
+    const previewText = await page.locator('[data-testid="email-summary-preview"]').innerText();
+    if (!previewText.includes("… (ver el resto en la app)")) {
+      throw new Error("Long week email preview expected to contain '… (ver el resto en la app)'");
+    }
+    console.log(
+      "  ✓ Long week email summary preview is truncated with '… (ver el resto en la app)'"
+    );
+
+    // Verify Email summary button opens Gmail compose without recipient and under URL cap (< 3500)
+    const emailButton = reloadedRemindersDetails.locator(
+      '[data-testid="open-gmail-summary-button"]'
+    );
+    await emailButton.waitFor({ state: "visible", timeout: 5000 });
+
+    await context.route("https://mail.google.com/**", (route: any) => {
+      route.fulfill({
+        status: 200,
+        contentType: "text/html",
+        body: "<html><body>Gmail Compose Mock</body></html>",
+      });
+    });
+
+    const pagePromise = context.waitForEvent("page");
+    await emailButton.click();
+    const newPage = await pagePromise;
+    const openedUrl = newPage.url();
+    if (!openedUrl.startsWith("https://mail.google.com/mail/?view=cm&fs=1")) {
+      throw new Error(`Opened URL expected to start with Gmail compose URL, got: ${openedUrl}`);
+    }
+    if (openedUrl.includes("&to=") || openedUrl.includes("?to=")) {
+      throw new Error("Gmail compose URL must not contain recipient (to=)");
+    }
+    if (openedUrl.length >= 3500) {
+      throw new Error(
+        `Gmail compose URL length ${openedUrl.length} exceeds safe cap of 3500 characters`
+      );
+    }
+    await newPage.close();
+    await context.unroute("https://mail.google.com/**");
+    console.log(
+      `  ✓ Long week Gmail compose URL verified: length (${openedUrl.length}) under cap (< 3500) without recipient`
+    );
+
+    // Click "Copiar resumen" and assert clipboard text is the full summary (non-truncated, >1500 chars)
+    const copyBtn = reloadedRemindersDetails.locator('[data-testid="copy-email-summary-button"]');
+    await copyBtn.waitFor({ state: "visible", timeout: 5000 });
+    await copyBtn.click();
+
+    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+    if (clipboardText.length <= 1500) {
+      throw new Error(
+        `Clipboard text length ${clipboardText.length} expected to be > 1500 characters`
+      );
+    }
+    if (clipboardText.includes("… (ver el resto en la app)")) {
+      throw new Error(
+        "Full summary copied to clipboard must not be truncated with '… (ver el resto en la app)'"
+      );
+    }
+    if (!clipboardText.includes("Tarea extendida número 25")) {
+      throw new Error("Full summary copied to clipboard must contain all tasks");
+    }
+    console.log(
+      `  ✓ 'Copiar resumen' copied full text to clipboard (${clipboardText.length} chars, non-truncated)`
+    );
+
+    await reloadedRemindersDetails.locator("> summary").click();
+
+    // Verify "Cerrar semana" button inside Mi semana
+    const closeWeekBtn = page.locator('[data-testid="close-week-button"]');
+    await closeWeekBtn.waitFor({ state: "visible", timeout: 5000 });
+    await closeWeekBtn.click();
+
     const closingSection = page
       .locator(
         '[data-testid="early-close-guard-box"], [data-testid="weekly-reflective-closing-section"]'
       )
       .first();
     await closingSection.waitFor({ state: "visible", timeout: 10000 });
-
     if (mode === "preview") {
       await page.screenshot({
-        path: path.join(outputDir, "10-review-with-active-week.png"),
+        path: path.join(outputDir, "06-closing-view.png"),
         fullPage: true,
       });
     }
-    console.log("  ✓ Cierre opened with active week");
+    console.log("  ✓ 'Cerrar semana' opened closing view");
+
+    // If early close guard is shown, test cancel returning to active week, then confirm early close
+    const cancelEarlyCloseBtn = page.locator('[data-testid="cancel-early-close-button"]');
+    if ((await cancelEarlyCloseBtn.count()) > 0) {
+      await cancelEarlyCloseBtn.click();
+      await activeScheduleSection.waitFor({ state: "visible", timeout: 10000 });
+      console.log("  ✓ Cancel early close returned to active week");
+
+      await closeWeekBtn.click();
+      await page.locator('[data-testid="confirm-early-close-button"]').click();
+      await page
+        .locator('[data-testid="weekly-reflective-closing-section"]')
+        .waitFor({ state: "visible", timeout: 5000 });
+      const backToActiveBtn = page.locator('[data-testid="back-to-active-week-button"]');
+      await backToActiveBtn.waitFor({ state: "visible", timeout: 5000 });
+      await backToActiveBtn.click();
+      await activeScheduleSection.waitFor({ state: "visible", timeout: 10000 });
+      console.log("  ✓ '← Volver a Mi semana' returned to active week view");
+    } else {
+      const backToActiveBtn = page.locator('[data-testid="back-to-active-week-button"]');
+      await backToActiveBtn.waitFor({ state: "visible", timeout: 5000 });
+      await backToActiveBtn.click();
+      await activeScheduleSection.waitFor({ state: "visible", timeout: 10000 });
+      console.log("  ✓ '← Volver a Mi semana' returned to active week view");
+    }
+
+    // Reload with active week -> lands on Mi semana
+    console.log("\nTesting reload with active week...");
+    await page.reload({ waitUntil: "networkidle" });
+    const isTabActiveOnReload = await tabActive.evaluate((el: HTMLElement) =>
+      el.classList.contains("primary")
+    );
+    if (!isTabActiveOnReload) {
+      throw new Error("Reload with active week should land on Mi semana (nav-tab-active)");
+    }
+    await page
+      .locator('[data-testid="active-week-schedule-section"]')
+      .waitFor({ state: "visible", timeout: 10000 });
+    console.log("  ✓ Reload with active week landed on Mi semana");
+
+    // Reload with draft -> lands on Nueva semana at Revisar
+    console.log("\nTesting reload with draft...");
+    // Purge current active week first to leave state clean for draft test
+    await closeWeekBtn.click();
+    const earlyConfirm = page.locator('[data-testid="confirm-early-close-button"]');
+    if ((await earlyConfirm.count()) > 0) {
+      await earlyConfirm.click();
+    }
+    const purgeBtn = page.locator('button:has-text("Purgar semana actual")');
+    if ((await purgeBtn.count()) > 0) {
+      await purgeBtn.click();
+      const confirmPurgeBtn = page.locator('button:has-text("Confirmar purga")');
+      await confirmPurgeBtn.click();
+      await page.waitForTimeout(500);
+    }
+
+    // Go to Nueva semana, populate text and continue to review to establish a draft
+    await page.locator('[data-testid="nav-tab-new-week"]').click();
+    await page
+      .locator('[data-testid="flow-step-write"]')
+      .waitFor({ state: "visible", timeout: 5000 });
+    await page.locator('[data-testid="sample-case-select"]').selectOption("case-01");
+    await page.waitForFunction(() => {
+      const textarea = document.querySelector(
+        '[data-testid="flow-textarea"]'
+      ) as HTMLTextAreaElement | null;
+      return textarea && textarea.value.length > 0;
+    });
+    await page.locator('[data-testid="flow-continue-to-review"]').click();
+    await reviewStep.waitFor({ state: "visible", timeout: 15000 });
+
+    // Reload while on review step with draft in storage
+    await page.reload({ waitUntil: "networkidle" });
+    const isNewWeekOnReload = await page
+      .locator('[data-testid="nav-tab-new-week"]')
+      .evaluate((el: HTMLElement) => el.classList.contains("primary"));
+    if (!isNewWeekOnReload) {
+      throw new Error("Reload with draft should land on Nueva semana (nav-tab-new-week)");
+    }
+    await page
+      .locator('[data-testid="flow-step-review"]')
+      .waitFor({ state: "visible", timeout: 10000 });
+    console.log("  ✓ Reload with draft landed on Nueva semana at Revisar step");
 
     // Check for errors
     if (pageErrors.length > 0) {

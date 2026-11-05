@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { ProposedWeek, TargetWeek } from "../../domain/week";
 import { PipelineDiagnostic } from "../../application/planning-pipeline";
 import { generateIcsCalendarExport } from "../../domain/calendar";
+import { getStoredReminderPreferences } from "../../domain/reminders";
+import { CalendarReminderSettings } from "./calendar-reminder-settings";
 import { formatCommitmentType } from "../labels";
 
 export interface PlanningProposalReviewFooterProps {
@@ -39,6 +42,61 @@ export function PlanningProposalReviewFooter({
   handleStartFreshWeek,
   handleConfirmPlan,
 }: PlanningProposalReviewFooterProps) {
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
+
+  const handleDownloadWeekIcs = () => {
+    const prefs = getStoredReminderPreferences();
+    const exportItems = [
+      ...proposedWeek.foci.map((f) => ({
+        id: f.id,
+        title: f.title,
+        day: activeTargetWeek.startDate,
+        durationHours: f.estimatedHours || 2,
+        description: `Foco: ${f.desiredOutcome}`,
+        isCommitment: true,
+        hasDeadline: false,
+        allDay: true,
+      })),
+      ...proposedWeek.obligations.map((o) => ({
+        id: o.itemId,
+        title: o.title,
+        day: o.dueDate || activeTargetWeek.startDate,
+        durationHours: o.estimatedHours || 1,
+        description: `Compromiso (${formatCommitmentType(o.commitmentType)})`,
+        isCommitment: true,
+        hasDeadline: Boolean(o.dueDate),
+        allDay: true,
+      })),
+      ...proposedWeek.flexibleOptions.map((fl) => ({
+        id: fl.itemId,
+        title: fl.title,
+        day: activeTargetWeek.startDate,
+        durationHours: fl.estimatedHours || 1,
+        description: fl.condition ? `Condición: ${fl.condition}` : "Opción flexible",
+        isCommitment: false,
+        hasDeadline: false,
+        allDay: true,
+      })),
+    ];
+    const ics = generateIcsCalendarExport(exportItems, {
+      calendarName: "Conscious Tech — Propuesta",
+      reminderOffset: prefs.offset,
+      includeTasksInAlarms: prefs.includeTasks,
+      timeZone: "Europe/Madrid",
+    });
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `conscious-tech-propuesta-${activeTargetWeek.startDate}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setExportNotice(
+      "Archivo .ics descargado con recordatorios. Para importarlo en Google Calendar: entra en Ajustes → Importar y exportar → Selecciona el archivo descargado."
+    );
+  };
   return (
     <>
       {/* Confirmation Prompt & Key Tradeoffs */}
@@ -308,43 +366,22 @@ export function PlanningProposalReviewFooter({
             >
               ✨ Planificar otra semana
             </button>
+            <div
+              style={{
+                width: "100%",
+                paddingTop: "6px",
+                borderTop: "1px solid var(--border-color, #e6ded1)",
+                marginTop: "4px",
+              }}
+            >
+              <CalendarReminderSettings compact />
+            </div>
             <button
               type="button"
               className="secondary small"
               data-testid="proposal-export-to-gcal"
               style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-              onClick={() => {
-                const exportItems = [
-                  ...proposedWeek.foci.map((f) => ({
-                    title: f.title,
-                    day: activeTargetWeek.startDate,
-                    durationHours: f.estimatedHours || 2,
-                    description: `Foco: ${f.desiredOutcome}`,
-                  })),
-                  ...proposedWeek.obligations.map((o) => ({
-                    title: o.title,
-                    day: o.dueDate || activeTargetWeek.startDate,
-                    durationHours: o.estimatedHours || 1,
-                    description: `Compromiso (${formatCommitmentType(o.commitmentType)})`,
-                  })),
-                  ...proposedWeek.flexibleOptions.map((fl) => ({
-                    title: fl.title,
-                    day: activeTargetWeek.startDate,
-                    durationHours: fl.estimatedHours || 1,
-                    description: fl.condition ? `Condición: ${fl.condition}` : "Opción flexible",
-                  })),
-                ];
-                const ics = generateIcsCalendarExport(exportItems, "Conscious Tech — Propuesta");
-                const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `conscious-tech-propuesta-${activeTargetWeek.startDate}.ics`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-              }}
+              onClick={handleDownloadWeekIcs}
             >
               <span>📅</span>
               <span>Exportar propuesta (.ics / Google Cal)</span>
@@ -352,17 +389,97 @@ export function PlanningProposalReviewFooter({
           </div>
         </details>
 
-        <button
-          type="button"
-          className="primary"
-          aria-label="Confirmar y activar semana"
-          disabled={isConfirming}
-          onClick={handleConfirmPlan}
-          data-testid="confirm-plan-button"
-        >
-          {isConfirming ? "Guardando semana..." : "✓ Confirmar y activar semana"}
-        </button>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            type="button"
+            className="secondary"
+            data-testid="proposal-add-week-to-gcal"
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+            title="Descarga el archivo .ics con tus tareas y recordatorios para importar en Google Calendar"
+            onClick={handleDownloadWeekIcs}
+          >
+            <span>📅</span>
+            <span>Añadir semana a Google Calendar (.ics)</span>
+          </button>
+          <button
+            type="button"
+            className="primary"
+            aria-label="Confirmar y activar semana"
+            disabled={isConfirming}
+            onClick={handleConfirmPlan}
+            data-testid="confirm-plan-button"
+          >
+            {isConfirming ? "Guardando semana..." : "✓ Confirmar y activar semana"}
+          </button>
+        </div>
       </div>
+
+      {exportNotice && (
+        <div
+          className="status-message status-success"
+          style={{
+            marginTop: "12px",
+            fontSize: "0.84rem",
+            padding: "12px 14px",
+            background: "#f0fdf4",
+            border: "1px solid #bbf7d0",
+            borderRadius: "6px",
+          }}
+          role="status"
+          data-testid="proposal-gcal-import-note"
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: "10px",
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 600, color: "#166534", marginBottom: "4px" }}>
+                ✓ Archivo .ics descargado en tu equipo
+              </div>
+              <p style={{ margin: "2px 0 8px 0", fontSize: "0.8rem", color: "#1e3a5f" }}>
+                Para que aparezca en tu Google Calendar y sincronice con tu móvil, impórtalo en la
+                web de Google Calendar:
+              </p>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                <a
+                  href="https://calendar.google.com/calendar/u/0/r/settings/export"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="button primary small"
+                  style={{
+                    fontSize: "0.8rem",
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    padding: "4px 10px",
+                  }}
+                  data-testid="proposal-open-gcal-import-web-button"
+                >
+                  <span>📅</span>
+                  <span>Abrir importador de Google Calendar</span>
+                </a>
+                <span className="calm-muted" style={{ fontSize: "0.76rem" }}>
+                  (En Ajustes → Importar y exportar, selecciona el archivo descargado)
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="secondary small"
+              onClick={() => setExportNotice(null)}
+              style={{ padding: "2px 6px", fontSize: "0.75rem", minWidth: "auto" }}
+              aria-label="Cerrar aviso"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
