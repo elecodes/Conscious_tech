@@ -29,7 +29,7 @@ export interface EmailSummaryResult {
   isTruncated: boolean;
 }
 
-const MAX_URL_BODY_LENGTH = 1500;
+const MAX_SAFE_URL_LENGTH = 1800;
 const TRUNCATION_INDICATOR = "\n\n… (ver el resto en la app)";
 
 /**
@@ -38,7 +38,8 @@ const TRUNCATION_INDICATOR = "\n\n… (ver el resto en la app)";
  * Privacy Invariants:
  * - The recipient is completely empty (no `to=` query parameter).
  * - No internal IDs, database UUIDs, or JSON payloads are included in the text.
- * - Text is capped at ~1,500 characters to prevent link breakages in email clients.
+ * - Encoded URL length is bounded strictly below 1,800 characters to prevent HTTP 400
+ *   (Request-URI Too Large) on Google Frontend web servers and mailto overflows.
  */
 export function buildEmailSummary(input: EmailSummaryInput): EmailSummaryResult {
   const { targetWeek, items, reflections } = input;
@@ -86,25 +87,43 @@ export function buildEmailSummary(input: EmailSummaryInput): EmailSummaryResult 
 
   const fullBody = lines.join("\n");
 
+  const baseGmailPrefix = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(
+    subject
+  )}&body=`;
+  const baseMailtoPrefix = `mailto:?subject=${encodeURIComponent(subject)}&body=`;
+
+  const maxPrefixLength = Math.max(baseGmailPrefix.length, baseMailtoPrefix.length);
+  const maxAllowedEncodedBody = Math.max(200, MAX_SAFE_URL_LENGTH - maxPrefixLength);
+
   let truncatedBody = fullBody;
   let isTruncated = false;
 
-  if (fullBody.length > MAX_URL_BODY_LENGTH) {
+  if (encodeURIComponent(truncatedBody).length > maxAllowedEncodedBody) {
     isTruncated = true;
-    const allowedChars = MAX_URL_BODY_LENGTH - TRUNCATION_INDICATOR.length;
-    // Slice and trim at end
-    truncatedBody = fullBody.slice(0, Math.max(0, allowedChars)).trimEnd() + TRUNCATION_INDICATOR;
+    const encodedSuffix = encodeURIComponent(TRUNCATION_INDICATOR);
+    const targetEncodedLen = Math.max(50, maxAllowedEncodedBody - encodedSuffix.length);
+
+    let low = 0;
+    let high = fullBody.length;
+    let bestFit = 0;
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      const candidate = fullBody.slice(0, mid).trimEnd();
+      if (encodeURIComponent(candidate).length <= targetEncodedLen) {
+        bestFit = mid;
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+    truncatedBody = fullBody.slice(0, bestFit).trimEnd() + TRUNCATION_INDICATOR;
   }
 
   // Gmail compose link (no recipient: the user inputs their own destination)
-  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(
-    subject
-  )}&body=${encodeURIComponent(truncatedBody)}`;
+  const gmailUrl = `${baseGmailPrefix}${encodeURIComponent(truncatedBody)}`;
 
   // Default mailto link (no recipient)
-  const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
-    truncatedBody
-  )}`;
+  const mailtoUrl = `${baseMailtoPrefix}${encodeURIComponent(truncatedBody)}`;
 
   return {
     subject,

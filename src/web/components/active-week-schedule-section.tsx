@@ -62,6 +62,7 @@ export function ActiveWeekScheduleSection({
   setFeedbackMessage,
 }: ActiveWeekScheduleSectionProps) {
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
   const handleDownloadWeekIcs = () => {
     const prefs = getStoredReminderPreferences();
@@ -143,6 +144,28 @@ export function ActiveWeekScheduleSection({
             >
               <span>📅</span>
               <span>Añadir semana a Google Calendar</span>
+            </button>
+            <button
+              type="button"
+              className="secondary small"
+              data-testid="open-email-summary-top-button"
+              style={{
+                fontSize: "0.8rem",
+                padding: "4px 10px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+              }}
+              onClick={() => {
+                setIsExportOpen(true);
+                setTimeout(() => {
+                  const el = document.getElementById("email-summary-card-wrapper");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }, 50);
+              }}
+            >
+              <span>✉️</span>
+              <span>Enviar a Gmail / Correo</span>
             </button>
             <button
               type="button"
@@ -336,6 +359,8 @@ export function ActiveWeekScheduleSection({
         <details
           className="calm-details"
           data-testid="reminders-and-alerts-details"
+          open={isExportOpen}
+          onToggle={(e) => setIsExportOpen((e.target as HTMLDetailsElement).open)}
           style={{
             marginTop: "16px",
             background: "var(--surface-warm, #fcfbf8)",
@@ -353,7 +378,7 @@ export function ActiveWeekScheduleSection({
             }}
             data-testid="reminders-and-alerts-summary"
           >
-            🔔 Recordatorios y avisos
+            📤 Exportar y compartir semana (Google Calendar, Gmail y recordatorios y avisos)
           </summary>
           <div
             style={{
@@ -363,6 +388,20 @@ export function ActiveWeekScheduleSection({
               gap: "16px",
             }}
           >
+            <div id="email-summary-card-wrapper">
+              <EmailSummaryCard
+                targetWeek={plan?.targetWeek || { startDate: "2026-10-19", endDate: "2026-10-25" }}
+                items={planItems.map((item) => {
+                  const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
+                  return {
+                    title: item.title,
+                    day: alloc ? alloc.day : item.dueDate,
+                    source: item.source,
+                  };
+                })}
+              />
+            </div>
+
             <div
               style={{
                 background: "#ffffff",
@@ -372,10 +411,10 @@ export function ActiveWeekScheduleSection({
               }}
             >
               <h4 style={{ margin: "0 0 6px 0", fontSize: "0.9rem" }}>
-                Recordatorios de calendario
+                Recordatorios y avisos de calendario
               </h4>
               <p className="calm-muted" style={{ margin: "0 0 8px 0", fontSize: "0.78rem" }}>
-                Avisos para eventos con fecha y hora al exportar a Google Calendar o Apple Calendar.
+                Configura los avisos para eventos con fecha y hora al exportar a Google Calendar o Apple Calendar.
               </p>
               <CalendarReminderSettings compact />
               <button
@@ -395,18 +434,6 @@ export function ActiveWeekScheduleSection({
                 <span>Añadir semana a Google Calendar</span>
               </button>
             </div>
-
-            <EmailSummaryCard
-              targetWeek={plan?.targetWeek || { startDate: "2026-10-19", endDate: "2026-10-25" }}
-              items={planItems.map((item) => {
-                const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
-                return {
-                  title: item.title,
-                  day: alloc ? alloc.day : item.dueDate,
-                  source: item.source,
-                };
-              })}
-            />
           </div>
         </details>
       )}

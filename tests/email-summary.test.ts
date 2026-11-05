@@ -90,8 +90,8 @@ describe("Email summary builder", () => {
     expect(summary.isTruncated).toBe(true);
     expect(summary.truncatedBody.length).toBeLessThanOrEqual(1550);
     expect(summary.truncatedBody).toContain("… (ver el resto en la app)");
-    expect(summary.gmailUrl.length).toBeLessThan(3500);
-    expect(summary.mailtoUrl.length).toBeLessThan(3500);
+    expect(summary.gmailUrl.length).toBeLessThanOrEqual(1800);
+    expect(summary.mailtoUrl.length).toBeLessThanOrEqual(1800);
   });
 
   it("encodes special characters (accents, &, #, newlines) correctly and includes no recipient", () => {

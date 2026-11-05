@@ -109,7 +109,7 @@ export function EmailSummaryCard({
         <a
           href={summary.gmailUrl}
           target="_blank"
-          rel="noopener,noreferrer"
+          rel="noopener noreferrer"
           className="button primary small"
           style={{
             fontSize: "0.8rem",

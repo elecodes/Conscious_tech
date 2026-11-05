@@ -109,6 +109,7 @@ describe("Reminders and Email Summary UI Components", () => {
       expect(html).toContain('data-testid="email-summary-preview"');
       expect(html).toContain("Mi semana · 2026-10-19 al 2026-10-25");
       expect(html).toContain('data-testid="open-gmail-summary-button"');
+      expect(html).toContain('rel="noopener noreferrer"');
       expect(html).toContain("https://mail.google.com/mail/?view=cm&amp;fs=1");
       expect(html).not.toContain("&amp;to=");
       expect(html).toContain('data-testid="open-mailto-summary-button"');
@@ -250,8 +251,12 @@ describe("Reminders and Email Summary UI Components", () => {
 
       expect(html).toContain('data-testid="add-week-to-gcal-button"');
       expect(html).toContain("Añadir semana a Google Calendar");
+      expect(html).toContain('data-testid="open-email-summary-top-button"');
+      expect(html).toContain("Enviar a Gmail / Correo");
       expect(html).toContain('data-testid="reminders-and-alerts-details"');
+      expect(html).toContain("Exportar y compartir");
       expect(html).toContain("Recordatorios y avisos");
+      expect(html).toContain('id="email-summary-card-wrapper"');
     });
   });
 
