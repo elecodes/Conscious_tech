@@ -395,10 +395,11 @@ export function PlanningProposalReviewFooter({
             className="secondary"
             data-testid="proposal-add-week-to-gcal"
             style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+            title="Descarga el archivo .ics con tus tareas y recordatorios para importar en Google Calendar"
             onClick={handleDownloadWeekIcs}
           >
             <span>📅</span>
-            <span>Añadir semana a Google Calendar</span>
+            <span>Añadir semana a Google Calendar (.ics)</span>
           </button>
           <button
             type="button"
@@ -416,11 +417,67 @@ export function PlanningProposalReviewFooter({
       {exportNotice && (
         <div
           className="status-message status-success"
-          style={{ marginTop: "12px", fontSize: "0.82rem" }}
+          style={{
+            marginTop: "12px",
+            fontSize: "0.84rem",
+            padding: "12px 14px",
+            background: "#f0fdf4",
+            border: "1px solid #bbf7d0",
+            borderRadius: "6px",
+          }}
           role="status"
           data-testid="proposal-gcal-import-note"
         >
-          {exportNotice}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: "10px",
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 600, color: "#166534", marginBottom: "4px" }}>
+                ✓ Archivo .ics descargado en tu equipo
+              </div>
+              <p style={{ margin: "2px 0 8px 0", fontSize: "0.8rem", color: "#1e3a5f" }}>
+                Para que aparezca en tu Google Calendar y sincronice con tu móvil, impórtalo en la
+                web de Google Calendar:
+              </p>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                <a
+                  href="https://calendar.google.com/calendar/u/0/r/settings/export"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="button primary small"
+                  style={{
+                    fontSize: "0.8rem",
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    padding: "4px 10px",
+                  }}
+                  data-testid="proposal-open-gcal-import-web-button"
+                >
+                  <span>📅</span>
+                  <span>Abrir importador de Google Calendar</span>
+                </a>
+                <span className="calm-muted" style={{ fontSize: "0.76rem" }}>
+                  (En Ajustes → Importar y exportar, selecciona el archivo descargado)
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="secondary small"
+              onClick={() => setExportNotice(null)}
+              style={{ padding: "2px 6px", fontSize: "0.75rem", minWidth: "auto" }}
+              aria-label="Cerrar aviso"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
     </>

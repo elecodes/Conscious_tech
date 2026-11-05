@@ -250,13 +250,15 @@ describe("Reminders and Email Summary UI Components", () => {
       );
 
       expect(html).toContain('data-testid="add-week-to-gcal-button"');
-      expect(html).toContain("Añadir semana a Google Calendar");
+      expect(html).toContain("Añadir semana a Google Calendar (.ics)");
       expect(html).toContain('data-testid="open-email-summary-top-button"');
       expect(html).toContain("Enviar a Gmail / Correo");
       expect(html).toContain('data-testid="reminders-and-alerts-details"');
       expect(html).toContain("Exportar y compartir");
       expect(html).toContain("Recordatorios y avisos");
       expect(html).toContain('id="email-summary-card-wrapper"');
+      expect(html).toContain('data-testid="link-gcal-settings-export"');
+      expect(html).toContain("https://calendar.google.com/calendar/u/0/r/settings/export");
     });
   });
 
@@ -299,7 +301,7 @@ describe("Reminders and Email Summary UI Components", () => {
       );
 
       expect(html).toContain('data-testid="proposal-add-week-to-gcal"');
-      expect(html).toContain("Añadir semana a Google Calendar");
+      expect(html).toContain("Añadir semana a Google Calendar (.ics)");
       expect(html).toContain('data-testid="proposal-more-actions-details"');
       expect(html).toContain('data-testid="calendar-reminder-settings"');
     });
