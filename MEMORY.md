@@ -367,13 +367,17 @@ Implemented and calibrated skills:
 - **Claridad de Proveedor en Ajustes**: Mensaje informativo explicativo bajo el selector cuando el modo Mock determinista está activo, preservando el proveedor predeterminado.
 - **Cobertura Automatizada Exhaustiva**: Tests para persistencia de recordatorios (`localStorage`), límites seguros de URL en resumen por correo (< 3.500 caracteres), codificación de caracteres especiales, ausencia de destinatario, copia íntegra al portapapeles y prueba de humo ampliada en Chromium real (953 tests en 70 suites).
 
-20. **Pendiente para la próxima sesión (Investigación de Calendario y Gmail)**:
+20. **Resolución de «Enviarme el resumen por correo» a Gmail y Pendientes de Calendario**:
 
-- **Revisión de Exportación e Importación de Calendario (`.ics` / Google Calendar)**:
+- **Descubrimiento y Acceso Inmediato en «Mi semana»**:
+  - Se añadió el botón superior `✉️ Enviar a Gmail / Correo` junto a los accesos directos de la cabecera de la agenda activa.
+  - Se renombró el contenedor inferior colapsado a `📤 Exportar y compartir semana (Google Calendar, Gmail y recordatorios y avisos)` y se sincronizó su apertura automática (`open={isExportOpen}`) al pulsar el botón superior, posicionando el scroll directo sobre la tarjeta de correo.
+- **Blindaje de Longitud de URL y Prevención de HTTP 400**:
+  - Se acotó la longitud codificada de la URL a un techo estricto de < 1.800 caracteres en `src/domain/email-summary.ts` mediante truncado por búsqueda binaria sobre caracteres seguros, impidiendo que Google Frontend rechace peticiones por URI excesiva (`400 Bad Request` / `414 URI Too Long`).
+  - Se corrigió la sintaxis HTML del atributo `rel` en el enlace a Gmail de `rel="noopener,noreferrer"` a `rel="noopener noreferrer"`.
+  - El botón «Copiar resumen» sigue copiando el 100% del texto íntegro sin truncar al portapapeles.
+- **Pendiente para Calendario**:
   - Verificar en entorno real cómo Google Calendar interpreta los disparadores de alarma (`VALARM`): las tareas de día completo configuradas a las 09:00 (`+PT9H`) vs tareas horarias con alarma 1 hora antes (`-PT1H`).
-- **Revisión de "Enviarme el resumen por correo" a Gmail**:
-  - Investigar por qué no está funcionando adecuadamente según el reporte de la persona usuaria.
-  - Comprobar la URL de redacción de Gmail (`https://mail.google.com/mail/?view=cm&fs=1&su=...&body=...`), parámetros requeridos/conflictivos, decodificación en cliente de escritorio y comportamiento ante enlaces y saltos de línea.
 
 Detailed specifications for individual skills live separately from this file.
 
