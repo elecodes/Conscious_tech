@@ -112,7 +112,7 @@ export function EmailSummaryCard({
           rel="noopener noreferrer"
           className="button primary small"
           style={{
-            fontSize: "0.8rem",
+            fontSize: "0.82rem",
             textDecoration: "none",
             display: "inline-flex",
             alignItems: "center",
@@ -120,6 +120,7 @@ export function EmailSummaryCard({
           }}
           data-testid="open-gmail-summary-button"
         >
+          <span>✉️</span>
           <span>Abrir en Gmail</span>
         </a>
 
@@ -127,7 +128,7 @@ export function EmailSummaryCard({
           href={summary.mailtoUrl}
           className="button secondary small"
           style={{
-            fontSize: "0.8rem",
+            fontSize: "0.82rem",
             textDecoration: "none",
             display: "inline-flex",
             alignItems: "center",
@@ -135,17 +136,18 @@ export function EmailSummaryCard({
           }}
           data-testid="open-mailto-summary-button"
         >
+          <span>📬</span>
           <span>Usar mi programa de correo</span>
         </a>
 
         <button
           type="button"
           className="secondary small"
-          style={{ fontSize: "0.8rem" }}
+          style={{ fontSize: "0.82rem" }}
           onClick={handleCopy}
           data-testid="copy-email-summary-button"
         >
-          {copied ? "✓ Copiado" : "Copiar resumen"}
+          {copied ? "✓ Copiado" : "📋 Copiar resumen"}
         </button>
       </div>
       {copied && (

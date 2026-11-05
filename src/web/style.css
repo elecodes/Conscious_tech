@@ -241,9 +241,11 @@ textarea {
 }
 
 /* Primary & Secondary Buttons */
-button.primary {
+button.primary,
+a.button.primary,
+.button.primary {
   background: var(--accent-sage);
-  color: #ffffff;
+  color: #ffffff !important;
   border: 1px solid var(--accent-sage);
   padding: 10px 22px;
   font-size: 0.92rem;
@@ -258,15 +260,22 @@ button.primary {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  text-decoration: none;
 }
 
-button.primary:hover:not(:disabled) {
+button.primary:hover:not(:disabled),
+a.button.primary:hover,
+.button.primary:hover {
   background: var(--accent-sage-hover);
+  color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(45, 64, 51, 0.22);
   transform: translateY(-0.5px);
+  text-decoration: none;
 }
 
-button.secondary {
+button.secondary,
+a.button.secondary,
+.button.secondary {
   background: #ffffff;
   color: var(--text-main);
   border: 1px solid var(--border-color);
@@ -281,19 +290,31 @@ button.secondary {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  text-decoration: none;
 }
 
-button.secondary:hover:not(:disabled) {
+button.secondary:hover:not(:disabled),
+a.button.secondary:hover,
+.button.secondary:hover {
   background: #fbf9f4;
   border-color: #cfc5b4;
+  color: var(--text-main);
+  text-decoration: none;
 }
 
 button.small,
 button.primary.small,
-button.secondary.small {
+button.secondary.small,
+a.button.small,
+a.button.primary.small,
+a.button.secondary.small,
+.button.small,
+.button.primary.small,
+.button.secondary.small {
   padding: 5px 12px;
   font-size: 0.82rem;
   border-radius: 999px;
+  text-decoration: none;
 }
 
 button:disabled {
