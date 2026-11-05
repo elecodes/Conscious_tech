@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Clarified calendar export buttons across «Mi semana» and Proposal Confirmation to explicitly state `.ics` download (`Añadir semana a Google Calendar (.ics)`), eliminating confusion with direct cloud sync.
   - Added guided post-download bridge in active week and proposal footer with 1-click action button (`Abrir importador de Google Calendar` $\rightarrow$ `calendar.google.com/calendar/u/0/r/settings/export`) to easily upload the `.ics` so it syncs to mobile and external devices.
   - Highlighted 1-click cloud sync on individual tasks under `••• Más` (`📅 Google Cal (1 clic)`), which saves directly to Google Calendar without downloading files.
+  - Resolved CSS selector scoping in `style.css` for `a.button` elements, providing distinct visual hierarchy and pill-button shapes for `[✉️ Abrir en Gmail]` (solid sage green primary), `[📬 Usar mi programa de correo]` (bordered white secondary), and `[📋 Copiar resumen]` (utility).
 - **Automated Coverage & Test Gates**:
   - Added unit and integration tests for calendar reminder preferences (restoring preferences from localStorage across reloads and clean profile defaults).
   - Added unit tests for email summary edge cases with long weeks (>1,500 characters), ensuring body truncation with "… (ver el resto en la app)", safe URL lengths (< 3500 characters) for Gmail compose and mailto, proper encoding of special characters (accents, &, #, newlines), absence of recipients, and full non-truncated copy to clipboard.

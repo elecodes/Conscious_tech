@@ -376,6 +376,7 @@ Implemented and calibrated skills:
   - Se acotó la longitud codificada de la URL a un techo estricto de < 1.800 caracteres en `src/domain/email-summary.ts` mediante truncado por búsqueda binaria sobre caracteres seguros, impidiendo que Google Frontend rechace peticiones por URI excesiva (`400 Bad Request` / `414 URI Too Long`).
   - Se corrigió la sintaxis HTML del atributo `rel` en el enlace a Gmail de `rel="noopener,noreferrer"` a `rel="noopener noreferrer"`.
   - El botón «Copiar resumen» sigue copiando el 100% del texto íntegro sin truncar al portapapeles.
+  - Se corrigió el alcance de estilos CSS en `style.css` para `a.button`, dotando de silueta de botón píldora y jerarquía visual nítida a `[✉️ Abrir en Gmail]` (primario verde salvia), `[📬 Usar mi programa de correo]` (secundario con borde) y `[📋 Copiar resumen]`.
 - **Transparencia en Calendario y Puente Asistido a Google Calendar Web**:
   - Botón renombrado a `Añadir semana a Google Calendar (.ics)` en Mi semana y Confirmar propuesta, explicitando que la exportación semanal se realiza mediante archivo `.ics`.
   - Tarjeta de aviso enriquecida con botón directo `Abrir importador de Google Calendar` (`https://calendar.google.com/calendar/u/0/r/settings/export`) para facilitar la subida a la nube de Google y sincronización automática con el móvil.

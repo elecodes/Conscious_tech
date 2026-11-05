@@ -45,7 +45,9 @@ docs/
     ├── 0023-proxy-hardening-and-provider-decoupling.md
     ├── 0024-domain-decoupling-browser-smoke-tests-and-privacy-hardening.md
     ├── 0025-ui-simplification-and-progressive-disclosure.md
-    └── 0026-reminders-and-email-summary.md
+    ├── 0026-reminders-and-email-summary.md
+    ├── 0027-guided-flow-and-card-simplification.md
+    └── 0028-calendar-bridge-and-email-summary-polish.md
 src/
 ├── domain/                  # Pure domain types & strict Zod schemas
 │   ├── items.ts             # ItemType, ItemStatus (incl. archived), ExtractedItem
