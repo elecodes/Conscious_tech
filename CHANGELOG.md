@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Made email summary discoverable in «Mi semana» with a direct top action button (`✉️ Enviar a Gmail / Correo`) and explicit section header (`📤 Exportar y compartir semana`), resolving hidden accordion friction.
   - Bounded final encoded Gmail/mailto URL length strictly below 1,800 characters via binary search trimming to prevent HTTP 400 (`Request-URI Too Large`) on Google Frontend servers, while keeping 100% full text copy to clipboard.
   - Corrected HTML `rel` attribute in Gmail compose link from comma-separated `rel="noopener,noreferrer"` to standard space-separated `rel="noopener noreferrer"`.
+  - Clarified calendar export buttons across «Mi semana» and Proposal Confirmation to explicitly state `.ics` download (`Añadir semana a Google Calendar (.ics)`), eliminating confusion with direct cloud sync.
+  - Added guided post-download bridge in active week and proposal footer with 1-click action button (`Abrir importador de Google Calendar` $\rightarrow$ `calendar.google.com/calendar/u/0/r/settings/export`) to easily upload the `.ics` so it syncs to mobile and external devices.
+  - Highlighted 1-click cloud sync on individual tasks under `••• Más` (`📅 Google Cal (1 clic)`), which saves directly to Google Calendar without downloading files.
 - **Automated Coverage & Test Gates**:
   - Added unit and integration tests for calendar reminder preferences (restoring preferences from localStorage across reloads and clean profile defaults).
   - Added unit tests for email summary edge cases with long weeks (>1,500 characters), ensuring body truncation with "… (ver el resto en la app)", safe URL lengths (< 3500 characters) for Gmail compose and mailto, proper encoding of special characters (accents, &, #, newlines), absence of recipients, and full non-truncated copy to clipboard.
