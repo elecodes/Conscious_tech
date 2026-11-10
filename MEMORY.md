@@ -458,3 +458,18 @@ The product succeeds when the person can say:
 - «Eliminar semana» sustituye «Purgar» sin cambiar confirmación, cancelación ni alcance.
 - El siguiente paso requiere diseñar persistencia, deshacer y relación con el cierre
   antes de añadir acciones diarias con estado.
+
+## UX incremental: diseño de acciones diarias (pendiente de implementar)
+
+- Contrato propuesto en `docs/daily-actions-design.md`. Las disposiciones actuales
+  del cierre son estado de componente; no constituyen progreso diario persistente.
+- `reverted` existe en el esquema del historial, pero falta la operación de
+  reversión y la captura previa necesaria para deshacer postergaciones.
+- Una postergación vigente contradice un resultado completado en el cierre actual:
+  resolver explícitamente, sin cambiar silenciosamente la prioridad de evidencias.
+- Propuesta: actividad opcional en la agenda, concurrencia con su versión existente,
+  reversión solo si no hubo cambios posteriores y transacciones atómicas.
+- Completar no libera horas ni completa automáticamente un foco agrupado. Cierre y
+  reapertura deben conservar resultados; arrastre mantiene identidad y selección.
+- Entregas futuras: 7a contrato/persistencia, 7b completar con cierre y deshacer,
+  7c mover, 7d aplazar. Todavía no hay controles ni esquemas nuevos implementados.

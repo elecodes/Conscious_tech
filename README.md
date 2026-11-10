@@ -408,3 +408,9 @@ Manual checks for release verification:
 ## License
 
 Private (UNLICENSED)
+
+### Daily actions: design checkpoint
+
+Daily completion and undo are not implemented yet. The proposed persistence,
+closing, reopening and carryover behavior, with incremental delivery gates, is
+recorded in [the daily-actions design](docs/daily-actions-design.md).

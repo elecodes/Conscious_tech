@@ -1,6 +1,6 @@
 # UX improvement plan
 
-Status: steps 0–6 complete; daily-action design is next.
+Status: steps 0–6 complete; step 7 design documented, implementation pending.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
@@ -369,3 +369,25 @@ Baseline results:
   and dev modes pass.
 - Next: step 7, define daily-action persistence, undo, history, closing and carryover
   semantics before implementing new stateful controls.
+
+### Step 7 — daily-action design checkpoint
+
+- Investigated current progress, adjustment, closing, reopening, backup and
+  carryover behavior. Findings and the proposed contract are in
+  [daily-actions-design.md](daily-actions-design.md).
+- Current closing selections are component state, not persisted daily progress.
+  Existing adjustment history names a reverted lifecycle but supplies no public
+  undo operation; postponement removes allocations without recording a full
+  reversible before-state.
+- Documented individual completion, movement and postponement, conservative
+  version-checked undo, atomic writes, and preservation of grouped focus members.
+- Explicitly addressed the existing conflict between a live postponement and a
+  completed closing outcome. No silent precedence rule is introduced.
+- Proposed an optional agenda activity field, backward data compatibility,
+  integration with closing/reopening, candidate deduplication and a verification
+  matrix. These are design decisions for future implementation, not shipped APIs.
+- Split delivery into 7a persistence/contracts, 7b completion with closing and undo,
+  7c movement, and 7d postponement. Functional acceptance remains pending.
+- Verification: documentation formatting and diff checks pass. No runtime code,
+  dependency, storage schema, or saved user data changed in this checkpoint.
+- Next: 7a, implement and test the minimal persistence contract before adding UI.
