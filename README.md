@@ -313,6 +313,13 @@ entries remain under **Si queda espacio** and **Fuera de esta semana**. Open a f
 to inspect its contributing items. Agenda details and exports are secondary;
 exports and weekly closing still include the complete inventory.
 
+Open **Calendario y compartir** to choose reminders and **Descargar calendario
+(.ics)**, then import the file in your calendar. Importing calendars is a one-time
+reference, not a live connection. Email actions prepare a draft for you to review
+and send; **Copiar resumen** copies the full text. In **Ajustes**, browser storage
+and backups are separate from AI processing: Mock uses no external AI, while Groq
+and Gemini receive your notes and required context when you generate.
+
 ### 4. Run Test Suite
 
 Unit, behavioral, and security tests run deterministically with zero token consumption (987 tests across 74 suites):

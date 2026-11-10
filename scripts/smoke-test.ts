@@ -739,13 +739,31 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     if ((await earlyConfirm.count()) > 0) {
       await earlyConfirm.click();
     }
-    const purgeBtn = page.locator('button:has-text("Purgar semana actual")');
-    if ((await purgeBtn.count()) > 0) {
-      await purgeBtn.click();
-      const confirmPurgeBtn = page.locator('button:has-text("Confirmar purga")');
-      await confirmPurgeBtn.click();
-      await page.waitForTimeout(500);
-    }
+    const purgeBtn = page.getByRole("button", { name: "Eliminar semana actual", exact: true });
+    await purgeBtn.click();
+    await page.getByRole("button", { name: "Cancelar eliminación", exact: true }).click();
+    await purgeBtn.waitFor();
+    await purgeBtn.click();
+    await page
+      .getByRole("button", { name: "Confirmar eliminación definitiva", exact: true })
+      .click();
+    await page.waitForFunction(async () => {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open("conscious_tech_db");
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      try {
+        return await new Promise<boolean>((resolve, reject) => {
+          const request = db.transaction("plans", "readonly").objectStore("plans").count();
+          request.onsuccess = () => resolve(request.result === 0);
+          request.onerror = () => reject(request.error);
+        });
+      } finally {
+        db.close();
+      }
+    });
+    console.log("  ✓ Week deletion retains explicit confirmation and cancellation");
 
     // Go to Nueva semana, populate text and continue to review to establish a draft
     await page.locator('[data-testid="nav-tab-new-week"]').click();

@@ -55,7 +55,7 @@ export function EmailSummaryCard({
     >
       <div style={{ marginBottom: "8px" }}>
         <h4 style={{ margin: "0 0 4px 0", fontSize: compact ? "0.88rem" : "0.95rem" }}>
-          ✉️ Enviarme el resumen por correo
+          ✉️ Resumen para copiar o enviar
         </h4>
         <span className="calm-muted" style={{ fontSize: "0.78rem" }}>
           Asunto previsto: <strong>{summary.subject}</strong>
@@ -101,8 +101,8 @@ export function EmailSummaryCard({
         }}
       >
         🔒 <strong>Privacidad:</strong> Ningún dato se envía automáticamente. Al abrir el enlace, el
-        proveedor de correo podrá ver el texto del resumen. El destinatario queda vacío para que
-        escribas tu propia dirección.
+        proveedor de correo podrá ver el texto del resumen. El destinatario queda vacío. Revisa el
+        borrador y envíalo desde tu correo; la app no lo envía por ti.
       </p>
 
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
@@ -121,7 +121,7 @@ export function EmailSummaryCard({
           data-testid="open-gmail-summary-button"
         >
           <span>✉️</span>
-          <span>Abrir en Gmail</span>
+          <span>Preparar correo en Gmail</span>
         </a>
 
         <a
@@ -137,7 +137,7 @@ export function EmailSummaryCard({
           data-testid="open-mailto-summary-button"
         >
           <span>📬</span>
-          <span>Usar mi programa de correo</span>
+          <span>Preparar en mi programa de correo</span>
         </a>
 
         <button

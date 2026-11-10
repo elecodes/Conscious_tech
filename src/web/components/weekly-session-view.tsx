@@ -503,7 +503,7 @@ export function WeeklySessionView({
         );
       } else if (res.status === "conflict_active_plan_exists") {
         setReopenFeedback(
-          `No es posible reabrir esta semana porque ya existe otra semana activa (${res.existingActivePlanId}). Cierra o purga la semana activa antes de reabrir esta.`
+          `No es posible reabrir esta semana porque ya existe otra semana activa (${res.existingActivePlanId}). Cierra o elimina la semana activa antes de reabrir esta.`
         );
       } else {
         setReopenFeedback(
@@ -1288,32 +1288,31 @@ export function WeeklySessionView({
               <div
                 className="status-message status-error"
                 role="alert"
-                aria-label="Confirmación para purgar semana"
+                aria-label="Confirmación para eliminar semana"
                 style={{ display: "flex", flexDirection: "column", gap: "8px" }}
               >
                 <p>
-                  ¿Deseas purgar completamente esta semana y sus datos asociados? Esta acción
-                  eliminará el plan, la agenda y reportes de la base de datos local y no se puede
-                  deshacer.
+                  ¿Deseas eliminar esta semana y sus datos asociados? Esta acción eliminará el plan,
+                  la agenda y los informes guardados en este navegador. No se puede deshacer.
                 </p>
                 <div style={{ display: "flex", gap: "8px" }}>
                   <button
                     className="primary"
                     style={{ backgroundColor: "#8c2a2a", borderColor: "#8c2a2a" }}
-                    aria-label="Confirmar purga definitiva"
+                    aria-label="Confirmar eliminación definitiva"
                     onClick={async () => {
                       if (plan) {
                         await purgeSession(plan.planId);
                         setIsPurgeConfirming(false);
-                        setFeedbackMessage("Semana purgada.");
+                        setFeedbackMessage("Semana eliminada.");
                       }
                     }}
                   >
-                    Confirmar purga
+                    Eliminar definitivamente
                   </button>
                   <button
                     className="secondary"
-                    aria-label="Cancelar purga"
+                    aria-label="Cancelar eliminación"
                     onClick={() => setIsPurgeConfirming(false)}
                   >
                     Cancelar
@@ -1324,10 +1323,10 @@ export function WeeklySessionView({
               <button
                 className="secondary"
                 style={{ color: "#8c2a2a", borderColor: "#f0d0d0" }}
-                aria-label="Purgar semana actual"
+                aria-label="Eliminar semana actual"
                 onClick={() => setIsPurgeConfirming(true)}
               >
-                Purgar semana actual
+                Eliminar semana actual
               </button>
             )}
           </div>

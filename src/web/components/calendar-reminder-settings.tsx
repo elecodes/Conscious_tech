@@ -120,7 +120,7 @@ export function CalendarReminderSettings({
               color: "var(--accent-color, #2b6cb0)",
             }}
           >
-            🔔 Tu calendario te avisará
+            🔔 Avisos en tu calendario
           </p>
           <p
             className="calm-muted"
@@ -130,8 +130,9 @@ export function CalendarReminderSettings({
               lineHeight: 1.35,
             }}
           >
-            Google Calendar te avisará con una notificación; puedes activar el aviso por correo en
-            sus ajustes. Para tareas de todo el día te avisamos a las 9:00.
+            Los avisos dependen de los ajustes de tu calendario después de importar el archivo.
+            Puedes activar el aviso por correo en sus ajustes. Para tareas de todo el día, el
+            archivo incluye un aviso a las 9:00. La app no envía notificaciones.
           </p>
         </div>
       )}

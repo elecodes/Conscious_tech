@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Consolidated weekly calendar downloads and reminder settings into one calendar
+  and sharing section, preserving complete-plan exports and summary contents.
+- Clarified file downloads, event and email preparation, manual calendar imports,
+  browser storage, and external AI processing; removed automatic-sync implications.
+- Replaced technical week-purge wording with plain deletion language while keeping
+  explicit confirmation and cancellation.
+
 - Clarified the active week around focus areas and commitments, with optional and
   deferred entries in separate disclosures and every source retained.
 - Moved agenda versions, empty history, and exports into secondary details; made

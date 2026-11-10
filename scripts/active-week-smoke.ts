@@ -61,6 +61,17 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
 
     // Existing export still receives the complete inventory, independently of its visibility.
     await page.getByTestId("reminders-and-alerts-summary").click();
+    if ((await page.getByTestId("add-week-to-gcal-button").count()) !== 1)
+      throw new Error("Weekly calendar download is duplicated");
+    if (
+      !(await page.getByTestId("add-week-to-gcal-button").innerText()).includes(
+        "Descargar calendario"
+      )
+    )
+      throw new Error("Calendar action does not describe a download");
+    await page.getByRole("link", { name: /Preparar correo en Gmail/ }).waitFor();
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth))
+      throw new Error("Calendar/sharing controls overflow on mobile");
     const downloadPromise = page.waitForEvent("download");
     await page.getByTestId("add-week-to-gcal-button").click();
     const download = await downloadPromise;

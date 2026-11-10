@@ -1,6 +1,6 @@
 # UX improvement plan
 
-Status: steps 0–5 complete; calendar, sharing, and trust language are next.
+Status: steps 0–6 complete; daily-action design is next.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
@@ -344,3 +344,28 @@ Baseline results:
   dependency-cycle checks, production build, and browser smoke tests in preview
   and dev modes pass.
 - Next: step 6, calendar, sharing, and trust language.
+
+### Step 6 — calendar, sharing, and trust language
+
+- Consolidated three identical weekly downloads into one calendar/sharing section.
+  Reminder settings precede the single download; complete-plan scope and payload
+  remain unchanged. Import links and the download success instructions remain.
+- Distinguished downloading an ICS file, preparing one Google Calendar event,
+  composing an email, and copying the complete summary. None implies automatic
+  sending, account connection, or ongoing calendar synchronization.
+- Calendar import explains its one-time nature and the separate paths: a local
+  file is read in the browser; a URL is fetched through the app server from the
+  calendar service. The saved private URL remains removable.
+- Settings distinguish browser storage from external AI processing. Mock remains
+  the default; an external-provider indicator explains that generating sends
+  notes. Backup and restore controls remain accessible and unchanged.
+- Replaced technical purge wording with deletion language while preserving the
+  confirmation, cancellation, and irreversible-action explanation.
+- Browser regressions cover the single download on mobile, unchanged reminders
+  and ICS inventory, bounded email URLs, full clipboard copying, the external-AI
+  indicator, import, and cancellation/deletion with an actual storage check.
+- Verification: 987 tests across 74 files, type checking, lint, formatting,
+  dependency-cycle checks, production build, and browser smoke tests in preview
+  and dev modes pass.
+- Next: step 7, define daily-action persistence, undo, history, closing and carryover
+  semantics before implementing new stateful controls.

@@ -326,6 +326,12 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
                 Modo de prueba · Sin IA externa
               </span>
             )}
+            {providerType !== "mock" && (
+              <span className="notebook-pill" data-testid="external-ai-indicator">
+                IA externa: {providerType === "groq" ? "Groq" : "Gemini"} · Al generar se envían tus
+                notas
+              </span>
+            )}
             <details
               className="calm-details"
               style={{ margin: 0, padding: "4px 10px", position: "relative" }}
@@ -354,14 +360,14 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
                 }}
               >
                 <h4 style={{ margin: "0 0 6px 0", fontSize: "0.9rem" }}>
-                  💾 Soberanía de datos y respaldo local
+                  💾 Tus datos y copias de seguridad
                 </h4>
                 <p
                   className="calm-muted"
                   style={{ margin: "0 0 10px 0", fontSize: "0.8rem", lineHeight: 1.4 }}
                 >
-                  Tus planes, agendas, cierres y recuerdos se guardan únicamente en tu navegador.
-                  Puedes descargar una copia de seguridad o restaurarla en cualquier momento.
+                  La app guarda tus planes, agendas, cierres y recuerdos en este navegador. Puedes
+                  descargar una copia de seguridad o restaurarla en cualquier momento.
                 </p>
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                   <button
@@ -418,8 +424,10 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
                     className="calm-muted"
                     style={{ margin: "0 0 8px 0", fontSize: "0.8rem", lineHeight: 1.4 }}
                   >
-                    Mock realiza pruebas locales sin enviar datos fuera; Groq y Gemini conectan con
-                    modelos reales mediante el servidor local.
+                    El almacenamiento en tu navegador y el procesamiento con IA son distintos. En
+                    modo de prueba, tus notas no se envían a servicios de IA. Con Groq o Gemini, las
+                    notas y el contexto necesario se envían al proveedor elegido a través del
+                    servidor de la app.
                   </p>
                   <label
                     htmlFor="settings-provider-select"
@@ -440,8 +448,8 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
                     style={{ width: "100%", fontSize: "0.82rem", padding: "4px 8px" }}
                   >
                     <option value="mock">Mock (Prueba local determinista)</option>
-                    <option value="groq">Groq (Servidor local / Qwen 2.5 32B)</option>
-                    <option value="gemini">Gemini (Servidor local / Gemini 2.5 Flash)</option>
+                    <option value="groq">Groq (IA externa)</option>
+                    <option value="gemini">Gemini (IA externa)</option>
                   </select>
                   {providerType === "mock" && (
                     <p
@@ -449,8 +457,8 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
                       data-testid="mock-provider-explanation"
                       style={{ margin: "6px 0 0 0", fontSize: "0.78rem", lineHeight: 1.4 }}
                     >
-                      Ahora usas el modo de prueba (Mock): no se envía nada a ningún servicio. Elige
-                      Groq o Gemini para propuestas con IA real.
+                      Ahora usas el modo de prueba (Mock): tus notas no se envían a servicios de IA.
+                      Elige Groq o Gemini para propuestas con IA real.
                     </p>
                   )}
                   {providerType !== "mock" && (
@@ -464,7 +472,8 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
                         borderRadius: "4px",
                       }}
                     >
-                      ⚠️ Utiliza credenciales locales del servidor (proxy local).
+                      Al generar con IA, enviarás tus notas y contexto al proveedor seleccionado.
+                      Las credenciales se gestionan en el servidor.
                     </div>
                   )}
                 </div>

@@ -18,7 +18,7 @@ describe("CalendarSyncCard UI Component & Server Proxy Handler", () => {
 
       expect(html).toContain('data-testid="calendar-sync-card"');
       expect(html).toContain("Google Calendar (Compromisos fijos)");
-      expect(html).toContain("Conectar / Sincronizar");
+      expect(html).toContain("Importar calendario");
       // Initially collapsed, input should not be in the DOM
       expect(html).not.toContain('data-testid="ical-url-input"');
     });
@@ -30,9 +30,7 @@ describe("CalendarSyncCard UI Component & Server Proxy Handler", () => {
 
       expect(html).toContain('data-testid="calendar-privacy-notice"');
       expect(html).toContain("El enlace privado se guarda en este navegador hasta ser olvidado");
-      expect(html).toContain(
-        "puedes eliminarlo en cualquier momento con &quot;Olvidar enlace&quot;"
-      );
+      expect(html).toContain("olvidado con &quot;Olvidar enlace&quot;");
       expect(html).toContain('data-testid="ical-url-input"');
       expect(html).toContain('data-testid="forget-ical-url-btn"');
       expect(html).toContain("Olvidar enlace");

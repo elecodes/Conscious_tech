@@ -444,3 +444,17 @@ The product succeeds when the person can say:
   visible. Imprevistos aparece antes de las listas secundarias.
 - No hay migración, nuevas dependencias ni llamadas adicionales a IA. La siguiente
   etapa consolidará calendario, compartir y lenguaje de confianza.
+
+## UX incremental: calendario, compartir y confianza
+
+- Una sola descarga semanal .ics comparte sección con recordatorios, importación y
+  resumen. Mantiene el contenido completo; no filtra aplazados silenciosamente.
+- Descargar, preparar un evento, preparar un correo y copiar describen acciones
+  diferentes. La app no promete envío, conexión de cuenta ni sincronización continua.
+- La importación es puntual: el archivo se lee en el navegador; un enlace se consulta
+  mediante el servidor al servicio de calendario. Se mantiene «Olvidar enlace».
+- Ajustes distingue almacenamiento en navegador de procesamiento externo. Mock sigue
+  por defecto; Groq/Gemini muestran que generar envía notas y contexto al proveedor.
+- «Eliminar semana» sustituye «Purgar» sin cambiar confirmación, cancelación ni alcance.
+- El siguiente paso requiere diseñar persistencia, deshacer y relación con el cierre
+  antes de añadir acciones diarias con estado.

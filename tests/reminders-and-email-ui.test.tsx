@@ -39,9 +39,9 @@ describe("Reminders and Email Summary UI Components", () => {
 
       expect(html).toContain('data-testid="reminder-include-tasks-checkbox"');
       expect(html).toContain("Incluir también tareas");
-      expect(html).toContain("Tu calendario te avisará");
-      expect(html).toContain("puedes activar el aviso por correo en sus ajustes");
-      expect(html).toContain("Para tareas de todo el día te avisamos a las 9:00");
+      expect(html).toContain("Avisos en tu calendario");
+      expect(html).toContain("Puedes activar el aviso por correo en sus ajustes");
+      expect(html).toContain("incluye un aviso a las 9:00");
     });
 
     it("restores reminder preferences from local storage on clean vs configured profiles", () => {
@@ -219,7 +219,7 @@ describe("Reminders and Email Summary UI Components", () => {
     } as unknown as StoredWeeklyPlan;
     const planItems = [{ itemId: "task-1", title: "Tarea 1", source: "Foco", estimatedHours: 2 }];
 
-    it("renders prominent 'Añadir semana a Google Calendar' button and 'Recordatorios y avisos' details", () => {
+    it("renders one calendar download and a single calendar/sharing section", () => {
       const html = renderToStaticMarkup(
         <ActiveWeekScheduleSection
           schedule={mockSchedule}
@@ -250,12 +250,14 @@ describe("Reminders and Email Summary UI Components", () => {
       );
 
       expect(html).toContain('data-testid="add-week-to-gcal-button"');
-      expect(html).toContain("Añadir semana a Google Calendar (.ics)");
-      expect(html).toContain('data-testid="open-email-summary-top-button"');
-      expect(html).toContain("Enviar a Gmail / Correo");
+      expect(html).toContain("Descargar calendario (.ics)");
+      expect(html.match(/data-testid="add-week-to-gcal-button"/g)).toHaveLength(1);
+      expect(html).not.toContain('data-testid="open-email-summary-top-button"');
+      expect(html).not.toContain('data-testid="export-week-to-gcal"');
+      expect(html).not.toContain('data-testid="download-ics-from-reminders-button"');
       expect(html).toContain('data-testid="reminders-and-alerts-details"');
-      expect(html).toContain("Exportar y compartir");
-      expect(html).toContain("Recordatorios y avisos");
+      expect(html).toContain("Calendario y compartir");
+      expect(html).toContain("Calendario y recordatorios");
       expect(html).toContain('id="email-summary-card-wrapper"');
       expect(html).toContain('data-testid="link-gcal-settings-export"');
       expect(html).toContain("https://calendar.google.com/calendar/u/0/r/settings/export");

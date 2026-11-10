@@ -122,9 +122,9 @@ describe("FIX 2: Voseo denylist regression guard", () => {
       "../src/web/components/calendar-reminder-settings.tsx"
     );
     const reminderSettingsContent = fs.readFileSync(reminderSettingsPath, "utf-8");
-    expect(reminderSettingsContent).toContain("Tu calendario te avisará");
-    expect(reminderSettingsContent).toContain("puedes activar el aviso por correo");
-    expect(reminderSettingsContent).toContain("Para tareas de todo el día te avisamos a las 9:00.");
+    expect(reminderSettingsContent).toContain("Avisos en tu calendario");
+    expect(reminderSettingsContent).toContain("Puedes activar el aviso por correo");
+    expect(reminderSettingsContent).toContain("incluye un aviso a las 9:00.");
     expect(reminderSettingsContent).toContain("Incluir también tareas");
     expect(reminderSettingsContent).not.toContain("podés");
 
@@ -133,9 +133,9 @@ describe("FIX 2: Voseo denylist regression guard", () => {
       "../src/web/components/email-summary-card.tsx"
     );
     const emailSummaryContent = fs.readFileSync(emailSummaryPath, "utf-8");
-    expect(emailSummaryContent).toContain("Enviarme el resumen por correo");
-    expect(emailSummaryContent).toContain("Abrir en Gmail");
-    expect(emailSummaryContent).toContain("Usar mi programa de correo");
+    expect(emailSummaryContent).toContain("Resumen para copiar o enviar");
+    expect(emailSummaryContent).toContain("Preparar correo en Gmail");
+    expect(emailSummaryContent).toContain("Preparar en mi programa de correo");
     expect(emailSummaryContent).not.toContain("enviame");
 
     const activeWeekSchedulePath = path.resolve(
@@ -143,8 +143,8 @@ describe("FIX 2: Voseo denylist regression guard", () => {
       "../src/web/components/active-week-schedule-section.tsx"
     );
     const activeWeekScheduleContent = fs.readFileSync(activeWeekSchedulePath, "utf-8");
-    expect(activeWeekScheduleContent).toContain("Añadir semana a Google Calendar");
-    expect(activeWeekScheduleContent).toContain("Recordatorios y avisos");
+    expect(activeWeekScheduleContent).toContain("Descargar calendario");
+    expect(activeWeekScheduleContent).toContain("Calendario y recordatorios");
     expect(activeWeekScheduleContent).not.toContain("agregá");
   });
 });

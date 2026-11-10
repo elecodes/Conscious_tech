@@ -77,7 +77,7 @@ export function CalendarSyncCard({
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.error || "No se pudo sincronizar con el calendario.");
+        throw new Error(data.error || "No se pudo importar el calendario.");
       }
 
       const events = parseIcalContent(data.ics, {
@@ -89,7 +89,7 @@ export function CalendarSyncCard({
       setLastSummary(summary);
       onCalendarApplied(summary);
     } catch (err: unknown) {
-      setErrorMessage((err as Error).message || "Error al sincronizar el calendario.");
+      setErrorMessage((err as Error).message || "Error al importar el calendario.");
     } finally {
       setIsLoading(false);
     }
@@ -171,7 +171,7 @@ export function CalendarSyncCard({
             setIsOpen(!isOpen);
           }}
         >
-          {isOpen ? "Ocultar" : "Conectar / Sincronizar"}
+          {isOpen ? "Ocultar" : "Importar calendario"}
         </button>
       </div>
 
@@ -184,8 +184,10 @@ export function CalendarSyncCard({
               marginBottom: "10px",
             }}
           >
-            Pega la <strong>Dirección secreta en formato iCal</strong> de tu Google Calendar (la
-            encuentras en{" "}
+            Esta importación es una consulta puntual: no conecta tu cuenta ni se actualiza
+            automáticamente. Vuelve a importar cuando necesites datos recientes. Pega la{" "}
+            <strong>Dirección secreta en formato iCal</strong> de tu Google Calendar (la encuentras
+            en{" "}
             <em>
               Google Calendar &gt; Configuración &gt; Tu calendario &gt; Integrar el calendario
             </em>
@@ -217,7 +219,7 @@ export function CalendarSyncCard({
               disabled={isLoading || !icalUrl.trim()}
               style={{ padding: "7px 14px", fontSize: "0.85rem" }}
             >
-              {isLoading ? "Sincronizando..." : "Sincronizar"}
+              {isLoading ? "Importando..." : "Importar desde enlace"}
             </button>
             <button
               type="button"
@@ -256,9 +258,9 @@ export function CalendarSyncCard({
             <span>🔒</span>
             <span data-testid="calendar-privacy-notice">
               <strong>Privacidad:</strong> El enlace privado se guarda en este navegador hasta ser
-              olvidado (puedes eliminarlo en cualquier momento con "Olvidar enlace") y se consulta
-              vía POST local seguro sin enviarse a servidores de terceros ni guardarse en registros
-              de acceso.
+              olvidado con "Olvidar enlace". Al importar desde un enlace, el servidor de la app
+              consulta el servicio que aloja tu calendario. Un archivo .ics se lee en este
+              navegador.
             </span>
           </div>
 

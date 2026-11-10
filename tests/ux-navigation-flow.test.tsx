@@ -558,7 +558,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     expect(html).toContain("Asistente de IA");
     expect(html).toContain('data-testid="mock-provider-explanation"');
     expect(html).toContain(
-      "Ahora usas el modo de prueba (Mock): no se envía nada a ningún servicio. Elige Groq o Gemini para propuestas con IA real."
+      "Ahora usas el modo de prueba (Mock): tus notas no se envían a servicios de IA. Elige Groq o Gemini para propuestas con IA real."
     );
 
     // Config bar en Ideas solo contiene el selector de casos de ejemplo

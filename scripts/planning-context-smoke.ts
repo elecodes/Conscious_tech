@@ -60,6 +60,7 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
     // Invalid input is rejected before an AI request, preserving notes and the write step.
     await page.getByTestId("settings-dropdown").locator("summary").click();
     await page.getByTestId("provider-select").selectOption("groq");
+    await page.getByTestId("external-ai-indicator").waitFor();
     await page.getByTestId("settings-dropdown").locator("summary").click();
     await page.getByTestId("capture-available-hours").fill("-1");
     await page.getByTestId("flow-continue-to-review").click();
@@ -118,7 +119,7 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
 
     // Importing the same calendar twice must not subtract commitments from net free hours.
     await page.getByTestId("planning-options-details").locator(":scope > summary").click();
-    await page.getByRole("button", { name: "Conectar / Sincronizar", exact: true }).click();
+    await page.getByRole("button", { name: "Importar calendario", exact: true }).click();
     const calendarFile = {
       name: "synthetic-calendar.ics",
       mimeType: "text/calendar",
@@ -140,6 +141,7 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
     await page.getByTestId("planning-available-hours-input").fill("10");
     await page.getByTestId("settings-dropdown").locator("summary").click();
     await page.getByTestId("provider-select").selectOption("groq");
+    await page.getByTestId("external-ai-indicator").waitFor();
     await page.getByTestId("settings-dropdown").locator("summary").click();
     await page.getByTestId("step-indicator-confirm").click();
     await page.getByRole("alert").filter({ hasText: "Error de planificación:" }).waitFor();
