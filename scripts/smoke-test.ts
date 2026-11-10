@@ -1,5 +1,6 @@
 import net from "node:net";
 import { verifyPlanningContext } from "./planning-context-smoke";
+import { verifyPlanningReview } from "./planning-review-smoke";
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -379,20 +380,20 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
     console.log("  ✓ Collapsed 'Ajustes de la semana (opcional)' verified in Revisar");
 
-    // Verify calm idea cards and details toggle
-    const detailsToggle = page.locator('[data-testid^="details-toggle-"]').first();
+    // Source corrections live inside the matching proposal entry, not a second list.
+    await page.getByTestId("planning-review-board").waitFor();
+    const sourceDetails = page.locator('[data-testid^="review-details-"]').first();
+    const detailsToggle = sourceDetails.locator(":scope > summary");
     await detailsToggle.waitFor({ state: "visible", timeout: 5000 });
-    const isExpandedInitial = (await detailsToggle.getAttribute("aria-expanded")) === "true";
-    if (isExpandedInitial) {
-      throw new Error("Details toggle should be collapsed (aria-expanded=false) by default");
-    }
+    if (await sourceDetails.evaluate((el: HTMLDetailsElement) => el.open))
+      throw new Error("Source details should initially be collapsed");
     await detailsToggle.click();
-    const isExpandedAfterClick = (await detailsToggle.getAttribute("aria-expanded")) === "true";
-    if (!isExpandedAfterClick) {
-      throw new Error("Details toggle should be expanded (aria-expanded=true) after click");
-    }
+    if (!(await sourceDetails.evaluate((el: HTMLDetailsElement) => el.open)))
+      throw new Error("Source corrections did not expand");
+    if (!(await sourceDetails.getByRole("checkbox").first().isVisible()))
+      throw new Error("Source selection is not reachable inside corrections");
     await detailsToggle.click();
-    console.log("  ✓ Calm cards and details toggle (aria-expanded) verified");
+    console.log("  ✓ Unified proposal and source corrections verified");
 
     // Test back button from Revisar to Escribir (preserving text)
     const backToWriteBtn = page.locator('[data-testid="flow-back-to-write"]');
@@ -790,6 +791,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
 
     await verifyPlanningContext(browser, url);
+    await verifyPlanningReview(browser, url);
     await browser.close();
     console.log(`=== Smoke Test [${mode}] PASSED ===\n`);
   } finally {

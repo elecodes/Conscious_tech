@@ -291,7 +291,7 @@ describe("Claridad de Navegación y Ajuste de Elementos en Preparación", () => 
 
     // En carga planificada debe desglosar las horas flexibles en lugar de mostrar 'Sin estimar' confuso
     expect(html).toContain("0h fijas (~4h flexibles)");
-    expect(html).toContain("Opciones flexibles (2)");
+    expect(html).toContain("Si queda espacio (2)");
     expect(html).toContain("Capacidad disponible (4h flexibles)");
   });
 });

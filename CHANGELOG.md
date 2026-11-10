@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Unified proposal review into this week, optional work, deferred work, and
+  unscheduled thoughts; attached original wording and corrections to each entry.
+- Kept excluded and unplaced sources inspectable, with selection distinguished
+  from placement and an explicit first-proposal action when needed.
+- Protected grouped focus membership during moves and normalized effort units in
+  source editing and manual inclusion using the existing planning engine.
+- Fixed mobile overflow when opening corrections with long source notes.
+
 - Added a read-only activation summary with intention, dates, category counts,
   stored time estimates, protected space, and honest capacity uncertainty.
 - Moved intention editing back to review and calendar exports to the active week;

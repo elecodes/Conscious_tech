@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { extractItemHours } from "../../skills/build-week/deterministic";
 import { ExtractedItem } from "../../domain/items";
 import {
   formatItemType,
@@ -13,6 +14,8 @@ export interface CalmIdeaCardProps {
   onToggle: () => void;
   onUpdateEffort?: (itemId: string, hours: number | null) => void;
   onUpdateDeadline?: (itemId: string, dateStr: string | null) => void;
+  detailsOnly?: boolean;
+  selectionLabel?: string;
 }
 
 export function CalmIdeaCard({
@@ -21,8 +24,10 @@ export function CalmIdeaCard({
   onToggle,
   onUpdateEffort,
   onUpdateDeadline,
+  detailsOnly = false,
+  selectionLabel,
 }: CalmIdeaCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(detailsOnly);
 
   return (
     <li
@@ -34,7 +39,7 @@ export function CalmIdeaCard({
         gap: "6px",
         padding: "8px 12px",
         background: isAccepted ? "var(--bg-highlight, #fdfdfd)" : "#fafafa",
-        opacity: isAccepted ? 1 : 0.65,
+        opacity: isAccepted || selectionLabel ? 1 : 0.65,
         border: isAccepted ? "1px solid var(--border-color, #e0ded9)" : "1px dashed #d1d5db",
         borderRadius: "6px",
       }}
@@ -63,13 +68,20 @@ export function CalmIdeaCard({
             id={`item-check-${item.id}`}
             checked={isAccepted}
             onChange={onToggle}
-            aria-label={`Incluir elemento ${item.title}`}
+            aria-label={
+              selectionLabel ? `${selectionLabel}: ${item.title}` : `Incluir elemento ${item.title}`
+            }
             style={{ cursor: "pointer", flexShrink: 0 }}
           />
+          {selectionLabel && (
+            <label htmlFor={`item-check-${item.id}`} className="calm-muted">
+              {selectionLabel}
+            </label>
+          )}
           <strong
             style={{
               fontSize: "0.92rem",
-              textDecoration: isAccepted ? "none" : "line-through",
+              textDecoration: isAccepted || selectionLabel ? "none" : "line-through",
               color: isAccepted ? "inherit" : "var(--text-muted, #888)",
             }}
           >
@@ -86,22 +98,24 @@ export function CalmIdeaCard({
           )}
         </div>
 
-        <button
-          type="button"
-          className="secondary small"
-          aria-expanded={isExpanded}
-          aria-controls={`idea-details-${item.id}`}
-          onClick={() => setIsExpanded(!isExpanded)}
-          data-testid={`details-toggle-${item.id}`}
-          style={{
-            fontSize: "0.78rem",
-            padding: "2px 8px",
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Detalles {isExpanded ? "▲" : "▼"}
-        </button>
+        {!detailsOnly && (
+          <button
+            type="button"
+            className="secondary small"
+            aria-expanded={isExpanded}
+            aria-controls={`idea-details-${item.id}`}
+            onClick={() => setIsExpanded(!isExpanded)}
+            data-testid={`details-toggle-${item.id}`}
+            style={{
+              fontSize: "0.78rem",
+              padding: "2px 8px",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Detalles {isExpanded ? "▲" : "▼"}
+          </button>
+        )}
       </div>
 
       {/* Secciones plegadas tras toggle de Detalles accesible */}
@@ -175,9 +189,9 @@ export function CalmIdeaCard({
                 type="number"
                 min="0"
                 max="100"
-                step="0.5"
+                step="any"
                 placeholder="Sin estimar"
-                value={item.estimatedEffort?.value ?? ""}
+                value={extractItemHours(item) ?? ""}
                 onChange={(e) => {
                   const val = e.target.value === "" ? null : Number(e.target.value);
                   onUpdateEffort(item.id, val);

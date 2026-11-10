@@ -803,6 +803,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     expect(htmlStep2).toContain("flow-continue-to-confirm");
     expect(htmlStep2).toContain("idea-card-item-1");
     expect(htmlStep2).toContain("details-toggle-item-1");
+    expect(htmlStep2).toContain("generate-first-proposal-button");
 
     // Paso 3: Confirmar
     const sampleWeek: ProposedWeek = {

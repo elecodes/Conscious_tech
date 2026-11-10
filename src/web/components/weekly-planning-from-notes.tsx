@@ -13,7 +13,7 @@ import {
 import { StoredWeeklyPlan, WeeklyPlanDraftContext } from "../../domain/repositories/types";
 import { WeeklySchedule } from "../../domain/schedule";
 import { extractItems } from "../../skills/extract-items";
-import { calculateWeeklyCapacity } from "../../skills/build-week/deterministic";
+import { calculateWeeklyCapacity, extractItemHours } from "../../skills/build-week/deterministic";
 import {
   generateWeeklyProposalFromItemsDetailed,
   PipelineDiagnostic,
@@ -25,8 +25,7 @@ import { PlanningCapacityHud } from "./planning-capacity-hud";
 import { PlanningHeaderSection, type PendingCarryOverTask } from "./planning-header-section";
 export type { PendingCarryOverTask };
 import { PlanningExtractedItemsReview } from "./planning-extracted-items-review";
-import { PlanningProposedItemsSection } from "./planning-proposed-items-section";
-import { PlanningDeferredItemsSection } from "./planning-deferred-items-section";
+import { PlanningReviewBoard } from "./planning-review-board";
 import { PlanningProposalReviewFooter } from "./planning-proposal-review-footer";
 import { logger } from "../../utils/logger";
 import { CalendarWeekSummary } from "../../domain/calendar";
@@ -889,7 +888,7 @@ export function WeeklyPlanningFromNotes({
 
     if (combinedItems.length === 0) {
       setPlanningError(
-        "Selecciona al menos una tarea (extraída o postergada de semanas anteriores) para generar la planificación semanal."
+        "Selecciona al menos un elemento de tus notas o de semanas anteriores para generar otra propuesta."
       );
       return false;
     }
@@ -919,6 +918,14 @@ export function WeeklyPlanningFromNotes({
         if (dec.decision === "include_recovery") {
           const it = combinedItems.find((i) => i.id === itemId);
           if (it) {
+            // Recovery is already satisfied by a group containing this item; keep every member.
+            if (
+              finalProposal.foci.some(
+                (focus) =>
+                  focus.contributingItemIds.includes(itemId) && focus.contributingItemIds.length > 1
+              )
+            )
+              continue;
             const originalDueDate = it.deadline?.resolved || "2026-10-15";
             const updatedFoci = finalProposal.foci.filter(
               (f) => !f.contributingItemIds.includes(itemId)
@@ -934,14 +941,14 @@ export function WeeklyPlanningFromNotes({
                 desiredOutcome: `Completar como prioridad de recuperación la tarea vencida (fecha límite original: ${originalDueDate})`,
                 rationale: `Incluida conscientemente como prioridad de recuperación por decisión de la persona. Fecha límite original conservada: ${originalDueDate}.`,
                 contributingItemIds: [itemId],
-                estimatedHours: it.estimatedEffort?.value ?? null,
+                estimatedHours: extractItemHours(it),
               });
             } else {
               updatedFlexible.push({
                 itemId,
                 title: `Recuperación: ${it.title}`,
                 condition: `Tarea vencida (fecha límite original: ${originalDueDate}) incluida como opción flexible al alcanzarse el máximo de 3 focos.`,
-                estimatedHours: it.estimatedEffort?.value ?? null,
+                estimatedHours: extractItemHours(it),
               });
             }
             const newCap = calculateWeeklyCapacity({
@@ -1147,11 +1154,22 @@ export function WeeklyPlanningFromNotes({
     decision: "keep_unscheduled" | "include_recovery" | "reschedule_future"
   ) => {
     if (!proposedWeek) return;
+    if (
+      proposedWeek.foci.some(
+        (focus) =>
+          focus.contributingItemIds.includes(itemId) && focus.contributingItemIds.length > 1
+      )
+    ) {
+      setPlanningError(
+        "Este elemento pertenece a un foco agrupado. Revisa sus elementos antes de moverlo para conservar toda la información."
+      );
+      return;
+    }
 
     const sourceItem = extractedItems?.find((i) => i.id === itemId);
     const itemTitle = sourceItem?.title || "Elemento";
     const originalDueDate = sourceItem?.deadline?.resolved || "2026-10-15";
-    const estimatedHours = sourceItem?.estimatedEffort?.value ?? null;
+    const estimatedHours = sourceItem ? extractItemHours(sourceItem) : null;
 
     const defaultNextWeek = resolveDefaultTargetWeek(proposedWeek.weekSummary.targetWeek.endDate);
 
@@ -1267,8 +1285,11 @@ export function WeeklyPlanningFromNotes({
   ) => {
     if (!proposedWeek) return;
     const item = extractedItems?.find((i) => i.id === itemId);
-    const itemTitle = item?.title ?? itemId;
-    const estimatedHours = item?.estimatedEffort?.value ?? null;
+    const itemTitle =
+      item?.title ??
+      proposedWeek.deferredItems.find((entry) => entry.itemId === itemId)?.title ??
+      itemId;
+    const estimatedHours = item ? extractItemHours(item) : null;
 
     const nextDeferredDecisions: Record<
       string,
@@ -1528,6 +1549,12 @@ export function WeeklyPlanningFromNotes({
     const focus = proposedWeek.foci.find((f) => f.id === focusId);
     if (!focus) return;
 
+    if (focus.contributingItemIds.length !== 1) {
+      setPlanningError(
+        "Este foco no corresponde a un único elemento. Conservamos su información; revisa sus elementos antes de cambiarlo."
+      );
+      return;
+    }
     const itemId = focus.contributingItemIds[0] ?? focus.id;
     const newFlexible: WeeklyFlexibleOption = {
       itemId,
@@ -2023,36 +2050,6 @@ export function WeeklyPlanningFromNotes({
             handleCalendarApplied={handleCalendarApplied}
           />
 
-          {extractedItems && (
-            <PlanningExtractedItemsReview
-              extractedItems={extractedItems}
-              acceptedItemIds={acceptedItemIds}
-              acceptedCount={acceptedCount}
-              handleAcceptAll={handleAcceptAll}
-              handleDiscardAll={handleDiscardAll}
-              handleStartFreshWeek={handleStartFreshWeek}
-              handleToggleItem={handleToggleItem}
-              handleUpdateItemEffort={handleUpdateItemEffort}
-              handleUpdateItemDeadline={handleUpdateItemDeadline}
-              noteText={noteText}
-              setNoteText={setNoteText}
-              isExtracting={isExtracting}
-              handleExtract={handleExtract}
-              userIntent={userIntent}
-              setUserIntent={setUserIntent}
-              availableHoursInput={availableHoursInput}
-              setAvailableHoursInput={setAvailableHoursInput}
-              protectedSpacePercentInput={protectedSpacePercentInput}
-              setProtectedSpacePercentInput={setProtectedSpacePercentInput}
-              isPlanning={isPlanning}
-              planningError={planningError}
-              selectedCarryOverItemIds={selectedCarryOverItemIds}
-              handleGenerateProposal={handleGenerateProposal}
-              isProposalDirty={isProposalDirty}
-              proposedWeek={proposedWeek}
-            />
-          )}
-
           {proposedWeek && (
             <div
               style={{
@@ -2117,28 +2114,60 @@ export function WeeklyPlanningFromNotes({
                 onCancelEditCapacity={handleCancelEditCapacity}
                 onVerifyCapacity={handleVerifyCapacity}
               />
-
-              <PlanningProposedItemsSection
-                proposedWeek={proposedWeek}
-                activeTargetWeek={activeTargetWeek}
-                extractedItems={extractedItems}
-                editingProposalItemId={editingProposalItemId}
-                proposalItemHoursInput={proposalItemHoursInput}
-                setEditingProposalItemId={setEditingProposalItemId}
-                setProposalItemHoursInput={setProposalItemHoursInput}
-                handleDemoteFocusToFlexible={handleDemoteFocusToFlexible}
-                handlePromoteFlexibleToFocus={handlePromoteFlexibleToFocus}
-                handleSaveProposalItemHours={handleSaveProposalItemHours}
-              />
-
-              <PlanningDeferredItemsSection
-                proposedWeek={proposedWeek}
-                extractedItems={extractedItems}
-                deferredDecisions={deferredDecisions}
-                handleDeferredDecisionChange={handleDeferredDecisionChange}
-                handleApplyOverdueDecision={handleApplyOverdueDecision}
-              />
             </div>
+          )}
+
+          {(extractedItems || proposedWeek) && (
+            <PlanningExtractedItemsReview
+              extractedItems={extractedItems ?? []}
+              acceptedItemIds={acceptedItemIds}
+              acceptedCount={acceptedCount}
+              handleAcceptAll={handleAcceptAll}
+              handleDiscardAll={handleDiscardAll}
+              handleStartFreshWeek={handleStartFreshWeek}
+              handleToggleItem={handleToggleItem}
+              handleUpdateItemEffort={handleUpdateItemEffort}
+              handleUpdateItemDeadline={handleUpdateItemDeadline}
+              noteText={noteText}
+              setNoteText={setNoteText}
+              isExtracting={isExtracting}
+              handleExtract={handleExtract}
+              userIntent={userIntent}
+              setUserIntent={setUserIntent}
+              availableHoursInput={availableHoursInput}
+              setAvailableHoursInput={setAvailableHoursInput}
+              protectedSpacePercentInput={protectedSpacePercentInput}
+              setProtectedSpacePercentInput={setProtectedSpacePercentInput}
+              isPlanning={isPlanning}
+              planningError={planningError}
+              selectedCarryOverItemIds={selectedCarryOverItemIds}
+              handleGenerateProposal={handleGenerateProposal}
+              isProposalDirty={isProposalDirty}
+              proposedWeek={proposedWeek}
+              reviewContent={
+                proposedWeek ? (
+                  <PlanningReviewBoard
+                    proposedWeek={proposedWeek}
+                    activeTargetWeek={activeTargetWeek}
+                    extractedItems={extractedItems}
+                    editingProposalItemId={editingProposalItemId}
+                    proposalItemHoursInput={proposalItemHoursInput}
+                    setEditingProposalItemId={setEditingProposalItemId}
+                    setProposalItemHoursInput={setProposalItemHoursInput}
+                    handleDemoteFocusToFlexible={handleDemoteFocusToFlexible}
+                    handlePromoteFlexibleToFocus={handlePromoteFlexibleToFocus}
+                    handleSaveProposalItemHours={handleSaveProposalItemHours}
+                    deferredDecisions={deferredDecisions}
+                    handleDeferredDecisionChange={handleDeferredDecisionChange}
+                    handleApplyOverdueDecision={handleApplyOverdueDecision}
+                    acceptedItemIds={acceptedItemIds}
+                    handleToggleItem={handleToggleItem}
+                    handleUpdateItemEffort={handleUpdateItemEffort}
+                    handleUpdateItemDeadline={handleUpdateItemDeadline}
+                  />
+                ) : undefined
+              }
+            />
           )}
 
           <div

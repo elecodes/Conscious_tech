@@ -1,8 +1,20 @@
+import { extractItemHours } from "../../skills/build-week/deterministic";
+import type { ReactNode } from "react";
 import { ProposedWeek } from "../../domain/week";
 import { ExtractedItem } from "../../domain/items";
-import { formatDeferredReason, formatUnscheduledCategory } from "./weekly-session-formatters";
+import {
+  formatDeferredReason,
+  formatUnscheduledCategory,
+  formatHours,
+} from "./weekly-session-formatters";
 
 export interface PlanningDeferredItemsSectionProps {
+  title?: string;
+  description?: string;
+  includeLabel?: string;
+  sectionPrefix?: string;
+  showOverdueDecisions?: boolean;
+  renderItemDetails?: (itemIds: string[], rationale?: string) => ReactNode;
   proposedWeek: ProposedWeek;
   extractedItems: ExtractedItem[] | null;
   deferredDecisions: Record<string, "pending_decision" | "intentional_postponement" | "included">;
@@ -18,6 +30,12 @@ export interface PlanningDeferredItemsSectionProps {
 
 export function PlanningDeferredItemsSection({
   proposedWeek,
+  title,
+  description = "Dejar tareas fuera te permite enfocarte en lo prioritario",
+  includeLabel = "Incluir en la semana",
+  sectionPrefix = "proposed-deferred-items",
+  showOverdueDecisions = true,
+  renderItemDetails,
   extractedItems,
   deferredDecisions,
   handleDeferredDecisionChange,
@@ -30,7 +48,7 @@ export function PlanningDeferredItemsSection({
         <details
           className="calm-details permiso-no-hacer-box"
           style={{ marginTop: "24px" }}
-          data-testid="proposed-deferred-items-section"
+          data-testid={`${sectionPrefix}-section`}
         >
           <summary
             style={{
@@ -39,20 +57,26 @@ export function PlanningDeferredItemsSection({
               fontSize: "1.05rem",
               padding: "4px 0",
             }}
-            data-testid="proposed-deferred-items-summary"
+            data-testid={`${sectionPrefix}-summary`}
           >
-            <span>☕</span> Elementos no programados o diferidos (
-            {proposedWeek.deferredItems.length === 1
-              ? "1 idea pendiente de decidir"
-              : `${proposedWeek.deferredItems.length} ideas pendientes de decidir`}
-            )
+            {title ? (
+              `${title} (${proposedWeek.deferredItems.length})`
+            ) : (
+              <>
+                <span>☕</span> Elementos no programados o diferidos (
+                {proposedWeek.deferredItems.length === 1
+                  ? "1 idea pendiente de decidir"
+                  : `${proposedWeek.deferredItems.length} ideas pendientes de decidir`}
+                )
+              </>
+            )}
           </summary>
           <div style={{ marginTop: "12px" }}>
             <span
               className="calm-muted"
               style={{ fontSize: "0.82rem", display: "block", marginBottom: "12px" }}
             >
-              Dejar tareas fuera te permite enfocarte en lo prioritario
+              {description}
             </span>
 
             {/* 1. Pendientes de decisión / Fuera de propuesta */}
@@ -62,7 +86,14 @@ export function PlanningDeferredItemsSection({
               );
               if (pendingItems.length === 0) return null;
               return (
-                <div style={{ marginBottom: "12px" }} data-testid="pending-decision-items-group">
+                <div
+                  style={{ marginBottom: "12px" }}
+                  data-testid={
+                    sectionPrefix === "proposed-deferred-items"
+                      ? "pending-decision-items-group"
+                      : `${sectionPrefix}-pending-group`
+                  }
+                >
                   <span
                     style={{
                       fontSize: "0.85rem",
@@ -130,13 +161,16 @@ export function PlanningDeferredItemsSection({
                               </span>
                             </div>
                           </div>
-                          <div
-                            className="calm-muted"
-                            style={{ fontSize: "0.82rem" }}
-                            data-testid={`proposed-deferred-rationale-${def.itemId}`}
-                          >
-                            {def.rationale}
-                          </div>
+                          {!renderItemDetails && (
+                            <div
+                              className="calm-muted"
+                              style={{ fontSize: "0.82rem" }}
+                              data-testid={`proposed-deferred-rationale-${def.itemId}`}
+                            >
+                              {def.rationale}
+                            </div>
+                          )}
+                          {renderItemDetails?.([def.itemId], def.rationale)}
                           {isOverdue && (
                             <div
                               className="calm-muted"
@@ -171,7 +205,7 @@ export function PlanningDeferredItemsSection({
                               }
                               data-testid={`defer-item-include-button-${def.itemId}`}
                             >
-                              Incluir en la semana
+                              {includeLabel}
                             </button>
                             <button
                               type="button"
@@ -199,7 +233,14 @@ export function PlanningDeferredItemsSection({
               );
               if (postponedItems.length === 0) return null;
               return (
-                <div style={{ marginBottom: "12px" }} data-testid="postponed-items-group">
+                <div
+                  style={{ marginBottom: "12px" }}
+                  data-testid={
+                    sectionPrefix === "proposed-deferred-items"
+                      ? "postponed-items-group"
+                      : `${sectionPrefix}-postponed-group`
+                  }
+                >
                   <span
                     style={{
                       fontSize: "0.85rem",
@@ -256,13 +297,16 @@ export function PlanningDeferredItemsSection({
                               </span>
                             </div>
                           </div>
-                          <div
-                            className="calm-muted"
-                            style={{ fontSize: "0.82rem" }}
-                            data-testid={`proposed-deferred-rationale-${def.itemId}`}
-                          >
-                            {def.rationale}
-                          </div>
+                          {!renderItemDetails && (
+                            <div
+                              className="calm-muted"
+                              style={{ fontSize: "0.82rem" }}
+                              data-testid={`proposed-deferred-rationale-${def.itemId}`}
+                            >
+                              {def.rationale}
+                            </div>
+                          )}
+                          {renderItemDetails?.([def.itemId], def.rationale)}
                           {originalDueDate && (
                             <div
                               className="calm-muted"
@@ -299,7 +343,7 @@ export function PlanningDeferredItemsSection({
                               }
                               data-testid={`defer-item-include-button-${def.itemId}`}
                             >
-                              Incluir en la semana
+                              {includeLabel}
                             </button>
                           </div>
                         </div>
@@ -315,6 +359,7 @@ export function PlanningDeferredItemsSection({
 
       {/* Decisiones sobre tareas con fecha límite vencida (Requirement 3 & 4) */}
       {(() => {
+        if (!showOverdueDecisions) return null;
         const overdueList = (extractedItems || []).filter((item) => {
           const dl = item.deadline?.resolved;
           return Boolean(dl && dl < proposedWeek.weekSummary.targetWeek.startDate);
@@ -328,6 +373,11 @@ export function PlanningDeferredItemsSection({
             </h5>
             {overdueList.map((item) => {
               const originalDueDate = item.deadline?.resolved;
+              const isGroupedFocus = proposedWeek.foci.some(
+                (focus) =>
+                  focus.contributingItemIds.includes(item.id) &&
+                  focus.contributingItemIds.length > 1
+              );
               const isRecovery =
                 proposedWeek.foci.some((f) => f.contributingItemIds.includes(item.id)) ||
                 proposedWeek.flexibleOptions.some((o) => o.itemId === item.id);
@@ -371,13 +421,19 @@ export function PlanningDeferredItemsSection({
                     className="calm-text"
                     style={{ fontSize: "0.85rem", margin: "6px 0", color: "#78350f" }}
                   >
-                    Esta tarea ({item.estimatedEffort?.value ?? 6}h) tenía fecha límite el{" "}
-                    <strong>{originalDueDate}</strong>, anterior a la semana objetivo (
+                    Esta tarea ({formatHours(extractItemHours(item), "sin estimar")}) tenía fecha
+                    límite el <strong>{originalDueDate}</strong>, anterior a la semana objetivo (
                     {proposedWeek.weekSummary.targetWeek.startDate} a{" "}
                     {proposedWeek.weekSummary.targetWeek.endDate}). La fecha límite original{" "}
                     <strong>no se altera silenciosamente</strong> ni se presenta falsamente como
                     futura.
                   </p>
+                  {isGroupedFocus && (
+                    <p className="calm-muted">
+                      Este elemento pertenece a un foco agrupado. Las acciones individuales están
+                      desactivadas; puedes corregirlo desde los detalles del foco.
+                    </p>
+                  )}
                   <div style={{ marginTop: "12px" }}>
                     <span
                       id={`overdue-decision-label-${item.id}`}
@@ -405,6 +461,12 @@ export function PlanningDeferredItemsSection({
                         aria-pressed={isUnscheduled}
                         className={isUnscheduled ? "primary small" : "secondary small"}
                         data-testid={`decision-unscheduled-${item.id}`}
+                        disabled={isGroupedFocus}
+                        title={
+                          isGroupedFocus
+                            ? "Este elemento pertenece a un foco agrupado. Revisa sus elementos para conservarlos todos."
+                            : undefined
+                        }
                         onClick={() => handleApplyOverdueDecision(item.id, "keep_unscheduled")}
                         style={{
                           display: "flex",
@@ -462,6 +524,12 @@ export function PlanningDeferredItemsSection({
                         aria-pressed={isRecovery}
                         className={isRecovery ? "primary small" : "secondary small"}
                         data-testid={`decision-recovery-${item.id}`}
+                        disabled={isGroupedFocus}
+                        title={
+                          isGroupedFocus
+                            ? "Este elemento pertenece a un foco agrupado. Revisa sus elementos para conservarlos todos."
+                            : undefined
+                        }
                         onClick={() => handleApplyOverdueDecision(item.id, "include_recovery")}
                         style={{
                           display: "flex",
@@ -491,7 +559,7 @@ export function PlanningDeferredItemsSection({
                           <strong style={{ fontSize: "0.85rem" }}>
                             {isRecovery
                               ? "✓ Prioridad de recuperación"
-                              : `Prioridad de recuperación (${item.estimatedEffort?.value ?? 6}h)`}
+                              : `Prioridad de recuperación (${formatHours(extractItemHours(item), "sin estimar")})`}
                           </strong>
                           {isRecovery && (
                             <span
@@ -510,8 +578,10 @@ export function PlanningDeferredItemsSection({
                             fontWeight: "normal",
                           }}
                         >
-                          Se incorpora como foco principal de la semana consumiendo{" "}
-                          {item.estimatedEffort?.value ?? 6}h planificables.
+                          Se incorpora como foco principal de la semana.
+                          {extractItemHours(item) == null
+                            ? " Falta estimar su tiempo para comprobar la viabilidad."
+                            : ` Tiempo previsto: ${formatHours(extractItemHours(item))}.`}
                         </span>
                       </button>
 
@@ -521,6 +591,12 @@ export function PlanningDeferredItemsSection({
                         aria-pressed={isPostponed}
                         className={isPostponed ? "primary small" : "secondary small"}
                         data-testid={`decision-postpone-${item.id}`}
+                        disabled={isGroupedFocus}
+                        title={
+                          isGroupedFocus
+                            ? "Este elemento pertenece a un foco agrupado. Revisa sus elementos para conservarlos todos."
+                            : undefined
+                        }
                         onClick={() => handleApplyOverdueDecision(item.id, "reschedule_future")}
                         style={{
                           display: "flex",

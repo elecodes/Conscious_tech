@@ -171,18 +171,28 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
     )
       throw new Error("Confirmation contains editing or export controls");
     await page.getByTestId("flow-back-to-review").click();
-    const firstDetails = page.locator('[data-testid^="details-toggle-"]').first();
-    await firstDetails.click();
-    await page
-      .getByRole("spinbutton", { name: /^Horas estimadas para/ })
-      .first()
-      .fill("3");
+    const firstDetails = page.locator('[data-testid^="review-details-"]').first();
+    await firstDetails.evaluate((el) => {
+      for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+        if (parent instanceof HTMLDetailsElement) parent.open = true;
+      }
+    });
+    await firstDetails.locator(":scope > summary").click();
+    const editedSource = firstDetails.locator('[data-testid^="idea-card-"]').first();
+    const editedSourceTestId = await editedSource.getAttribute("data-testid");
+    if (!editedSourceTestId) throw new Error("Missing source correction identity");
+    await editedSource.getByRole("spinbutton", { name: /^Horas estimadas para/ }).fill("3");
     await page.getByTestId("proposal-dirty-banner").waitFor();
     await page.getByTestId("update-proposal-button").click();
     await page.getByTestId("proposal-dirty-banner").waitFor({ state: "hidden" });
+    await page.getByTestId(editedSourceTestId).evaluate((el) => {
+      for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+        if (parent instanceof HTMLDetailsElement) parent.open = true;
+      }
+    });
     await page
+      .getByTestId(editedSourceTestId)
       .getByLabel(/^Fecha límite para/)
-      .first()
       .fill("2026-12-10");
     await page.getByTestId("proposal-dirty-banner").waitFor();
 
@@ -193,11 +203,15 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
     await page.getByRole("button", { name: "No lo sé todavía", exact: true }).click();
     await page.getByTestId("flow-continue-to-review").click();
     await page.getByTestId("flow-step-review").waitFor();
-    await page.locator('[data-testid^="details-toggle-"]').first().click();
+    await page.getByTestId(editedSourceTestId).evaluate((el) => {
+      for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+        if (parent instanceof HTMLDetailsElement) parent.open = true;
+      }
+    });
     if (
       (await page
+        .getByTestId(editedSourceTestId)
         .getByRole("spinbutton", { name: /^Horas estimadas para/ })
-        .first()
         .inputValue()) !== "3"
     )
       throw new Error("Changing capacity discarded a corrected estimate");

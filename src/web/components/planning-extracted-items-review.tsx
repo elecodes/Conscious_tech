@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { ExtractedItem } from "../../domain/items";
 import { ProposedWeek } from "../../domain/week";
 import { VoiceDictationButton } from "./voice-dictation-button";
@@ -6,6 +6,7 @@ import { CalmIdeaCard } from "./calm-idea-card";
 import { formatIdeasSplitExplanation } from "../labels";
 
 export interface PlanningExtractedItemsReviewProps {
+  reviewContent?: ReactNode;
   extractedItems: ExtractedItem[];
   acceptedItemIds: Set<string>;
   acceptedCount: number;
@@ -35,6 +36,7 @@ export interface PlanningExtractedItemsReviewProps {
 
 export function PlanningExtractedItemsReview({
   extractedItems,
+  reviewContent,
   acceptedItemIds,
   acceptedCount,
   handleAcceptAll,
@@ -76,6 +78,51 @@ export function PlanningExtractedItemsReview({
   const splitExplanation = proposedWeek
     ? formatIdeasSplitExplanation(acceptedCount, scheduledCount, pendingCount)
     : null;
+  const selectionTools = (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: "8px",
+        marginBottom: "8px",
+      }}
+    >
+      <h4 style={{ margin: 0, fontSize: "1.05rem" }}>
+        Elementos identificados ({acceptedCount} de {extractedItems.length} seleccionados)
+      </h4>
+      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+        <button
+          type="button"
+          className="secondary small"
+          style={{ fontSize: "0.82rem", padding: "3px 8px" }}
+          onClick={handleAcceptAll}
+        >
+          {reviewContent ? "Usar todos al actualizar" : "Aceptar todos"}
+        </button>
+        <button
+          type="button"
+          className="secondary small"
+          style={{ fontSize: "0.82rem", padding: "3px 8px" }}
+          onClick={handleDiscardAll}
+        >
+          {reviewContent ? "Excluir todos al actualizar" : "Descartar todos"}
+        </button>
+        <button
+          type="button"
+          className="secondary small"
+          style={{ fontSize: "0.82rem", padding: "3px 8px", color: "#8c8273" }}
+          onClick={handleStartFreshWeek}
+          data-testid="clear-extracted-items-button"
+          title="Despejar elementos actuales y empezar una nueva semana"
+        >
+          ✨ Limpiar elementos
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div
       style={{
@@ -84,98 +131,72 @@ export function PlanningExtractedItemsReview({
         borderTop: "1px solid var(--border-color, #e0e0e0)",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "8px",
-          marginBottom: "8px",
-        }}
-      >
-        <h4 style={{ margin: 0, fontSize: "1.05rem" }}>
-          Elementos identificados ({acceptedCount} de {extractedItems.length} seleccionados)
-        </h4>
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-          <button
-            type="button"
-            className="secondary small"
-            style={{ fontSize: "0.82rem", padding: "3px 8px" }}
-            onClick={handleAcceptAll}
-          >
-            Aceptar todos
-          </button>
-          <button
-            type="button"
-            className="secondary small"
-            style={{ fontSize: "0.82rem", padding: "3px 8px" }}
-            onClick={handleDiscardAll}
-          >
-            Descartar todos
-          </button>
-          <button
-            type="button"
-            className="secondary small"
-            style={{ fontSize: "0.82rem", padding: "3px 8px", color: "#8c8273" }}
-            onClick={handleStartFreshWeek}
-            data-testid="clear-extracted-items-button"
-            title="Despejar elementos actuales y empezar una nueva semana"
-          >
-            ✨ Limpiar elementos
-          </button>
-        </div>
-      </div>
-
-      {splitExplanation && (
-        <p
-          className="calm-text"
-          data-testid="ideas-split-explanation"
-          style={{
-            margin: "0 0 10px 0",
-            fontSize: "0.85rem",
-            color: "var(--accent-color, #2b6cb0)",
-            fontWeight: 500,
-          }}
-        >
-          {splitExplanation}
-        </p>
-      )}
-
-      <p className="calm-muted" style={{ fontSize: "0.85rem", margin: "0 0 10px 0" }}>
-        Selecciona qué elementos deseas incluir en la propuesta semanal. Los no seleccionados se
-        descartarán de esta planificación.
-      </p>
-
-      {extractedItems.length === 0 ? (
-        <p className="calm-muted" style={{ marginTop: "12px" }}>
-          No se identificaron elementos accionables en el texto. Puedes intentar expresarlo con más
-          detalle.
-        </p>
+      {reviewContent ? (
+        <>
+          {reviewContent}
+          <details className="calm-details review-selection-tools">
+            <summary>Selección de partida y herramientas</summary>
+            {selectionTools}
+            <p className="calm-muted">
+              Marcar un elemento permite tenerlo en cuenta al actualizar; no garantiza que entre en
+              la semana. Desmarcarlo lo excluye de la próxima propuesta.
+            </p>
+          </details>
+        </>
       ) : (
-        <ul
-          className="items-list"
-          style={{
-            listStyle: "none",
-            padding: 0,
-            margin: 0,
-            display: "flex",
-            flexDirection: "column",
-            gap: "6px",
-          }}
-          aria-label="Lista de elementos identificados"
-        >
-          {extractedItems.map((item) => (
-            <CalmIdeaCard
-              key={item.id}
-              item={item}
-              isAccepted={acceptedItemIds.has(item.id)}
-              onToggle={() => handleToggleItem(item.id)}
-              onUpdateEffort={handleUpdateItemEffort}
-              onUpdateDeadline={handleUpdateItemDeadline}
-            />
-          ))}
-        </ul>
+        <>
+          {selectionTools}
+          {splitExplanation && (
+            <p
+              className="calm-text"
+              data-testid="ideas-split-explanation"
+              style={{
+                margin: "0 0 10px 0",
+                fontSize: "0.85rem",
+                color: "var(--accent-color, #2b6cb0)",
+                fontWeight: 500,
+              }}
+            >
+              {splitExplanation}
+            </p>
+          )}
+
+          <p className="calm-muted" style={{ fontSize: "0.85rem", margin: "0 0 10px 0" }}>
+            Selecciona qué elementos deseas incluir en la propuesta semanal. Los no seleccionados se
+            descartarán de esta planificación.
+          </p>
+
+          {extractedItems.length === 0 ? (
+            <p className="calm-muted" style={{ marginTop: "12px" }}>
+              No se identificaron elementos en el texto. Puedes conservar tus notas o volver a
+              escribir cuando lo necesites.
+            </p>
+          ) : (
+            <ul
+              className="items-list"
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
+              }}
+              aria-label="Lista de elementos identificados"
+            >
+              {extractedItems.map((item) => (
+                <CalmIdeaCard
+                  key={item.id}
+                  item={item}
+                  isAccepted={acceptedItemIds.has(item.id)}
+                  onToggle={() => handleToggleItem(item.id)}
+                  onUpdateEffort={handleUpdateItemEffort}
+                  onUpdateDeadline={handleUpdateItemDeadline}
+                />
+              ))}
+            </ul>
+          )}
+        </>
       )}
 
       {/* Añadir más ideas o tareas a la lista (colapsado opcional) */}
@@ -415,6 +436,18 @@ export function PlanningExtractedItemsReview({
         </div>
       </details>
 
+      {!proposedWeek && (acceptedCount > 0 || _selectedCarryOverItemIds.size > 0) && (
+        <button
+          type="button"
+          className="primary"
+          disabled={isPlanning || isExtracting}
+          onClick={handleGenerateProposal}
+          data-testid="generate-first-proposal-button"
+        >
+          {isPlanning ? "Preparando propuesta..." : "Generar propuesta"}
+        </button>
+      )}
+
       {/* Actualizar propuesta link/button when inputs have changed */}
       {isProposalDirty && (
         <div
@@ -434,7 +467,8 @@ export function PlanningExtractedItemsReview({
           data-testid="proposal-dirty-banner"
         >
           <span style={{ color: "#854d0e" }}>
-            Hay cambios en los elementos o ajustes de la semana.
+            Hay cambios en los elementos o ajustes de la semana. Actualizar crea una nueva
+            propuesta; revisa de nuevo dónde queda cada elemento.
           </span>
           <button
             type="button"

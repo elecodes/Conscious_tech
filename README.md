@@ -299,6 +299,11 @@ review the target dates, and adjust protected space (25% by default). Choose
 **No lo sé todavía** to receive a provisional proposal without a capacity claim.
 Imported calendar commitments are a reference and are not deducted again.
 
+Review the proposal in **Esta semana**, **Si queda espacio**, and **Fuera de esta
+semana**. Unscheduled thoughts remain notes. Open **Detalles y correcciones** on an
+entry to inspect the source and edit dates or estimates. Selecting a source means
+it can be considered on regeneration; it does not automatically schedule it.
+
 Before activation, review the summary of the exact proposal. Return to review to
 change its intention or contents; calendar export and sharing are available from
 **Mi semana** after activation.

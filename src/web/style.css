@@ -843,3 +843,56 @@ details.calm-details[open] {
   gap: 8px;
   margin-top: 10px;
 }
+
+.planning-review-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.review-source-details {
+  margin-top: 12px;
+}
+.review-source-details summary,
+.review-overdue-decisions summary {
+  cursor: pointer;
+  padding: 6px 0;
+}
+.review-source-details > p {
+  margin: 8px 0;
+}
+.review-source-list {
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.review-pending-change {
+  padding: 8px;
+  background: var(--surface-parchment);
+}
+.review-selection-tools {
+  margin-top: 16px;
+}
+.planning-review-board .inner-note-box {
+  margin-top: 8px;
+}
+
+.planning-review-board .item-card {
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  max-width: 100%;
+}
+.planning-review-board .calm-idea-card label {
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+.planning-review-board .calm-idea-card input[type="date"] {
+  min-width: 0;
+  max-width: 100%;
+}

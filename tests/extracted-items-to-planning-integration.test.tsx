@@ -244,7 +244,7 @@ describe("Conectar Extracción y volcado con la planificación semanal", () => {
 
     // Debe mostrar la sección de elementos diferidos
     expect(htmlWithProposal).toContain("proposed-deferred-items-section");
-    expect(htmlWithProposal).toContain("Elementos no programados o diferidos");
+    expect(htmlWithProposal).toContain("Fuera de esta semana");
 
     // Debe mostrar el informe trimestral
     expect(htmlWithProposal).toContain("proposed-deferred-item-item-mock-1");
@@ -254,6 +254,9 @@ describe("Conectar Extracción y volcado con la planificación semanal", () => {
     expect(htmlWithProposal).toContain("Sin programar en la semana");
 
     // Debe mostrar la explicación clara (rationale)
-    expect(htmlWithProposal).toContain("proposed-deferred-rationale-item-mock-1");
+    expect(htmlWithProposal).toContain("review-details-item-mock-1");
+    expect(htmlWithProposal).toContain(
+      detailedPlan.proposal.deferredItems.find((item) => item.itemId === "item-mock-1")!.rationale
+    );
   });
 });

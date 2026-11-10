@@ -466,7 +466,7 @@ describe("Mejoras de capacidad: Separación visual, eliminación de redundancia,
 
     // 4. Descripciones legibles en las opciones
     expect(html).toContain("No consume capacidad planificable");
-    expect(html).toContain("consumiendo 6h planificables");
+    expect(html).toContain("Tiempo previsto: 6h.");
     expect(html).toContain("Se posterga conscientemente a una semana posterior");
   });
 

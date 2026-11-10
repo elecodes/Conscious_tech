@@ -1,6 +1,6 @@
 # UX improvement plan
 
-Status: steps 0–3 complete; simplifying proposal review is next.
+Status: steps 0–4 complete; clarifying the active week is next.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
@@ -291,3 +291,35 @@ Baseline results:
   tests in preview and dev modes. Focus areas and up to three commitments are
   visible immediately; remaining items can be inspected without leaving the page.
 - Next: step 4, one clear decision surface for proposal review.
+
+### Step 4 — one primary proposal review
+
+- Reused the existing proposal, promotion/demotion, deferral, and capacity components
+  in one decision board: this week, if there is space, outside this week, and
+  unscheduled ideas/concerns. The initial flat list is no longer a second primary
+  view when a proposal exists.
+- Attached source wording, type/status, selection, dates, and effort corrections
+  to each matching entry. Grouped focuses retain access to every contributing
+  source. Excluded and newly added sources remain inspectable during review.
+- Clearly distinguished consideration during regeneration from placement in the
+  proposal; bulk selection is secondary. Regeneration explicitly prompts another
+  review of placements. Existing individual placement operations are reused.
+- Captures without a proposal have an explicit first-generation action. Empty
+  proposals and thought-only notes do not require creating tasks.
+- Prevented unsafe focus/group moves and individual overdue moves that would
+  discard other contributing IDs. Such controls explain their limitation; source
+  corrections remain available. Recovery reapplication preserves an already-grouped
+  focus rather than removing its other members.
+- Reused the planner's existing effort normalization in source editing and manual
+  inclusion/recovery: minutes/days are shown and consumed as the same planning
+  hours. Unknown efforts are not presented as invented six-hour tasks.
+- Added conservation fixtures and browser checks for grouped sources, existing
+  moves, exclusions, reload, long source text on mobile, and first proposals from
+  captured items. No IndexedDB schema, AI contract, or dependency changes.
+- Group splitting and reassignment of aggregate effort remain a separate design
+  task; this step does not invent a split or allocate group hours to members.
+- Verification: 982 tests across 73 files pass, along with type checking, lint,
+  formatting, dependency-cycle checks, production build, and browser smoke tests
+  in preview and dev modes. Browser checks compare persisted item membership
+  before/after moves and after regeneration and reload.
+- Next: step 5, separate deferred items from active priorities in Mi semana.

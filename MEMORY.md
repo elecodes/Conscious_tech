@@ -415,3 +415,18 @@ The product succeeds when the person can say:
   activar. El foco de teclado entra en la región de confirmación.
 - La activación tiene una protección inmediata contra envíos repetidos además del
   estado de guardado. No se han cambiado contratos de IA ni esquemas persistidos.
+
+## UX incremental: revisión unificada
+
+- Con propuesta, las decisiones se presentan por posición y las correcciones se
+  abren dentro de la entrada correspondiente; no hay otra lista principal de
+  elementos extraídos. Sin propuesta se mantiene la captura revisable y una acción
+  explícita para generar la primera propuesta.
+- Seleccionar significa tener en cuenta al regenerar, no planificar. Los elementos
+  excluidos y pendientes siguen accesibles durante la revisión. Las ideas y
+  preocupaciones no se convierten en tareas por cambiar de presentación.
+- Los movimientos de focos que no representan un único elemento están protegidos,
+  igual que los cambios individuales de vencidos dentro de un foco agrupado. No se
+  deben perder miembros ni inventar cómo repartir su estimación agregada.
+- La edición y los movimientos usan extractItemHours, la misma normalización que
+  el planificador, sin modificar la unidad original hasta que la persona la edite.

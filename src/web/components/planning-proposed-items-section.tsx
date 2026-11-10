@@ -1,9 +1,12 @@
+import type { ReactNode } from "react";
 import { ProposedWeek, TargetWeek } from "../../domain/week";
 import { ExtractedItem } from "../../domain/items";
 import { buildGoogleCalendarTemplateUrl } from "../../domain/calendar";
 import { formatCommitmentType } from "../labels";
 
 export interface PlanningProposedItemsSectionProps {
+  section?: "all" | "scheduled" | "flexible";
+  renderItemDetails?: (itemIds: string[], rationale?: string) => ReactNode;
   proposedWeek: ProposedWeek;
   activeTargetWeek: TargetWeek;
   extractedItems: ExtractedItem[] | null;
@@ -18,6 +21,8 @@ export interface PlanningProposedItemsSectionProps {
 
 export function PlanningProposedItemsSection({
   proposedWeek,
+  section = "all",
+  renderItemDetails,
   activeTargetWeek,
   extractedItems,
   editingProposalItemId,
@@ -31,7 +36,7 @@ export function PlanningProposedItemsSection({
   return (
     <>
       {/* Weekly Foci */}
-      {proposedWeek.foci.length > 0 && (
+      {section !== "flexible" && proposedWeek.foci.length > 0 && (
         <div style={{ marginTop: "24px" }}>
           <div
             style={{
@@ -148,19 +153,6 @@ export function PlanningProposedItemsSection({
                           <button
                             type="button"
                             className="secondary small"
-                            onClick={() => {
-                              setEditingProposalItemId(focus.id);
-                              setProposalItemHoursInput(
-                                focus.estimatedHours !== null ? String(focus.estimatedHours) : ""
-                              );
-                            }}
-                            data-testid={`adjust-focus-hours-${focus.id}`}
-                          >
-                            ⏱️ Ajustar horas
-                          </button>
-                          <button
-                            type="button"
-                            className="secondary small"
                             data-testid={`focus-add-to-gcal-${focus.id}`}
                             style={{
                               fontSize: "0.78rem",
@@ -212,12 +204,14 @@ export function PlanningProposedItemsSection({
                     </div>
                   </div>
 
-                  <div
-                    className="calm-muted"
-                    style={{ fontSize: "0.82rem", marginTop: "10px", fontStyle: "italic" }}
-                  >
-                    <em>Fundamentación:</em> {focus.rationale}
-                  </div>
+                  {!renderItemDetails && (
+                    <div
+                      className="calm-muted"
+                      style={{ fontSize: "0.82rem", marginTop: "10px", fontStyle: "italic" }}
+                    >
+                      <em>Fundamentación:</em> {focus.rationale}
+                    </div>
+                  )}
 
                   {/* Actions on Focus */}
                   <div
@@ -234,6 +228,12 @@ export function PlanningProposedItemsSection({
                       className="secondary small"
                       onClick={() => handleDemoteFocusToFlexible(focus.id)}
                       data-testid={`demote-focus-to-flexible-${focus.id}`}
+                      disabled={focus.contributingItemIds.length !== 1}
+                      title={
+                        focus.contributingItemIds.length !== 1
+                          ? "Este foco no corresponde a un único elemento. Conservamos su información; revisa sus detalles antes de cambiarlo."
+                          : undefined
+                      }
                     >
                       ↩ Mover a opción flexible
                     </button>
@@ -251,6 +251,13 @@ export function PlanningProposedItemsSection({
                       ⏱️ Ajustar horas
                     </button>
                   </div>
+
+                  {focus.contributingItemIds.length !== 1 && (
+                    <p className="calm-muted">
+                      Este movimiento solo está disponible para focos con un único elemento. Puedes
+                      corregir el contenido en Detalles.
+                    </p>
+                  )}
 
                   {/* Inline Hours Editor */}
                   {editingProposalItemId === focus.id && (
@@ -305,6 +312,10 @@ export function PlanningProposedItemsSection({
                       </button>
                     </div>
                   )}
+                  {renderItemDetails?.(
+                    focus.contributingItemIds.length ? focus.contributingItemIds : [focus.id],
+                    focus.rationale
+                  )}
                 </div>
               );
             })}
@@ -313,7 +324,7 @@ export function PlanningProposedItemsSection({
       )}
 
       {/* Weekly Obligations */}
-      {proposedWeek.obligations.length > 0 && (
+      {section !== "flexible" && proposedWeek.obligations.length > 0 && (
         <div style={{ marginTop: "16px" }}>
           <h5 style={{ margin: "0 0 8px 0" }}>
             Obligaciones y compromisos ({proposedWeek.obligations.length})
@@ -474,6 +485,7 @@ export function PlanningProposedItemsSection({
                     </button>
                   </div>
                 )}
+                {renderItemDetails?.([ob.itemId], ob.rationale)}
               </div>
             ))}
           </div>
@@ -481,11 +493,13 @@ export function PlanningProposedItemsSection({
       )}
 
       {/* Weekly Flexible Options */}
-      {proposedWeek.flexibleOptions.length > 0 && (
+      {section !== "scheduled" && proposedWeek.flexibleOptions.length > 0 && (
         <div style={{ marginTop: "16px" }} data-testid="proposed-flexible-options-section">
-          <h5 style={{ margin: "0 0 8px 0" }}>
-            Opciones flexibles ({proposedWeek.flexibleOptions.length})
-          </h5>
+          {section !== "flexible" && (
+            <h5 style={{ margin: "0 0 8px 0" }}>
+              Opciones flexibles ({proposedWeek.flexibleOptions.length})
+            </h5>
+          )}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {proposedWeek.flexibleOptions.map((opt) => (
               <div
@@ -664,6 +678,7 @@ export function PlanningProposedItemsSection({
                     </button>
                   </div>
                 )}
+                {renderItemDetails?.([opt.itemId], opt.condition)}
               </div>
             ))}
           </div>
