@@ -342,8 +342,9 @@ export function PlanningExtractedItemsReview({
               Límites de capacidad y espacio protegido (opcional)
             </div>
             <p className="calm-muted" style={{ fontSize: "0.82rem", margin: "0 0 10px 0" }}>
-              Registra cuántas horas tienes disponibles y cuánto margen quieres proteger para
-              comprobar la viabilidad real.
+              Indica las horas libres después de tus compromisos, incluidos los del calendario. No
+              restamos esas reuniones de nuevo. El margen protegido se reserva dentro de estas
+              horas.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
               <div style={{ flex: "1 1 200px" }}>

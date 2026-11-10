@@ -1,6 +1,6 @@
 # UX improvement plan
 
-Status: baseline cleanup and capture improvements complete; planning context is next.
+Status: steps 0–2 complete; self-contained confirmation is next.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
@@ -203,8 +203,8 @@ activate intentionally without help? Repeat the same tasks after later steps.
 
 ## First checkpoint
 
-Complete baseline verification and review this sequence before changing application
-code. Resolve step 0 first, then implement step 1 only.
+The initial checkpoint separated baseline cleanup from the first capture change.
+The completed checkpoints below record subsequent implementation and verification.
 
 Baseline results:
 
@@ -246,3 +246,26 @@ Baseline results:
 - No domain rules, storage schemas, AI contracts, or dependencies changed.
 - Next: step 2, planning context before generating a proposal. Stop here for review
   of the capture screen before advancing.
+
+### Step 2 — planning context before generation
+
+- Added optional net free hours and the target week below the writing area, with
+  editable dates and protected space. Unknown capacity stays provisional; zero is
+  known capacity in both review and the active week.
+- Reused the existing week and capacity schemas for input validation. Invalid
+  dates, hours, or ratios are rejected before an AI request.
+- Valid context survives reload in a transient localStorage key, removed after
+  activation. No IndexedDB schema or provider contract changed. Older drafts
+  without editable context restore their proposal capacity.
+- Calendar import no longer assumes 40 available hours or subtracts commitments
+  from already-net free hours. Calendar reference data resets when dates change.
+- Failed regeneration stays in review. Confirmation checks current dates, items,
+  selections, capacity, and notes; the progress indicator uses the same checks.
+  Changing context alone preserves manual item corrections instead of re-extracting.
+- Added validation tests and isolated synthetic browser scenarios for reload,
+  legacy drafts, duplicate calendar import, unknown/zero capacity, item edits,
+  context changes, provider failure, retry, and explicit activation.
+- Verification: 969 tests across 71 files, type checking, lint, formatting,
+  dependency-cycle checks, production build, and browser smoke tests in preview and
+  dev modes pass. Mobile context controls also have no horizontal overflow.
+- Next: step 3, a compact summary immediately before activation.

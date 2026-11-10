@@ -69,7 +69,7 @@ export function PlanningCapacityHud({
             style={{ fontSize: "0.92rem", color: "var(--text-main)", fontWeight: 500 }}
           >
             {proposedWeek.weekSummary.capacity.totalAvailableHours != null &&
-            proposedWeek.weekSummary.capacity.totalAvailableHours > 0
+            proposedWeek.weekSummary.capacity.totalAvailableHours >= 0
               ? `Tienes ${Math.max(
                   0,
                   proposedWeek.weekSummary.capacity.totalAvailableHours -
@@ -81,7 +81,7 @@ export function PlanningCapacityHud({
                   proposedWeek.weekSummary.capacity.knownEstimatedHours ??
                   0
                 } h`
-              : "Aún no has configurado tu capacidad"}
+              : "Propuesta provisional: indica tus horas libres para comprobar si cabe"}
           </span>
           {isCapacityConfigured && (
             <span

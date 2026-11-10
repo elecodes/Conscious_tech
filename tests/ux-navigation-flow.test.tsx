@@ -739,7 +739,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     );
 
     // Muestra la frase limpia
-    expect(html).toContain("Aún no has configurado tu capacidad");
+    expect(html).toContain("Propuesta provisional: indica tus horas libres para comprobar si cabe");
     // NO muestra la chapa redundante de Capacidad no configurada
     expect(html).not.toContain('data-testid="planning-capacity-status-summary-badge"');
     expect(html).not.toContain("Capacidad no configurada");

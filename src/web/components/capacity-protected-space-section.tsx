@@ -69,7 +69,7 @@ export function CapacityProtectedSpaceSection({ capacity }: CapacityProtectedSpa
               data-testid="capacity-sentence-summary"
               style={{ fontSize: "0.88rem", color: "var(--text-main)", fontWeight: 500 }}
             >
-              {capacity.totalAvailableHours != null && capacity.totalAvailableHours > 0
+              {capacity.totalAvailableHours != null && capacity.totalAvailableHours >= 0
                 ? `Tienes ${Math.max(
                     0,
                     capacity.totalAvailableHours -

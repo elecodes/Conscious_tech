@@ -768,6 +768,13 @@ La persona puede indicar:
 
 La capacidad planificable debe dejar espacio.
 
+En la captura semanal, las horas indicadas son las **horas libres después de los
+compromisos existentes**. El calendario importado sirve como referencia: no se
+inventa una base de 40 horas ni se restan sus reuniones otra vez. La capacidad
+puede dejarse sin definir; en ese caso la propuesta es provisional. Cero horas es
+un dato explícito y se conserva como tal. El margen protegido inicial es del 25 %
+y puede ajustarse antes de generar la propuesta.
+
 ---
 
 # 27. Creación de la semana

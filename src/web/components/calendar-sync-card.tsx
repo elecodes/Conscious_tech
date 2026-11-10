@@ -158,7 +158,7 @@ export function CalendarSyncCard({
             <div style={{ fontSize: "0.78rem", color: "var(--text-muted, #64748b)" }}>
               {lastSummary
                 ? `${lastSummary.events.length} eventos para esta semana (${lastSummary.totalCommittedHours}h comprometidas)`
-                : "Sincroniza tus reuniones para calcular tu capacidad real honesta"}
+                : "Importa tus reuniones como referencia para indicar tus horas libres"}
             </div>
           </div>
         </div>
@@ -302,8 +302,8 @@ export function CalendarSyncCard({
 
               {lastSummary.events.length === 0 ? (
                 <div style={{ color: "#64748b", fontStyle: "italic" }}>
-                  No se encontraron eventos con horario para esta semana. Tienes tu capacidad 100%
-                  libre.
+                  No se encontraron eventos con horario en este calendario para esta semana. Indica
+                  tus horas libres teniendo en cuenta tus demás compromisos.
                 </div>
               ) : (
                 <ul style={{ margin: 0, paddingLeft: "18px", color: "#334155" }}>

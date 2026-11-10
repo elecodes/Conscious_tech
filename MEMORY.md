@@ -391,3 +391,15 @@ Detailed specifications for individual skills live separately from this file.
 The product succeeds when the person can say:
 
 > **“Ahora veo con claridad qué quiero cuidar.”**
+
+## UX incremental: contexto antes de planificar
+
+- La captura muestra fechas y horas libres opcionales antes de generar la propuesta.
+  Las horas ya excluyen los compromisos existentes; importar un calendario no
+  presupone 40 horas ni descuenta reuniones de nuevo.
+- Sin horas, la propuesta se presenta como provisional; cero es capacidad conocida.
+- El contexto previo se conserva en una clave local transitoria validada, sin
+  migrar IndexedDB. Los borradores antiguos sin contexto siguen siendo compatibles.
+- Fechas, selecciones, estimaciones y límites modificados requieren actualizar la
+  propuesta. Un fallo al generar conserva la revisión e impide activar la anterior.
+  Cambiar solo el contexto no vuelve a extraer ni descarta correcciones manuales.

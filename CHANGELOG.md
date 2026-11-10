@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Added optional free hours, target-week dates, and protected-space settings before
+  proposal generation, with transient context restored after reload.
+- Marked unknown capacity as provisional and distinguished it from zero free hours.
+- Calendar import now preserves the person's net free-hours input rather than
+  assuming a 40-hour week or subtracting existing commitments again.
+- Blocked confirmation after failed regeneration or stale item/date edits, while
+  retaining manual corrections when only planning context changes.
+
 - Simplified initial capture with a shorter welcome and header, collapsed examples,
   and less repeated navigation guidance.
 - Added a visible local demo indicator, corrected the capture label association,

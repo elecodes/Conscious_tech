@@ -95,8 +95,10 @@ describe("FIX 2: Voseo denylist regression guard", () => {
       "../src/web/components/calendar-sync-card.tsx"
     );
     const calendarContent = fs.readFileSync(calendarCardPath, "utf-8");
-    expect(calendarContent).toContain("Sincroniza tus reuniones");
-    expect(calendarContent).toMatch(/Tienes tu capacidad 100%\s+libre\./);
+    expect(calendarContent).toContain("Importa tus reuniones");
+    expect(calendarContent.replace(/\s+/g, " ")).toContain(
+      "Indica tus horas libres teniendo en cuenta tus demás compromisos."
+    );
     expect(calendarContent).not.toContain("Sincronizá");
     expect(calendarContent).not.toContain("Tenés");
 

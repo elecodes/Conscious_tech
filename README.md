@@ -294,6 +294,11 @@ Start by writing notes, or expand **Probar con un ejemplo**. The default **Modo 
 prueba** uses local mock processing; real AI providers are available in **Ajustes**
 when server credentials are configured.
 
+Before continuing, optionally enter your free hours after existing commitments,
+review the target dates, and adjust protected space (25% by default). Choose
+**No lo sé todavía** to receive a provisional proposal without a capacity claim.
+Imported calendar commitments are a reference and are not deducted again.
+
 ### 4. Run Test Suite
 
 Unit, behavioral, and security tests run deterministically with zero token consumption (900+ tests across 67 suites):

@@ -78,6 +78,33 @@ describe("Mejoras de capacidad: Separación visual, eliminación de redundancia,
     } as unknown as WeeklySessionContextValue;
   }
 
+  it("restores zero-capacity proposals without dividing protected hours by zero", async () => {
+    const provider = new MockProvider();
+    const extraction = await extractItems(provider, { text: userNote, currentDate });
+    const { proposal } = await generateWeeklyProposalFromItemsDetailed(provider, {
+      items: extraction.items,
+      currentDate,
+      targetWeek,
+      totalAvailableHours: 0,
+      minProtectedSpaceRatio: 0.25,
+    });
+    const html = renderToStaticMarkup(
+      <WeeklySessionReactContext.Provider value={createMockSessionContext()}>
+        <WeeklyPlanningFromNotes
+          provider={provider}
+          currentDate={currentDate}
+          initialItems={extraction.items}
+          initialProposedWeek={proposal}
+          initialStep="write"
+        />
+      </WeeklySessionReactContext.Provider>
+    );
+    expect(html).not.toContain("NaN");
+    expect(html).toContain('data-testid="capture-available-hours"');
+    expect(html).toContain('value="0"');
+    expect(html).toContain("Reservamos un 25 %");
+  });
+
   it("1. Separación visual: 'Desconocido' y '8 h planificadas' aparecen en paneles independientes y no en badges pegadas", async () => {
     const provider = new MockProvider();
     const extractionResult = await extractItems(provider, {

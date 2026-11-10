@@ -755,3 +755,38 @@ details.calm-details[open] {
     gap: 8px;
   }
 }
+
+.capture-planning-context {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+}
+.capture-hours-row,
+.capture-context-dates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.capture-hours-row input {
+  width: 100%;
+  max-width: 200px;
+}
+.capture-context-dates {
+  margin-top: 8px;
+}
+.capture-context-dates label {
+  display: grid;
+  gap: 4px;
+}
+.capture-planning-context summary {
+  cursor: pointer;
+}
+.planning-review-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}

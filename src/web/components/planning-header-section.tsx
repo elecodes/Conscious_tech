@@ -237,6 +237,7 @@ export function PlanningHeaderSection({
 
           {/* Calendar Integration (Inside options section) */}
           <CalendarSyncCard
+            key={`${activeTargetWeek.startDate}-${activeTargetWeek.endDate}`}
             targetWeek={activeTargetWeek}
             onCalendarApplied={handleCalendarApplied}
           />

@@ -30,6 +30,11 @@ import { PlanningDeferredItemsSection } from "./planning-deferred-items-section"
 import { PlanningProposalReviewFooter } from "./planning-proposal-review-footer";
 import { logger } from "../../utils/logger";
 import { CalendarWeekSummary } from "../../domain/calendar";
+import {
+  parsePlanningContext,
+  readPlanningContext,
+  STORAGE_KEY_PLANNING_CONTEXT,
+} from "../planning-context-inputs";
 import sampleDumpsData from "../../../cases/sample-dumps.json";
 
 export interface WeeklyPlanningFromNotesProps {
@@ -64,11 +69,20 @@ export function WeeklyPlanningFromNotes({
     currentDate || new Date().toISOString().split("T")[0] || "2026-10-12";
 
   // Target week being planned (customizable by human)
+  const [savedPlanningContext] = useState(readPlanningContext);
   const defaultTargetWeek = state?.activePlan
     ? resolveDefaultTargetWeek(state.activePlan.targetWeek.endDate)
     : resolveDefaultTargetWeek(effectiveCurrentDate);
-  const [targetWeekStart, setTargetWeekStart] = useState(defaultTargetWeek.startDate);
-  const [targetWeekEnd, setTargetWeekEnd] = useState(defaultTargetWeek.endDate);
+  const [targetWeekStart, setTargetWeekStart] = useState(
+    initialProposedWeek?.weekSummary.targetWeek.startDate ??
+      savedPlanningContext?.targetWeekStart ??
+      defaultTargetWeek.startDate
+  );
+  const [targetWeekEnd, setTargetWeekEnd] = useState(
+    initialProposedWeek?.weekSummary.targetWeek.endDate ??
+      savedPlanningContext?.targetWeekEnd ??
+      defaultTargetWeek.endDate
+  );
 
   const activeTargetWeek: TargetWeek = {
     startDate: targetWeekStart,
@@ -225,9 +239,10 @@ export function WeeklyPlanningFromNotes({
   const initialAvailable =
     initialProposedWeek?.weekSummary?.capacity?.totalAvailableHours != null
       ? String(initialProposedWeek.weekSummary.capacity.totalAvailableHours)
-      : "";
+      : (savedPlanningContext?.availableHoursInput ?? "");
   const initialRatioPercent =
     initialProposedWeek?.weekSummary?.capacity?.totalAvailableHours != null &&
+    initialProposedWeek.weekSummary.capacity.totalAvailableHours > 0 &&
     initialProposedWeek?.weekSummary?.capacity?.protectedSpaceHours != null
       ? String(
           Math.round(
@@ -236,7 +251,7 @@ export function WeeklyPlanningFromNotes({
               100
           )
         )
-      : "25";
+      : (savedPlanningContext?.protectedSpacePercentInput ?? "25");
 
   const [availableHoursInput, setAvailableHoursInput] = useState(initialAvailable);
   const [protectedSpacePercentInput, setProtectedSpacePercentInput] = useState(initialRatioPercent);
@@ -244,15 +259,40 @@ export function WeeklyPlanningFromNotes({
   const [calendarSummary, setCalendarSummary] = useState<CalendarWeekSummary | null>(null);
   const [isEditingCapacity, setIsEditingCapacity] = useState(false);
 
+  useEffect(() => {
+    setCalendarSummary(null);
+    setCapacityFeedbackMessage(null);
+  }, [targetWeekStart, targetWeekEnd]);
+
   const handleCalendarApplied = (summary: CalendarWeekSummary) => {
     setCalendarSummary(summary);
-    const defaultWeeklyBase = 40;
-    const remainingPlannable = Math.max(0, defaultWeeklyBase - summary.totalCommittedHours);
-    setAvailableHoursInput(String(remainingPlannable));
     setCapacityFeedbackMessage(
-      `📅 Google Calendar sincronizado: ${summary.totalCommittedHours}h ocupadas en ${summary.events.length} reunión(es). Capacidad restante ajustada a ${remainingPlannable}h.`
+      `📅 Calendario importado: ${summary.totalCommittedHours} h ocupadas. Indica tus horas libres después de estos compromisos; no las restamos de nuevo.`
     );
   };
+
+  const contextInputs = {
+    targetWeekStart,
+    targetWeekEnd,
+    availableHoursInput,
+    protectedSpacePercentInput,
+  };
+  useEffect(() => {
+    const context = {
+      targetWeekStart,
+      targetWeekEnd,
+      availableHoursInput,
+      protectedSpacePercentInput,
+    };
+    try {
+      parsePlanningContext(context);
+      localStorage.setItem(STORAGE_KEY_PLANNING_CONTEXT, JSON.stringify(context));
+    } catch {
+      // Invalid intermediate edits or unavailable storage must not interrupt writing.
+    }
+  }, [targetWeekStart, targetWeekEnd, availableHoursInput, protectedSpacePercentInput]);
+
+  const itemSignature = (items: ExtractedItem[] | null) => JSON.stringify(items ?? []);
   const [editingProposalItemId, setEditingProposalItemId] = useState<string | null>(null);
   const [proposalItemHoursInput, setProposalItemHoursInput] = useState<string>("");
 
@@ -262,7 +302,25 @@ export function WeeklyPlanningFromNotes({
     userIntent: string;
     availableHours: string;
     protectedSpace: string;
-  } | null>(null);
+    items: string;
+    targetWeekStart: string;
+    targetWeekEnd: string;
+    noteText: string;
+  } | null>(() =>
+    initialProposedWeek
+      ? {
+          acceptedItemIds: Array.from(acceptedItemIds).sort().join(","),
+          carryOverIds: Array.from(selectedCarryOverItemIds).sort().join(","),
+          userIntent: userIntent.trim(),
+          availableHours: initialAvailable.trim(),
+          protectedSpace: initialRatioPercent.trim(),
+          items: itemSignature(extractedItems),
+          targetWeekStart: initialProposedWeek.weekSummary.targetWeek.startDate,
+          targetWeekEnd: initialProposedWeek.weekSummary.targetWeek.endDate,
+          noteText: noteText.trim(),
+        }
+      : null
+  );
 
   const currentAcceptedSignature = Array.from(acceptedItemIds).sort().join(",");
   const currentCarryOverSignature = Array.from(selectedCarryOverItemIds).sort().join(",");
@@ -272,18 +330,29 @@ export function WeeklyPlanningFromNotes({
 
   const isProposalDirty = Boolean(
     proposedWeek !== null &&
-    lastGeneratedParams !== null &&
-    (lastGeneratedParams.acceptedItemIds !== currentAcceptedSignature ||
-      lastGeneratedParams.carryOverIds !== currentCarryOverSignature ||
-      lastGeneratedParams.userIntent !== currentUserIntent ||
-      lastGeneratedParams.availableHours !== currentAvailableHours ||
-      lastGeneratedParams.protectedSpace !== currentProtectedSpace)
+    (proposedWeek.weekSummary.targetWeek.startDate !== targetWeekStart ||
+      proposedWeek.weekSummary.targetWeek.endDate !== targetWeekEnd ||
+      (lastGeneratedParams !== null &&
+        (lastGeneratedParams.acceptedItemIds !== currentAcceptedSignature ||
+          lastGeneratedParams.carryOverIds !== currentCarryOverSignature ||
+          lastGeneratedParams.userIntent !== currentUserIntent ||
+          lastGeneratedParams.availableHours !== currentAvailableHours ||
+          lastGeneratedParams.protectedSpace !== currentProtectedSpace ||
+          lastGeneratedParams.items !== itemSignature(extractedItems) ||
+          lastGeneratedParams.targetWeekStart !== targetWeekStart ||
+          lastGeneratedParams.targetWeekEnd !== targetWeekEnd)))
+  );
+  const isCaptureDirty = Boolean(
+    lastGeneratedParams && lastGeneratedParams.noteText !== noteText.trim()
   );
 
   useEffect(() => {
     if (initialProposedWeek?.weekSummary?.capacity?.totalAvailableHours != null) {
       setAvailableHoursInput(String(initialProposedWeek.weekSummary.capacity.totalAvailableHours));
-      if (initialProposedWeek.weekSummary.capacity.protectedSpaceHours != null) {
+      if (
+        initialProposedWeek.weekSummary.capacity.protectedSpaceHours != null &&
+        initialProposedWeek.weekSummary.capacity.totalAvailableHours > 0
+      ) {
         setProtectedSpacePercentInput(
           String(
             Math.round(
@@ -303,8 +372,10 @@ export function WeeklyPlanningFromNotes({
   useEffect(() => {
     let isCancelled = false;
     async function restoreDraft() {
-      // Do not overwrite if explicit initial items are transferred from capture space
+      // Only hydrate an empty proposal; date edits must not overwrite manual corrections.
+      // Explicit initial items are also owned by the current capture flow.
       if (
+        proposedWeek ||
         initialProposedWeek ||
         (initialItems && initialItems.length > 0) ||
         !service?.getDraftPlan
@@ -384,6 +455,34 @@ export function WeeklyPlanningFromNotes({
                   ? String(draft.proposal.weekSummary.capacity.totalAvailableHours)
                   : ""),
               protectedSpace: draft.draftContext?.protectedSpacePercentInput?.trim() || "25",
+              items: itemSignature(draft.draftContext.extractedItems ?? null),
+              targetWeekStart: draft.proposal.weekSummary.targetWeek.startDate,
+              targetWeekEnd: draft.proposal.weekSummary.targetWeek.endDate,
+              noteText: draft.draftContext.noteText?.trim() ?? "",
+            });
+          } else {
+            // Older backups may have a proposal without editable draft context.
+            const capacity = draft.proposal.weekSummary.capacity;
+            const hours =
+              capacity.totalAvailableHours == null ? "" : String(capacity.totalAvailableHours);
+            const protectedPercent =
+              capacity.totalAvailableHours && capacity.protectedSpaceHours != null
+                ? String(
+                    Math.round((capacity.protectedSpaceHours / capacity.totalAvailableHours) * 100)
+                  )
+                : "25";
+            setAvailableHoursInput(hours);
+            setProtectedSpacePercentInput(protectedPercent);
+            setLastGeneratedParams({
+              acceptedItemIds: Array.from(acceptedItemIds).sort().join(","),
+              carryOverIds: Array.from(selectedCarryOverItemIds).sort().join(","),
+              userIntent: userIntent.trim(),
+              availableHours: hours,
+              protectedSpace: protectedPercent,
+              items: itemSignature(extractedItems),
+              targetWeekStart: draft.targetWeek.startDate,
+              targetWeekEnd: draft.targetWeek.endDate,
+              noteText: noteText.trim(),
             });
           }
         } else {
@@ -600,6 +699,17 @@ export function WeeklyPlanningFromNotes({
     const trimmed = noteText.trim();
     if (!trimmed || isExtracting || isPlanning) return;
 
+    // Changing time or dates must not discard corrections already made to the items.
+    if (proposedWeek && extractedItems && !isCaptureDirty) {
+      setExtractError(null);
+      if (await handleGenerateProposal()) setFlowStep("review");
+      else
+        setExtractError(
+          "No se pudo actualizar la propuesta. Revisa las fechas y las horas, o vuelve a intentarlo."
+        );
+      return;
+    }
+
     const reqId = ++extractRequestIdRef.current;
     setIsExtracting(true);
     setExtractError(null);
@@ -608,6 +718,7 @@ export function WeeklyPlanningFromNotes({
     setSuccessMessage(null);
 
     try {
+      const { capacity: currentCapacityConfig } = parsePlanningContext(contextInputs);
       // 1. Extraer elementos de las notas
       const result: ExtractedItems = await extractItems(provider, {
         text: trimmed,
@@ -625,26 +736,6 @@ export function WeeklyPlanningFromNotes({
       // 2. Construir propuesta semanal con estos elementos
       setIsExtracting(false);
       setIsPlanning(true);
-
-      const totalAvailableHours =
-        availableHoursInput.trim() !== "" ? Number(availableHoursInput) : undefined;
-      const minProtectedSpaceRatio =
-        protectedSpacePercentInput.trim() !== "" ? Number(protectedSpacePercentInput) / 100 : 0.25;
-
-      const currentCapacityConfig =
-        totalAvailableHours !== undefined &&
-        Number.isFinite(totalAvailableHours) &&
-        totalAvailableHours >= 0
-          ? {
-              totalAvailableHours,
-              minProtectedSpaceRatio:
-                Number.isFinite(minProtectedSpaceRatio) &&
-                minProtectedSpaceRatio >= 0 &&
-                minProtectedSpaceRatio <= 1
-                  ? minProtectedSpaceRatio
-                  : 0.25,
-            }
-          : undefined;
 
       const detailedResult = await generateWeeklyProposalFromItemsDetailed(provider, {
         items: newItems,
@@ -670,6 +761,10 @@ export function WeeklyPlanningFromNotes({
         userIntent: userIntent.trim(),
         availableHours: availableHoursInput.trim(),
         protectedSpace: protectedSpacePercentInput.trim(),
+        items: itemSignature(newItems),
+        targetWeekStart,
+        targetWeekEnd,
+        noteText: trimmed,
       });
       setFlowStep("review");
     } catch (err) {
@@ -743,7 +838,7 @@ export function WeeklyPlanningFromNotes({
   // Handlers: Step 3 - Generate Weekly Proposal
   // --------------------------------------------------------------------------
   const handleGenerateProposal = async () => {
-    if (isPlanning) return;
+    if (isPlanning || isExtracting) return false;
 
     const acceptedExtracted = extractedItems
       ? extractedItems.filter((i) => acceptedItemIds.has(i.id))
@@ -790,7 +885,7 @@ export function WeeklyPlanningFromNotes({
       setPlanningError(
         "Selecciona al menos una tarea (extraída o postergada de semanas anteriores) para generar la planificación semanal."
       );
-      return;
+      return false;
     }
 
     const reqId = ++planningRequestIdRef.current;
@@ -799,25 +894,7 @@ export function WeeklyPlanningFromNotes({
     setConfirmationError(null);
 
     try {
-      const totalAvailableHours =
-        availableHoursInput.trim() !== "" ? Number(availableHoursInput) : undefined;
-      const minProtectedSpaceRatio =
-        protectedSpacePercentInput.trim() !== "" ? Number(protectedSpacePercentInput) / 100 : 0.25;
-
-      const currentCapacityConfig =
-        totalAvailableHours !== undefined &&
-        Number.isFinite(totalAvailableHours) &&
-        totalAvailableHours >= 0
-          ? {
-              totalAvailableHours,
-              minProtectedSpaceRatio:
-                Number.isFinite(minProtectedSpaceRatio) &&
-                minProtectedSpaceRatio >= 0 &&
-                minProtectedSpaceRatio <= 1
-                  ? minProtectedSpaceRatio
-                  : 0.25,
-            }
-          : undefined;
+      const { capacity: currentCapacityConfig } = parsePlanningContext(contextInputs);
 
       const detailedResult = await generateWeeklyProposalFromItemsDetailed(provider, {
         items: combinedItems,
@@ -828,7 +905,7 @@ export function WeeklyPlanningFromNotes({
         minProtectedSpaceRatio: currentCapacityConfig?.minProtectedSpaceRatio,
       });
 
-      if (reqId !== planningRequestIdRef.current) return;
+      if (reqId !== planningRequestIdRef.current) return false;
       let finalProposal = detailedResult.proposal;
 
       // Re-apply any previous overdue decisions if already chosen
@@ -892,12 +969,18 @@ export function WeeklyPlanningFromNotes({
         userIntent: userIntent.trim(),
         availableHours: availableHoursInput.trim(),
         protectedSpace: protectedSpacePercentInput.trim(),
+        items: itemSignature(extractedItems),
+        targetWeekStart,
+        targetWeekEnd,
+        noteText: noteText.trim(),
       });
+      return true;
     } catch (err) {
-      if (reqId !== planningRequestIdRef.current) return;
+      if (reqId !== planningRequestIdRef.current) return false;
       setPlanningError(
         (err as Error).message || "Ocurrió un error al generar la propuesta semanal con la IA."
       );
+      return false;
     } finally {
       if (reqId === planningRequestIdRef.current) {
         setIsPlanning(false);
@@ -906,9 +989,22 @@ export function WeeklyPlanningFromNotes({
   };
 
   const handleContinueToConfirm = async () => {
-    if (isProposalDirty) {
-      await handleGenerateProposal();
+    if (!proposedWeek || isPlanning || isExtracting) return;
+    if (isCaptureDirty) {
+      setFlowStep("write");
+      setExtractError(
+        "Has cambiado las notas. Pulsa Continuar para revisar una propuesta actualizada."
+      );
+      return;
     }
+    try {
+      parsePlanningContext(contextInputs);
+    } catch (err) {
+      setPlanningError((err as Error).message);
+      setFlowStep("review");
+      return;
+    }
+    if (isProposalDirty && !(await handleGenerateProposal())) return;
     setFlowStep("confirm");
   };
 
@@ -916,7 +1012,12 @@ export function WeeklyPlanningFromNotes({
   // Handlers: Step 4 - Explicit Human Confirmation to Persist
   // --------------------------------------------------------------------------
   const handleConfirmPlan = async () => {
-    if (!proposedWeek || isConfirming) return;
+    if (!proposedWeek || isConfirming || isPlanning || isExtracting) return;
+    if (isProposalDirty || isCaptureDirty) {
+      setFlowStep("review");
+      setPlanningError("Revisa y actualiza la propuesta antes de activar la semana.");
+      return;
+    }
 
     setIsConfirming(true);
     setConfirmationError(null);
@@ -974,6 +1075,7 @@ export function WeeklyPlanningFromNotes({
         try {
           localStorage.removeItem(STORAGE_KEY_CAPTURE_TEXT);
           localStorage.removeItem(STORAGE_KEY_CAPTURE_RESULT);
+          localStorage.removeItem(STORAGE_KEY_PLANNING_CONTEXT);
         } catch {
           // ignore
         }
@@ -1290,14 +1392,17 @@ export function WeeklyPlanningFromNotes({
     const rawHours = hoursOverride !== undefined ? hoursOverride : availableHoursInput;
     const rawPercent = ratioOverride !== undefined ? ratioOverride : protectedSpacePercentInput;
 
-    const hours = rawHours.trim() !== "" ? Number(rawHours) : undefined;
-    const percent = rawPercent.trim() !== "" ? Number(rawPercent) : 25;
-    const ratio = (Number.isFinite(percent) && percent >= 0 && percent <= 100 ? percent : 25) / 100;
-
-    const capacityConfig =
-      hours !== undefined && Number.isFinite(hours) && hours >= 0
-        ? { totalAvailableHours: hours, minProtectedSpaceRatio: ratio }
-        : undefined;
+    let capacityConfig;
+    try {
+      capacityConfig = parsePlanningContext({
+        ...contextInputs,
+        availableHoursInput: rawHours,
+        protectedSpacePercentInput: rawPercent,
+      }).capacity;
+    } catch (err) {
+      setPlanningError((err as Error).message);
+      return;
+    }
 
     const newCap = calculateWeeklyCapacity({
       capacityConfig,
@@ -1634,11 +1739,9 @@ export function WeeklyPlanningFromNotes({
         <button
           type="button"
           onClick={() => {
-            if (proposedWeek) {
-              setFlowStep("confirm");
-            }
+            void handleContinueToConfirm();
           }}
-          disabled={!proposedWeek}
+          disabled={!proposedWeek || isPlanning || isExtracting}
           className={flowStep === "confirm" ? "primary small" : "secondary small"}
           aria-current={flowStep === "confirm" ? "step" : undefined}
           data-testid="step-indicator-confirm"
@@ -1703,6 +1806,7 @@ export function WeeklyPlanningFromNotes({
                 ¿Qué tienes en la cabeza?
               </label>
               <VoiceDictationButton
+                disabled={isExtracting || isPlanning}
                 getText={() => noteText}
                 onTranscript={(transcript) => {
                   setNoteText((prev) => (prev ? `${prev}\n${transcript}` : transcript));
@@ -1720,6 +1824,84 @@ export function WeeklyPlanningFromNotes({
               style={{ width: "100%", padding: "10px", boxSizing: "border-box" }}
               disabled={isExtracting || isPlanning}
             />
+
+            <section
+              className="capture-planning-context"
+              aria-label="Tiempo y semana de la propuesta"
+            >
+              <p className="calm-muted">
+                Semana del {targetWeekStart} al {targetWeekEnd}
+              </p>
+              <label htmlFor="capture-available-hours">
+                ¿Cuánto tiempo tienes para esto esta semana?
+              </label>
+              <div className="capture-hours-row">
+                <input
+                  id="capture-available-hours"
+                  data-testid="capture-available-hours"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  placeholder="Horas libres (opcional)"
+                  value={availableHoursInput}
+                  onChange={(e) => setAvailableHoursInput(e.target.value)}
+                  disabled={isExtracting || isPlanning}
+                  aria-describedby="capture-capacity-help"
+                />
+                <button
+                  type="button"
+                  className="secondary small"
+                  disabled={isExtracting || isPlanning}
+                  onClick={() => setAvailableHoursInput("")}
+                >
+                  No lo sé todavía
+                </button>
+              </div>
+              <p id="capture-capacity-help" className="calm-muted">
+                Indica las horas libres después de tus compromisos. Reservamos un{" "}
+                {protectedSpacePercentInput || "25"} % para descanso e imprevistos.
+                {availableHoursInput.trim() === "" &&
+                  " Sin horas definidas, la propuesta será provisional: aún no podremos comprobar si cabe."}
+              </p>
+              <details>
+                <summary>Cambiar fechas o espacio protegido</summary>
+                <div className="capture-context-dates">
+                  <label>
+                    Desde{" "}
+                    <input
+                      type="date"
+                      data-testid="capture-week-start"
+                      value={targetWeekStart}
+                      onChange={(e) => setTargetWeekStart(e.target.value)}
+                      disabled={isExtracting || isPlanning}
+                    />
+                  </label>
+                  <label>
+                    Hasta{" "}
+                    <input
+                      type="date"
+                      data-testid="capture-week-end"
+                      value={targetWeekEnd}
+                      onChange={(e) => setTargetWeekEnd(e.target.value)}
+                      disabled={isExtracting || isPlanning}
+                    />
+                  </label>
+                  <label>
+                    Espacio protegido (%){" "}
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="5"
+                      data-testid="capture-protected-space"
+                      value={protectedSpacePercentInput}
+                      onChange={(e) => setProtectedSpacePercentInput(e.target.value)}
+                      disabled={isExtracting || isPlanning}
+                    />
+                  </label>
+                </div>
+              </details>
+            </section>
 
             <div
               className="actions"
@@ -1796,7 +1978,11 @@ export function WeeklyPlanningFromNotes({
       {/* PASO 2: REVISAR                                                     */}
       {/* -------------------------------------------------------------------- */}
       {flowStep === "review" && (
-        <div data-testid="flow-step-review">
+        <fieldset
+          className="planning-review-fields"
+          disabled={isPlanning || isExtracting}
+          data-testid="flow-step-review"
+        >
           <PlanningHeaderSection
             hasActivePlan={hasActivePlan}
             initialItems={initialItems}
@@ -1965,12 +2151,12 @@ export function WeeklyPlanningFromNotes({
               className="primary"
               data-testid="flow-continue-to-confirm"
               onClick={handleContinueToConfirm}
-              disabled={!proposedWeek}
+              disabled={!proposedWeek || isPlanning || isExtracting}
             >
               Continuar a confirmar →
             </button>
           </div>
-        </div>
+        </fieldset>
       )}
 
       {/* -------------------------------------------------------------------- */}
