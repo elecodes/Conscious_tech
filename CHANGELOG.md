@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Clarified the active week around focus areas and commitments, with optional and
+  deferred entries in separate disclosures and every source retained.
+- Moved agenda versions, empty history, and exports into secondary details; made
+  unexpected-event intake easier to find. Existing export and closing scope is
+  preserved and the complete-plan export scope is stated explicitly.
+
 - Unified proposal review into this week, optional work, deferred work, and
   unscheduled thoughts; attached original wording and corrections to each entry.
 - Kept excluded and unplaced sources inspectable, with selection distinguished

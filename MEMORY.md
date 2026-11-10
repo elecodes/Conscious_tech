@@ -430,3 +430,17 @@ The product succeeds when the person can say:
   deben perder miembros ni inventar cómo repartir su estimación agregada.
 - La edición y los movimientos usan extractItemHours, la misma normalización que
   el planificador, sin modificar la unidad original hasta que la persona la edite.
+
+## UX incremental: semana activa clara
+
+- Mi semana presenta focos y compromisos como prioridades. Opciones flexibles y
+  aplazados permanecen consultables en secciones plegadas, sin reclasificar datos.
+- La pertenencia explícita a la propuesta prevalece sobre asignaciones residuales
+  de agenda. Los grupos conservan todas sus fuentes y su estimación conjunta.
+- Ajustes, cierre y exportación conservan el inventario completo; la exportación
+  explica este alcance. Un ajuste explícito puede seguir moviendo un aplazado a
+  opciones flexibles según el comportamiento existente.
+- Versiones e historial vacío quedan en detalles; el historial con cambios sigue
+  visible. Imprevistos aparece antes de las listas secundarias.
+- No hay migración, nuevas dependencias ni llamadas adicionales a IA. La siguiente
+  etapa consolidará calendario, compartir y lenguaje de confianza.

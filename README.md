@@ -308,9 +308,14 @@ Before activation, review the summary of the exact proposal. Return to review to
 change its intention or contents; calendar export and sharing are available from
 **Mi semana** after activation.
 
+The active week leads with focus areas and commitments. Optional and deferred
+entries remain under **Si queda espacio** and **Fuera de esta semana**. Open a focus
+to inspect its contributing items. Agenda details and exports are secondary;
+exports and weekly closing still include the complete inventory.
+
 ### 4. Run Test Suite
 
-Unit, behavioral, and security tests run deterministically with zero token consumption (900+ tests across 67 suites):
+Unit, behavioral, and security tests run deterministically with zero token consumption (987 tests across 74 suites):
 
 ```bash
 npm test

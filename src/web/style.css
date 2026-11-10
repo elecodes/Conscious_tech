@@ -896,3 +896,43 @@ details.calm-details[open] {
   min-width: 0;
   max-width: 100%;
 }
+
+.active-week-priorities {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.active-focus-card {
+  padding: 16px;
+  display: grid;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+.active-focus-card summary,
+.active-week-secondary summary,
+.active-week-technical summary {
+  cursor: pointer;
+}
+.active-week-secondary {
+  margin-top: 16px;
+}
+.active-week-secondary > p,
+.active-focus-card details > p {
+  margin: 10px 0;
+}
+.active-week-technical {
+  margin-top: 12px;
+  font-size: 0.85rem;
+}
+.active-week-technical > p {
+  margin-top: 8px;
+}
+.active-week-priorities .item-card,
+.active-week-secondary .item-card {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.active-time-block {
+  flex-wrap: wrap;
+}

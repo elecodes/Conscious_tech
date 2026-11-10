@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { partitionActiveWeekItems } from "../active-week-items";
+import { formatHours } from "./weekly-session-formatters";
 import { WeeklySchedule } from "../../domain/schedule";
 import { StoredWeeklyPlan } from "../../domain/repositories/types";
 import { buildGoogleCalendarTemplateUrl, generateIcsCalendarExport } from "../../domain/calendar";
@@ -63,6 +65,7 @@ export function ActiveWeekScheduleSection({
 }: ActiveWeekScheduleSectionProps) {
   const [exportNotice, setExportNotice] = useState<string | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const groups = partitionActiveWeekItems(plan, schedule, planItems);
 
   const handleDownloadWeekIcs = () => {
     const prefs = getStoredReminderPreferences();
@@ -104,6 +107,139 @@ export function ActiveWeekScheduleSection({
     );
   };
 
+  const renderItem = (item: PlanItemSummary) => {
+    const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
+    const isSelected = (selectedAdjustmentItemId || planItems[0]?.itemId) === item.itemId;
+    const isObligation =
+      item.source === "Obligación" || item.source?.toLowerCase().includes("obligaci");
+
+    return (
+      <div
+        key={item.itemId}
+        className="item-card"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "10px",
+          padding: "10px 14px",
+          borderLeft: isObligation
+            ? "4px solid #c53030"
+            : isSelected
+              ? "3px solid var(--accent-color, #2b6cb0)"
+              : undefined,
+          background: isSelected ? "#f8fafc" : undefined,
+        }}
+        data-testid={`active-task-item-${item.itemId}`}
+      >
+        <div style={{ flex: "1 1 240px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <strong>{item.title}</strong>
+            <span className="badge badge-idea" style={{ fontSize: "0.75rem" }}>
+              {item.source}
+            </span>
+          </div>
+          {item.dueDate && (
+            <div className="calm-muted" style={{ fontSize: "0.8rem", marginTop: "2px" }}>
+              📅 Fecha límite: <strong>{item.dueDate}</strong>
+            </div>
+          )}
+        </div>
+
+        <details
+          className="calm-details item-more-actions"
+          data-testid={`task-more-actions-${item.itemId}`}
+        >
+          <summary
+            style={{
+              cursor: "pointer",
+              fontSize: "0.8rem",
+              padding: "4px 8px",
+              borderRadius: "4px",
+              background: "#f3f4f6",
+              border: "1px solid #d1d5db",
+              color: "#4b5563",
+              userSelect: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+            data-testid={`task-more-actions-summary-${item.itemId}`}
+          >
+            ••• Más
+          </summary>
+          <div
+            style={{
+              marginTop: "6px",
+              display: "flex",
+              gap: "8px",
+              alignItems: "center",
+              flexWrap: "wrap",
+              padding: "6px 8px",
+              background: "#f8fafc",
+              border: "1px solid #e2e8f0",
+              borderRadius: "4px",
+            }}
+          >
+            <span className="badge badge-muted" style={{ fontSize: "0.8rem" }}>
+              ⏱️ {item.estimatedHours ? `${item.estimatedHours}h` : "Sin estimar"}
+            </span>
+            <span
+              className={alloc ? "badge badge-task" : "badge badge-muted"}
+              style={{ fontSize: "0.8rem" }}
+            >
+              📅 {alloc ? alloc.day : "En la semana"}
+            </span>
+            <button
+              type="button"
+              className="secondary small"
+              style={{ fontSize: "0.8rem", padding: "4px 10px" }}
+              data-testid={`adjust-task-${item.itemId}`}
+              onClick={() => {
+                setSelectedAdjustmentItemId(item.itemId);
+                setIsAdjustmentOpen(true);
+                setLastSavedAdjustment(null);
+                const box = document.getElementById("adjustment-proposal-box");
+                if (box) box.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              Ajustar
+            </button>
+            <button
+              type="button"
+              className="secondary small"
+              data-testid={`add-to-gcal-${item.itemId}`}
+              style={{
+                fontSize: "0.8rem",
+                padding: "4px 8px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+              title="Abrir y guardar en Google Calendar en 1 clic (sincroniza directo con tu móvil)"
+              onClick={() => {
+                const day = alloc
+                  ? alloc.day
+                  : item.dueDate || plan?.targetWeek.startDate || "2026-10-19";
+                const gcalUrl = buildGoogleCalendarTemplateUrl({
+                  title: item.title,
+                  day,
+                  durationHours: item.estimatedHours || 1,
+                  description: `Categoría: ${item.source}${item.rationale ? `\n${item.rationale}` : ""}`,
+                });
+                window.open(gcalUrl, "_blank", "noopener,noreferrer");
+              }}
+            >
+              <span>📅</span>
+              <span>Google Cal (1 clic)</span>
+            </button>
+          </div>
+        </details>
+      </div>
+    );
+  };
+
   return (
     <section
       className="results-section"
@@ -122,69 +258,11 @@ export function ActiveWeekScheduleSection({
         }}
       >
         <div>
-          <h3 style={{ margin: 0 }}>Agenda y tareas de la semana ({planItems.length})</h3>
+          <h3 style={{ margin: 0 }}>Focos y compromisos de esta semana</h3>
           <span className="calm-muted" style={{ fontSize: "0.82rem" }}>
-            Tus prioridades activas en este cuaderno
+            Lo que has elegido cuidar esta semana
           </span>
         </div>
-        {planItems.length > 0 && (
-          <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-            <button
-              type="button"
-              className="primary small"
-              data-testid="add-week-to-gcal-button"
-              style={{
-                fontSize: "0.8rem",
-                padding: "4px 10px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-              }}
-              title="Descarga el archivo .ics con tus tareas y recordatorios para importar en Google Calendar"
-              onClick={handleDownloadWeekIcs}
-            >
-              <span>📅</span>
-              <span>Añadir semana a Google Calendar (.ics)</span>
-            </button>
-            <button
-              type="button"
-              className="secondary small"
-              data-testid="open-email-summary-top-button"
-              style={{
-                fontSize: "0.8rem",
-                padding: "4px 10px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-              }}
-              onClick={() => {
-                setIsExportOpen(true);
-                setTimeout(() => {
-                  const el = document.getElementById("email-summary-card-wrapper");
-                  if (el) el.scrollIntoView({ behavior: "smooth" });
-                }, 50);
-              }}
-            >
-              <span>✉️</span>
-              <span>Enviar a Gmail / Correo</span>
-            </button>
-            <button
-              type="button"
-              className="secondary small"
-              data-testid="export-week-to-gcal"
-              style={{
-                fontSize: "0.8rem",
-                padding: "4px 10px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-              }}
-              onClick={handleDownloadWeekIcs}
-            >
-              <span>Exportar (.ics)</span>
-            </button>
-          </div>
-        )}
       </div>
 
       {exportNotice && (
@@ -254,163 +332,107 @@ export function ActiveWeekScheduleSection({
         </div>
       )}
 
-      <div className="items-list" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        {planItems.length === 0 ? (
-          <p className="calm-muted">No hay tareas identificadas en el plan.</p>
-        ) : (
-          planItems.map((item) => {
-            const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
-            const isSelected = (selectedAdjustmentItemId || planItems[0]?.itemId) === item.itemId;
-            const isObligation =
-              item.source === "Obligación" || item.source?.toLowerCase().includes("obligaci");
-
-            return (
-              <div
-                key={item.itemId}
-                className="item-card"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "10px",
-                  padding: "10px 14px",
-                  borderLeft: isObligation
-                    ? "4px solid #c53030"
-                    : isSelected
-                      ? "3px solid var(--accent-color, #2b6cb0)"
-                      : undefined,
-                  background: isSelected ? "#f8fafc" : undefined,
-                }}
-                data-testid={`active-task-item-${item.itemId}`}
-              >
-                <div style={{ flex: "1 1 240px" }}>
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}
-                  >
-                    <strong>{item.title}</strong>
-                    <span className="badge badge-idea" style={{ fontSize: "0.75rem" }}>
-                      {item.source}
-                    </span>
-                  </div>
-                  {item.dueDate && (
-                    <div className="calm-muted" style={{ fontSize: "0.8rem", marginTop: "2px" }}>
-                      📅 Fecha límite: <strong>{item.dueDate}</strong>
-                    </div>
-                  )}
-                </div>
-
-                <details
-                  className="calm-details item-more-actions"
-                  data-testid={`task-more-actions-${item.itemId}`}
-                >
-                  <summary
-                    style={{
-                      cursor: "pointer",
-                      fontSize: "0.8rem",
-                      padding: "4px 8px",
-                      borderRadius: "4px",
-                      background: "#f3f4f6",
-                      border: "1px solid #d1d5db",
-                      color: "#4b5563",
-                      userSelect: "none",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
-                    data-testid={`task-more-actions-summary-${item.itemId}`}
-                  >
-                    ••• Más
-                  </summary>
-                  <div
-                    style={{
-                      marginTop: "6px",
-                      display: "flex",
-                      gap: "8px",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      padding: "6px 8px",
-                      background: "#f8fafc",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "4px",
-                    }}
-                  >
-                    <span className="badge badge-muted" style={{ fontSize: "0.8rem" }}>
-                      ⏱️ {item.estimatedHours ? `${item.estimatedHours}h` : "Sin estimar"}
-                    </span>
-                    <span
-                      className={alloc ? "badge badge-task" : "badge badge-muted"}
-                      style={{ fontSize: "0.8rem" }}
-                    >
-                      📅 {alloc ? alloc.day : "En la semana"}
-                    </span>
-                    <button
-                      type="button"
-                      className="secondary small"
-                      style={{ fontSize: "0.8rem", padding: "4px 10px" }}
-                      data-testid={`adjust-task-${item.itemId}`}
-                      onClick={() => {
-                        setSelectedAdjustmentItemId(item.itemId);
-                        setIsAdjustmentOpen(true);
-                        setLastSavedAdjustment(null);
-                        const box = document.getElementById("adjustment-proposal-box");
-                        if (box) box.scrollIntoView({ behavior: "smooth" });
-                      }}
-                    >
-                      Ajustar
-                    </button>
-                    <button
-                      type="button"
-                      className="secondary small"
-                      data-testid={`add-to-gcal-${item.itemId}`}
-                      style={{
-                        fontSize: "0.8rem",
-                        padding: "4px 8px",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "4px",
-                      }}
-                      title="Abrir y guardar en Google Calendar en 1 clic (sincroniza directo con tu móvil)"
-                      onClick={() => {
-                        const day = alloc
-                          ? alloc.day
-                          : item.dueDate || plan?.targetWeek.startDate || "2026-10-19";
-                        const gcalUrl = buildGoogleCalendarTemplateUrl({
-                          title: item.title,
-                          day,
-                          durationHours: item.estimatedHours || 1,
-                          description: `Categoría: ${item.source}${item.rationale ? `\n${item.rationale}` : ""}`,
-                        });
-                        window.open(gcalUrl, "_blank", "noopener,noreferrer");
-                      }}
-                    >
-                      <span>📅</span>
-                      <span>Google Cal (1 clic)</span>
-                    </button>
-                  </div>
-                </details>
-              </div>
-            );
-          })
+      <div className="active-week-priorities" data-testid="active-week-priorities">
+        {groups.focuses.length + groups.obligations.length === 0 && (
+          <p className="calm-muted" data-testid="empty-active-priorities">
+            No hay focos ni compromisos en esta semana. El espacio puede quedarse sin ocupar.
+          </p>
         )}
+        {groups.focuses.map(({ focus, items }) => (
+          <article
+            key={focus.id}
+            className="calm-box active-focus-card"
+            data-testid={`active-focus-${focus.id}`}
+          >
+            <h4>{focus.title}</h4>
+            <p className="calm-text">{focus.desiredOutcome}</p>
+            <p className="calm-muted">
+              Tiempo previsto del foco: {formatHours(focus.estimatedHours, "sin estimar")}
+            </p>
+            {items.length > 0 ? (
+              <details data-testid={`active-focus-items-${focus.id}`}>
+                <summary>Ver y ajustar sus elementos ({items.length})</summary>
+                {items.length > 1 && (
+                  <p className="calm-muted">
+                    La estimación pertenece al foco completo; no está repartida entre sus elementos.
+                  </p>
+                )}
+                <div className="items-list">{items.map(renderItem)}</div>
+              </details>
+            ) : (
+              <p className="calm-muted">Este foco no tiene elementos individuales identificados.</p>
+            )}
+          </article>
+        ))}
+        {groups.obligations.length > 0 && (
+          <section aria-label="Compromisos de esta semana" data-testid="active-week-commitments">
+            <h4>Compromisos ({groups.obligations.length})</h4>
+            <div className="items-list">{groups.obligations.map(renderItem)}</div>
+          </section>
+        )}
+      </div>
 
-        {schedule.timeBlocks && schedule.timeBlocks.length > 0 && (
-          <div style={{ marginTop: "16px" }}>
-            <h4 style={{ margin: "0 0 8px 0" }}>Bloques de horario específico</h4>
+      {groups.flexible.length > 0 && (
+        <details className="calm-details active-week-secondary" data-testid="active-week-flexible">
+          <summary>Si queda espacio ({groups.flexible.length})</summary>
+          <p className="calm-muted">Son opciones, no compromisos adicionales.</p>
+          <div className="items-list">{groups.flexible.map(renderItem)}</div>
+        </details>
+      )}
+      {groups.deferred.length > 0 && (
+        <details className="calm-details active-week-secondary" data-testid="active-week-deferred">
+          <summary>Fuera de esta semana ({groups.deferred.length})</summary>
+          <p className="calm-muted">
+            Se conservan en el plan para consulta y cierre; no figuran como prioridades de esta
+            semana.
+          </p>
+          <div className="items-list">{groups.deferred.map(renderItem)}</div>
+        </details>
+      )}
+      {groups.agenda.length > 0 && (
+        <details
+          className="calm-details active-week-secondary"
+          data-testid="active-week-agenda-items"
+        >
+          <summary>Otros elementos de la agenda ({groups.agenda.length})</summary>
+          <p className="calm-muted">
+            Tienen una asignación en la agenda, sin estar clasificados como foco o compromiso en la
+            propuesta.
+          </p>
+          <div className="items-list">{groups.agenda.map(renderItem)}</div>
+        </details>
+      )}
+      {groups.unclassified.length > 0 && (
+        <details
+          className="calm-details active-week-secondary"
+          data-testid="active-week-other-items"
+        >
+          <summary>Otros elementos guardados ({groups.unclassified.length})</summary>
+          <div className="items-list">{groups.unclassified.map(renderItem)}</div>
+        </details>
+      )}
+      {schedule.timeBlocks.length > 0 && (
+        <details
+          className="calm-details active-week-secondary"
+          data-testid="active-week-time-blocks"
+        >
+          <summary>Ver bloques de horario ({schedule.timeBlocks.length})</summary>
+          <div className="items-list">
             {schedule.timeBlocks.map((block, idx) => (
-              <div key={idx} className="item-card" style={{ padding: "8px 12px" }}>
-                <div className="item-title">{block.itemId}</div>
-                <div className="item-tags">
-                  <span className="badge badge-muted">📅 {block.day}</span>
-                  <span className="badge badge-muted">
-                    ⏰ {block.startTime} - {block.endTime}
-                  </span>
-                </div>
+              <div key={idx} className="item-card active-time-block">
+                <strong>
+                  {planItems.find((item) => item.itemId === block.itemId)?.title ||
+                    "Bloque de tiempo"}
+                </strong>
+                <span className="calm-muted">
+                  {block.day} · {block.startTime} - {block.endTime}
+                </span>
+                <code>{block.itemId}</code>
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </details>
+      )}
 
       {planItems.length > 0 && (
         <details
@@ -445,6 +467,66 @@ export function ActiveWeekScheduleSection({
               gap: "16px",
             }}
           >
+            <p className="calm-muted" data-testid="active-week-export-scope">
+              La exportación y el resumen incluyen el plan completo ({planItems.length} elementos),
+              también las opciones flexibles y los elementos fuera de esta semana.
+            </p>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="primary small"
+                data-testid="add-week-to-gcal-button"
+                style={{
+                  fontSize: "0.8rem",
+                  padding: "4px 10px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+                title="Descarga el archivo .ics con tus tareas y recordatorios para importar en Google Calendar"
+                onClick={handleDownloadWeekIcs}
+              >
+                <span>📅</span>
+                <span>Añadir semana a Google Calendar (.ics)</span>
+              </button>
+              <button
+                type="button"
+                className="secondary small"
+                data-testid="open-email-summary-top-button"
+                style={{
+                  fontSize: "0.8rem",
+                  padding: "4px 10px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+                onClick={() => {
+                  setIsExportOpen(true);
+                  setTimeout(() => {
+                    const el = document.getElementById("email-summary-card-wrapper");
+                    if (el) el.scrollIntoView({ behavior: "smooth" });
+                  }, 50);
+                }}
+              >
+                <span>✉️</span>
+                <span>Enviar a Gmail / Correo</span>
+              </button>
+              <button
+                type="button"
+                className="secondary small"
+                data-testid="export-week-to-gcal"
+                style={{
+                  fontSize: "0.8rem",
+                  padding: "4px 10px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+                onClick={handleDownloadWeekIcs}
+              >
+                <span>Exportar (.ics)</span>
+              </button>
+            </div>
             <div id="email-summary-card-wrapper">
               <EmailSummaryCard
                 targetWeek={plan?.targetWeek || { startDate: "2026-10-19", endDate: "2026-10-25" }}

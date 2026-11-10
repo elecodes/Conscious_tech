@@ -1,6 +1,6 @@
 # UX improvement plan
 
-Status: steps 0–4 complete; clarifying the active week is next.
+Status: steps 0–5 complete; calendar, sharing, and trust language are next.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
@@ -323,3 +323,24 @@ Baseline results:
   in preview and dev modes. Browser checks compare persisted item membership
   before/after moves and after regeneration and reload.
 - Next: step 5, separate deferred items from active priorities in Mi semana.
+
+### Step 5 — clarify the active week
+
+- Active priorities show focus areas and commitments. Optional and deferred work
+  remain accessible in separate, initially collapsed sections. Focus groups retain
+  all contributing sources and identify their estimate as a group total.
+- Presentation uses explicit proposal membership before residual agenda allocations;
+  viewing a saved week never changes classification or requires a migration.
+  Unclassified and schedule-only items remain accessible rather than disappearing.
+- Schedule versions and empty adjustment history are behind agenda details; actual
+  history remains visible. Unexpected-event intake precedes secondary schedule lists.
+- Export controls are secondary. Their existing complete-plan scope is explicitly
+  described; adjustments, exports, and closing still receive the full inventory.
+  Consolidating duplicate export controls remains step 6.
+- Added partition conservation/immutability tests and browser checks for keyboard
+  disclosures, mobile overflow, complete ICS contents, explicit adjustment of a
+  deferred item, reload, and closing every item.
+- Verification: 987 tests across 74 files, type checking, lint, formatting,
+  dependency-cycle checks, production build, and browser smoke tests in preview
+  and dev modes pass.
+- Next: step 6, calendar, sharing, and trust language.

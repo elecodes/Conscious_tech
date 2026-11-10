@@ -1,6 +1,7 @@
 import net from "node:net";
 import { verifyPlanningContext } from "./planning-context-smoke";
 import { verifyPlanningReview } from "./planning-review-smoke";
+import { verifyActiveWeek } from "./active-week-smoke";
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -792,6 +793,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
 
     await verifyPlanningContext(browser, url);
     await verifyPlanningReview(browser, url);
+    await verifyActiveWeek(browser, url);
     await browser.close();
     console.log(`=== Smoke Test [${mode}] PASSED ===\n`);
   } finally {

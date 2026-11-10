@@ -1148,7 +1148,6 @@ export function WeeklySessionView({
           className="config-row"
           style={{ marginTop: "12px", flexWrap: "wrap", gap: "8px", alignItems: "center" }}
         >
-          <span className="badge badge-muted">Versión de agenda: v{schedule?.version ?? 0}</span>
           {onNavigateSpace ? (
             <div style={{ marginLeft: "auto", display: "flex", gap: "8px", flexWrap: "wrap" }}>
               <button
@@ -1174,11 +1173,41 @@ export function WeeklySessionView({
             </div>
           ) : null}
         </div>
+        {schedule && (
+          <details
+            className="calm-details active-week-technical"
+            data-testid="active-week-technical-details"
+          >
+            <summary>Detalles de la agenda</summary>
+            <p className="calm-muted">Versión de agenda: v{schedule.version}</p>
+            {schedule.appliedAdjustments.length === 0 &&
+              (activeSpace === undefined || activeSpace === "active") && (
+                <ScheduleAdjustmentHistorySection schedule={schedule} />
+              )}
+          </details>
+        )}
       </section>
 
       {/* Capacidad y espacio protegido */}
       {plan?.proposal.weekSummary.capacity && (
         <CapacityProtectedSpaceSection capacity={plan.proposal.weekSummary.capacity} />
+      )}
+
+      {/* 📡 Radar de Imprevistos (Sección 21-25 PROJECT_CONTEXT) */}
+      {plan && schedule && (activeSpace === undefined || activeSpace === "active") && (
+        <UnforeseenRadarSection
+          radarInput={radarInput}
+          setRadarInput={setRadarInput}
+          radarEvaluating={radarEvaluating}
+          radarError={radarError}
+          setRadarError={setRadarError}
+          radarResult={radarResult}
+          setRadarResult={setRadarResult}
+          handleEvaluateRadar={handleEvaluateRadar}
+          handleApplyRadarAdjustment={handleApplyRadarAdjustment}
+          handleIncorporateRadarItems={handleIncorporateRadarItems}
+          setFeedbackMessage={setFeedbackMessage}
+        />
       )}
 
       {/* Schedule & Blocks */}
@@ -1211,27 +1240,12 @@ export function WeeklySessionView({
         />
       )}
 
-      {/* 📡 Radar de Imprevistos (Sección 21-25 PROJECT_CONTEXT) */}
-      {plan && schedule && (activeSpace === undefined || activeSpace === "active") && (
-        <UnforeseenRadarSection
-          radarInput={radarInput}
-          setRadarInput={setRadarInput}
-          radarEvaluating={radarEvaluating}
-          radarError={radarError}
-          setRadarError={setRadarError}
-          radarResult={radarResult}
-          setRadarResult={setRadarResult}
-          handleEvaluateRadar={handleEvaluateRadar}
-          handleApplyRadarAdjustment={handleApplyRadarAdjustment}
-          handleIncorporateRadarItems={handleIncorporateRadarItems}
-          setFeedbackMessage={setFeedbackMessage}
-        />
-      )}
-
       {/* Schedule Adjustment History Section */}
-      {schedule && (activeSpace === undefined || activeSpace === "active") && (
-        <ScheduleAdjustmentHistorySection schedule={schedule} />
-      )}
+      {schedule &&
+        schedule.appliedAdjustments.length > 0 &&
+        (activeSpace === undefined || activeSpace === "active") && (
+          <ScheduleAdjustmentHistorySection schedule={schedule} />
+        )}
 
       {/* Review & Learning Sections (Review Space or Legacy Unified View) */}
       {(activeSpace === undefined || activeSpace === "review") && (
