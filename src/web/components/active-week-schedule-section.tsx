@@ -471,7 +471,8 @@ export function ActiveWeekScheduleSection({
                 Recordatorios y avisos de calendario
               </h4>
               <p className="calm-muted" style={{ margin: "0 0 8px 0", fontSize: "0.78rem" }}>
-                Configura los avisos para eventos con fecha y hora al exportar a Google Calendar o Apple Calendar.
+                Configura los avisos para eventos con fecha y hora al exportar a Google Calendar o
+                Apple Calendar.
               </p>
               <CalendarReminderSettings compact />
               <div

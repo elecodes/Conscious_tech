@@ -1,6 +1,6 @@
 # UX improvement plan
 
-Status: planning only; application changes have not started.
+Status: baseline cleanup complete; capture improvements are next.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
@@ -218,3 +218,14 @@ Baseline results:
   failed its console-error gate with `ERR_CERT_AUTHORITY_INVALID`. A separate
   browser probe reproduced a failed request to `fonts.googleapis.com`. Dev-mode
   smoke checks were not reached. Browser smoke verification is not yet green.
+
+## Completed checkpoints
+
+### Step 0 — baseline cleanup
+
+- Formatted only the two pre-existing failing files, without behavior changes.
+- All seven CI checks now pass, including 953 tests and browser smoke tests in
+  preview and dev modes.
+- Browser verification required adding the environment's existing proxy CA to the
+  browser NSS trust database in the same command sandbox as the smoke run. This is
+  environment setup only; no TLS bypass or repository test change was needed.
