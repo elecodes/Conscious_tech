@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Added a read-only activation summary with intention, dates, category counts,
+  stored time estimates, protected space, and honest capacity uncertainty.
+- Moved intention editing back to review and calendar exports to the active week;
+  confirmation now emphasizes the explicit activation action.
+- Improved confirmation keyboard focus and prevented repeated activation while a
+  save is in flight.
+
 - Added optional free hours, target-week dates, and protected-space settings before
   proposal generation, with transient context restored after reload.
 - Marked unknown capacity as provisional and distinguished it from zero free hours.

@@ -403,3 +403,15 @@ The product succeeds when the person can say:
 - Fechas, selecciones, estimaciones y límites modificados requieren actualizar la
   propuesta. Un fallo al generar conserva la revisión e impide activar la anterior.
   Cambiar solo el contexto no vuelve a extraer ni descarta correcciones manuales.
+
+## UX incremental: confirmación autocontenida
+
+- La confirmación presenta la propuesta exacta que se guardará, sin recalcular
+  reglas de capacidad ni sumar las opciones flexibles al tiempo de focos y
+  compromisos. Las estimaciones parciales y la capacidad desconocida siguen
+  apareciendo como pendientes de verificación.
+- La intención se edita en revisión y se regenera antes de confirmar; la última
+  pantalla es de lectura. La exportación sigue disponible en Mi semana tras
+  activar. El foco de teclado entra en la región de confirmación.
+- La activación tiene una protección inmediata contra envíos repetidos además del
+  estado de guardado. No se han cambiado contratos de IA ni esquemas persistidos.

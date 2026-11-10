@@ -203,6 +203,11 @@ export function WeeklyPlanningFromNotes({
     }
   }, [initialItems]);
 
+  const confirmationStepRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (flowStep === "confirm") confirmationStepRef.current?.focus();
+  }, [flowStep]);
+
   const [userIntent, setUserIntent] = useState("");
   const [isPlanning, setIsPlanning] = useState(false);
   const [planningError, setPlanningError] = useState<string | null>(null);
@@ -232,6 +237,7 @@ export function WeeklyPlanningFromNotes({
   } | null>(null);
   const [diagnostics, setDiagnostics] = useState<PipelineDiagnostic[]>([]);
   const [isConfirming, setIsConfirming] = useState(false);
+  const confirmationInFlightRef = useRef(false);
   const [confirmationError, setConfirmationError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -1012,13 +1018,21 @@ export function WeeklyPlanningFromNotes({
   // Handlers: Step 4 - Explicit Human Confirmation to Persist
   // --------------------------------------------------------------------------
   const handleConfirmPlan = async () => {
-    if (!proposedWeek || isConfirming || isPlanning || isExtracting) return;
+    if (
+      !proposedWeek ||
+      isConfirming ||
+      confirmationInFlightRef.current ||
+      isPlanning ||
+      isExtracting
+    )
+      return;
     if (isProposalDirty || isCaptureDirty) {
       setFlowStep("review");
       setPlanningError("Revisa y actualiza la propuesta antes de activar la semana.");
       return;
     }
 
+    confirmationInFlightRef.current = true;
     setIsConfirming(true);
     setConfirmationError(null);
     const nowIso = new Date().toISOString();
@@ -1101,6 +1115,7 @@ export function WeeklyPlanningFromNotes({
         (err as Error).message || "Error al persistir el plan en la base de datos local."
       );
     } finally {
+      confirmationInFlightRef.current = false;
       setIsConfirming(false);
     }
   };
@@ -2163,7 +2178,13 @@ export function WeeklyPlanningFromNotes({
       {/* PASO 3: CONFIRMAR                                                   */}
       {/* -------------------------------------------------------------------- */}
       {flowStep === "confirm" && proposedWeek && (
-        <div data-testid="flow-step-confirm">
+        <div
+          data-testid="flow-step-confirm"
+          ref={confirmationStepRef}
+          tabIndex={-1}
+          role="region"
+          aria-label="Confirmación de la semana"
+        >
           <div
             style={{
               display: "flex",
@@ -2186,14 +2207,11 @@ export function WeeklyPlanningFromNotes({
 
           <PlanningProposalReviewFooter
             proposedWeek={proposedWeek}
-            activeTargetWeek={activeTargetWeek}
             diagnostics={diagnostics}
             activePlanConflict={activePlanConflict}
             setActivePlanConflict={setActivePlanConflict}
             onPlanCreated={onPlanCreated}
             confirmationError={confirmationError}
-            userIntent={userIntent}
-            setUserIntent={setUserIntent}
             isConfirming={isConfirming}
             handleAdjustElements={() => {
               handleAdjustElements();

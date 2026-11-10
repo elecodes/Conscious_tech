@@ -1,4 +1,25 @@
-import type { Browser } from "playwright";
+import type { Browser, Page } from "playwright";
+import type { StoredWeeklyPlan } from "../src/domain/repositories/types";
+
+async function readPlans(page: Page): Promise<StoredWeeklyPlan[]> {
+  return page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("conscious_tech_db");
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    try {
+      return await new Promise<StoredWeeklyPlan[]>((resolve, reject) => {
+        const tx = db.transaction("plans", "readonly");
+        const request = tx.objectStore("plans").getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    } finally {
+      db.close();
+    }
+  });
+}
 
 /** Isolated synthetic flows: never contact a real AI service. */
 export async function verifyPlanningContext(browser: Browser, url: string) {
@@ -134,6 +155,21 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
     await page.getByTestId("settings-dropdown").locator("summary").click();
     await page.getByTestId("flow-continue-to-confirm").click();
     await page.getByTestId("flow-step-confirm").waitFor();
+    if (
+      !(await page.getByTestId("flow-step-confirm").evaluate((el) => el === document.activeElement))
+    )
+      throw new Error("Focus did not enter confirmation");
+    if ((await page.getByTestId("confirmation-available-hours").innerText()) !== "10h")
+      throw new Error("Confirmation did not reflect updated available hours");
+    if ((await page.getByTestId("confirmation-protected-hours").innerText()) !== "2.5h")
+      throw new Error("Confirmation did not reflect updated protected time");
+    if (
+      await page
+        .getByTestId("flow-step-confirm")
+        .locator('input, textarea, a[href*="calendar"]')
+        .count()
+    )
+      throw new Error("Confirmation contains editing or export controls");
     await page.getByTestId("flow-back-to-review").click();
     const firstDetails = page.locator('[data-testid^="details-toggle-"]').first();
     await firstDetails.click();
@@ -190,7 +226,27 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
     )
       throw new Error("Zero capacity was treated as unknown");
     await page.getByTestId("flow-continue-to-confirm").click();
-    await page.getByRole("button", { name: "Confirmar y activar semana", exact: true }).click();
+    await page.getByTestId("flow-step-confirm").waitFor();
+    const draftToActivate = (await readPlans(page)).find(
+      (plan) => plan.status === "draft" && plan.targetWeek.startDate === "2026-12-08"
+    );
+    if (!draftToActivate) throw new Error("Expected current draft before activation");
+    const counts = await page.getByTestId("confirmation-counts").innerText();
+    if (
+      !counts.includes(`${draftToActivate.proposal.foci.length} foco`) ||
+      !counts.includes(`${draftToActivate.proposal.obligations.length} compromiso`) ||
+      !counts.includes(`${draftToActivate.proposal.deferredItems.length} elemento`)
+    )
+      throw new Error("Confirmation counts differ from the current draft");
+    await page.setViewportSize({ width: 390, height: 844 });
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth))
+      throw new Error("Mobile confirmation overflows horizontally");
+    await page
+      .getByRole("button", { name: "Confirmar y activar semana", exact: true })
+      .evaluate((button: HTMLButtonElement) => {
+        button.click();
+        button.click();
+      });
     await page.getByRole("heading", { name: "Mi semana", exact: true }).waitFor();
     if (!(await page.getByTestId("capacity-compact-bar").innerText()).includes("Tienes 0 h libres"))
       throw new Error("Active week lost zero capacity");
@@ -200,9 +256,32 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
       )) !== null
     )
       throw new Error("Activated week left stale transient context");
+    const activated = (await readPlans(page)).find((plan) => plan.status === "active");
+    if (JSON.stringify(activated?.proposal) !== JSON.stringify(draftToActivate.proposal))
+      throw new Error("Activation saved a different proposal from the one reviewed");
+    if ((await readPlans(page)).filter((plan) => plan.status === "active").length !== 1)
+      throw new Error("Rapid activation created duplicate active weeks");
+
+    // A future proposal must preserve an existing active week when activation conflicts.
+    await page.getByTestId("nav-tab-new-week").click();
+    await page.getByTestId("step-indicator-write").click();
+    await page.getByTestId("flow-step-write").waitFor();
+    await page.getByTestId("flow-textarea").fill("Leer un capítulo la próxima semana (1 hora).");
+    await page.getByTestId("flow-continue-to-review").click();
+    await page.getByTestId("flow-step-review").waitFor();
+    await page.getByTestId("flow-continue-to-confirm").click();
+    await page.getByTestId("flow-step-confirm").waitFor();
+    await page.getByTestId("confirm-plan-button").click();
+    await page.getByTestId("active-plan-conflict-transition").waitFor();
+    const afterConflict = (await readPlans(page)).filter((plan) => plan.status === "active");
+    if (
+      afterConflict.length !== 1 ||
+      JSON.stringify(afterConflict[0]) !== JSON.stringify(activated)
+    )
+      throw new Error("Conflicting activation changed the existing active week");
     if (errors.length) throw new Error(errors.join("\n"));
     console.log(
-      "  ✓ Planning context: validation, restoration, unknown/zero capacity and failed regeneration verified"
+      "  ✓ Planning context and confirmation: exact proposal, capacity, rapid activation and active-week conflict verified"
     );
   } finally {
     await context.close();

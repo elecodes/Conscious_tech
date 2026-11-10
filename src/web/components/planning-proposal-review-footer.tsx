@@ -1,14 +1,9 @@
-import { useState } from "react";
 import { ProposedWeek, TargetWeek } from "../../domain/week";
 import { PipelineDiagnostic } from "../../application/planning-pipeline";
-import { generateIcsCalendarExport } from "../../domain/calendar";
-import { getStoredReminderPreferences } from "../../domain/reminders";
-import { CalendarReminderSettings } from "./calendar-reminder-settings";
-import { formatCommitmentType } from "../labels";
+import { PlanningConfirmationSummary } from "./planning-confirmation-summary";
 
 export interface PlanningProposalReviewFooterProps {
   proposedWeek: ProposedWeek;
-  activeTargetWeek: TargetWeek;
   diagnostics: PipelineDiagnostic[];
   activePlanConflict: {
     existingActivePlanId: string;
@@ -17,8 +12,6 @@ export interface PlanningProposalReviewFooterProps {
   setActivePlanConflict: (val: null) => void;
   onPlanCreated?: () => void;
   confirmationError: string | null;
-  userIntent: string;
-  setUserIntent: (val: string) => void;
   isConfirming: boolean;
   handleAdjustElements: () => void;
   setIsReviewingSelection: (val: boolean) => void;
@@ -28,75 +21,17 @@ export interface PlanningProposalReviewFooterProps {
 
 export function PlanningProposalReviewFooter({
   proposedWeek,
-  activeTargetWeek,
   diagnostics,
   activePlanConflict,
   setActivePlanConflict,
   onPlanCreated,
   confirmationError,
-  userIntent,
-  setUserIntent,
   isConfirming,
   handleAdjustElements,
   setIsReviewingSelection,
   handleStartFreshWeek,
   handleConfirmPlan,
 }: PlanningProposalReviewFooterProps) {
-  const [exportNotice, setExportNotice] = useState<string | null>(null);
-
-  const handleDownloadWeekIcs = () => {
-    const prefs = getStoredReminderPreferences();
-    const exportItems = [
-      ...proposedWeek.foci.map((f) => ({
-        id: f.id,
-        title: f.title,
-        day: activeTargetWeek.startDate,
-        durationHours: f.estimatedHours || 2,
-        description: `Foco: ${f.desiredOutcome}`,
-        isCommitment: true,
-        hasDeadline: false,
-        allDay: true,
-      })),
-      ...proposedWeek.obligations.map((o) => ({
-        id: o.itemId,
-        title: o.title,
-        day: o.dueDate || activeTargetWeek.startDate,
-        durationHours: o.estimatedHours || 1,
-        description: `Compromiso (${formatCommitmentType(o.commitmentType)})`,
-        isCommitment: true,
-        hasDeadline: Boolean(o.dueDate),
-        allDay: true,
-      })),
-      ...proposedWeek.flexibleOptions.map((fl) => ({
-        id: fl.itemId,
-        title: fl.title,
-        day: activeTargetWeek.startDate,
-        durationHours: fl.estimatedHours || 1,
-        description: fl.condition ? `Condición: ${fl.condition}` : "Opción flexible",
-        isCommitment: false,
-        hasDeadline: false,
-        allDay: true,
-      })),
-    ];
-    const ics = generateIcsCalendarExport(exportItems, {
-      calendarName: "Conscious Tech — Propuesta",
-      reminderOffset: prefs.offset,
-      includeTasksInAlarms: prefs.includeTasks,
-      timeZone: "Europe/Madrid",
-    });
-    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `conscious-tech-propuesta-${activeTargetWeek.startDate}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setExportNotice(
-      "Archivo .ics descargado con recordatorios. Para importarlo en Google Calendar: entra en Ajustes → Importar y exportar → Selecciona el archivo descargado."
-    );
-  };
   return (
     <>
       {/* Confirmation Prompt & Key Tradeoffs */}
@@ -217,8 +152,8 @@ export function PlanningProposalReviewFooter({
             <strong>{activePlanConflict.targetWeek.startDate}</strong> al{" "}
             <strong>{activePlanConflict.targetWeek.endDate}</strong> está guardada de forma segura
             como borrador en tu cuaderno local (almacenamiento en este dispositivo). Puedes volver a
-            verla y ajustarla en cualquier momento desde esta pestaña (<strong>Planificar</strong>).
-            En cuanto completes el cierre de semana de tu semana actual, podrás activarla
+            verla y ajustarla en cualquier momento desde esta pestaña (<strong>Nueva semana</strong>
+            ). En cuanto completes el cierre de semana de tu semana actual, podrás activarla
             directamente.
           </p>
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
@@ -251,235 +186,59 @@ export function PlanningProposalReviewFooter({
         </div>
       )}
 
-      {/* Apunte a lápiz / intuición (como en el diseño) */}
-      <div
-        style={{
-          marginTop: "20px",
-          padding: "14px 16px",
-          background: "var(--surface-warm, #fcfbf8)",
-          border: "1px dashed var(--border-color, #e6ded1)",
-          borderRadius: "10px",
-        }}
-      >
-        <div style={{ marginBottom: "6px" }}>
-          <label
-            htmlFor="apunte-lapiz-input"
-            style={{
-              fontSize: "0.85rem",
-              fontWeight: 600,
-              color: "var(--text-main)",
-            }}
-          >
-            ✏️ Notas o ajustes libres para esta semana (opcional):
-          </label>
-        </div>
-        <textarea
-          id="apunte-lapiz-input"
-          rows={2}
-          style={{
-            width: "100%",
-            padding: "8px 12px",
-            fontSize: "0.9rem",
-            fontFamily: "var(--font-serif)",
-            background: "#ffffff",
-            border: "1px solid var(--border-color)",
-            borderRadius: "6px",
-            boxSizing: "border-box",
-            minHeight: "60px",
-          }}
-          placeholder="Escribe aquí si necesitas más tiempo o aligerar algo..."
-          value={userIntent}
-          onChange={(e) => setUserIntent(e.target.value)}
-        />
-      </div>
-
-      {/* Confirmation Actions */}
-      <div
-        style={{
-          marginTop: "20px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "12px",
-        }}
-      >
-        <details className="calm-details" data-testid="proposal-more-actions-details">
-          <summary
-            style={{
-              cursor: "pointer",
-              fontWeight: 500,
-              fontSize: "0.88rem",
-              padding: "6px 10px",
-              borderRadius: "6px",
-              background: "#f3f4f6",
-              border: "1px solid #d1d5db",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              userSelect: "none",
-            }}
-            data-testid="proposal-more-actions-summary"
-          >
-            ⚙️ Más acciones
-          </summary>
-          <div
-            style={{
-              marginTop: "8px",
-              display: "flex",
-              gap: "8px",
-              flexWrap: "wrap",
-              padding: "10px",
-              background: "#faf9f6",
-              border: "1px solid var(--border-color, #e6ded1)",
-              borderRadius: "6px",
-            }}
-          >
-            <button
-              type="button"
-              className="secondary small"
-              aria-label="Volver a revisar la selección de elementos"
-              disabled={isConfirming}
-              onClick={handleAdjustElements}
-              data-testid="adjust-elements-button"
-            >
-              ✏️ Ajustar elementos
-            </button>
-            <button
-              type="button"
-              className="secondary small"
-              aria-label="Añadir más ideas o tareas a esta propuesta"
-              disabled={isConfirming}
-              onClick={() => setIsReviewingSelection(true)}
-              data-testid="add-more-ideas-button"
-            >
-              ➕ Añadir más ideas
-            </button>
-            <button
-              type="button"
-              className="secondary small"
-              style={{ color: "#8c8273" }}
-              aria-label="Comenzar otra semana desde cero"
-              disabled={isConfirming}
-              onClick={handleStartFreshWeek}
-              data-testid="start-fresh-week-button"
-            >
-              ✨ Planificar otra semana
-            </button>
-            <div
-              style={{
-                width: "100%",
-                paddingTop: "6px",
-                borderTop: "1px solid var(--border-color, #e6ded1)",
-                marginTop: "4px",
-              }}
-            >
-              <CalendarReminderSettings compact />
-            </div>
-            <button
-              type="button"
-              className="secondary small"
-              data-testid="proposal-export-to-gcal"
-              style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-              onClick={handleDownloadWeekIcs}
-            >
-              <span>📅</span>
-              <span>Exportar propuesta (.ics / Google Cal)</span>
-            </button>
-          </div>
-        </details>
-
-        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-          <button
-            type="button"
-            className="secondary"
-            data-testid="proposal-add-week-to-gcal"
-            style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-            title="Descarga el archivo .ics con tus tareas y recordatorios para importar en Google Calendar"
-            onClick={handleDownloadWeekIcs}
-          >
-            <span>📅</span>
-            <span>Añadir semana a Google Calendar (.ics)</span>
-          </button>
-          <button
-            type="button"
-            className="primary"
-            aria-label="Confirmar y activar semana"
-            disabled={isConfirming}
-            onClick={handleConfirmPlan}
-            data-testid="confirm-plan-button"
-          >
-            {isConfirming ? "Guardando semana..." : "✓ Confirmar y activar semana"}
-          </button>
-        </div>
-      </div>
-
-      {exportNotice && (
-        <div
-          className="status-message status-success"
-          style={{
-            marginTop: "12px",
-            fontSize: "0.84rem",
-            padding: "12px 14px",
-            background: "#f0fdf4",
-            border: "1px solid #bbf7d0",
-            borderRadius: "6px",
-          }}
-          role="status"
-          data-testid="proposal-gcal-import-note"
+      <PlanningConfirmationSummary proposal={proposedWeek} />
+      <p className="calm-muted activation-explanation" id="activation-explanation">
+        Al activar, guardas esta propuesta en este navegador y pasa a ser tu semana activa. Después
+        podrás exportarla o compartirla desde Mi semana.
+      </p>
+      <div className="confirmation-actions">
+        <button
+          type="button"
+          className="primary"
+          aria-label="Confirmar y activar semana"
+          aria-describedby="activation-explanation"
+          disabled={isConfirming}
+          onClick={handleConfirmPlan}
+          data-testid="confirm-plan-button"
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              gap: "10px",
-            }}
+          {isConfirming ? "Guardando semana..." : "✓ Confirmar y activar semana"}
+        </button>
+      </div>
+      <details className="calm-details" data-testid="proposal-more-actions-details">
+        <summary data-testid="proposal-more-actions-summary">⚙️ Más acciones</summary>
+        <div className="confirmation-secondary-actions">
+          <button
+            type="button"
+            className="secondary small"
+            disabled={isConfirming}
+            aria-label="Volver a revisar la intención y los elementos"
+            onClick={handleAdjustElements}
+            data-testid="adjust-elements-button"
           >
-            <div>
-              <div style={{ fontWeight: 600, color: "#166534", marginBottom: "4px" }}>
-                ✓ Archivo .ics descargado en tu equipo
-              </div>
-              <p style={{ margin: "2px 0 8px 0", fontSize: "0.8rem", color: "#1e3a5f" }}>
-                Para que aparezca en tu Google Calendar y sincronice con tu móvil, impórtalo en la
-                web de Google Calendar:
-              </p>
-              <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-                <a
-                  href="https://calendar.google.com/calendar/u/0/r/settings/export"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="button primary small"
-                  style={{
-                    fontSize: "0.8rem",
-                    textDecoration: "none",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "5px",
-                    padding: "4px 10px",
-                  }}
-                  data-testid="proposal-open-gcal-import-web-button"
-                >
-                  <span>📅</span>
-                  <span>Abrir importador de Google Calendar</span>
-                </a>
-                <span className="calm-muted" style={{ fontSize: "0.76rem" }}>
-                  (En Ajustes → Importar y exportar, selecciona el archivo descargado)
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              className="secondary small"
-              onClick={() => setExportNotice(null)}
-              style={{ padding: "2px 6px", fontSize: "0.75rem", minWidth: "auto" }}
-              aria-label="Cerrar aviso"
-            >
-              ✕
-            </button>
-          </div>
+            Editar intención o elementos
+          </button>
+          <button
+            type="button"
+            className="secondary small"
+            disabled={isConfirming}
+            aria-label="Añadir más ideas o tareas a esta propuesta"
+            onClick={() => setIsReviewingSelection(true)}
+            data-testid="add-more-ideas-button"
+          >
+            Añadir más ideas
+          </button>
+          <button
+            type="button"
+            className="secondary small"
+            disabled={isConfirming}
+            aria-label="Comenzar otra semana desde cero"
+            onClick={handleStartFreshWeek}
+            data-testid="start-fresh-week-button"
+          >
+            Planificar otra semana
+          </button>
         </div>
-      )}
+      </details>
     </>
   );
 }

@@ -7,7 +7,7 @@ import { ActiveWeekScheduleSection } from "../src/web/components/active-week-sch
 import { PlanningProposalReviewFooter } from "../src/web/components/planning-proposal-review-footer";
 import { WeeklySchedule } from "../src/domain/schedule";
 import { StoredWeeklyPlan } from "../src/domain/repositories/types";
-import { ProposedWeek, TargetWeek } from "../src/domain/week";
+import { TargetWeek, createEmptyProposedWeek } from "../src/domain/week";
 import {
   getStoredReminderPreferences,
   saveStoredReminderPreferences,
@@ -264,34 +264,16 @@ describe("Reminders and Email Summary UI Components", () => {
 
   describe("PlanningProposalReviewFooter integration", () => {
     const activeTargetWeek: TargetWeek = { startDate: "2026-10-19", endDate: "2026-10-25" };
-    const mockProposedWeek = {
-      foci: [
-        {
-          id: "f-1",
-          title: "Foco principal",
-          desiredOutcome: "Resultado",
-          contributingItemIds: [],
-        },
-      ],
-      obligations: [],
-      flexibleOptions: [],
-      deferredItems: [],
-      weekSummary: {
-        targetWeek: activeTargetWeek,
-      },
-    } as unknown as ProposedWeek;
+    const mockProposedWeek = createEmptyProposedWeek("2026-10-12", activeTargetWeek);
 
-    it("renders prominent 'Añadir semana a Google Calendar' button and reminder settings inside actions", () => {
+    it("shows the activation summary and keeps export outside confirmation", () => {
       const html = renderToStaticMarkup(
         <PlanningProposalReviewFooter
           proposedWeek={mockProposedWeek}
-          activeTargetWeek={activeTargetWeek}
           diagnostics={[]}
           activePlanConflict={null}
           setActivePlanConflict={vi.fn()}
           confirmationError={null}
-          userIntent=""
-          setUserIntent={vi.fn()}
           isConfirming={false}
           handleAdjustElements={vi.fn()}
           setIsReviewingSelection={vi.fn()}
@@ -300,10 +282,13 @@ describe("Reminders and Email Summary UI Components", () => {
         />
       );
 
-      expect(html).toContain('data-testid="proposal-add-week-to-gcal"');
-      expect(html).toContain("Añadir semana a Google Calendar (.ics)");
+      expect(html).toContain('data-testid="confirmation-summary"');
+      expect(html).not.toContain('data-testid="proposal-add-week-to-gcal"');
+      expect(html).not.toContain("Exportar propuesta");
+      expect(html).toContain("Después");
+      expect(html).toContain("exportarla o compartirla desde Mi semana");
       expect(html).toContain('data-testid="proposal-more-actions-details"');
-      expect(html).toContain('data-testid="calendar-reminder-settings"');
+      expect(html).not.toContain('data-testid="calendar-reminder-settings"');
     });
   });
 });

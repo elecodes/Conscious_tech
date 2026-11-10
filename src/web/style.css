@@ -790,3 +790,56 @@ details.calm-details[open] {
   margin: 0;
   min-width: 0;
 }
+
+.confirmation-summary {
+  margin-top: 16px;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  overflow-wrap: anywhere;
+}
+.confirmation-intent {
+  font-weight: 600;
+}
+.confirmation-focus-list,
+.confirmation-item-details ul {
+  padding-left: 20px;
+}
+.confirmation-time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+.confirmation-time-grid dt {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.confirmation-time-grid dd {
+  margin: 0;
+  font-weight: 600;
+}
+.confirmation-capacity-note {
+  background: var(--surface-parchment);
+  padding: 10px;
+  border-radius: 6px;
+}
+.confirmation-item-details summary {
+  cursor: pointer;
+}
+.confirmation-item-details h4 {
+  margin-top: 12px;
+}
+.activation-explanation {
+  margin: 12px 0;
+}
+.confirmation-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+.confirmation-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}

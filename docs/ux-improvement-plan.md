@@ -1,6 +1,6 @@
 # UX improvement plan
 
-Status: steps 0–2 complete; self-contained confirmation is next.
+Status: steps 0–3 complete; simplifying proposal review is next.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
@@ -269,3 +269,25 @@ Baseline results:
   dependency-cycle checks, production build, and browser smoke tests in preview and
   dev modes pass. Mobile context controls also have no horizontal overflow.
 - Next: step 3, a compact summary immediately before activation.
+
+### Step 3 — self-contained confirmation
+
+- Added a read-only summary of the exact proposal: intention, dates, focus areas,
+  commitment/optional/deferred counts, stored time estimates, and protected space.
+  Optional hours are explicitly separate from focus/commitment estimates.
+- Unknown and partial capacity remain visibly unverified. Overload and compromised
+  protected time stay visible; zero and empty proposals do not invent hours/tasks.
+- Removed the editable intention field from confirmation; intention changes use
+  review and regeneration so the displayed summary cannot lag behind an edit.
+- Moved calendar downloads/reminder configuration out of confirmation. Existing
+  calendar and sharing actions remain available in the active week.
+- Explained activation, moved keyboard focus into the confirmation region, and
+  added an immediate guard against repeated activation before state rerenders.
+- Added summary boundary tests and browser checks for updated totals, mobile
+  overflow, exact persisted proposal equality, rapid activation, and preservation
+  of an existing active week when a future proposal conflicts.
+- Verification: all 975 tests across 72 files pass, along with type checking,
+  lint, formatting, dependency-cycle checks, production build, and browser smoke
+  tests in preview and dev modes. Focus areas and up to three commitments are
+  visible immediately; remaining items can be inspected without leaving the page.
+- Next: step 4, one clear decision surface for proposal review.

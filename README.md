@@ -299,6 +299,10 @@ review the target dates, and adjust protected space (25% by default). Choose
 **No lo sé todavía** to receive a provisional proposal without a capacity claim.
 Imported calendar commitments are a reference and are not deducted again.
 
+Before activation, review the summary of the exact proposal. Return to review to
+change its intention or contents; calendar export and sharing are available from
+**Mi semana** after activation.
+
 ### 4. Run Test Suite
 
 Unit, behavioral, and security tests run deterministically with zero token consumption (900+ tests across 67 suites):
