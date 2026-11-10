@@ -203,7 +203,9 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
   const hasActiveWeek = Boolean(state.activePlan && state.activePlan.status === "active");
   const isEnding = Boolean(hasActiveWeek && state.activePlan!.targetWeek.endDate <= todayStr);
   const isMiSemana = activeSpace === "active";
-  const hideNextStepBar = isMiSemana && hasActiveWeek && !isEnding;
+  const hideNextStepBar =
+    (isMiSemana && hasActiveWeek && !isEnding) ||
+    (activeSpace === "capture" && nextStep.targetSpace === "capture");
 
   const handleExportBackup = async () => {
     if (!exportBackup) return;
@@ -266,7 +268,7 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
   if (initialTab === undefined && state.status === "loading" && userSelectedTab === null) {
     return (
       <div className="container" data-testid="app-loading-screen">
-        <header>
+        <header className="app-header">
           <div
             style={{
               display: "flex",
@@ -278,9 +280,7 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
           >
             <div>
               <h1>Tecnología Consciente</h1>
-              <p className="subtitle">
-                Cuaderno de claridad y ciclo semanal · AI propone, tú decides
-              </p>
+              <p className="subtitle">IA propone, tú decides.</p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
               <span className="badge badge-muted">Iniciando...</span>
@@ -298,7 +298,7 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
 
   return (
     <div className="container">
-      <header>
+      <header className="app-header">
         <div
           style={{
             display: "flex",
@@ -310,12 +310,22 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
         >
           <div>
             <h1>Tecnología Consciente</h1>
-            <p className="subtitle">
-              Cuaderno de claridad y ciclo semanal · AI propone, tú decides
-            </p>
+            <p className="subtitle">IA propone, tú decides.</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-            <ProcessStatusBadge />
+            {(activeSpace !== "capture" ||
+              hasActiveWeek ||
+              state.draftPlans?.length ||
+              state.draftPlan) && <ProcessStatusBadge />}
+            {providerType === "mock" && (
+              <span
+                className="notebook-pill"
+                data-testid="demo-mode-indicator"
+                title="Modo de prueba local: no se envían tus notas a servicios de IA."
+              >
+                Modo de prueba · Sin IA externa
+              </span>
+            )}
             <details
               className="calm-details"
               style={{ margin: 0, padding: "4px 10px", position: "relative" }}
@@ -585,22 +595,7 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
 
         {/* First-run welcome card */}
         {showWelcome && (
-          <div
-            className="calm-box"
-            data-testid="welcome-card"
-            style={{
-              marginTop: "16px",
-              padding: "16px 20px",
-              background: "#fdfcf9",
-              border: "1px solid var(--border-color, #e0ded9)",
-              borderRadius: "8px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              gap: "16px",
-              boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
-            }}
-          >
+          <div className="calm-box welcome-card" data-testid="welcome-card">
             <div>
               <h3
                 style={{
@@ -611,23 +606,6 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
               >
                 Escribe → Revisa → Vive tu semana
               </h3>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: "0.88rem",
-                  color: "var(--text-muted, #555)",
-                  lineHeight: 1.5,
-                }}
-              >
-                <strong>1. Escribe:</strong> Vuelca lo que tienes en la cabeza sin preocuparte por
-                ordenar.
-                <br />
-                <strong>2. Revisa:</strong> Ajusta la propuesta con tus ideas y espacio protegido
-                reservado.
-                <br />
-                <strong>3. Vive tu semana:</strong> Avanza con calma y foco día a día en tu
-                cuaderno.
-              </p>
             </div>
             <button
               type="button"

@@ -1528,7 +1528,7 @@ export function WeeklyPlanningFromNotes({
 
   return (
     <section
-      className="calm-box"
+      className="calm-box weekly-planning-flow"
       style={{
         marginTop: "20px",
         background: "var(--card-bg, #ffffff)",
@@ -1550,7 +1550,7 @@ export function WeeklyPlanningFromNotes({
         <div>
           <h2 style={{ margin: 0 }}>Nueva semana</h2>
           <p className="calm-muted" style={{ margin: "4px 0 0 0", fontSize: "0.88rem" }}>
-            Elige qué entra en tu semana con calma · IA propone · Tú decides
+            Elige qué cuidar esta semana.
           </p>
         </div>
         <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
@@ -1572,9 +1572,7 @@ export function WeeklyPlanningFromNotes({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          gap: "10px",
           margin: "14px 0 20px 0",
-          padding: "8px 16px",
           background: "var(--surface-warm, #fdfbf7)",
           border: "1px solid var(--border-color, #e6ded1)",
           borderRadius: "20px",
@@ -1668,23 +1666,23 @@ export function WeeklyPlanningFromNotes({
       {/* -------------------------------------------------------------------- */}
       {flowStep === "write" && (
         <div data-testid="flow-step-write">
-          <section className="config-bar" style={{ marginBottom: "14px" }}>
-            <div className="config-row">
-              <span className="config-label">Caso de ejemplo:</span>
-              <select
-                data-testid="sample-case-select"
-                value={selectedCaseId}
-                onChange={(e) => handleCaseSelect(e.target.value)}
-              >
-                <option value="">-- Escribe tus ideas o elige un ejemplo --</option>
-                {sampleDumpsData.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.id} - {c.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </section>
+          <details className="capture-examples" data-testid="capture-examples">
+            <summary>Probar con un ejemplo</summary>
+            <label htmlFor="capture-example-select">Caso de ejemplo:</label>
+            <select
+              id="capture-example-select"
+              data-testid="sample-case-select"
+              value={selectedCaseId}
+              onChange={(e) => handleCaseSelect(e.target.value)}
+            >
+              <option value="">Elige un ejemplo</option>
+              {sampleDumpsData.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+          </details>
 
           <section className="input-section">
             <div
@@ -1697,7 +1695,11 @@ export function WeeklyPlanningFromNotes({
                 gap: "8px",
               }}
             >
-              <label htmlFor="flow-textarea" className="textarea-label" style={{ margin: 0 }}>
+              <label
+                htmlFor="planning-notes-input"
+                className="textarea-label"
+                style={{ margin: 0 }}
+              >
                 ¿Qué tienes en la cabeza?
               </label>
               <VoiceDictationButton

@@ -579,7 +579,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
       /<button[^>]*class="[^"]*primary[^"]*"[^>]*data-testid="nav-tab-new-week"/
     );
     expect(htmlEmpty).toContain('data-testid="flow-step-write"');
-    expect(htmlEmpty).toContain("Escribe lo que tienes en la cabeza");
+    expect(htmlEmpty).not.toContain('data-testid="next-step-bar"');
     expect(htmlEmpty).not.toContain('data-testid="next-step-button"');
 
     // B) Semana activa -> aterriza en Mi semana (active)
@@ -686,7 +686,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     const htmlCapture = renderToStaticMarkup(
       <App service={service} initialState={emptyState} initialTab="capture" />
     );
-    expect(htmlCapture).toContain("Escribe lo que tienes en la cabeza");
+    expect(htmlCapture).not.toContain('data-testid="next-step-bar"');
     expect(htmlCapture).not.toContain('data-testid="next-step-button"');
 
     // En Mi semana con target capture -> botón visible para comenzar semana
@@ -760,7 +760,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
 
     // En Revisar tiene botón para volver a escribir
     expect(html).toContain("← Volver a escribir");
-    expect(html).toContain("Elige qué entra en tu semana con calma");
+    expect(html).toContain("Elige qué cuidar esta semana.");
   });
 
   it("17. Flujo guiado Nueva semana: línea de progreso visible y botones 'Volver' en cada paso", async () => {

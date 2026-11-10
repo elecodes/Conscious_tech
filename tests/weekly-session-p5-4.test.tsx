@@ -210,7 +210,7 @@ describe("Fase P5.4 — Conectar la entrada de ideas con la planificación seman
 
       expect(html).toContain("¿Qué tienes en la cabeza?");
       expect(html).toContain("Continuar");
-      expect(html).toContain("IA propone · Tú decides");
+      expect(html).toContain("Elige qué cuidar esta semana.");
     });
 
     it("WeeklySessionView en estado no_active_session debe mostrar WeeklyPlanningFromNotes", async () => {

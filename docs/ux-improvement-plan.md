@@ -1,6 +1,6 @@
 # UX improvement plan
 
-Status: baseline cleanup complete; capture improvements are next.
+Status: baseline cleanup and capture improvements complete; planning context is next.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
@@ -229,3 +229,20 @@ Baseline results:
 - Browser verification required adding the environment's existing proxy CA to the
   browser NSS trust database in the same command sandbox as the smoke run. This is
   environment setup only; no TLS bypass or repository test change was needed.
+
+### Step 1 — easier capture
+
+- Shortened the header and first-use welcome. Removed duplicate next-step guidance
+  on empty capture and hid the empty process badge there.
+- Collapsed examples behind a keyboard-accessible control, retaining every example
+  and its stable internal ID while removing fixture IDs from visible option text.
+- Added a visible mock-mode indicator, corrected the textarea label, and added
+  keyboard focus outlines. Provider switching controls the indicator correctly.
+- At 390 by 844 pixels, the complete empty textarea is visible with the welcome
+  open and real fonts loaded; no horizontal overflow is present.
+- Browser checks cover label focus, keyboard focus, example selection, note
+  preservation across reload, welcome dismissal, draft recovery, plan activation,
+  calendar exports, and closing in preview and dev modes.
+- No domain rules, storage schemas, AI contracts, or dependencies changed.
+- Next: step 2, planning context before generating a proposal. Stop here for review
+  of the capture screen before advancing.

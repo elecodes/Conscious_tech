@@ -676,3 +676,82 @@ details.calm-details summary {
 details.calm-details[open] {
   padding-bottom: 14px;
 }
+
+/* Capture: keep the first action close and keyboard focus visible. */
+:is(button, a, summary, select, input, textarea):focus-visible {
+  outline: 3px solid var(--accent-sage-mid);
+  outline-offset: 3px;
+}
+
+.welcome-card {
+  margin-top: 16px;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--surface-warm);
+}
+
+.capture-examples {
+  margin-bottom: 14px;
+  min-width: 0;
+}
+
+.capture-examples summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 6px 0;
+}
+
+.capture-examples label {
+  display: block;
+  margin: 8px 0 4px;
+}
+
+.capture-examples select {
+  width: 100%;
+  min-width: 0;
+}
+
+.guided-flow-progress {
+  gap: 10px;
+  padding: 8px 16px;
+}
+
+@media (max-width: 600px) {
+  .container {
+    width: 100%;
+    padding: 16px 16px 48px;
+  }
+
+  .app-header {
+    margin-bottom: 16px;
+  }
+
+  .app-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .app-header .subtitle {
+    font-size: 0.9rem;
+  }
+
+  .weekly-planning-flow {
+    padding: 16px;
+  }
+
+  .weekly-planning-flow .guided-flow-progress {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .weekly-planning-flow .guided-flow-progress button {
+    padding: 8px 10px;
+  }
+
+  .welcome-card {
+    padding: 12px;
+    gap: 8px;
+  }
+}

@@ -122,6 +122,11 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     const providerSelectInSettings = page.locator('[data-testid="provider-select"]');
     await providerSelectInSettings.waitFor({ state: "visible", timeout: 5000 });
     console.log("  ✓ Provider selector reachable inside Ajustes dropdown");
+    await providerSelectInSettings.selectOption("groq");
+    if (await page.getByTestId("demo-mode-indicator").isVisible()) {
+      throw new Error("Demo indicator must not appear for a real provider");
+    }
+    await providerSelectInSettings.selectOption("mock");
 
     if (mode === "preview") {
       await page.screenshot({
@@ -140,6 +145,60 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
       throw new Error(`Expected welcome card header, got ${welcomeText}`);
     }
     console.log("  ✓ First-run welcome card visible");
+
+    // Capture must fit on a phone with the first-run welcome still visible.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.evaluate(() => document.fonts.ready);
+    const captureInput = page.getByTestId("flow-textarea");
+    const captureBox = await captureInput.boundingBox();
+    if (!captureBox || captureBox.y < 0 || captureBox.y + captureBox.height > 844) {
+      throw new Error(
+        `Capture textarea must fit in the first mobile viewport: ${JSON.stringify(captureBox)}`
+      );
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)) {
+      throw new Error("Fresh mobile capture must not overflow horizontally");
+    }
+    if (await page.getByTestId("next-step-bar").isVisible()) {
+      throw new Error("Capture must not repeat its next-step guidance");
+    }
+    if (await page.getByTestId("sample-case-select").isVisible()) {
+      throw new Error("Examples should initially be collapsed");
+    }
+    await page.getByTestId("demo-mode-indicator").waitFor({ state: "visible" });
+    await page.getByText("¿Qué tienes en la cabeza?", { exact: true }).click();
+    if (
+      !(await captureInput.evaluate((el: HTMLTextAreaElement) => el === document.activeElement))
+    ) {
+      throw new Error("Clicking the capture label must focus its textarea");
+    }
+    await page.keyboard.press("Shift+Tab");
+    const focusStyle = await page.evaluate(() => {
+      const el = document.activeElement;
+      return el ? getComputedStyle(el).outlineStyle : "none";
+    });
+    if (focusStyle === "none") throw new Error("Keyboard focus must be visible");
+    if (mode === "preview") {
+      await page.screenshot({
+        path: path.join(outputDir, "00-mobile-capture.png"),
+        fullPage: true,
+      });
+    }
+    await captureInput.fill("Quiero reservar tiempo para leer esta semana.");
+    await page.waitForFunction(
+      () =>
+        localStorage.getItem("conscious_tech_transient_dump_text") ===
+        "Quiero reservar tiempo para leer esta semana."
+    );
+    await page.reload({ waitUntil: "networkidle" });
+    if ((await captureInput.inputValue()) !== "Quiero reservar tiempo para leer esta semana.") {
+      throw new Error("Capture notes must survive reload");
+    }
+    await captureInput.fill("");
+    await page.setViewportSize({ width: 1280, height: 900 });
+    console.log(
+      "  ✓ Mobile capture fits, examples are collapsed, demo mode and keyboard focus verified"
+    );
 
     // Dismiss welcome card
     await page.locator('[data-testid="dismiss-welcome-button"]').click();
@@ -252,6 +311,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
 
     // Select sample case (case-01)
     const sampleCaseSelect = page.locator('[data-testid="sample-case-select"]');
+    await page.locator('[data-testid="capture-examples"] summary').click();
     await sampleCaseSelect.selectOption("case-01");
     await page.waitForFunction(() => {
       const textarea = document.querySelector(
@@ -689,6 +749,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     await page
       .locator('[data-testid="flow-step-write"]')
       .waitFor({ state: "visible", timeout: 5000 });
+    await page.locator('[data-testid="capture-examples"] summary').click();
     await page.locator('[data-testid="sample-case-select"]').selectOption("case-01");
     await page.waitForFunction(() => {
       const textarea = document.querySelector(

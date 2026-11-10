@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+- Simplified initial capture with a shorter welcome and header, collapsed examples,
+  and less repeated navigation guidance.
+- Added a visible local demo indicator, corrected the capture label association,
+  and improved mobile spacing and keyboard focus visibility.
+- Extended browser smoke checks for mobile first-use capture, provider labeling,
+  keyboard access, and note recovery after reload.
+
 ## [0.25.1] - 2026-11-04
 
 ### Polish, Copy & Test Coverage

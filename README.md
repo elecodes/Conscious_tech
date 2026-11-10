@@ -286,7 +286,13 @@ GEMINI_MODEL=gemini-2.5-flash
 npm run dev
 ```
 
-Open `http://localhost:5173` to test brain dumps interactively, select sample cases, switch providers, and inspect raw JSON outputs.
+Run the command inside this repository on your own computer, then open the URL
+printed by Vite (normally `http://localhost:5173`). A server running in a remote
+Codex environment is not your computer's localhost.
+
+Start by writing notes, or expand **Probar con un ejemplo**. The default **Modo de
+prueba** uses local mock processing; real AI providers are available in **Ajustes**
+when server credentials are configured.
 
 ### 4. Run Test Suite
 
