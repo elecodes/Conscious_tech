@@ -1,0 +1,220 @@
+# UX improvement plan
+
+Status: planning only; application changes have not started.
+
+Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
+
+## Goal
+
+Make capture, weekly decisions, and daily use easier while preserving the product's
+principle: AI proposes; the person decides. Keep the Spanish-first interface,
+protected time, conservative extraction, and explicit plan activation.
+
+## Working method
+
+- Implement one numbered step at a time, with a separate commit for each completed
+  step. Record what changed, checks run, and remaining limitations.
+- Start each step from a clean, verified checkpoint. If checks fail, diagnose and
+  resolve the failure before starting the next step.
+- Prefer existing components and domain operations. Avoid new dependencies and
+  changes to storage schemas, provider contracts, or planning rules in presentation
+  steps.
+- Verify relevant behavior tests and browser flows. Complete the repository's CI
+  checks before calling a step finished.
+- Keep existing browser data usable. Any necessary persistent-state changes need a
+  separate design, compatibility tests, and a backup/restore check first.
+- Revert individual commits if needed. Never reset or overwrite user work.
+- Do not merge or deploy as part of this plan.
+
+## Baseline observations
+
+The existing application already provides two primary tabs and a three-stage
+planning flow. These should be refined incrementally.
+
+The local browser walkthrough used the mock provider. Real-provider output quality
+and real calendar-account behavior were not evaluated.
+
+- At 390 by 844 pixels, the initial writing area started around 1,056 pixels down
+  the page. Introductory blocks and the example selector precede it.
+- Continuing from capture generates a proposal before capacity is configured.
+- Review displays both selected extracted items and a separate proposal list.
+- In the first example, five selected ideas produced two planned/flexible entries
+  and three deferred entries. Activation then displayed all five under active
+  priorities, although the deferred entries retained an unscheduled label.
+- Confirmation does not normally repeat a compact plan summary.
+- Two active-week calendar buttons trigger the same download.
+- The capture label targets a different ID from its textarea.
+- The tested review and active views had no horizontal overflow at 390 pixels.
+
+## Implementation sequence
+
+### 0. Resolve baseline check failures
+
+- Apply formatting only to the two existing failing files listed below, in a
+  separate housekeeping commit. Confirm the diff has no behavior changes.
+- Resolve browser certificate trust for external fonts in the test environment and
+  rerun the unmodified smoke suite. Do not disable TLS verification to obtain a pass.
+- Complete these checks before starting UI implementation.
+
+### 1. Make capture easier to reach
+
+Scope:
+
+- Compact the mobile header and welcome guide.
+- Hide redundant next-step guidance when it repeats the current capture action.
+- Replace the prominent calibration-case selector with a secondary example control;
+  retain examples without exposing fixture IDs as primary product language.
+- Correct the capture label association and provide visible keyboard focus.
+- Show a quiet, accurate demo-mode indicator when the mock provider is selected.
+
+Acceptance:
+
+- The empty writing area and its label are visible without scrolling at 390 by
+  844 pixels, with the default welcome state.
+- Capture, dictation, example selection, autosave, and welcome dismissal still work.
+- Keyboard users can identify focus and activate the capture controls.
+- Desktop and mobile views have no horizontal overflow.
+
+### 2. Establish planning context before generating a proposal
+
+Scope:
+
+- Show the target week and an optional available-hours input before planning.
+- Allow an explicit unknown-capacity path; describe its proposal as provisional.
+- Explain the existing protected-space default without requiring customization.
+- Reuse existing capacity validation and calendar arithmetic. Make clear whether
+  hours are before or after imported calendar commitments to avoid double counting.
+- Preserve notes and context on failures. Failed regeneration must not advance to
+  confirmation with an outdated proposal.
+
+Acceptance:
+
+- Known, unknown, zero, invalid, and calendar-adjusted capacity behave consistently.
+- Back navigation and reload preserve existing supported draft data.
+- Dates, selected items, and time edits cannot silently activate a stale proposal.
+- Existing capacity-conservation and protected-time behavior remains intact.
+
+### 3. Make confirmation self-contained
+
+Scope:
+
+- Add a compact summary of intention, planned commitments, capacity or uncertainty,
+  protected space, and saved-for-later items immediately above activation.
+- Explain the effect of activation in one sentence.
+- Move export out of the primary confirmation path while retaining access after
+  activation.
+
+Acceptance:
+
+- Summary values come from the exact proposal being confirmed.
+- Existing active-week conflict handling and double-submit protection still work.
+- Back navigation preserves decisions; activation remains explicitly confirmed.
+
+### 4. Simplify proposal review
+
+Scope:
+
+- Present one primary decision surface for this week, flexible options, and later.
+- Preserve ideas and concerns without automatically converting them into tasks.
+- Keep source wording, classification, and explanations available in details.
+- Use existing promotion, demotion, selection, and deferral operations where they
+  apply. Design unsupported moves separately instead of inventing domain behavior.
+
+Acceptance:
+
+- Every extracted item remains accounted for, including excluded and deferred items.
+- Selection and placement have distinct, understandable meanings.
+- Editing estimates or dates reliably updates the proposal before confirmation.
+- Long notes, empty proposals, and concern-only captures remain usable.
+
+### 5. Clarify the active week
+
+Scope:
+
+- Lead with the week's intention, focus areas, and commitments.
+- Separate saved-for-later entries from active priorities using existing item
+  membership; do not delete or change their persisted classification.
+- Put schedule versions, empty history, and secondary exports behind details.
+- Keep unexpected-event intake easy to discover.
+
+Acceptance:
+
+- Deferred work does not appear as an active commitment.
+- Adjustments, history, closing, carryover, and reopening retain all items.
+- Existing saved weeks render correctly without a migration.
+
+### 6. Consolidate calendar, sharing, and trust language
+
+Scope:
+
+- Consolidate duplicate exports into a calendar-and-sharing section.
+- Label downloads, calendar event creation, copying, and email composition literally.
+- Preserve import guidance and explain that imported events are not live synced.
+- Explain local storage separately from external AI processing, at the point of use.
+- Replace technical deletion wording with plain Spanish while preserving safeguards.
+
+Acceptance:
+
+- ICS contents, reminders, email length limits, and complete clipboard copies remain
+  correct.
+- No account connection, upload, or live synchronization is implied.
+- Mock mode remains local; real providers are not silently enabled.
+- Backup, restoration, and deletion controls remain accessible.
+
+### 7. Design daily actions before adding persistent behavior
+
+Scope:
+
+- Inspect how active task progress maps to closing dispositions and carryover.
+- Define completion, moving, postponing, and undo behavior using existing domain
+  operations where possible.
+- Document whether persistent-state changes are required before implementation.
+- Implement only once reload, undo, history, and closing semantics are explicit.
+
+Acceptance:
+
+- A daily action has a clear result, survives reload when appropriate, and can be
+  undone without overwriting subsequent decisions.
+- Closing accurately reflects progress; carryover does not duplicate or lose work.
+- Old backups and existing weeks remain compatible.
+
+## Verification for each step
+
+Run meaningful behavior checks for the affected flow, then the existing CI commands:
+
+```sh
+npm run typecheck
+npm run lint
+npm run format:check
+npm run check:cycles
+npm test
+npm run build
+npm run test:smoke
+```
+
+Manually inspect desktop and mobile, keyboard navigation, fresh use, and a restored
+draft. For the affected flow, also check an active week, a closed week, error
+recovery, and reload as applicable. Use mock AI for repeatable checks; live AI
+validation is separate and must not transmit personal notes implicitly.
+
+After the first presentation step, use a small usability check before restructuring
+review: can someone start, explain what enters the week, locate deferred work, and
+activate intentionally without help? Repeat the same tasks after later steps.
+
+## First checkpoint
+
+Complete baseline verification and review this sequence before changing application
+code. Resolve step 0 first, then implement step 1 only.
+
+Baseline results:
+
+- Type checking, lint, dependency-cycle checks, and production build passed.
+- All 953 tests passed across 70 test files.
+- Repository formatting failed on two pre-existing files:
+  `docs/adr/0028-calendar-bridge-and-email-summary-polish.md` and
+  `src/web/components/active-week-schedule-section.tsx`. They remain unchanged in
+  this planning checkpoint. The new plan itself passes formatting.
+- The unmodified browser smoke suite completed its preview-flow assertions but
+  failed its console-error gate with `ERR_CERT_AUTHORITY_INVALID`. A separate
+  browser probe reproduced a failed request to `fonts.googleapis.com`. Dev-mode
+  smoke checks were not reached. Browser smoke verification is not yet green.
