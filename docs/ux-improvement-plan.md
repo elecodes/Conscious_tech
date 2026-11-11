@@ -1,8 +1,31 @@
 # UX improvement plan
 
-Status: steps 0–7 complete, including 7a–7d. Ready for a user walkthrough.
+Status: steps 0–7 and subsequent calendar walkthrough changes complete. Paused after user review; the next three items below remain pending.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
+
+## Next session — agreed at the end of the walkthrough
+
+Checkpoint: `d556170` on `codex/ux-step-by-step` (latest application change).
+Documentation-only session close follows this checkpoint; no further UI work today.
+
+1. **Less calendar text.** Review the weekly view and put secondary explanations
+   behind compact disclosures. Keep tasks, dates, daily hours and primary actions
+   visible. Check narrow columns, expanded/collapsed sidebar and mobile.
+2. **Voice dictation.** Reproduce the reported failure with the user's browser,
+   microphone permissions and language. Inspect the existing Web Speech API flow,
+   error/end events and input updates. Do not claim a fix until actual speech input
+   is verified; automated mocks alone cannot establish microphone recognition.
+3. **Included tasks without a day.** Add drag/drop from the undated section into a
+   calendar day, plus a keyboard/touch equivalent and local hour editing. Preserve
+   their inclusion, estimates and other assignments; do not duplicate tasks or invent
+   hours. Verify cancellation, saving, capacity, persistence and mobile layout.
+
+The implemented tray recovers **outside/postponed tasks**. It does not yet make the
+separate **included, undated tasks** draggable. Keep this distinction when resuming.
+
+Start with the calendar disclosures, then dictation, then undated-task movement,
+in separate small steps. The user has paused implementation for today.
 
 ## Goal
 

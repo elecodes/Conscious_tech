@@ -9,7 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Pending review
+
+- Reduce calendar text with compact disclosures while keeping primary actions visible.
+- Investigate user-reported voice dictation failure; the cause and browser conditions
+  have not yet been reproduced.
+- Enable direct calendar drag/drop for tasks already included in the active week
+  but still without a day. This is distinct from the implemented deferred-task tray.
+
 ### Changed
+
+- Clarify task hour distribution: open a readable floating editor, explain existing
+  assignments and explicit saving, and offer equal distribution across chosen days
+  to correct totals without retaining the original day's full allocation.
+
+- Remove repeated allocation totals from calendar card controls. Collapsing Mis
+  semanas now releases the sidebar column so the calendar uses the full width.
+
+- Make the weeks visibility control prominent with a filled arrow action and
+  shorten calendar day effort labels to the hour value (for example, “1 h”).
+
+- In demo extraction, recognize independent action sentences without a space after
+  their terminator, while preserving dotted project names, URLs and decimals.
+
+- Recognize compact lists of three or more short names separated by periods in
+  demo capture, including “Typing.logica.python.patrones.big school.apps” as six
+  independent items. Clarify the same intent in the AI extraction prompt.
+
+- Show deferred and postponed work in a tray above the active calendar. Drag to a
+  day or use “Añadir a un día” to edit day/hours and include the task atomically.
+  Recovering a postponement preserves its history and cancels its future suggestion.
+- Add direct hour editing for single-day active tasks; unknown estimates remain
+  unknown and can still have a chosen day. Multi-day portions keep their split editor.
+
+- Make the calendar's “Ajustar horas” action compact, with smaller text, padding
+  and corners proportional to the card's other controls.
 
 - Added per-task daily hour distribution in drafts and active weeks, with partial
   allocation, remaining-effort feedback and validation against task/day budgets.
@@ -910,29 +944,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Prohibited inventing specific calendar dates for broad temporal expressions (e.g. "in November").
   - Prohibited deriving task effort from friction complaints (e.g. "Gradle takes half a day").
   - Enforced atomic separation of independent actions without merging.
-
-- Clarify task hour distribution: open a readable floating editor, explain existing
-  assignments and explicit saving, and offer equal distribution across chosen days
-  to correct totals without retaining the original day's full allocation.
-
-- Remove repeated allocation totals from calendar card controls. Collapsing Mis
-  semanas now releases the sidebar column so the calendar uses the full width.
-
-- Make the weeks visibility control prominent with a filled arrow action and
-  shorten calendar day effort labels to the hour value (for example, “1 h”).
-
-- In demo extraction, recognize independent action sentences without a space after
-  their terminator, while preserving dotted project names, URLs and decimals.
-
-- Recognize compact lists of three or more short names separated by periods in
-  demo capture, including “Typing.logica.python.patrones.big school.apps” as six
-  independent items. Clarify the same intent in the AI extraction prompt.
-
-- Show deferred and postponed work in a tray above the active calendar. Drag to a
-  day or use “Añadir a un día” to edit day/hours and include the task atomically.
-  Recovering a postponement preserves its history and cancels its future suggestion.
-- Add direct hour editing for single-day active tasks; unknown estimates remain
-  unknown and can still have a chosen day. Multi-day portions keep their split editor.
-
-- Make the calendar's “Ajustar horas” action compact, with smaller text, padding
-  and corners proportional to the card's other controls.

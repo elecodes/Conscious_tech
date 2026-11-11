@@ -55,3 +55,12 @@ El usuario solicitó:
   - Cero dependencias npm añadidas.
 - **Limitaciones**:
   - La compatibilidad depende del soporte Web Speech API del navegador. En navegadores sin soporte, la interfaz degrada elegantemente a entrada por teclado.
+
+## Seguimiento de validación — 11 de noviembre de 2026
+
+La persona usuaria comunica que el dictado parece no funcionar. La integración
+existente no equivale a una verificación actual del reconocimiento real de voz.
+El diagnóstico queda pendiente para la próxima sesión: reproducir navegador,
+permisos, idioma, eventos de error/fin y actualización del texto antes de decidir
+una corrección. No se cambia hoy la arquitectura ni se declara resuelto el fallo.
+Ver [seguimiento UX](../ux-improvement-plan.md).

@@ -4,6 +4,29 @@
 
 ---
 
+## Estado de la vista de prueba
+
+Trabajo guardado en `codex/ux-step-by-step`; todavía no integrado en `main`.
+El calendario permite repartir horas entre días, mover asignaciones y mostrar u
+ocultar el panel de semanas. Las tareas aplazadas o fuera de semana aparecen en
+una bandeja encima de los días: arrástralas o usa «Añadir a un día» y confirma día
+y horas. Las tarjetas de un solo día ofrecen «Ajustar horas» en formato compacto.
+
+Pendiente para la próxima sesión:
+
+- Reducir el texto del calendario mediante desplegables claros.
+- Diagnosticar el dictado por voz: se ha comunicado que no funciona; aún no está corregido.
+- Añadir drag/drop desde las tareas incluidas en la semana que siguen sin día asignado.
+
+Última verificación funcional completa: 1.081 pruebas en 85 archivos y pruebas de
+navegador en preview/desarrollo. El ajuste visual posterior del botón también se
+verificó en navegador, tipos y lint. No se ha publicado una nueva versión.
+
+Seguimiento: [plan UX](docs/ux-improvement-plan.md) y
+[ADR 0029](docs/adr/0029-calendar-first-planning-and-task-recovery.md).
+
+---
+
 ## Philosophy & Core Rules
 
 1. **The AI proposes; the human decides.** The system never silently alters your plans or commits your time.
@@ -475,8 +498,3 @@ Manual checks for release verification:
 ## License
 
 Private (UNLICENSED)
-
-Las tareas aplazadas o fuera de semana aparecen en una bandeja encima del calendario
-activo. Arrástralas a un día o usa «Añadir a un día» para elegir día y horas antes de
-confirmar. Las tarjetas de un solo día permiten «Ajustar horas» directamente; para
-varios días se conserva «Repartir horas».

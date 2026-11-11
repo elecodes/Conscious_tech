@@ -716,3 +716,21 @@ The product succeeds when the person can say:
   Resume no ofrece deshacer como si fuera un movimiento simple.
 - Sin IA ni dependencias nuevas. El balance se recalcula con el esfuerzo explícito;
   se validan límites diarios, fechas, tareas cerradas y concurrencia antes de guardar.
+
+### Cierre de sesión — 11 de noviembre de 2026
+
+- La persona decide parar por hoy. Último cambio de aplicación: `d556170`, botón
+  Ajustar horas compacto. Guardar este cierre y documentación en la misma rama
+  `codex/ux-step-by-step`; no integrar en main ni publicar una versión.
+- Próxima sesión, en pasos pequeños: (1) revisar desplegables y reducir texto del
+  calendario; (2) diagnosticar el dictado por voz comunicado como no funcional;
+  (3) permitir arrastrar tareas incluidas pero sin día al calendario y ajustar horas
+  allí, con alternativa accesible. Estos tres puntos siguen pendientes.
+- La bandeja de fuera de semana/aplazadas ya permite arrastre, pero las tareas de
+  «En esta semana · sin día asignado» no. No confundir ambas implementaciones.
+- La voz aún no tiene causa reproducida ni solución verificada. Revisar navegador,
+  permisos, idioma y eventos de reconocimiento; no afirmar funcionamiento real
+  basándose solo en pruebas simuladas.
+- ADR 0029 consolida las decisiones del calendario. ADR 0019 registra el problema
+  pendiente del dictado. README y plan UX enlazan el punto de reanudación; Changelog
+  reúne los cambios recientes bajo Unreleased, sin alterar versiones publicadas.
