@@ -37,6 +37,31 @@ describe("MockProvider — Extracción determinista de notas arbitrarias", () =>
     ).toHaveLength(1);
   });
 
+  it("extracts the user's compact list as six separate items", async () => {
+    const result = await extractItems(new MockProvider(), {
+      text: "Typing.logica.python.patrones.big school.apps",
+      currentDate,
+    });
+    expect(result.items.map((item) => item.rawText)).toEqual([
+      "Typing",
+      "logica",
+      "python",
+      "patrones",
+      "big school",
+      "apps",
+    ]);
+    expect(new Set(result.items.map((item) => item.id)).size).toBe(6);
+    for (const text of [
+      "Logica.patrones",
+      "docs.api.example.com",
+      "www.review.study",
+      "release.2.5",
+      "config.test.ts",
+    ]) {
+      expect(splitNotesIntoSegments(text)).toEqual([text]);
+    }
+  });
+
   // --------------------------------------------------------------------------
   // 1. Regresión específica del reporte del usuario
   // --------------------------------------------------------------------------

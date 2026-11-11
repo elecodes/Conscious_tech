@@ -923,3 +923,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - In demo extraction, recognize independent action sentences without a space after
   their terminator, while preserving dotted project names, URLs and decimals.
+
+- Recognize compact lists of three or more short names separated by periods in
+  demo capture, including “Typing.logica.python.patrones.big school.apps” as six
+  independent items. Clarify the same intent in the AI extraction prompt.

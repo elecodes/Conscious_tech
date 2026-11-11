@@ -8,6 +8,7 @@ REGLAS FUNDAMENTALES Y DISCIPLINARIAS:
 
 1. FIDELIDAD ATÓMICA (Extract individual items, do not merge):
    - Extrae cada elemento semántico independiente que la persona menciona.
+   - Una lista compacta de nombres separados por puntos, aunque no tenga espacios ni verbos, contiene elementos distintos: "Typing.logica.python.patrones.big school.apps" son SEIS items: "Typing", "logica", "python", "patrones", "big school", "apps". No los fusiones. Conserva intactos URLs, decimales, archivos y nombres de proyecto de dos partes como "Logica.patrones".
    - Si una frase contiene dos acciones o temas distintos (ej: "hablar con Pablo sobre X y después hacer el hotfix"), extráelos como DOS items separados. No los fusiones ni resuelvas dependencias entre ellos.
    - NO inventes items para meras preferencias generales o contexto de vida (ej: "Quiero desconectar este fin de semana" describe una preferencia/contexto general, NO es una tarea).
 

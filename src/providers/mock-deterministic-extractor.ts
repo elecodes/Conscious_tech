@@ -281,11 +281,30 @@ export function splitNotesIntoSegments(text: string): string[] {
       (mark, _punctuation, offset: number) => {
         const nextClause = trimmedLine.slice(offset + 1);
         const previousToken = trimmedLine.slice(0, offset).split(/\s+/).at(-1) ?? "";
-        if (/[/:@]/.test(previousToken) || /^www(?:\.|$)/i.test(previousToken)) return mark;
+        const token = `${previousToken}${mark}${nextClause.split(/\s+/)[0]}`;
+        if (
+          /[/:@]/.test(previousToken) ||
+          /^www(?:\.|$)/i.test(previousToken) ||
+          /\.(?:js|ts|tsx|json|py|md)\.?$/i.test(token)
+        )
+          return mark;
         return startsWithActionVerb(nextClause) ? `${mark} ` : mark;
       }
     );
-    const parts = spacedLine.split(sentenceBoundaryRegex);
+    // Compact lists of three or more short names use periods as separators,
+    // even without verbs or spaces (e.g. Typing.logica.python.big school).
+    // Keep two-part project names and technical addresses/versions intact.
+    const labels = trimmedLine.replace(/\.$/, "").split(".");
+    const compactList =
+      labels.length >= 3 &&
+      !labels.some((label) => startsWithActionVerb(label.trim())) &&
+      labels.every(
+        (label) =>
+          /^[\p{L}][\p{L}\s-]*$/u.test(label.trim()) && label.trim().split(/\s+/).length <= 4
+      ) &&
+      !/^(?:www\.)/i.test(trimmedLine) &&
+      !/\.(?:com|org|net|io|dev|edu|gov|es|uk|co|app|js|ts|tsx|json|py|md)\.?$/i.test(trimmedLine);
+    const parts = compactList ? labels : spacedLine.split(sentenceBoundaryRegex);
 
     for (const part of parts) {
       const clean = part
