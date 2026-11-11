@@ -1,3 +1,4 @@
+import { MonthTaskCalendar } from "./month-task-calendar";
 import { DraftTaskCalendar } from "./draft-task-calendar";
 import {
   retainDraftDays,
@@ -70,7 +71,7 @@ export function WeeklyPlanningFromNotes({
   initialStep,
   onNavigateSpace,
 }: WeeklyPlanningFromNotesProps) {
-  const { createOrSavePlan, service, state } = useWeeklySession();
+  const { createOrSavePlan, saveDraftPlan, service, state } = useWeeklySession();
 
   const effectiveCurrentDate =
     currentDate || new Date().toISOString().split("T")[0] || "2026-10-12";
@@ -133,6 +134,9 @@ export function WeeklyPlanningFromNotes({
   const draftSaveCount = useRef(0);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [draftSaveError, setDraftSaveError] = useState<string | null>(null);
+  const [calendarView, setCalendarView] = useState<"week" | "month">("week");
+  const [weekLoading, setWeekLoading] = useState(false);
+  const [monthError, setMonthError] = useState<string | null>(null);
   const [plannedDays, setPlannedDays] = useState<Record<string, string>>({});
   const [carryOverTasks, setCarryOverTasks] = useState<PendingCarryOverTask[]>([]);
   const [selectedCarryOverItemIds, setSelectedCarryOverItemIds] = useState<Set<string>>(new Set());
@@ -526,7 +530,7 @@ export function WeeklyPlanningFromNotes({
     proposalToSave: ProposedWeek,
     contextOverrides?: Partial<WeeklyPlanDraftContext>
   ) => {
-    if (!service?.saveDraftPlan) return;
+    if (!service?.saveDraftPlan) return false;
     const nowIso = new Date().toISOString();
     const tWeek = proposalToSave.weekSummary.targetWeek;
     const draftPlan: StoredWeeklyPlan = {
@@ -551,14 +555,17 @@ export function WeeklyPlanningFromNotes({
       createdAt: nowIso,
       updatedAt: nowIso,
     };
-    const save = service.saveDraftPlan.bind(service);
+    let saved = true;
+    const save = saveDraftPlan ?? service.saveDraftPlan.bind(service);
     draftSaveCount.current += 1;
     setIsSavingDraft(true);
     const pending = draftSaveQueue.current.then(async () => {
       try {
-        await save(draftPlan);
+        const result = await save(draftPlan);
+        if (result?.status === "invalid_data") throw new Error("Invalid draft data");
         setDraftSaveError(null);
       } catch (e) {
+        saved = false;
         logger.error("Failed to save plan draft", e);
         setDraftSaveError("No se ha podido guardar el borrador. Reintenta antes de activar.");
       } finally {
@@ -568,6 +575,111 @@ export function WeeklyPlanningFromNotes({
     });
     draftSaveQueue.current = pending;
     await pending;
+    return saved;
+  };
+
+  const openMonthWeek = async (week: TargetWeek) => {
+    if (weekLoading || isPlanning || isExtracting || isConfirming) return;
+    setMonthError(null);
+    if (week.startDate === targetWeekStart && week.endDate === targetWeekEnd) {
+      setCalendarView("week");
+      return;
+    }
+    if (
+      isProposalDirty ||
+      isCaptureDirty ||
+      (!proposedWeek && (noteText.trim() || extractedItems?.length))
+    ) {
+      setMonthError(
+        "Conserva tus cambios: vuelve a Semana y actualiza el calendario antes de abrir otra semana."
+      );
+      return;
+    }
+    setWeekLoading(true);
+    try {
+      await draftSaveQueue.current;
+      if (proposedWeek && !(await persistDraft(proposedWeek))) {
+        setMonthError(
+          "No se ha guardado el borrador. Vuelve a Semana y reintenta antes de cambiar."
+        );
+        return;
+      }
+      if (
+        state.activePlan?.targetWeek.startDate === week.startDate &&
+        state.activePlan.targetWeek.endDate === week.endDate
+      ) {
+        if (onNavigateSpace) onNavigateSpace("active");
+        else setMonthError("Esta semana está activa. Abre Mi semana para gestionarla.");
+        return;
+      }
+      const drafts = (await service?.getDraftPlans?.()) ?? state.draftPlans ?? [];
+      const overlappingId = drafts.find(
+        (draft) =>
+          draft.planId === `draft-${week.startDate}` && draft.targetWeek.endDate !== week.endDate
+      );
+      if (overlappingId) {
+        setMonthError(
+          `Ya hay un borrador del ${overlappingId.targetWeek.startDate} al ${overlappingId.targetWeek.endDate}. Ábrelo desde Semanas del mes para conservar su rango.`
+        );
+        return;
+      }
+      const draft = await service?.getDraftPlan?.(week);
+      const context = draft?.draftContext;
+      const hours =
+        context?.availableHoursInput ??
+        (draft?.proposal.weekSummary.capacity.totalAvailableHours != null
+          ? String(draft.proposal.weekSummary.capacity.totalAvailableHours)
+          : "");
+      const percent = context?.protectedSpacePercentInput ?? "25";
+      const items = context?.extractedItems ?? null;
+      const accepted = context?.acceptedItemIds ?? items?.map((item) => item.id) ?? [];
+      setTargetWeekStart(week.startDate);
+      setTargetWeekEnd(week.endDate);
+      setProposedWeek(draft?.proposal ?? null);
+      setExtractedItems(items);
+      setAcceptedItemIds(new Set(accepted));
+      setSelectedCarryOverItemIds(new Set(context?.selectedCarryOverItemIds ?? []));
+      setOverdueDecisions(context?.overdueDecisions ?? {});
+      setDeferredDecisions(context?.deferredDecisions ?? {});
+      setPlannedDays(context?.plannedDays ?? {});
+      setAvailableHoursInput(hours);
+      setProtectedSpacePercentInput(percent);
+      setNoteText(context?.noteText ?? "");
+      setUserIntent(context?.userIntent ?? "");
+      setDiagnostics([]);
+      setPlanningError(null);
+      setExtractError(null);
+      setConfirmationError(null);
+      setActivePlanConflict(null);
+      setDraftSaveError(null);
+      setIsEditingCapacity(false);
+      setIsReviewingSelection(false);
+      setEditingProposalItemId(null);
+      setSelectedCaseId("");
+      setSuccessMessage(null);
+      setCapacityFeedbackMessage(null);
+      setLastGeneratedParams(
+        draft
+          ? {
+              acceptedItemIds: [...accepted].sort().join(","),
+              carryOverIds: [...(context?.selectedCarryOverItemIds ?? [])].sort().join(","),
+              userIntent: context?.userIntent?.trim() ?? "",
+              availableHours: hours.trim(),
+              protectedSpace: percent.trim(),
+              items: itemSignature(items),
+              targetWeekStart: week.startDate,
+              targetWeekEnd: week.endDate,
+              noteText: context?.noteText?.trim() ?? "",
+            }
+          : null
+      );
+      setFlowStep(draft ? "review" : "write");
+      setCalendarView("week");
+    } catch {
+      setMonthError("No se pudo abrir la semana. Tus cambios actuales se conservan.");
+    } finally {
+      setWeekLoading(false);
+    }
   };
 
   const editCalendarHours = async (id: string, hours: number | null) => {
@@ -1851,8 +1963,12 @@ export function WeeklyPlanningFromNotes({
           type="button"
           className={flowStep === "write" ? "primary small" : "secondary small"}
           data-testid="step-indicator-write"
+          disabled={weekLoading}
           aria-current={flowStep === "write" ? "step" : undefined}
-          onClick={() => setFlowStep("write")}
+          onClick={() => {
+            setCalendarView("week");
+            setFlowStep("write");
+          }}
         >
           Escribir tareas
         </button>
@@ -1861,13 +1977,75 @@ export function WeeklyPlanningFromNotes({
           className={flowStep !== "write" ? "primary small" : "secondary small"}
           data-testid="step-indicator-review"
           aria-current={flowStep !== "write" ? "step" : undefined}
-          disabled={!proposedWeek && !extractedItems?.length}
-          onClick={() => setFlowStep("review")}
+          disabled={weekLoading || (!proposedWeek && !extractedItems?.length)}
+          onClick={() => {
+            setCalendarView("week");
+            setFlowStep("review");
+          }}
         >
           Calendario
         </button>
       </nav>
 
+      <div className="calendar-view-switch" role="group" aria-label="Vista del calendario">
+        <button
+          type="button"
+          className="secondary small"
+          aria-pressed={calendarView === "week"}
+          onClick={() => {
+            setMonthError(null);
+            setCalendarView("week");
+          }}
+          data-testid="calendar-view-week"
+          disabled={weekLoading}
+        >
+          Semana
+        </button>
+        <button
+          type="button"
+          className="secondary small"
+          aria-pressed={calendarView === "month"}
+          onClick={() => {
+            setMonthError(null);
+            setCalendarView("month");
+          }}
+          data-testid="calendar-view-month"
+          disabled={weekLoading}
+        >
+          Mes y otras semanas
+        </button>
+      </div>
+      {monthError && <p role="alert">{monthError}</p>}
+      {calendarView === "month" && (
+        <MonthTaskCalendar
+          initialMonth={targetWeekStart.slice(0, 7)}
+          plans={[
+            ...(state.activePlan ? [state.activePlan] : []),
+            ...(state.draftPlans ?? []).filter(
+              (plan) =>
+                !proposedWeek ||
+                plan.targetWeek.startDate !== proposedWeek.weekSummary.targetWeek.startDate ||
+                plan.targetWeek.endDate !== proposedWeek.weekSummary.targetWeek.endDate
+            ),
+            ...(proposedWeek
+              ? [
+                  {
+                    planId: `draft-${targetWeekStart}`,
+                    status: "draft" as const,
+                    targetWeek: proposedWeek.weekSummary.targetWeek,
+                    proposal: proposedWeek,
+                    draftContext: { extractedItems: extractedItems ?? undefined, plannedDays },
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                  },
+                ]
+              : []),
+          ]}
+          schedule={state.activeSchedule ?? null}
+          disabled={weekLoading || isSavingDraft || isPlanning || isExtracting || isConfirming}
+          onOpenWeek={(week) => void openMonthWeek(week)}
+        />
+      )}
       {successMessage && (
         <div className="status-message status-info" style={{ marginBottom: "16px" }} role="status">
           {successMessage}
@@ -1877,7 +2055,7 @@ export function WeeklyPlanningFromNotes({
       {/* -------------------------------------------------------------------- */}
       {/* PASO 1: ESCRIBIR                                                    */}
       {/* -------------------------------------------------------------------- */}
-      {flowStep === "write" && (
+      {calendarView === "week" && flowStep === "write" && (
         <div data-testid="flow-step-write">
           <details className="capture-examples" data-testid="capture-examples">
             <summary>Probar con un ejemplo</summary>
@@ -2087,7 +2265,7 @@ export function WeeklyPlanningFromNotes({
       {/* -------------------------------------------------------------------- */}
       {/* PASO 2: REVISAR                                                     */}
       {/* -------------------------------------------------------------------- */}
-      {(flowStep === "review" || flowStep === "confirm") && (
+      {calendarView === "week" && (flowStep === "review" || flowStep === "confirm") && (
         <fieldset
           className="planning-review-fields"
           disabled={isPlanning || isExtracting || isConfirming}

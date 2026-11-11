@@ -1,3 +1,5 @@
+import { useCalendarDrag } from "../use-calendar-drag";
+import { calendarMovement } from "../calendar-movement";
 import { useEffect, useState } from "react";
 import type { StoredWeeklyPlan } from "../../domain/repositories/types";
 import type { WeeklySchedule } from "../../domain/schedule";
@@ -20,12 +22,31 @@ export function ActiveTaskCalendar({
   schedule,
   items,
   onInspect,
+  onMove,
+  busy = false,
 }: {
   plan: StoredWeeklyPlan;
   schedule: WeeklySchedule | null;
   items: readonly PlanItemSummary[];
   onInspect: (id: string) => void;
+  onMove?: (id: string, sourceDay: string, targetDay: string) => void;
+  busy?: boolean;
 }) {
+  const drag = useCalendarDrag((id, source, day) => {
+    if (source && day && !busy) onMove?.(id, source, day);
+  });
+  const movable = (task: CalendarTask, day: string) =>
+    !!onMove &&
+    !!schedule &&
+    !busy &&
+    task.state !== "completed" &&
+    task.state !== "dropped" &&
+    !!calendarMovement(
+      schedule,
+      task.itemId,
+      day,
+      day === plan.targetWeek.startDate ? plan.targetWeek.endDate : plan.targetWeek.startDate
+    );
   const [showAll, setShowAll] = useState(false);
   const [page, setPage] = useState(0);
   useEffect(() => {
@@ -41,6 +62,12 @@ export function ActiveTaskCalendar({
       <button
         type="button"
         className={`task-calendar-entry task-calendar-${task.state}`}
+        draggable={!!entry && movable(task, entry.day)}
+        onDragStart={(event) => {
+          if (entry && movable(task, entry.day)) drag.start(event, task.itemId, entry.day);
+          else event.preventDefault();
+        }}
+        onDragEnd={drag.end}
         onClick={() => onInspect(task.itemId)}
         data-testid={`calendar-task-${task.itemId}-${slot}`}
       >
@@ -77,6 +104,22 @@ export function ActiveTaskCalendar({
           </span>
         )}
       </button>
+      {entry && movable(task, entry.day) && (
+        <label className="calendar-move-select">
+          Mover a
+          <select
+            aria-label={`Mover ${task.title} a otro día`}
+            value={entry.day}
+            onChange={(event) => onMove?.(task.itemId, entry.day, event.target.value)}
+          >
+            {model.days.map((day) => (
+              <option key={day.date} value={day.date}>
+                {dateLabel(day.date, { weekday: "short", day: "numeric", month: "short" })}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
     </li>
   );
   const undated = model.undated.filter(visible);
@@ -132,8 +175,9 @@ export function ActiveTaskCalendar({
         </span>
       </p>
       <p className="calm-muted task-calendar-hint">
-        Pulsa una tarea para verla y gestionarla. Solo las asignaciones guardadas aparecen en un
-        día; una fecha límite no asigna la tarea a ese día.
+        Arrastra una tarea con asignación simple a otro día o usa Mover a. Pulsa la tarea para ver
+        todos sus controles. Solo las asignaciones guardadas aparecen en un día; una fecha límite no
+        asigna la tarea a ese día.
       </p>
       {model.pages > 1 && (
         <nav className="task-calendar-pagination" aria-label="Días de esta planificación">
@@ -164,7 +208,8 @@ export function ActiveTaskCalendar({
           return (
             <section
               key={day.date}
-              className={`task-calendar-day${day.date === today ? " task-calendar-today" : ""}`}
+              className={`task-calendar-day${day.date === today ? " task-calendar-today" : ""}${drag.over === day.date ? " calendar-drop-over" : ""}`}
+              {...drag.target(day.date)}
               aria-label={dateLabel(day.date, { weekday: "long", day: "numeric", month: "long" })}
               data-testid={`calendar-day-${day.date}`}
             >

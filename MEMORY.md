@@ -581,3 +581,27 @@ The product succeeds when the person can say:
   el bloqueo de propuestas desactualizadas y de otra semana ya activa.
 - El resumen y la revisión detallada quedan como opciones, sin una tercera pantalla.
   Los días vacíos ocupan menos espacio en móvil; rangos largos se paginan.
+
+## Calendario: arrastrar tareas y vista mensual
+
+- La persona pidió drag/drop y eligió explícitamente Vista mensual frente a limitar
+  la navegación a Esta semana / Próxima semana.
+- El borrador permite arrastrar tareas ya incluidas entre días o a Sin día elegido.
+  Se conserva el campo de fecha como alternativa táctil y para teclado. Las notas
+  fuera de la semana requieren una inclusión explícita antes de poder arrastrarse.
+- Mi semana permite mover asignaciones diarias simples o un bloque fijo individual
+  mediante drag/drop o Mover a. Se reutilizan el comando atómico move, sus controles
+  de versión/solapamiento/capacidad y Deshacer. Las asignaciones divididas o mixtas
+  siguen usando controles detallados; no se adivina qué parte mover. No se inventan
+  horas para permitir arrastrar tareas que solo tienen un día elegido.
+- Mes y otras semanas, dentro de Nueva semana, proyecta tareas pendientes de la
+  semana activa y borradores, sin interpretar fechas límite como días asignados.
+  Las tareas sin día permanecen en el resumen de su semana. Funciona entre meses y
+  años y conserva los rangos personalizados de las semanas guardadas.
+- Seleccionar un día abre su semana; un futuro plan es un borrador separado. La
+  navegación guarda primero el borrador actual, bloquea cambios pendientes de
+  regeneración y errores de guardado, y conserva la única semana activa.
+- Los guardados pasan por el controlador de sesión para refrescar todos los
+  borradores visibles; también se atienden resultados invalid_data, sin tratarlos
+  como un guardado exitoso. No hay nuevos esquemas, dependencias ni llamadas de IA
+  para arrastrar, navegar o proyectar el mes.

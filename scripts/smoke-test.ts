@@ -1,4 +1,4 @@
-import { verifyDraftCalendar } from "./draft-calendar-smoke";
+import { verifyDraftCalendar, verifyCustomMonthRange } from "./draft-calendar-smoke";
 import net from "node:net";
 import { verifyPlanningContext } from "./planning-context-smoke";
 import { verifyPlanningReview } from "./planning-review-smoke";
@@ -790,6 +790,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
       url,
       mode === "preview" ? path.join(outputDir, "draft-calendar-mobile.png") : undefined
     );
+    await verifyCustomMonthRange(browser, url);
     await verifyPlanningReview(browser, url);
     await verifyActiveWeek(browser, url);
     await browser.close();

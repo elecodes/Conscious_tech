@@ -548,3 +548,26 @@ Baseline results:
   files, types, lint, formatting, dependency cycles, production build and browser
   checks in preview and development all pass. Build retains the existing bundle
   size warning; no dependencies were added.
+
+### User walkthrough — drag/drop and monthly planning
+
+- The user requested day-to-day drag/drop and explicitly selected a monthly view.
+- Draft tasks already included in the week can be dragged to a day or back to the
+  undated section. Date controls remain available for touch/keyboard. External
+  drags and no-op drops do not change the calendar.
+- Active simple allocations and individual fixed blocks use the existing atomic,
+  version-checked movement command, preserving hours, conflict checks and undo.
+  Mixed/split assignments retain their detailed controls; no partial move is guessed.
+- Added a month projection of active/pending work and saved drafts, including
+  truthful undated counts by week. Deadlines do not place tasks. Day/week selection
+  opens the weekly editor, with independent future drafts and year/month boundaries.
+- Week switching saves the current draft, refuses dirty capture/settings and failed
+  persistence, clears obsolete editor state, and never replaces the active week.
+  Draft saves now refresh session draft lists and surface invalid-data results.
+- No schema/provider/dependency changes. Added model/domain regressions and browser
+  coverage for actual dragging, keyboard movement, undo, separate future drafts,
+  return to a previous week, reload and mobile overflow.
+- Verification: 1,061 tests across 81 files; types, lint, formatting, dependency
+  cycles, production build and browser smoke in preview/development pass. Focused
+  browser checks also cover dirty-note protection and navigation across New Year.
+  The existing bundle-size build warning remains.

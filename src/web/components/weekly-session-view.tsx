@@ -1,3 +1,4 @@
+import { calendarMovement } from "../calendar-movement";
 import { ActiveTaskCalendar } from "./active-task-calendar";
 import type { MovementAction, PostponementAction } from "../../domain/item-activity-types";
 import { useState, useEffect, useRef } from "react";
@@ -1287,6 +1288,15 @@ export function WeeklySessionView({
           plan={plan}
           schedule={schedule}
           items={planItems}
+          busy={activityBusy}
+          onMove={
+            recordItemActivity && schedule
+              ? (id, sourceDay, targetDay) => {
+                  const movement = calendarMovement(schedule, id, sourceDay, targetDay);
+                  if (movement) void handleActivity(id, undefined, movement);
+                }
+              : undefined
+          }
           onInspect={(id) => {
             const card = document.getElementById(`active-week-item-${id}`);
             let parent = card?.parentElement;

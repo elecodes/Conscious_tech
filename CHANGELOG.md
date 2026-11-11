@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Added drag/drop between weekly calendar days, with date/select alternatives for
+  touch and keyboard. Active simple assignments reuse validated movement and undo;
+  split assignments retain their detailed controls.
+- Added a monthly overview with active/draft labels, undated weekly counts and
+  safe navigation to independent future-week drafts. Saved drafts are refreshed
+  through the session controller; dirty notes and failed saves block week changes.
+
 - Simplified planning to notes → editable draft calendar → explicit activation.
   Added hours, inclusion and chosen-day controls directly to calendar task cards;
   moved detailed review to optional advanced controls and an in-place summary.

@@ -314,6 +314,18 @@ Calendar export and sharing are available from **Mi semana** after activation.
 **Pendientes** filter hides completed/dropped work; **Todas** restores it. Only
 saved assignments or explicitly chosen days appear in day columns. Weekly work without a day stays in a
 separate section, and deadlines are labeled without becoming calendar assignments.
+Drag included draft tasks onto a day or back to **sin día elegido**; the date
+field remains available for touch and keyboard. In the active week, simple daily
+allocations or single fixed blocks can be dragged between days, or moved with
+**Mover a**. Fixed blocks keep their start/end time; existing domain checks reject
+collisions or excess capacity, and **Deshacer** remains available. Split assignments
+keep their detailed movement controls.
+
+Open **Nueva semana → Mes y otras semanas** for a monthly overview of active work
+and saved drafts. Choose a day or a saved week to open its weekly editor. Future
+weeks are separate drafts, and undated tasks stay listed by week. Switching weeks
+saves the current draft first; changed notes/general settings must be updated
+before switching. Month navigation never activates another week automatically.
 Select a task to open its existing management controls.
 
 The active week also retains focus areas and commitments. Optional and deferred

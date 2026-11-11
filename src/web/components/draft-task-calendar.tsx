@@ -1,3 +1,4 @@
+import { useCalendarDrag } from "../use-calendar-drag";
 import { useState } from "react";
 import type { ProposedWeek } from "../../domain/week";
 import type { ExtractedItem } from "../../domain/items";
@@ -20,6 +21,7 @@ export function DraftTaskCalendar({
   onInclude: (id: string) => void;
   onDefer: (id: string) => void;
 }) {
+  const drag = useCalendarDrag((id, _source, day) => onDay(id, day));
   const included = includedDraftItemIds(proposal);
   const start = proposal.weekSummary.targetWeek.startDate;
   const end = proposal.weekSummary.targetWeek.endDate;
@@ -53,6 +55,19 @@ export function DraftTaskCalendar({
         tabIndex={-1}
         data-testid={`draft-task-${item.id}`}
       >
+        {inside && (
+          <button
+            type="button"
+            className="calendar-drag-handle secondary small"
+            draggable
+            onDragStart={(event) => drag.start(event, item.id, plannedDays[item.id] ?? null)}
+            onDragEnd={drag.end}
+            aria-label={`Arrastrar ${item.title}`}
+            title="Arrastra a otro día; también puedes usar Día elegido"
+          >
+            ⠿ Mover
+          </button>
+        )}
         <strong>{item.title}</strong>
         <span
           className="draft-calendar-placement"
@@ -157,8 +172,8 @@ export function DraftTaskCalendar({
         {format(end, { day: "numeric", month: "long", year: "numeric" })}
       </p>
       <p className="calm-muted">
-        Añade tareas a esta semana, elige sus horas y su día. Los cambios se guardan en el borrador;
-        la semana se activa cuando tú decidas.
+        Arrastra las tareas a otro día o usa Día elegido. Añade tareas y ajusta sus horas aquí. Los
+        cambios se guardan en el borrador; la semana se activa cuando tú decidas.
       </p>
       <p className="calm-muted" data-testid="draft-calendar-capacity">
         {proposal.weekSummary.capacity.knownEstimatedHours ?? 0} h estimadas
@@ -204,7 +219,8 @@ export function DraftTaskCalendar({
         {days.map((day) => (
           <section
             key={day}
-            className="task-calendar-day"
+            className={`task-calendar-day${drag.over === day ? " calendar-drop-over" : ""}`}
+            {...drag.target(day)}
             data-testid={`draft-calendar-day-${day}`}
           >
             <header>
@@ -215,7 +231,11 @@ export function DraftTaskCalendar({
           </section>
         ))}
       </div>
-      <section className="task-calendar-undated" data-testid="draft-calendar-undated">
+      <section
+        className={`task-calendar-undated${drag.over === "undated" ? " calendar-drop-over" : ""}`}
+        {...drag.target(null)}
+        data-testid="draft-calendar-undated"
+      >
         <h4>Esta semana, sin día elegido ({undated.length})</h4>
         <ul>{undated.map(card)}</ul>
       </section>
