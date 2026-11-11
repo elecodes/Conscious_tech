@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Added a responsive task calendar to Mi semana with explicit week dates,
+  pending/all filters, distinct progress counts and links to existing task controls.
+- Separated saved day assignments from weekly work without a day, deadlines,
+  optional work and postponed/out-of-week notes without changing stored decisions.
+
 - Placed inclusion decisions and actual weekly placement next to each source's
   hours/date controls. Kept the source panel open and restored focus after moves.
 - Removed duplicated deferred-item decisions outside those source panels while

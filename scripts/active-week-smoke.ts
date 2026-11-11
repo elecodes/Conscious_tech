@@ -58,6 +58,24 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
     await page.reload({ waitUntil: "networkidle" });
     const priorities = page.getByTestId("active-week-priorities");
     await priorities.waitFor();
+    await page.getByTestId("active-task-calendar").waitFor();
+    if (!(await page.getByTestId("calendar-week-range").innerText()).includes("diciembre"))
+      throw new Error("Calendar does not show the task week");
+    await page.getByTestId("calendar-task-c-2026-12-10").waitFor();
+    if (process.env.SMOKE_OUTPUT_DIR)
+      await page
+        .getByTestId("active-task-calendar")
+        .screenshot({ path: `${process.env.SMOKE_OUTPUT_DIR}/07-task-calendar.png` });
+    if (await page.getByTestId("calendar-task-g-2026-12-09").count())
+      throw new Error("Residual deferred allocation became a calendar priority");
+    if (JSON.stringify(await readSchedule()) !== JSON.stringify(fixture.schedule))
+      throw new Error("Calendar viewing changed stored assignments");
+    await page.getByTestId("calendar-task-a-undated").focus();
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(
+      () => document.activeElement?.getAttribute("data-testid") === "active-task-item-a"
+    );
+    await page.getByTestId("active-focus-items-group-focus").locator(":scope > summary").click();
     if (!(await priorities.innerText()).includes("Avanzar en el proyecto"))
       throw new Error("Focus area is missing from active priorities");
     for (const id of ["d", "e", "f", "g", "j"]) {
@@ -82,6 +100,14 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
       (button as HTMLButtonElement).click();
     });
     await page.getByTestId("item-completed-a").waitFor();
+    if (await page.getByTestId("calendar-task-a-undated").count())
+      throw new Error("Completed work remains in pending calendar filter");
+    const afterCompletion = await readSchedule();
+    await page.getByTestId("calendar-filter-all").click();
+    await page.getByTestId("calendar-task-a-undated").waitFor();
+    await page.getByTestId("calendar-filter-pending").click();
+    if (JSON.stringify(await readSchedule()) !== JSON.stringify(afterCompletion))
+      throw new Error("Calendar filtering changed stored progress");
     if (await page.getByTestId("item-completed-b").count())
       throw new Error("Completion affected another group member");
     await page.reload({ waitUntil: "networkidle" });
@@ -172,6 +198,10 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
     const beforePostponement = await readSchedule();
     await page.getByTestId("save-postpone-c").click();
     await page.getByTestId("active-week-postponed").getByTestId("active-task-item-c").waitFor();
+    if (await page.getByTestId("calendar-task-c-2026-12-10").count())
+      throw new Error("Postponed work remains in a calendar day");
+    if (!(await page.getByTestId("calendar-task-c-outside").textContent())?.includes("14 dic"))
+      throw new Error("Calendar lost postponed destination week");
     if (await priorities.getByTestId("active-task-item-c").count())
       throw new Error("Postponed commitment remains in active priorities");
     if (await page.getByTestId("complete-item-c").count())
@@ -306,7 +336,7 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
       throw new Error("Reopening/undo lost the reviewed correction");
     if (errors.length) throw new Error(errors.join("\n"));
     console.log(
-      "  ✓ Active week: membership, completion, movement, postponement/undo, mobile, closing and reopening verified"
+      "  ✓ Active week: calendar/filter/navigation, completion, movement, postponement, mobile and weekly lifecycle verified"
     );
   } finally {
     await context.close();

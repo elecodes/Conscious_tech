@@ -543,3 +543,17 @@ The product succeeds when the person can say:
   propuestas antiguas sin fuentes conservan sus controles anteriores.
 - Selección para regenerar y pertenencia a la propuesta siguen siendo distintas.
   Se reutilizan las operaciones existentes y sus protecciones de focos agrupados.
+
+## Ajuste de usabilidad: calendario de tareas en Mi semana
+
+- La persona aclaró que el cambio es solo para las tareas de «Mi semana», no para
+  el listado de semanas/borradores guardados.
+- Vista rápida con rango semanal explícito, días reales, filtro Pendientes/Todas
+  y contadores separados de pendientes, opcionales, completadas y aplazadas.
+- Solo bloques/asignaciones guardadas colocan una tarea en un día. La fecha límite
+  se etiqueta como tal; lo incluido en la semana sin día permanece en su sección.
+  No se reparten estimaciones agregadas de focos entre miembros.
+- Postergaciones, elementos fuera de la semana y notas permanecen aparte. Una tarea
+  abre sus controles existentes, desplegando ancestros y devolviendo el foco.
+- Es una proyección de lectura, sin cambios de almacenamiento, acciones de dominio,
+  integración de calendario externa ni listas de borradores. Responsive en móvil.

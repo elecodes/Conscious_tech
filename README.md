@@ -310,7 +310,13 @@ Before activation, review the summary of the exact proposal. Return to review to
 change its intention or contents; calendar export and sharing are available from
 **Mi semana** after activation.
 
-The active week leads with focus areas and commitments. Optional and deferred
+**Mi semana** starts with a task calendar showing its actual week range. The
+**Pendientes** filter hides completed/dropped work; **Todas** restores it. Only
+saved assignments appear in day columns. Weekly work without a day stays in a
+separate section, and deadlines are labeled without becoming calendar assignments.
+Select a task to open its existing management controls.
+
+The active week also retains focus areas and commitments. Optional and deferred
 entries remain under **Si queda espacio** and **Fuera de esta semana**. Open a focus
 to inspect its contributing items. Agenda details and exports are secondary;
 exports and weekly closing still include the complete inventory.
@@ -336,7 +342,7 @@ recorded in [the daily-actions design](docs/daily-actions-design.md).
 
 ### 4. Run Test Suite
 
-Unit, behavioral, and security tests run deterministically with zero token consumption (1,043 tests across 78 suites):
+Unit, behavioral, and security tests run deterministically with zero token consumption (1,049 tests across 79 suites):
 
 ```bash
 npm test

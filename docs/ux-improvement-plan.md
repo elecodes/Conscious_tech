@@ -503,3 +503,23 @@ Baseline results:
   one inclusion control per source, panel continuity, date preservation, focus and
   mobile overflow. All 1,043 tests across 78 files and the standard code/build and
   preview/dev browser checks pass.
+
+### User walkthrough — task calendar in Mi semana
+
+- The user requested a faster visual overview and clarified the scope is only
+  active-week tasks, leaving saved-week and draft lists unchanged.
+- Added a read-only weekly calendar above the existing controls: explicit week
+  dates, real day assignments, pending/all filters and unique task counts.
+- Consolidated a task's blocks and daily hours within each day without adding
+  them together. Repeated days do not multiply pending counts. Deadlines never
+  become assigned days; unscheduled weekly work remains clearly separate.
+- Deferred residual allocations and live postponements do not become priorities.
+  Notes and postponed destinations stay inspectable in a secondary section.
+- Task selection reveals the existing editor and focuses the matching item.
+  Mobile uses compact day rows; longer ranges page through seven-day windows.
+- Added six projection/rendering tests and browser checks for scope, deadline
+  distinction, progress filters, read-only behavior, keyboard navigation, mobile
+  overflow and live completion/postponement updates.
+- Verification: 1,049 tests across 79 files, types, lint, formatting, dependency
+  cycles, production build and preview/dev browser checks pass. No persistence,
+  domain operation, dependency or external calendar integration changes.

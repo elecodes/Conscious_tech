@@ -1,3 +1,4 @@
+import { ActiveTaskCalendar } from "./active-task-calendar";
 import type { MovementAction, PostponementAction } from "../../domain/item-activity-types";
 import { useState, useEffect, useRef } from "react";
 import { AIProvider } from "../../providers/ai-provider";
@@ -1274,6 +1275,24 @@ export function WeeklySessionView({
           </details>
         )}
       </section>
+
+      {plan?.status === "active" && (activeSpace === undefined || activeSpace === "active") && (
+        <ActiveTaskCalendar
+          plan={plan}
+          schedule={schedule}
+          items={planItems}
+          onInspect={(id) => {
+            const card = document.getElementById(`active-week-item-${id}`);
+            let parent = card?.parentElement;
+            while (parent) {
+              if (parent instanceof HTMLDetailsElement) parent.open = true;
+              parent = parent.parentElement;
+            }
+            card?.focus({ preventScroll: true });
+            card?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          }}
+        />
+      )}
 
       {/* Capacidad y espacio protegido */}
       {plan?.proposal.weekSummary.capacity && (

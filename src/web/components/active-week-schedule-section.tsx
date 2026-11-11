@@ -179,6 +179,8 @@ export function ActiveWeekScheduleSection({
           background: isSelected ? "#f8fafc" : undefined,
         }}
         data-testid={`active-task-item-${item.itemId}`}
+        id={`active-week-item-${item.itemId}`}
+        tabIndex={-1}
       >
         <div style={{ flex: "1 1 240px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
