@@ -1,3 +1,4 @@
+import { extractItemHours } from "../skills/build-week/deterministic";
 import {
   WeeklySessionServiceDependencies,
   LatestClosedWeekResult,
@@ -126,7 +127,14 @@ export async function findPendingCarryOverTasks(
       for (const id of fo.contributingItemIds) {
         if (!closedPlanItemMap.has(id)) {
           closedPlanItemMap.set(id, {
-            estimatedHours: fo.estimatedHours,
+            estimatedHours:
+              fo.contributingItemIds.length === 1
+                ? fo.estimatedHours
+                : plan.draftContext?.extractedItems?.find((source) => source.id === id)
+                  ? extractItemHours(
+                      plan.draftContext.extractedItems.find((source) => source.id === id)!
+                    )
+                  : null,
           });
         }
       }
@@ -216,9 +224,18 @@ export async function findPendingCarryOverTasks(
       for (const id of fo.contributingItemIds) {
         if (!activePlanItemMap.has(id)) {
           activePlanItemMap.set(id, {
-            title: fo.title,
+            title:
+              activePlan.draftContext?.extractedItems?.find((source) => source.id === id)?.title ??
+              fo.title,
             originCategory: "focus",
-            estimatedHours: fo.estimatedHours,
+            estimatedHours:
+              fo.contributingItemIds.length === 1
+                ? fo.estimatedHours
+                : activePlan.draftContext?.extractedItems?.find((source) => source.id === id)
+                  ? extractItemHours(
+                      activePlan.draftContext.extractedItems.find((source) => source.id === id)!
+                    )
+                  : null,
           });
         }
       }

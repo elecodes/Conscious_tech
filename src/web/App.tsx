@@ -1,3 +1,5 @@
+import { WeeksSidebar } from "./components/weeks-sidebar";
+import type { TargetWeek } from "../domain/week";
 import { useState } from "react";
 import { MockProvider } from "../providers/mock-provider";
 import { RemoteAIProvider } from "../providers/remote-ai-provider";
@@ -141,6 +143,15 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
   };
 
   const [hasPendingProposal, setHasPendingProposal] = useState(false);
+  const [requestedWeek, setRequestedWeek] = useState<TargetWeek | null>(null);
+  const openPlanningWeek = (week: TargetWeek) => {
+    setRequestedWeek(week);
+    setUserSelectedTab("prepare");
+  };
+  const requestedWeekHandled = (week: TargetWeek) =>
+    setRequestedWeek((current) =>
+      current?.startDate === week.startDate && current.endDate === week.endDate ? null : current
+    );
 
   const activeSpace: NavigationSpace =
     userSelectedTab ??
@@ -297,7 +308,7 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
   }
 
   return (
-    <div className="container">
+    <div className="container with-weeks-sidebar">
       <header className="app-header">
         <div
           style={{
@@ -692,38 +703,54 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
         )}
       </header>
 
-      {/* Render active space */}
-      {(activeSpace === "capture" || activeSpace === "prepare") && (
-        <main>
-          <WeeklySessionView
-            provider={getProviderInstance()}
-            activeSpace={activeSpace}
-            initialStep={activeSpace === "capture" ? "write" : undefined}
-            onProposalStatusChange={setHasPendingProposal}
-            onNavigateSpace={(space) => setActiveSpace(space)}
-          />
-        </main>
-      )}
+      <div className="weeks-workspace">
+        <WeeksSidebar
+          active={state.activePlan}
+          schedule={state.activeSchedule}
+          drafts={state.draftPlans ?? []}
+          previous={state.latestClosedWeek}
+          disabled={!!requestedWeek}
+          onOpen={(week, active) => (active ? setActiveSpace("active") : openPlanningWeek(week))}
+        />
+        <div className="weeks-main">
+          {/* Render active space */}
+          {(activeSpace === "capture" || activeSpace === "prepare") && (
+            <main>
+              <WeeklySessionView
+                provider={getProviderInstance()}
+                activeSpace={activeSpace}
+                initialStep={activeSpace === "capture" ? "write" : undefined}
+                requestedWeek={requestedWeek ?? undefined}
+                onRequestedWeekHandled={requestedWeekHandled}
+                onOpenPlanningWeek={openPlanningWeek}
+                onProposalStatusChange={setHasPendingProposal}
+                onNavigateSpace={(space) => setActiveSpace(space)}
+              />
+            </main>
+          )}
 
-      {activeSpace === "active" && (
-        <main>
-          <WeeklySessionView
-            provider={getProviderInstance()}
-            activeSpace="active"
-            onNavigateSpace={(space) => setActiveSpace(space)}
-          />
-        </main>
-      )}
+          {activeSpace === "active" && (
+            <main>
+              <WeeklySessionView
+                provider={getProviderInstance()}
+                activeSpace="active"
+                onOpenPlanningWeek={openPlanningWeek}
+                onNavigateSpace={(space) => setActiveSpace(space)}
+              />
+            </main>
+          )}
 
-      {activeSpace === "review" && (
-        <main>
-          <WeeklySessionView
-            provider={getProviderInstance()}
-            activeSpace="review"
-            onNavigateSpace={(space) => setActiveSpace(space)}
-          />
-        </main>
-      )}
+          {activeSpace === "review" && (
+            <main>
+              <WeeklySessionView
+                provider={getProviderInstance()}
+                activeSpace="review"
+                onNavigateSpace={(space) => setActiveSpace(space)}
+              />
+            </main>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { extractItemHours } from "../../skills/build-week/deterministic";
+import type { TargetWeek } from "../../domain/week";
 import { WeeklySchedule } from "../../domain/schedule";
 import { StoredWeeklyPlan } from "../../domain/repositories/types";
 import { SuggestedAdjustmentAction } from "../../domain/adjustment";
@@ -28,6 +30,8 @@ export interface ActiveWeekAdjustmentPanelProps {
   setIsAdjustmentPreviewOpen: (val: boolean) => void;
   handleSaveTaskAdjustment: (itemId: string, title: string) => void;
   applyAdjustment: (input: any) => Promise<any>;
+  targetDraft?: StoredWeeklyPlan;
+  onOpenDestination?: (week: TargetWeek) => void;
   setFeedbackMessage: (msg: string | null) => void;
 }
 
@@ -55,6 +59,8 @@ export function ActiveWeekAdjustmentPanel({
   handleSaveTaskAdjustment,
   applyAdjustment,
   setFeedbackMessage,
+  targetDraft,
+  onOpenDestination,
 }: ActiveWeekAdjustmentPanelProps) {
   return (
     <>
@@ -129,21 +135,29 @@ export function ActiveWeekAdjustmentPanel({
               const selectedItem =
                 planItems.find((i) => i.itemId === effectiveItemId) || planItems[0];
 
+              const original = plan?.draftContext?.extractedItems?.find(
+                (item) => item.id === selectedItem?.itemId
+              );
+              const grouped = plan?.proposal.foci.some(
+                (focus) =>
+                  focus.contributingItemIds.includes(selectedItem?.itemId ?? "") &&
+                  focus.contributingItemIds.length > 1
+              );
               const effectiveDeadline =
-                deadlineInput.trim() ||
-                selectedItem?.dueDate ||
-                (selectedItem?.title.toLowerCase().includes("informe") ? "2026-10-15" : "");
+                deadlineInput.trim() || selectedItem?.dueDate || original?.deadline?.resolved || "";
 
               const isDeadlineOverdue = Boolean(
                 effectiveDeadline && effectiveDeadline < targetWeekStart
               );
 
               const isCapacityUnconfigured =
-                plan?.proposal.weekSummary.capacity.totalAvailableHours === null;
+                targetDraft?.proposal.weekSummary.capacity.totalAvailableHours == null;
 
-              const hoursToFree =
-                selectedItem?.estimatedHours ??
-                (selectedItem?.title.toLowerCase().includes("informe") ? 6 : null);
+              const hoursToFree = grouped
+                ? original
+                  ? extractItemHours(original)
+                  : null
+                : (selectedItem?.estimatedHours ?? null);
 
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -464,7 +478,9 @@ export function ActiveWeekAdjustmentPanel({
                       >
                         <div>
                           <strong>Origen:</strong> {selectedItem.title} ({selectedItem.source})
-                          {hoursToFree ? ` · ${hoursToFree}h estimadas` : " · Sin estimación"}
+                          {hoursToFree != null
+                            ? ` · ${hoursToFree}h estimadas`
+                            : " · Sin estimación"}
                           {effectiveDeadline && (
                             <span>
                               {" "}
@@ -518,8 +534,9 @@ export function ActiveWeekAdjustmentPanel({
                               color: "#92400e",
                             }}
                           >
-                            ⚠️ <strong>Sin capacidad configurada:</strong> No hay horas disponibles
-                            confirmadas para esta semana.
+                            <strong>Horas de la semana destino por definir.</strong> Puedes
+                            añadirlas al organizarla. La tarea quedará guardada como reprogramada en
+                            Mis semanas.
                           </div>
                         )}
 
@@ -530,8 +547,22 @@ export function ActiveWeekAdjustmentPanel({
                         >
                           ℹ️ La tarea se retirará de tu semana actual y pasará a la semana del{" "}
                           {targetWeekStart} al {targetWeekEnd} para que la organices cuando la
-                          abras.
+                          abras. La encontrarás en el panel Mis semanas, bajo su semana destino.
                         </div>
+                        {onOpenDestination && (
+                          <button
+                            type="button"
+                            className="secondary small"
+                            onClick={() =>
+                              onOpenDestination({
+                                startDate: targetWeekStart,
+                                endDate: targetWeekEnd,
+                              })
+                            }
+                          >
+                            Ver semana destino y disponibilidad
+                          </button>
+                        )}
                         <span data-testid="domain-boundary-note" style={{ display: "none" }} />
                       </div>
 
@@ -631,7 +662,7 @@ export function ActiveWeekAdjustmentPanel({
 
                             if (res.status === "success") {
                               setFeedbackMessage(
-                                `Ajuste aplicado con éxito. Tarea reprogramada para ${targetWeekStart} al ${targetWeekEnd}. Nueva versión: v${res.schedule.version}`
+                                `«${selectedItem.title}» reprogramada para ${targetWeekStart} al ${targetWeekEnd}. La encontrarás en Mis semanas → Organizar esta semana.`
                               );
                               setIsAdjustmentPreviewOpen(false);
                             } else if (res.status === "concurrency_conflict") {

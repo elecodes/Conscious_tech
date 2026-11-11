@@ -1408,3 +1408,120 @@ details.calm-details[open] {
 .task-calendar-day > ul {
   align-content: start;
 }
+
+.week-availability-editor {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--surface-warm);
+}
+.week-availability-editor summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.week-availability-editor p {
+  font-size: 0.78rem;
+  margin: 7px 0;
+}
+.week-availability-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+.week-availability-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  flex: 1 1 160px;
+}
+.week-availability-fields input {
+  width: 100%;
+  min-width: 0;
+}
+.container.with-weeks-sidebar {
+  max-width: 1400px;
+}
+.weeks-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 245px;
+  gap: 20px;
+  align-items: start;
+}
+.weeks-main {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+.weeks-sidebar {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: 16px;
+  min-width: 0;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px;
+}
+.weeks-sidebar > details > summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+.weeks-sidebar > details[open] {
+  max-height: calc(100vh - 56px);
+  overflow-y: auto;
+}
+.weeks-sidebar p {
+  font-size: 0.75rem;
+  margin: 8px 0;
+}
+.sidebar-week {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--border-color);
+  padding: 12px 0;
+  font-size: 0.78rem;
+}
+.sidebar-week small {
+  color: var(--text-muted);
+}
+.sidebar-week ul {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.sidebar-week li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px;
+  background: var(--surface-warm);
+  border-radius: 5px;
+  overflow-wrap: anywhere;
+}
+.sidebar-week button.secondary.small {
+  white-space: normal;
+}
+@media (max-width: 1099px) {
+  .weeks-workspace {
+    display: flex;
+    flex-direction: column;
+  }
+  .weeks-sidebar {
+    position: static;
+    width: 100%;
+  }
+  .weeks-main {
+    width: 100%;
+  }
+  .weeks-sidebar > details[open] {
+    max-height: none;
+  }
+}

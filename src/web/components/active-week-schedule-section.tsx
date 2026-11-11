@@ -1,3 +1,4 @@
+import type { TargetWeek } from "../../domain/week";
 import { ItemPostponementControls } from "./item-postponement-controls";
 import { activePostponements } from "../../domain/item-postponement";
 import { ItemMovementControls } from "./item-movement-controls";
@@ -43,6 +44,8 @@ export interface ActiveWeekScheduleSectionProps {
   setIsAdjustmentPreviewOpen: (val: boolean) => void;
   handleSaveTaskAdjustment: (itemId: string, title: string) => void;
   applyAdjustment: (input: any) => Promise<any>;
+  targetDraft?: StoredWeeklyPlan;
+  onOpenDestination?: (week: TargetWeek) => void;
   setFeedbackMessage: (msg: string | null) => void;
 }
 
@@ -76,6 +79,8 @@ export function ActiveWeekScheduleSection({
   handleSaveTaskAdjustment,
   applyAdjustment,
   setFeedbackMessage,
+  targetDraft,
+  onOpenDestination,
 }: ActiveWeekScheduleSectionProps) {
   const [exportNotice, setExportNotice] = useState<string | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -763,6 +768,8 @@ export function ActiveWeekScheduleSection({
         handleSaveTaskAdjustment={handleSaveTaskAdjustment}
         applyAdjustment={applyAdjustment}
         setFeedbackMessage={setFeedbackMessage}
+        targetDraft={targetDraft}
+        onOpenDestination={onOpenDestination}
       />
     </section>
   );

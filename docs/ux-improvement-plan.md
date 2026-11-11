@@ -589,3 +589,24 @@ Baseline results:
 - Verification: 1,064 tests across 82 files, types, lint, formatting, dependency
   cycles, production build and browser checks in preview/development pass. The
   existing bundle-size warning remains. No schema or domain-operation changes.
+
+### User walkthrough — later availability and active/future week overview
+
+- Added visible availability editing after task capture, in both draft and active
+  weeks. Reuses validated capacity math, preserves estimates/assignments and treats
+  unknown hours separately from zero. Active updates use expected schedule versions.
+- Added a responsive collapsible Mis semanas sidebar, projecting active work,
+  saved drafts and explicit destinations from current/latest closed schedules.
+  Pending destination work is labelled by inclusion state; it is not a fake draft.
+- Sidebar navigation reuses protected exact-week switching after draft restoration.
+  Reschedule warnings now inspect destination capacity, with a link to that week;
+  the default destination is the following week.
+- Exposed carryover controls in the primary planner. Retained source cards and
+  accepted IDs on generation, restored valid selections and avoided copying a
+  shared focus estimate into each recovered source.
+- Added tests for later/zero/unknown capacity, preserved task data/completeness,
+  destination projection/deduplication and browser coverage for rescheduling,
+  separate active/future capacity, exact-week navigation, reload and mobile layout.
+- Verification: 1,069 tests across 83 files; types, lint, formatting, dependency
+  cycles, production build and complete browser checks in preview/development pass.
+  Existing bundle-size warnings remain. No dependencies or storage schemas changed.

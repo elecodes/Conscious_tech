@@ -305,6 +305,11 @@ week or leave it for later. Deadlines remain separate from chosen days; unknown
 hours stay unestimated. Changes are saved in the local draft, with a visible retry
 if saving fails. Shared focus estimates are adjusted as a whole in advanced options.
 
+You can add free hours later with **Añadir horas disponibles**, directly above the
+draft calendar or beside the active week's balance. **Guardar disponibilidad**
+recalculates capacity without regenerating tasks or changing their assigned days.
+Unknown hours mean **Por definir**; zero explicitly means no time is available.
+
 Use **Guardar y activar semana** when ready. **Ver detalle del plan** is optional,
 and **Opciones avanzadas** retains source corrections, capacity, focus controls and
 imports. Returning to your notes without edits preserves the calendar decisions.
@@ -328,6 +333,15 @@ Colour, text and symbols distinguish placement and progress: amber **Sin día**,
 blue **Programada**, green **Completada**, purple **Aplazada**, and grey notes or
 excluded work. Scheduled tasks may still be unfinished; the pending filter keeps
 its existing meaning.
+
+The collapsible **Mis semanas** sidebar shows the active week, saved drafts and
+explicitly rescheduled destinations with their tasks and separate availability.
+On smaller screens it becomes a collapsible panel above the content. Choose
+**Organizar esta semana** to open that exact week. Rescheduled tasks remain visible
+as **Reprogramada · por incluir** until you choose them for the destination calendar;
+they are never silently activated. Their source cards and individual effort are
+retained after generating a draft and reloading. The reschedule preview's capacity
+notice refers to the destination week, not the active week.
 
 Open **Nueva semana → Mes y otras semanas** for a monthly overview of active work
 and saved drafts. Choose a day or a saved week to open its weekly editor. Future

@@ -1,3 +1,6 @@
+import { CarryOverTasksSection } from "./carry-over-tasks-section";
+import { WeekAvailabilityEditor } from "./week-availability-editor";
+import { editWeekAvailability } from "../week-availability";
 import { MonthTaskCalendar } from "./month-task-calendar";
 import { DraftTaskCalendar } from "./draft-task-calendar";
 import {
@@ -12,6 +15,7 @@ import { MockProvider } from "../../providers/mock-provider";
 import { ExtractedItem, ExtractedItems } from "../../domain/items";
 import {
   CalendarDateSchema,
+  TargetWeekSchema,
   ProposedWeek,
   resolveDefaultTargetWeek,
   TargetWeek,
@@ -53,6 +57,8 @@ export interface WeeklyPlanningFromNotesProps {
   initialItems?: ExtractedItem[];
   initialProposedWeek?: ProposedWeek;
   onProposalStatusChange?: (hasProposal: boolean) => void;
+  requestedWeek?: TargetWeek;
+  onRequestedWeekHandled?: (week: TargetWeek) => void;
   initialStep?: "write" | "review" | "confirm";
   onNavigateSpace?: (space: "capture" | "prepare" | "active" | "review") => void;
 }
@@ -69,6 +75,8 @@ export function WeeklyPlanningFromNotes({
   initialProposedWeek,
   onProposalStatusChange,
   initialStep,
+  requestedWeek,
+  onRequestedWeekHandled,
   onNavigateSpace,
 }: WeeklyPlanningFromNotesProps) {
   const { createOrSavePlan, saveDraftPlan, service, state } = useWeeklySession();
@@ -136,6 +144,7 @@ export function WeeklyPlanningFromNotes({
   const [draftSaveError, setDraftSaveError] = useState<string | null>(null);
   const [calendarView, setCalendarView] = useState<"week" | "month">("week");
   const [weekLoading, setWeekLoading] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
   const [monthError, setMonthError] = useState<string | null>(null);
   const [plannedDays, setPlannedDays] = useState<Record<string, string>>({});
   const [carryOverTasks, setCarryOverTasks] = useState<PendingCarryOverTask[]>([]);
@@ -401,8 +410,10 @@ export function WeeklyPlanningFromNotes({
         initialProposedWeek ||
         (initialItems && initialItems.length > 0) ||
         !service?.getDraftPlan
-      )
+      ) {
+        setDraftRestored(true);
         return;
+      }
       try {
         const currentTargetWeek: TargetWeek = {
           startDate: targetWeekStart,
@@ -518,6 +529,8 @@ export function WeeklyPlanningFromNotes({
         }
       } catch (err) {
         logger.error("Failed to restore draft plan", err);
+      } finally {
+        if (!isCancelled) setDraftRestored(true);
       }
     }
     restoreDraft();
@@ -579,6 +592,10 @@ export function WeeklyPlanningFromNotes({
   };
 
   const openMonthWeek = async (week: TargetWeek) => {
+    if (!TargetWeekSchema.safeParse(week).success) {
+      setMonthError("Elige fechas válidas para la semana destino antes de abrirla.");
+      return;
+    }
     if (weekLoading || isPlanning || isExtracting || isConfirming) return;
     setMonthError(null);
     if (week.startDate === targetWeekStart && week.endDate === targetWeekEnd) {
@@ -682,6 +699,27 @@ export function WeeklyPlanningFromNotes({
     }
   };
 
+  useEffect(() => {
+    if (!requestedWeek || !draftRestored) return;
+    void openMonthWeek(requestedWeek).finally(() => onRequestedWeekHandled?.(requestedWeek));
+  }, [requestedWeek, draftRestored]);
+
+  const saveDraftAvailability = async (hours: string, protectedPercent: string) => {
+    if (!proposedWeek) return false;
+    const proposal = editWeekAvailability(proposedWeek, hours, protectedPercent);
+    setProposedWeek(proposal);
+    setAvailableHoursInput(hours);
+    setProtectedSpacePercentInput(protectedPercent);
+    setLastGeneratedParams((previous) =>
+      previous
+        ? { ...previous, availableHours: hours.trim(), protectedSpace: protectedPercent.trim() }
+        : previous
+    );
+    return persistDraft(proposal, {
+      availableHoursInput: hours,
+      protectedSpacePercentInput: protectedPercent,
+    });
+  };
   const editCalendarHours = async (id: string, hours: number | null) => {
     if (!proposedWeek || !extractedItems) return;
     try {
@@ -712,10 +750,14 @@ export function WeeklyPlanningFromNotes({
     const next = { ...plannedDays };
     if (day) next[id] = day;
     else delete next[id];
+    const previouslyFocused = document.activeElement;
     setPlannedDays(next);
     setPlanningError(null);
     await persistDraft(proposedWeek, { plannedDays: next });
     requestAnimationFrame(() => {
+      // A later edit owns focus even if this earlier save has only just finished.
+      if (document.activeElement !== previouslyFocused && document.activeElement !== document.body)
+        return;
       const card = document.getElementById(`draft-calendar-source-${id}`);
       card?.focus({ preventScroll: true });
       card?.scrollIntoView({ block: "nearest" });
@@ -772,7 +814,10 @@ export function WeeklyPlanningFromNotes({
         if (!isCancelled) {
           setCarryOverTasks(tasks);
           // By default, do NOT auto-select: "La IA propone; la persona decide"
-          setSelectedCarryOverItemIds(new Set());
+          setSelectedCarryOverItemIds(
+            (previous) =>
+              new Set([...previous].filter((id) => tasks.some((task) => task.itemId === id)))
+          );
         }
       } catch (err) {
         // Log quietly without breaking note planning
@@ -1064,7 +1109,7 @@ export function WeeklyPlanningFromNotes({
               }
             : null,
           estimatedEffort:
-            cot.estimatedHours != null
+            cot.estimatedHours != null && cot.estimatedHours > 0
               ? {
                   value: cot.estimatedHours,
                   unit: "hours",
@@ -1163,21 +1208,37 @@ export function WeeklyPlanningFromNotes({
         }
       }
 
+      const nextSources = [
+        ...(extractedItems ?? []),
+        ...carryOverAsItems.filter(
+          (item) => !extractedItems?.some((source) => source.id === item.id)
+        ),
+      ];
+      const nextAccepted = new Set([
+        ...acceptedItemIds,
+        ...carryOverAsItems.map((item) => item.id),
+      ]);
+      setExtractedItems(nextSources);
+      setAcceptedItemIds(nextAccepted);
       setProposedWeek(finalProposal);
       setDiagnostics(detailedResult.diagnostics);
       setIsReviewingSelection(false);
-      await persistDraft(finalProposal);
+      await persistDraft(finalProposal, {
+        extractedItems: nextSources,
+        acceptedItemIds: Array.from(nextAccepted),
+      });
       setLastGeneratedParams({
-        acceptedItemIds: Array.from(acceptedItemIds).sort().join(","),
+        acceptedItemIds: Array.from(nextAccepted).sort().join(","),
         carryOverIds: Array.from(selectedCarryOverItemIds).sort().join(","),
         userIntent: userIntent.trim(),
         availableHours: availableHoursInput.trim(),
         protectedSpace: protectedSpacePercentInput.trim(),
-        items: itemSignature(extractedItems),
+        items: itemSignature(nextSources),
         targetWeekStart,
         targetWeekEnd,
         noteText: noteText.trim(),
       });
+      setFlowStep("review");
       return true;
     } catch (err) {
       if (reqId !== planningRequestIdRef.current) return false;
@@ -2055,6 +2116,28 @@ export function WeeklyPlanningFromNotes({
       {/* -------------------------------------------------------------------- */}
       {/* PASO 1: ESCRIBIR                                                    */}
       {/* -------------------------------------------------------------------- */}
+      {calendarView === "week" && (
+        <CarryOverTasksSection
+          carryOverTasks={carryOverTasks.filter(
+            (task) => !proposedWeek || !includedDraftItemIds(proposedWeek).has(task.itemId)
+          )}
+          selectedCarryOverItemIds={
+            new Set(
+              Array.from(selectedCarryOverItemIds).filter(
+                (id) => !proposedWeek || !includedDraftItemIds(proposedWeek).has(id)
+              )
+            )
+          }
+          onToggleCarryOverItem={handleToggleCarryOverItem}
+          onSelectAll={() =>
+            setSelectedCarryOverItemIds(new Set(carryOverTasks.map((task) => task.itemId)))
+          }
+          onDeselectAll={() => setSelectedCarryOverItemIds(new Set())}
+          isPlanning={isPlanning || isExtracting}
+          onGenerateProposal={() => void handleGenerateProposal()}
+          hasExtractedItems={!!extractedItems?.length}
+        />
+      )}
       {calendarView === "week" && flowStep === "write" && (
         <div data-testid="flow-step-write">
           <details className="capture-examples" data-testid="capture-examples">
@@ -2273,6 +2356,12 @@ export function WeeklyPlanningFromNotes({
         >
           {proposedWeek ? (
             <>
+              <WeekAvailabilityEditor
+                capacity={proposedWeek.weekSummary.capacity}
+                week={proposedWeek.weekSummary.targetWeek}
+                onSave={saveDraftAvailability}
+                disabled={isSavingDraft || isPlanning || isExtracting || isConfirming}
+              />
               <DraftTaskCalendar
                 proposal={proposedWeek}
                 items={extractedItems ?? []}
@@ -2375,7 +2464,7 @@ export function WeeklyPlanningFromNotes({
               isReviewingSelection={isReviewingSelection}
               handleReturnToProposal={handleReturnToProposal}
               handleCancelProposal={handleCancelProposal}
-              carryOverTasks={carryOverTasks}
+              carryOverTasks={[]}
               selectedCarryOverItemIds={selectedCarryOverItemIds}
               handleToggleCarryOverItem={handleToggleCarryOverItem}
               setSelectedCarryOverItemIds={setSelectedCarryOverItemIds}

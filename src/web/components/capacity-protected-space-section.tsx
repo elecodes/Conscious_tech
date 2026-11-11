@@ -167,7 +167,7 @@ export function CapacityProtectedSpaceSection({ capacity }: CapacityProtectedSpa
             >
               <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
                 <span className="calm-muted">Disponibles:</span>{" "}
-                <strong>{formatHours(capacity.totalAvailableHours, "No disponible")}</strong>
+                <strong>{formatHours(capacity.totalAvailableHours, "Por definir")}</strong>
               </span>
               <span style={{ background: "#f3f0ea", padding: "3px 8px", borderRadius: "4px" }}>
                 <span className="calm-muted">Planificadas:</span>{" "}
@@ -260,7 +260,7 @@ export function CapacityProtectedSpaceSection({ capacity }: CapacityProtectedSpa
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
                     <span className="calm-muted">Tiempo disponible:</span>
                     <strong data-testid="total-available-hours">
-                      {formatHours(capacity.totalAvailableHours, "No disponible")}
+                      {formatHours(capacity.totalAvailableHours, "Por definir")}
                     </strong>
                   </div>
 

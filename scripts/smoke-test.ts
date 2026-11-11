@@ -1,3 +1,4 @@
+import { verifyWeekAvailability } from "./week-availability-smoke";
 import { verifyCalendarCards } from "./calendar-card-smoke";
 import { verifyDraftCalendar, verifyCustomMonthRange } from "./draft-calendar-smoke";
 import net from "node:net";
@@ -793,6 +794,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     );
     await verifyCustomMonthRange(browser, url);
     await verifyPlanningReview(browser, url);
+    await verifyWeekAvailability(browser, url, mode === "preview" ? outputDir : undefined);
     await verifyCalendarCards(browser, url, mode === "preview" ? outputDir : undefined);
     await verifyActiveWeek(browser, url);
     await browser.close();

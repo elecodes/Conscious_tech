@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Added availability editing directly to draft calendars and active-week balances,
+  preserving task choices, effort completeness and assigned days when recalculating.
+- Added a collapsible week sidebar showing active work, drafts and rescheduled
+  destinations, with exact-week navigation and truthful capacity/placement labels.
+- Corrected reschedule capacity notices to inspect the destination, exposed carryover
+  selection in the main planning flow, and retained carried source cards on generation.
+- Kept restored carryover selections and individual focus-member effort rather than
+  repeating a shared focus estimate on each recovered task.
+
 - Replaced oversized standalone movement selects with compact task-specific
   “Cambiar día” disclosures, including a fallback for tasks without simple allocations.
 - Kept movement controls mounted during saves to prevent neighbouring cards from

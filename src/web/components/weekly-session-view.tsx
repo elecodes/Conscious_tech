@@ -1,3 +1,5 @@
+import { WeekAvailabilityEditor } from "./week-availability-editor";
+import { editWeekAvailability } from "../week-availability";
 import { calendarMovement } from "../calendar-movement";
 import { ActiveTaskCalendar } from "./active-task-calendar";
 import type { MovementAction, PostponementAction } from "../../domain/item-activity-types";
@@ -8,7 +10,7 @@ import { useWeeklySession } from "../context/weekly-session-context";
 import { StoredWeeklyPlan } from "../../domain/repositories/types";
 import { ExtractedItem } from "../../domain/items";
 import { WeeklySchedule, DailyWorkAllocation } from "../../domain/schedule";
-import { EstimationCompleteness, resolveDefaultTargetWeek } from "../../domain/week";
+import { TargetWeek, EstimationCompleteness, resolveDefaultTargetWeek } from "../../domain/week";
 import { calculateWeeklyCapacity, resolveTargetWeek } from "../../skills/build-week/deterministic";
 import { WeeklyPlanningFromNotes } from "./weekly-planning-from-notes";
 import { evaluateRadarInput, RadarEvaluationResult } from "../../application/radar-pipeline";
@@ -61,6 +63,9 @@ export interface WeeklySessionViewProps {
   activeSpace?: "capture" | "prepare" | "active" | "review";
   onNavigateSpace?: (space: "capture" | "prepare" | "active" | "review") => void;
   onProposalStatusChange?: (hasProposal: boolean) => void;
+  requestedWeek?: TargetWeek;
+  onRequestedWeekHandled?: (week: TargetWeek) => void;
+  onOpenPlanningWeek?: (week: TargetWeek) => void;
   initialStep?: "write" | "review" | "confirm";
 }
 
@@ -72,6 +77,9 @@ export function WeeklySessionView({
   onNavigateSpace,
   onProposalStatusChange,
   initialStep,
+  requestedWeek,
+  onRequestedWeekHandled,
+  onOpenPlanningWeek,
 }: WeeklySessionViewProps = {}) {
   const {
     state,
@@ -102,8 +110,9 @@ export function WeeklySessionView({
   const [selectedAdjustmentItemId, setSelectedAdjustmentItemId] = useState<string>("");
   const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false);
   const [lastSavedAdjustment, setLastSavedAdjustment] = useState<string | null>(null);
-  const defaultTargetWeek =
-    state.activePlan?.targetWeek ?? resolveDefaultTargetWeek(new Date().toISOString().slice(0, 10));
+  const defaultTargetWeek = state.activePlan
+    ? resolveDefaultTargetWeek(state.activePlan.targetWeek.endDate)
+    : resolveDefaultTargetWeek(new Date().toISOString().slice(0, 10));
   const [targetWeekStart, setTargetWeekStart] = useState(defaultTargetWeek.startDate);
   const [targetWeekEnd, setTargetWeekEnd] = useState(defaultTargetWeek.endDate);
   const [deadlineInput, setDeadlineInput] = useState("");
@@ -139,6 +148,31 @@ export function WeeklySessionView({
       )
     );
   }, [activeSpace, plan, schedule]);
+  const saveActiveAvailability = async (hours: string, protectedPercent: string) => {
+    if (!plan || !schedule || activityLock.current) return false;
+    activityLock.current = true;
+    setActivityBusy(true);
+    try {
+      const proposal = editWeekAvailability(plan.proposal, hours, protectedPercent);
+      const now = new Date().toISOString();
+      const result = await createOrSavePlan(
+        { ...plan, proposal, updatedAt: now },
+        { ...schedule, version: schedule.version + 1, updatedAt: now },
+        schedule.version
+      );
+      if (result.status === "success") {
+        setFeedbackMessage("Disponibilidad guardada. Tus tareas y días se conservan.");
+        return true;
+      }
+      setFeedbackMessage(
+        "No se guardó la disponibilidad. La semana puede haber cambiado; recarga e inténtalo de nuevo."
+      );
+      return false;
+    } finally {
+      activityLock.current = false;
+      setActivityBusy(false);
+    }
+  };
   const handleActivity = async (
     itemId: string,
     reversesActionId?: string,
@@ -810,6 +844,8 @@ export function WeeklySessionView({
         <WeeklyPlanningFromNotes
           provider={provider}
           initialItems={initialPlanningItems}
+          requestedWeek={requestedWeek}
+          onRequestedWeekHandled={onRequestedWeekHandled}
           initialStep={initialStep ?? (activeSpace === "capture" ? "write" : "review")}
           hasActivePlan={state.status === "session_resumed"}
           onProposalStatusChange={onProposalStatusChange}
@@ -1312,7 +1348,15 @@ export function WeeklySessionView({
 
       {/* Capacidad y espacio protegido */}
       {plan?.proposal.weekSummary.capacity && (
-        <CapacityProtectedSpaceSection capacity={plan.proposal.weekSummary.capacity} />
+        <>
+          <WeekAvailabilityEditor
+            capacity={plan.proposal.weekSummary.capacity}
+            week={plan.targetWeek}
+            onSave={saveActiveAvailability}
+            disabled={activityBusy}
+          />
+          <CapacityProtectedSpaceSection capacity={plan.proposal.weekSummary.capacity} />
+        </>
       )}
 
       {/* 📡 Radar de Imprevistos (Sección 21-25 PROJECT_CONTEXT) */}
@@ -1378,6 +1422,12 @@ export function WeeklySessionView({
           setIsAdjustmentPreviewOpen={setIsAdjustmentPreviewOpen}
           handleSaveTaskAdjustment={handleSaveTaskAdjustment}
           applyAdjustment={applyAdjustment}
+          targetDraft={(state.draftPlans ?? []).find(
+            (draft) =>
+              draft.targetWeek.startDate === targetWeekStart &&
+              draft.targetWeek.endDate === targetWeekEnd
+          )}
+          onOpenDestination={onOpenPlanningWeek}
           setFeedbackMessage={setFeedbackMessage}
         />
       )}

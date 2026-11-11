@@ -625,3 +625,29 @@ The product succeeds when the person can say:
 - Pruebas específicas verifican que mover/deshacer una de dos tareas del mismo
   foco y día conserva las asignaciones de la otra, las horas y la propuesta.
   No se modificaron reglas de dominio, esquemas, proveedores ni dependencias.
+
+## Disponibilidad posterior y seguimiento de semanas
+
+- La persona pidió poder configurar tiempo disponible después de listar/activar
+  tareas, encontrar las reprogramadas y ver la semana activa y la siguiente juntas.
+- Añadir/Cambiar horas disponibles está a la vista en el calendario de borrador y
+  junto al balance activo. Valida los mismos límites, distingue Por definir de 0,
+  recalcula capacidad determinísticamente y preserva tareas, días y completitud.
+  La semana activa usa la operación de guardado con versión esperada de agenda.
+- Mis semanas es un lateral plegable en escritorio y panel plegable sobre el
+  contenido en móvil. Lista la activa, borradores y destinos explícitos conservados
+  en las postergaciones de la activa o el último cierre. No inventa borradores ni
+  horas: distingue Por preparar de Borrador y Reprogramada · por incluir de incluida.
+- El lateral abre rangos exactos mediante la navegación protegida ya usada por Mes;
+  espera restauración del borrador, conserva cambios pendientes y no activa semanas.
+- La vista previa de reprogramación usaba la disponibilidad de origen para avisar
+  sobre el destino: ahora mira el borrador del destino y permite abrirlo directamente.
+  El destino por defecto es la semana posterior a la activa.
+- Las tareas postergadas se eligen desde el flujo principal, sin buscar en opciones
+  avanzadas. Al generar se conservan fuentes, IDs aceptados y horas individuales;
+  antes el calendario podía quedar sin tarjetas aunque la propuesta incluyera tareas.
+- Restaurar candidatos conserva selecciones válidas. Un foco agrupado no reparte ni
+  repite su estimación total en cada miembro recuperado: usa la fuente individual
+  si existe y mantiene desconocido si no hay esa información.
+- Sin dependencias ni cambios de esquema, y sin IA para editar disponibilidad,
+  navegar o proyectar el lateral. Reprogramar conserva su acción explícita actual.

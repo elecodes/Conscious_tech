@@ -95,6 +95,8 @@ export async function verifyDraftCalendar(browser: Browser, url: string, screens
     await page.getByTestId("draft-hours-g").fill("3.5");
     await page.getByTestId("draft-day-g").fill("2026-12-08");
     await page.getByTestId("draft-hours-d").fill("");
+    if ((await page.getByTestId("draft-hours-d").inputValue()) !== "")
+      throw new Error("A previous day save interrupted the next hours edit");
     await page.getByTestId("draft-day-d").fill("2026-12-09");
     await page.getByTestId("draft-saving").waitFor({ state: "hidden" });
     await page
@@ -119,7 +121,9 @@ export async function verifyDraftCalendar(browser: Browser, url: string, screens
     if (draft?.draftContext?.plannedDays?.g !== "2026-12-08")
       throw new Error("Chosen day not saved");
     if (draft?.proposal.flexibleOptions.find((row) => row.itemId === "d")?.estimatedHours !== null)
-      throw new Error("Unknown hours were invented");
+      throw new Error(
+        `Unknown hours were invented: ${JSON.stringify({ proposal: draft?.proposal.flexibleOptions, source: draft?.draftContext?.extractedItems?.find((item) => item.id === "d") })}`
+      );
     await page.reload({ waitUntil: "networkidle" });
     await page.getByTestId("draft-calendar-day-2026-12-08").getByTestId("draft-task-g").waitFor();
     if ((await page.getByTestId("draft-hours-g").inputValue()) !== "3.5")

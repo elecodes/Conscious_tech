@@ -169,7 +169,7 @@ describe("Fase P5.3 — Visualización honesta de capacidad y espacio protegido"
         React.createElement(CapacityProtectedSpaceSection, { capacity })
       );
 
-      expect(html).toContain("No disponible"); // totalAvailableHours
+      expect(html).toContain("Por definir"); // totalAvailableHours
       expect(html).toContain("Capacidad desconocida"); // status
     });
 
