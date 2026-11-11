@@ -1,3 +1,6 @@
+import { TaskDaySplitEditor } from "./task-day-split-editor";
+import type { DailyWorkAllocation } from "../../domain/schedule";
+import { taskHoursBudget } from "../task-distribution";
 import { useCalendarDrag } from "../use-calendar-drag";
 import { useState } from "react";
 import type { ProposedWeek } from "../../domain/week";
@@ -12,6 +15,10 @@ export function DraftTaskCalendar({
   onDay,
   onInclude,
   onDefer,
+  allocations = [],
+  onSplit,
+  onMovePortion,
+  saving = false,
 }: {
   proposal: ProposedWeek;
   items: ExtractedItem[];
@@ -20,8 +27,15 @@ export function DraftTaskCalendar({
   onDay: (id: string, day: string | null) => void;
   onInclude: (id: string) => void;
   onDefer: (id: string) => void;
+  allocations?: DailyWorkAllocation[];
+  saving?: boolean;
+  onSplit?: (id: string, rows: DailyWorkAllocation[]) => Promise<boolean>;
+  onMovePortion?: (id: string, source: string, target: string | null) => void;
 }) {
-  const drag = useCalendarDrag((id, _source, day) => onDay(id, day));
+  const drag = useCalendarDrag((id, source, day) => {
+    if (source && allocations.some((row) => row.itemId === id)) onMovePortion?.(id, source, day);
+    else onDay(id, day);
+  });
   const included = includedDraftItemIds(proposal);
   const start = proposal.weekSummary.targetWeek.startDate;
   const end = proposal.weekSummary.targetWeek.endDate;
@@ -40,7 +54,17 @@ export function DraftTaskCalendar({
     new Intl.DateTimeFormat("es-ES", { ...options, timeZone: "UTC" }).format(
       new Date(`${date}T00:00:00Z`)
     );
-  const card = (item: ExtractedItem) => {
+  const daysFor = (id: string) =>
+    allocations.some((row) => row.itemId === id)
+      ? allocations.filter((row) => row.itemId === id).map((row) => row.day)
+      : plannedDays[id]
+        ? [plannedDays[id]!]
+        : [];
+  const card = (item: ExtractedItem, slot?: string) => {
+    const splitRows = allocations.filter((row) => row.itemId === item.id);
+    const suffix = splitRows.length > 1 && slot ? `-${slot}` : "";
+    const budget = taskHoursBudget(proposal, items, item.id, splitRows);
+    const todayHours = splitRows.find((row) => row.day === slot)?.allocatedHours;
     const inside = included.has(item.id);
     const thought = item.type === "idea" || item.type === "concern";
     const focus = proposal.foci.find((focus) => focus.contributingItemIds.includes(item.id));
@@ -49,18 +73,20 @@ export function DraftTaskCalendar({
     const flexible = proposal.flexibleOptions.some((entry) => entry.itemId === item.id);
     return (
       <li
-        key={item.id}
+        key={`${item.id}-${slot ?? "undated"}`}
         className="draft-calendar-card"
-        id={`draft-calendar-source-${item.id}`}
+        id={`draft-calendar-source-${item.id}${suffix}`}
         tabIndex={-1}
-        data-testid={`draft-task-${item.id}`}
+        data-testid={`draft-task-${item.id}${suffix}`}
       >
         {inside && (
           <button
             type="button"
             className="calendar-drag-handle secondary small"
             draggable
-            onDragStart={(event) => drag.start(event, item.id, plannedDays[item.id] ?? null)}
+            onDragStart={(event) =>
+              drag.start(event, item.id, slot ?? plannedDays[item.id] ?? null)
+            }
             onDragEnd={drag.end}
             aria-label={`Arrastrar ${item.title}`}
             title="Arrastra a otro día; también puedes usar Día elegido"
@@ -69,6 +95,11 @@ export function DraftTaskCalendar({
           </button>
         )}
         <strong>{item.title}</strong>
+        {todayHours != null && (
+          <span className="draft-day-hours">
+            {todayHours} h este día · {budget ?? "?"} h en total
+          </span>
+        )}
         <span
           className="draft-calendar-placement"
           role="status"
@@ -85,7 +116,7 @@ export function DraftTaskCalendar({
         {(!thought || inside) && (
           <>
             <label>
-              Horas
+              {splitRows.length ? "Horas totales" : "Horas"}
               <input
                 type="number"
                 min="0"
@@ -96,7 +127,7 @@ export function DraftTaskCalendar({
                 onChange={(event) =>
                   onHours(item.id, event.target.value === "" ? null : Number(event.target.value))
                 }
-                data-testid={`draft-hours-${item.id}`}
+                data-testid={`draft-hours-${item.id}${suffix}`}
               />
             </label>
             {grouped && (
@@ -105,7 +136,7 @@ export function DraftTaskCalendar({
                 en opciones avanzadas.
               </span>
             )}
-            {inside && (
+            {inside && !splitRows.length && (
               <label>
                 Día elegido
                 <input
@@ -122,6 +153,24 @@ export function DraftTaskCalendar({
                   data-testid={`draft-day-${item.id}`}
                 />
               </label>
+            )}
+            {inside && onSplit && (
+              <TaskDaySplitEditor
+                id={item.id}
+                title={item.title}
+                week={proposal.weekSummary.targetWeek}
+                totalHours={budget}
+                disabled={saving}
+                rows={
+                  splitRows.length
+                    ? splitRows
+                    : plannedDays[item.id] && budget != null && budget > 0
+                      ? [{ itemId: item.id, day: plannedDays[item.id]!, allocatedHours: budget }]
+                      : []
+                }
+                onSave={(rows) => onSplit(item.id, rows)}
+                testKey={`draft-${item.id}${suffix}`}
+              />
             )}
             {item.deadline?.resolved && (
               <span className="calm-muted">Fecha límite: {item.deadline.resolved}</span>
@@ -157,7 +206,7 @@ export function DraftTaskCalendar({
   const inside = items.filter((item) => included.has(item.id));
   const outside = items.filter((item) => !included.has(item.id));
   const undated = inside.filter(
-    (item) => !plannedDays[item.id] || plannedDays[item.id]! < start || plannedDays[item.id]! > end
+    (item) => !daysFor(item.id).some((day) => day >= start && day <= end)
   );
   return (
     <section
@@ -172,8 +221,9 @@ export function DraftTaskCalendar({
         {format(end, { day: "numeric", month: "long", year: "numeric" })}
       </p>
       <p className="calm-muted">
-        Arrastra las tareas a otro día o usa Día elegido. Añade tareas y ajusta sus horas aquí. Los
-        cambios se guardan en el borrador; la semana se activa cuando tú decidas.
+        Para varios días, abre «Repartir horas» y elige las horas de cada día. Arrastrar una parte
+        mueve solo esas horas. Los cambios se guardan en el borrador; la semana se activa cuando tú
+        decidas.
       </p>
       <p className="calm-muted" data-testid="draft-calendar-capacity">
         {proposal.weekSummary.capacity.knownEstimatedHours ?? 0} h estimadas
@@ -227,7 +277,11 @@ export function DraftTaskCalendar({
               <span>{format(day, { weekday: "short" })}</span>
               <strong>{format(day, { day: "numeric", month: "short" })}</strong>
             </header>
-            <ul>{inside.filter((item) => plannedDays[item.id] === day).map(card)}</ul>
+            <ul>
+              {inside
+                .filter((item) => daysFor(item.id).includes(day))
+                .map((item) => card(item, day))}
+            </ul>
           </section>
         ))}
       </div>
@@ -237,12 +291,12 @@ export function DraftTaskCalendar({
         data-testid="draft-calendar-undated"
       >
         <h4>Esta semana, sin día elegido ({undated.length})</h4>
-        <ul>{undated.map(card)}</ul>
+        <ul>{undated.map((item) => card(item))}</ul>
       </section>
       {!!outside.length && (
         <section className="task-calendar-undated" data-testid="draft-calendar-outside">
           <h4>Para decidir · fuera de esta semana ({outside.length})</h4>
-          <ul>{outside.map(card)}</ul>
+          <ul>{outside.map((item) => card(item))}</ul>
         </section>
       )}
     </section>

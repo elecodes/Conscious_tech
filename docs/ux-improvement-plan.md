@@ -610,3 +610,26 @@ Baseline results:
 - Verification: 1,069 tests across 83 files; types, lint, formatting, dependency
   cycles, production build and complete browser checks in preview/development pass.
   Existing bundle-size warnings remain. No dependencies or storage schemas changed.
+
+### User walkthrough — divide one task's hours across multiple days
+
+- Added Repartir horas to draft and active task cards, with partial allocation,
+  remaining effort and bounds for each task, shared focus and configured day.
+- Each day displays its own hours; unique task counts and weekly estimates do not
+  multiply. Dragging moves one portion and merges a same-task destination safely.
+- Persistence design: optional draftContext.plannedAllocations uses existing daily
+  allocation shapes and survives reload, draft switching and old/new backup import.
+  Activation validates and creates the actual schedule rows, preserving old single
+  day behavior. Actual active assignments take precedence over draft metadata.
+- Active distribution uses version-checked saving without modifying proposal/task
+  choices. Legacy total edits preserve existing portions and guard against reducing
+  effort below allocated hours. Fixed clock blocks keep their explicit controls.
+- Integrated every assigned date in month/sidebar projections, calendar export,
+  individual event links and email. Exported all-day portions include their hours
+  without fabricating clock times.
+- Added behavior and browser checks for a five-hour 2/2/1 task, partial distribution,
+  invalid/excess hours, shared/unknown effort, capacity, other-task preservation,
+  reload, activation, per-portion dragging, total edits, exports and mobile layout.
+- Validation: 1,075 tests across 84 files passed; typecheck, lint, formatting,
+  dependency-cycle check and production build passed. Full browser smoke passed
+  in preview and development, including split allocation and prior workflows.

@@ -1,3 +1,10 @@
+import type { DailyWorkAllocation } from "../../domain/schedule";
+import {
+  distributionHours,
+  moveDistributionPortion,
+  replaceTaskDistribution,
+  retainDraftAllocations,
+} from "../task-distribution";
 import { CarryOverTasksSection } from "./carry-over-tasks-section";
 import { WeekAvailabilityEditor } from "./week-availability-editor";
 import { editWeekAvailability } from "../week-availability";
@@ -146,6 +153,7 @@ export function WeeklyPlanningFromNotes({
   const [weekLoading, setWeekLoading] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
   const [monthError, setMonthError] = useState<string | null>(null);
+  const [plannedAllocations, setPlannedAllocations] = useState<DailyWorkAllocation[]>([]);
   const [plannedDays, setPlannedDays] = useState<Record<string, string>>({});
   const [carryOverTasks, setCarryOverTasks] = useState<PendingCarryOverTask[]>([]);
   const [selectedCarryOverItemIds, setSelectedCarryOverItemIds] = useState<Set<string>>(new Set());
@@ -424,6 +432,7 @@ export function WeeklyPlanningFromNotes({
         if (draft && draft.status === "draft" && draft.proposal) {
           setProposedWeek(draft.proposal);
           setPlannedDays(draft.draftContext?.plannedDays ?? {});
+          setPlannedAllocations(draft.draftContext?.plannedAllocations ?? []);
           if (draft.draftContext) {
             if (draft.draftContext.extractedItems) {
               setExtractedItems(draft.draftContext.extractedItems);
@@ -554,6 +563,7 @@ export function WeeklyPlanningFromNotes({
       draftContext: {
         extractedItems: extractedItems || undefined,
         plannedDays,
+        plannedAllocations,
         acceptedItemIds: Array.from(acceptedItemIds),
         selectedCarryOverItemIds: Array.from(selectedCarryOverItemIds),
         overdueDecisions,
@@ -659,6 +669,7 @@ export function WeeklyPlanningFromNotes({
       setOverdueDecisions(context?.overdueDecisions ?? {});
       setDeferredDecisions(context?.deferredDecisions ?? {});
       setPlannedDays(context?.plannedDays ?? {});
+      setPlannedAllocations(context?.plannedAllocations ?? []);
       setAvailableHoursInput(hours);
       setProtectedSpacePercentInput(percent);
       setNoteText(context?.noteText ?? "");
@@ -720,9 +731,41 @@ export function WeeklyPlanningFromNotes({
       protectedSpacePercentInput: protectedPercent,
     });
   };
+  const saveDraftSplit = async (id: string, rows: DailyWorkAllocation[]) => {
+    if (!proposedWeek || isPlanning || isExtracting || isConfirming) return false;
+    const next = replaceTaskDistribution(
+      proposedWeek,
+      extractedItems ?? undefined,
+      plannedAllocations,
+      id,
+      rows
+    );
+    const days = { ...plannedDays };
+    delete days[id];
+    setPlannedAllocations(next);
+    setPlannedDays(days);
+    setPlanningError(null);
+    return persistDraft(proposedWeek, { plannedAllocations: next, plannedDays: days });
+  };
+  const moveDraftPortion = async (id: string, source: string, target: string | null) => {
+    try {
+      const next = moveDistributionPortion(plannedAllocations, id, source, target);
+      await saveDraftSplit(
+        id,
+        next.filter((row) => row.itemId === id)
+      );
+    } catch (error) {
+      setPlanningError((error as Error).message);
+    }
+  };
   const editCalendarHours = async (id: string, hours: number | null) => {
     if (!proposedWeek || !extractedItems) return;
     try {
+      const assigned = distributionHours(plannedAllocations.filter((row) => row.itemId === id));
+      if (assigned > 0 && (hours == null || hours < assigned))
+        throw new Error(
+          `Ya has repartido ${assigned} h. Ajusta el reparto antes de reducir las horas totales.`
+        );
       const edited = editDraftCalendarHours(proposedWeek, extractedItems, id, hours);
       setExtractedItems(edited.items);
       setProposedWeek(edited.proposal);
@@ -874,6 +917,7 @@ export function WeeklyPlanningFromNotes({
         }
         const merged = Array.from(existingMap.values());
         setPlannedDays(retainDraftDays(extractedItems, merged, plannedDays));
+        setPlannedAllocations(retainDraftAllocations(extractedItems, merged, plannedAllocations));
         setExtractedItems(merged);
         setAcceptedItemIds((prev) => {
           const next = new Set(prev);
@@ -883,6 +927,9 @@ export function WeeklyPlanningFromNotes({
         setSuccessMessage(`Se añadieron ${newItems.length} nueva(s) idea(s) a la lista existente.`);
       } else {
         setPlannedDays(retainDraftDays(extractedItems ?? [], newItems, plannedDays));
+        setPlannedAllocations(
+          retainDraftAllocations(extractedItems ?? [], newItems, plannedAllocations)
+        );
         setExtractedItems(newItems);
         // By default, accept all extracted items for review
         setAcceptedItemIds(new Set(newItems.map((it) => it.id)));
@@ -966,6 +1013,12 @@ export function WeeklyPlanningFromNotes({
       const newItems = result.items || [];
       const nextPlannedDays = retainDraftDays(extractedItems ?? [], newItems, plannedDays);
       setPlannedDays(nextPlannedDays);
+      const nextAllocations = retainDraftAllocations(
+        extractedItems ?? [],
+        newItems,
+        plannedAllocations
+      );
+      setPlannedAllocations(nextAllocations);
       setExtractedItems(newItems);
       const newAcceptedIds = new Set(newItems.map((it) => it.id));
       setAcceptedItemIds(newAcceptedIds);
@@ -990,6 +1043,7 @@ export function WeeklyPlanningFromNotes({
       await persistDraft(detailedResult.proposal, {
         extractedItems: newItems,
         plannedDays: nextPlannedDays,
+        plannedAllocations: nextAllocations,
         acceptedItemIds: Array.from(newAcceptedIds),
         noteText: trimmed,
       });
@@ -1023,6 +1077,7 @@ export function WeeklyPlanningFromNotes({
   const handleStartFreshWeek = async () => {
     await draftSaveQueue.current;
     setPlannedDays({});
+    setPlannedAllocations([]);
     setDraftSaveError(null);
     setExtractedItems(null);
     setAcceptedItemIds(new Set());
@@ -1293,6 +1348,21 @@ export function WeeklyPlanningFromNotes({
       return;
     }
 
+    try {
+      const included = includedDraftItemIds(proposedWeek);
+      const rows = plannedAllocations.filter((row) => included.has(row.itemId));
+      for (const id of new Set(rows.map((row) => row.itemId)))
+        replaceTaskDistribution(
+          proposedWeek,
+          extractedItems ?? undefined,
+          rows,
+          id,
+          rows.filter((row) => row.itemId === id)
+        );
+    } catch (error) {
+      setPlanningError((error as Error).message);
+      return;
+    }
     for (const [itemId, day] of Object.entries(plannedDays)) {
       if (
         includedDraftItemIds(proposedWeek).has(itemId) &&
@@ -1343,7 +1413,8 @@ export function WeeklyPlanningFromNotes({
 
     const includedIds = includedDraftItemIds(proposedWeek);
     const chosenAllocations = Object.entries(plannedDays).flatMap(([itemId, day]) => {
-      if (!includedIds.has(itemId)) return [];
+      if (!includedIds.has(itemId) || plannedAllocations.some((row) => row.itemId === itemId))
+        return [];
       const source = extractedItems?.find((item) => item.id === itemId);
       const grouped = proposedWeek.foci.some(
         (focus) =>
@@ -1354,7 +1425,8 @@ export function WeeklyPlanningFromNotes({
         grouped ||
         hours == null ||
         hours <= 0 ||
-        existingSched?.dailyAllocations.some((row) => row.itemId === itemId)
+        existingSched?.dailyAllocations.some((row) => row.itemId === itemId) ||
+        existingSched?.timeBlocks.some((row) => row.itemId === itemId)
       )
         return [];
       return [{ itemId, day, allocatedHours: hours }];
@@ -1364,7 +1436,16 @@ export function WeeklyPlanningFromNotes({
       planId,
       weekRange: targetWeek,
       timeBlocks: existingSched?.timeBlocks ?? [],
-      dailyAllocations: [...(existingSched?.dailyAllocations ?? []), ...chosenAllocations],
+      dailyAllocations: [
+        ...(existingSched?.dailyAllocations ?? []),
+        ...chosenAllocations,
+        ...plannedAllocations.filter(
+          (row) =>
+            includedIds.has(row.itemId) &&
+            !existingSched?.dailyAllocations.some((previous) => previous.itemId === row.itemId) &&
+            !existingSched?.timeBlocks.some((previous) => previous.itemId === row.itemId)
+        ),
+      ],
       dayConstraints: existingSched?.dayConstraints ?? [],
       appliedAdjustments: existingSched?.appliedAdjustments ?? [],
       version: nextVersion,
@@ -1379,6 +1460,7 @@ export function WeeklyPlanningFromNotes({
         setSuccessMessage("¡Semana confirmada y guardada con éxito en tu cuaderno!");
         setProposedWeek(null);
         setPlannedDays({});
+        setPlannedAllocations([]);
         setDiagnostics([]);
         setExtractedItems(null);
         setNoteText("");
@@ -1430,6 +1512,7 @@ export function WeeklyPlanningFromNotes({
   const handleCancelProposal = async () => {
     await draftSaveQueue.current;
     setPlannedDays({});
+    setPlannedAllocations([]);
     setDraftSaveError(null);
     setProposedWeek(null);
     setDiagnostics([]);
@@ -2095,7 +2178,11 @@ export function WeeklyPlanningFromNotes({
                     status: "draft" as const,
                     targetWeek: proposedWeek.weekSummary.targetWeek,
                     proposal: proposedWeek,
-                    draftContext: { extractedItems: extractedItems ?? undefined, plannedDays },
+                    draftContext: {
+                      extractedItems: extractedItems ?? undefined,
+                      plannedDays,
+                      plannedAllocations,
+                    },
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                   },
@@ -2366,6 +2453,10 @@ export function WeeklyPlanningFromNotes({
                 proposal={proposedWeek}
                 items={extractedItems ?? []}
                 plannedDays={plannedDays}
+                allocations={plannedAllocations}
+                saving={isSavingDraft}
+                onSplit={saveDraftSplit}
+                onMovePortion={(id, source, target) => void moveDraftPortion(id, source, target)}
                 onHours={(id, hours) => void editCalendarHours(id, hours)}
                 onDay={(id, day) => void editCalendarDay(id, day)}
                 onInclude={(id) => void handleDeferredDecisionChange(id, "include_flexible")}

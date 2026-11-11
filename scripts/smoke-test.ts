@@ -1,3 +1,4 @@
+import { verifyTaskSplit } from "./task-split-smoke";
 import { verifyWeekAvailability } from "./week-availability-smoke";
 import { verifyCalendarCards } from "./calendar-card-smoke";
 import { verifyDraftCalendar, verifyCustomMonthRange } from "./draft-calendar-smoke";
@@ -796,6 +797,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     await verifyPlanningReview(browser, url);
     await verifyWeekAvailability(browser, url, mode === "preview" ? outputDir : undefined);
     await verifyCalendarCards(browser, url, mode === "preview" ? outputDir : undefined);
+    await verifyTaskSplit(browser, url, mode === "preview" ? outputDir : undefined);
     await verifyActiveWeek(browser, url);
     await browser.close();
     console.log(`=== Smoke Test [${mode}] PASSED ===\n`);

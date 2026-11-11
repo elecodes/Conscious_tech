@@ -651,3 +651,35 @@ The product succeeds when the person can say:
   si existe y mantiene desconocido si no hay esa información.
 - Sin dependencias ni cambios de esquema, y sin IA para editar disponibilidad,
   navegar o proyectar el lateral. Reprogramar conserva su acción explícita actual.
+
+## Tareas repartidas entre varios días
+
+- La persona pidió prolongar una tarea dentro de su semana y repartir, por ejemplo,
+  5 h entre lunes 2 h, miércoles 2 h y viernes 1 h.
+- Repartir horas aparece en cada tarjeta incluida del borrador y la semana activa.
+  Permite repartos parciales, muestra lo pendiente y valida fechas reales, días
+  únicos, valores positivos y que el reparto no supere el total conocido.
+- Cada día muestra solo su parte. Una tarea conserva su única estimación semanal
+  y su contador de pendiente; repetirla en días distintos no multiplica la carga.
+- Los borradores usan `draftContext.plannedAllocations`, opcional y basada en el
+  esquema existente DailyWorkAllocation. Se conserva al recargar/cambiar semana,
+  y las fuentes sustituidas con IDs reutilizados no heredan repartos ajenos.
+  Las copias antiguas siguen siendo válidas y se probó el recorrido de importación.
+- Activar valida y transfiere el reparto a la agenda sin duplicar el antiguo día
+  único. Las agendas activas usan sus asignaciones reales; no recuperan metadatos
+  de borrador como si fueran movimientos actuales.
+- Guardar reparto activo sustituye solo las filas de esa tarea, conserva estimación,
+  pertenencia y demás tareas, y usa versión esperada. Los límites diarios explícitos
+  siguen aplicándose. Los bloques horarios fijos mantienen sus controles propios.
+- No se divide una estimación compartida entre miembros de un foco por conjetura:
+  solo se usan esfuerzos individuales conocidos o asignaciones reales existentes,
+  y el conjunto no puede superar la estimación del foco.
+- Arrastrar una parte preserva el resto, fusiona el destino cuando ya existe y
+  conserva fracciones de hora. Dejar una parte sin día mantiene el esfuerzo pendiente.
+- Editar el total desde el control anterior conserva el reparto existente cuando
+  no se cambia el día; no permite reducirlo por debajo de las horas ya repartidas.
+- Mes, lateral, ICS, enlaces de evento y correo reflejan todos los días. Las
+  asignaciones sin reloj se exportan como eventos de día completo con horas en
+  el título; no se inventa una hora de inicio.
+- Sin dependencias ni llamadas nuevas de IA. Se conserva la distinción entre
+  estimación desconocida, horas explícitas y capacidad disponible.

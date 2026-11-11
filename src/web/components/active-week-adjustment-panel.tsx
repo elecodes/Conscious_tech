@@ -153,6 +153,9 @@ export function ActiveWeekAdjustmentPanel({
               const isCapacityUnconfigured =
                 targetDraft?.proposal.weekSummary.capacity.totalAvailableHours == null;
 
+              const taskParts = schedule.dailyAllocations.filter(
+                (row) => row.itemId === effectiveItemId
+              );
               const hoursToFree = grouped
                 ? original
                   ? extractItemHours(original)
@@ -186,20 +189,32 @@ export function ActiveWeekAdjustmentPanel({
                       style={{ width: "100%", padding: "7px 8px" }}
                     >
                       {planItems.map((item) => {
-                        const alloc = schedule?.dailyAllocations.find(
+                        const allocations = schedule.dailyAllocations.filter(
                           (a) => a.itemId === item.itemId
                         );
+                        const alloc = allocations[0];
                         return (
                           <option key={item.itemId} value={item.itemId}>
                             {item.title} ({item.source})
                             {item.estimatedHours ? ` · ${item.estimatedHours}h` : " · Sin estimar"}
-                            {alloc ? ` · 📅 ${alloc.day}` : ""}
+                            {alloc
+                              ? allocations.length > 1
+                                ? ` · ${allocations.length} días`
+                                : ` · 📅 ${alloc.day}`
+                              : ""}
                           </option>
                         );
                       })}
                     </select>
                   </div>
 
+                  {taskParts.length > 1 && (
+                    <p className="calm-muted" data-testid="existing-task-split-note">
+                      Esta tarea está repartida en {taskParts.length} días. Cambiar solo las horas
+                      conserva el reparto; elegir otro día aquí reúne las horas en ese día. Usa
+                      «Repartir horas» en el calendario para ajustar cada parte.
+                    </p>
+                  )}
                   {/* 2. Asignar horas y día en esta semana */}
                   <div
                     style={{

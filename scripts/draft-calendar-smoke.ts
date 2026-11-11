@@ -181,7 +181,10 @@ export async function verifyDraftCalendar(browser: Browser, url: string, screens
     await page.setViewportSize({ width: 1280, height: 900 });
     await page
       .getByTestId("calendar-task-g-2026-12-08")
-      .dragTo(page.getByTestId("calendar-day-2026-12-10"));
+      .evaluate((element) => element.scrollIntoView({ block: "center" }));
+    await page
+      .getByTestId("calendar-task-g-2026-12-08")
+      .dragTo(page.getByTestId("calendar-day-2026-12-10"), { targetPosition: { x: 30, y: 100 } });
     await page.getByTestId("calendar-task-g-2026-12-10").waitFor();
     await page.getByTestId("calendar-actions-g-2026-12-10").locator(":scope > summary").click();
     await page

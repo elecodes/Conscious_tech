@@ -41,6 +41,18 @@ export function weeksOverview(
           .map((item) => [item.itemId, item])
       ).values(),
     ];
+    const assignedDays = (id: string) => {
+      const rows =
+        actual?.dailyAllocations ??
+        (plan.status === "draft" ? (plan.draftContext?.plannedAllocations ?? []) : []);
+      const days = new Set([
+        ...rows.filter((row) => row.itemId === id).map((row) => row.day),
+        ...(actual?.timeBlocks.filter((row) => row.itemId === id).map((row) => row.day) ?? []),
+      ]);
+      if (!days.size && plan.draftContext?.plannedDays?.[id])
+        days.add(plan.draftContext.plannedDays[id]!);
+      return [...days].sort().join(", ") || undefined;
+    };
     result.set(key(plan.targetWeek), {
       key: key(plan.targetWeek),
       week: plan.targetWeek,
@@ -63,10 +75,7 @@ export function weeksOverview(
               }
             )
           : (item.estimatedHours ?? null),
-        day:
-          actual?.dailyAllocations.find((row) => row.itemId === item.itemId)?.day ??
-          actual?.timeBlocks.find((row) => row.itemId === item.itemId)?.day ??
-          plan.draftContext?.plannedDays?.[item.itemId],
+        day: assignedDays(item.itemId),
         carried: false,
       })),
     });

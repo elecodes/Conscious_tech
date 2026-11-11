@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Added per-task daily hour distribution in drafts and active weeks, with partial
+  allocation, remaining-effort feedback and validation against task/day budgets.
+- Preserved one weekly estimate and pending count when tasks span multiple days;
+  dragging a portion moves only its hours and may merge them into another day.
+- Saved optional draft distributions compatibly with older backups and transferred
+  them to real daily allocations on activation without inventing unknown effort.
+- Preserved split allocations when editing a task's total effort and represented
+  every assigned day in month/sidebar views, calendar downloads and email summaries.
+
 - Added availability editing directly to draft calendars and active-week balances,
   preserving task choices, effort completeness and assigned days when recalculating.
 - Added a collapsible week sidebar showing active work, drafts and rescheduled

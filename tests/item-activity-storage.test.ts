@@ -193,7 +193,14 @@ describe("Atomic daily activity storage", () => {
     const oldBackup = await exportUserData(storage);
     await storage.plans.save({
       ...plan,
-      draftContext: { ...plan.draftContext, plannedDays: { c: "2026-12-08" } },
+      draftContext: {
+        ...plan.draftContext,
+        plannedDays: { c: "2026-12-08" },
+        plannedAllocations: [
+          { itemId: "c", day: "2026-12-08", allocatedHours: 1 },
+          { itemId: "c", day: "2026-12-09", allocatedHours: 1 },
+        ],
+      },
     });
     const backup = await exportUserData(storage);
     await storage.clearAll();
@@ -202,9 +209,16 @@ describe("Atomic daily activity storage", () => {
     expect((await storage.plans.getById(plan.planId))?.draftContext?.plannedDays).toEqual({
       c: "2026-12-08",
     });
+    expect((await storage.plans.getById(plan.planId))?.draftContext?.plannedAllocations).toEqual([
+      { itemId: "c", day: "2026-12-08", allocatedHours: 1 },
+      { itemId: "c", day: "2026-12-09", allocatedHours: 1 },
+    ]);
     await storage.clearAll();
     storage = await createIndexedDbStorage({ dbName: "activity-test", customFactory: factory });
     await importUserData(JSON.stringify(oldBackup), storage);
+    expect(
+      (await storage.plans.getById(plan.planId))?.draftContext?.plannedAllocations
+    ).toBeUndefined();
     expect((await storage.plans.getById(plan.planId))?.draftContext?.plannedDays).toBeUndefined();
   });
   it("rejects malformed backup activity before writing any data", async () => {

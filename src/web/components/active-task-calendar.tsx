@@ -1,3 +1,6 @@
+import { TaskDaySplitEditor } from "./task-day-split-editor";
+import { taskHoursBudget } from "../task-distribution";
+import type { DailyWorkAllocation } from "../../domain/schedule";
 import { calendarTaskStatus } from "../calendar-task-status";
 import { useCalendarDrag } from "../use-calendar-drag";
 import { calendarMovement } from "../calendar-movement";
@@ -17,6 +20,7 @@ export function ActiveTaskCalendar({
   items,
   onInspect,
   onMove,
+  onDistribute,
   busy = false,
 }: {
   plan: StoredWeeklyPlan;
@@ -24,6 +28,7 @@ export function ActiveTaskCalendar({
   items: readonly PlanItemSummary[];
   onInspect: (id: string) => void;
   onMove?: (id: string, sourceDay: string, targetDay: string) => void;
+  onDistribute?: (id: string, rows: DailyWorkAllocation[]) => Promise<boolean>;
   busy?: boolean;
 }) {
   const movedTask = useRef<{ id: string; source: string; target: string } | null>(null);
@@ -121,6 +126,24 @@ export function ActiveTaskCalendar({
             </span>
           )}
         </button>
+        {canAdjust && onDistribute && (
+          <TaskDaySplitEditor
+            id={task.itemId}
+            title={task.title}
+            week={plan.targetWeek}
+            totalHours={taskHoursBudget(
+              plan.proposal,
+              plan.draftContext?.extractedItems,
+              task.itemId,
+              schedule?.dailyAllocations.filter((row) => row.itemId === task.itemId)
+            )}
+            rows={schedule?.dailyAllocations.filter((row) => row.itemId === task.itemId) ?? []}
+            onSave={(rows) => onDistribute(task.itemId, rows)}
+            disabled={busy}
+            fixed={!!schedule?.timeBlocks.some((row) => row.itemId === task.itemId)}
+            testKey={`active-${task.itemId}-${slot}`}
+          />
+        )}
         {canAdjust && (
           <details
             className="calendar-task-actions"
@@ -224,8 +247,8 @@ export function ActiveTaskCalendar({
         </span>
       </p>
       <p className="calm-muted task-calendar-hint">
-        Arrastra una tarjeta a otro día o abre «Cambiar día» en esa tarea. Las tareas con varias
-        asignaciones se ajustan desde sus controles. Una fecha límite no elige el día por ti.
+        Usa «Repartir horas» para distribuir una tarea entre varios días. Arrastrar una parte o usar
+        «Cambiar día» mueve solo esa asignación. Una fecha límite no elige el día por ti.
       </p>
       <ul className="calendar-status-legend" aria-label="Colores y símbolos del calendario">
         <li className="calendar-tone-undated">○ Sin día</li>

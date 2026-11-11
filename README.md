@@ -305,6 +305,19 @@ week or leave it for later. Deadlines remain separate from chosen days; unknown
 hours stay unestimated. Changes are saved in the local draft, with a visible retry
 if saving fails. Shared focus estimates are adjusted as a whole in advanced options.
 
+Use **Repartir horas** on a draft or active task to distribute its effort across
+multiple days: for example, 5 hours as 2 Monday + 2 Wednesday + 1 Friday. The form
+shows allocated and remaining effort and rejects totals above the task's budget.
+Partial distribution is allowed. Each calendar day shows only its portion; dragging
+that portion moves only those hours. Pending counts and weekly estimates still
+count one task. Fixed-time blocks retain their dedicated controls, and shared
+focus estimates are never arbitrarily divided between their sources.
+
+Draft distributions survive reload and become daily allocations on activation.
+Active edits use expected schedule versions and preserve other tasks. Updating the
+total effort alone keeps an existing distribution. Calendar, month/sidebar views,
+ICS downloads and email summaries retain the distinct days and portions.
+
 You can add free hours later with **Añadir horas disponibles**, directly above the
 draft calendar or beside the active week's balance. **Guardar disponibilidad**
 recalculates capacity without regenerating tasks or changing their assigned days.

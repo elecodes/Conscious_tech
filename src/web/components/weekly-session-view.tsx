@@ -1,3 +1,4 @@
+import { distributionHours, replaceTaskDistribution } from "../task-distribution";
 import { WeekAvailabilityEditor } from "./week-availability-editor";
 import { editWeekAvailability } from "../week-availability";
 import { calendarMovement } from "../calendar-movement";
@@ -148,6 +149,51 @@ export function WeeklySessionView({
       )
     );
   }, [activeSpace, plan, schedule]);
+  const saveActiveSplit = async (id: string, rows: DailyWorkAllocation[]) => {
+    if (!plan || !schedule || activityLock.current) return false;
+    const allocations = replaceTaskDistribution(
+      plan.proposal,
+      plan.draftContext?.extractedItems,
+      schedule.dailyAllocations,
+      id,
+      rows,
+      schedule
+    );
+    const days = { ...plan.draftContext?.plannedDays };
+    delete days[id];
+    activityLock.current = true;
+    setActivityBusy(true);
+    try {
+      const now = new Date().toISOString();
+      const result = await createOrSavePlan(
+        {
+          ...plan,
+          ...(plan.draftContext
+            ? { draftContext: { ...plan.draftContext, plannedDays: days } }
+            : {}),
+          updatedAt: now,
+        },
+        {
+          ...schedule,
+          dailyAllocations: allocations,
+          version: schedule.version + 1,
+          updatedAt: now,
+        },
+        schedule.version
+      );
+      if (result.status !== "success") {
+        setFeedbackMessage(
+          "No se guardó el reparto. La semana puede haber cambiado; recarga e inténtalo de nuevo."
+        );
+        return false;
+      }
+      setFeedbackMessage("Reparto guardado. Se conservan las horas totales y las demás tareas.");
+      return true;
+    } finally {
+      activityLock.current = false;
+      setActivityBusy(false);
+    }
+  };
   const saveActiveAvailability = async (hours: string, protectedPercent: string) => {
     if (!plan || !schedule || activityLock.current) return false;
     activityLock.current = true;
@@ -474,6 +520,14 @@ export function WeeklySessionView({
     const dayToApply =
       options?.overrideDay !== undefined ? options.overrideDay : taskDayInput.trim();
 
+    const existingParts = schedule?.dailyAllocations.filter((row) => row.itemId === itemId) ?? [];
+    const keepSplit = existingParts.length > 1 && dayToApply === existingParts[0]!.day;
+    if (keepSplit && (hoursToApply == null || hoursToApply < distributionHours(existingParts))) {
+      setFeedbackMessage(
+        "Ajusta primero el reparto de horas antes de reducir el total de esta tarea."
+      );
+      return;
+    }
     // 3. Update proposal collections
     const updatedObligations = plan.proposal.obligations.map((o) =>
       o.itemId === itemId ? { ...o, estimatedHours: hoursToApply } : o
@@ -547,7 +601,7 @@ export function WeeklySessionView({
     });
 
     const nextPlannedDays = { ...plan.draftContext?.plannedDays };
-    if (dayToApply) nextPlannedDays[itemId] = dayToApply;
+    if (dayToApply && !keepSplit) nextPlannedDays[itemId] = dayToApply;
     else delete nextPlannedDays[itemId];
     const updatedPlan: StoredWeeklyPlan = {
       ...plan,
@@ -574,13 +628,17 @@ export function WeeklySessionView({
       let newAllocations = [...schedule.dailyAllocations];
       const allocIdx = newAllocations.findIndex((a) => a.itemId === itemId);
 
-      if (dayToApply) {
+      if (keepSplit) {
+        // Changing the total alone keeps all existing daily portions.
+      } else if (dayToApply) {
         const allocation: DailyWorkAllocation = {
           itemId,
           day: dayToApply,
           allocatedHours: hoursToApply ?? 1,
         };
-        if (allocIdx >= 0) {
+        if (existingParts.length > 1) {
+          newAllocations = [...newAllocations.filter((row) => row.itemId !== itemId), allocation];
+        } else if (allocIdx >= 0) {
           newAllocations[allocIdx] = allocation;
         } else {
           newAllocations.push(allocation);
@@ -597,13 +655,21 @@ export function WeeklySessionView({
       };
     }
 
-    const res = await createOrSavePlan(updatedPlan, updatedSchedule ?? undefined);
+    const res = await createOrSavePlan(
+      updatedPlan,
+      updatedSchedule ?? undefined,
+      schedule?.version
+    );
     setIsAdjustmentPreviewOpen(false);
 
     if (res.status === "success") {
       let desc = `Ajuste guardado para «${itemTitle}»: `;
       desc += hoursToApply != null ? `${hoursToApply}h` : "sin estimar";
-      desc += dayToApply ? ` asignada al ${dayToApply}.` : " repartida en la semana.";
+      desc += keepSplit
+        ? " conservando su reparto entre varios días."
+        : dayToApply
+          ? ` asignada al ${dayToApply}.`
+          : " repartida en la semana.";
       setFeedbackMessage(desc);
       setLastSavedAdjustment(desc);
       setIsAdjustmentOpen(false);
@@ -1325,6 +1391,7 @@ export function WeeklySessionView({
           schedule={schedule}
           items={planItems}
           busy={activityBusy}
+          onDistribute={saveActiveSplit}
           onMove={
             recordItemActivity && schedule
               ? (id, sourceDay, targetDay) => {

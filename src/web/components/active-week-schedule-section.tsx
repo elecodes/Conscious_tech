@@ -1,3 +1,4 @@
+import { distributionHours } from "../task-distribution";
 import type { TargetWeek } from "../../domain/week";
 import { ItemPostponementControls } from "./item-postponement-controls";
 import { activePostponements } from "../../domain/item-postponement";
@@ -89,7 +90,7 @@ export function ActiveWeekScheduleSection({
 
   const handleDownloadWeekIcs = () => {
     const prefs = getStoredReminderPreferences();
-    const exportItems = planItems.map((item) => {
+    const exportItems = planItems.flatMap((item) => {
       const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
       const timeBlock = schedule.timeBlocks.find((tb) => tb.itemId === item.itemId);
       const day =
@@ -101,7 +102,7 @@ export function ActiveWeekScheduleSection({
         "2026-10-19";
       const isObligation =
         item.source === "Obligación" || item.source?.toLowerCase().includes("obligaci");
-      return {
+      const base = {
         id: item.itemId,
         title: item.title,
         day,
@@ -112,6 +113,16 @@ export function ActiveWeekScheduleSection({
         hasDeadline: Boolean(item.dueDate),
         allDay: !timeBlock,
       };
+      const parts = schedule.dailyAllocations.filter((row) => row.itemId === item.itemId);
+      return parts.length > 1 && !timeBlock
+        ? parts.map((part) => ({
+            ...base,
+            id: `${item.itemId}-${part.day}`,
+            title: `${item.title} · ${part.allocatedHours} h`,
+            day: part.day,
+            durationHours: part.allocatedHours,
+          }))
+        : [base];
     });
     const icsContent = generateIcsCalendarExport(exportItems, {
       calendarName: "Conscious Tech — Semana Activa",
@@ -135,6 +146,7 @@ export function ActiveWeekScheduleSection({
 
   const renderItem = (item: PlanItemSummary) => {
     const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
+    const parts = schedule.dailyAllocations.filter((row) => row.itemId === item.itemId);
     const isSelected = (selectedAdjustmentItemId || planItems[0]?.itemId) === item.itemId;
     const isObligation =
       item.source === "Obligación" || item.source?.toLowerCase().includes("obligaci");
@@ -293,7 +305,12 @@ export function ActiveWeekScheduleSection({
               className={alloc ? "badge badge-task" : "badge badge-muted"}
               style={{ fontSize: "0.8rem" }}
             >
-              📅 {alloc ? alloc.day : "En la semana"}
+              📅{" "}
+              {parts.length > 1
+                ? `${parts.length} días · ${distributionHours(parts)} h repartidas`
+                : alloc
+                  ? alloc.day
+                  : "En la semana"}
             </span>
             {onPostpone &&
               category &&
@@ -339,34 +356,58 @@ export function ActiveWeekScheduleSection({
             >
               Ajustar
             </button>
-            <button
-              type="button"
-              className="secondary small"
-              data-testid={`add-to-gcal-${item.itemId}`}
-              style={{
-                fontSize: "0.8rem",
-                padding: "4px 8px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-              }}
-              title="Abre un evento preparado en Google Calendar; revísalo y guárdalo allí"
-              onClick={() => {
-                const day = alloc
-                  ? alloc.day
-                  : item.dueDate || plan?.targetWeek.startDate || "2026-10-19";
-                const gcalUrl = buildGoogleCalendarTemplateUrl({
-                  title: item.title,
-                  day,
-                  durationHours: item.estimatedHours || 1,
-                  description: `Categoría: ${item.source}${item.rationale ? `\n${item.rationale}` : ""}`,
-                });
-                window.open(gcalUrl, "_blank", "noopener,noreferrer");
-              }}
-            >
-              <span>📅</span>
-              <span>Preparar evento en Google Calendar</span>
-            </button>
+            {parts.length > 1 && !schedule.timeBlocks.some((row) => row.itemId === item.itemId) ? (
+              parts.map((part) => (
+                <button
+                  type="button"
+                  className="secondary small"
+                  key={part.day}
+                  onClick={() =>
+                    window.open(
+                      buildGoogleCalendarTemplateUrl({
+                        title: item.title,
+                        day: part.day,
+                        durationHours: part.allocatedHours,
+                        description: `Parte del trabajo semanal: ${part.allocatedHours} h.`,
+                      }),
+                      "_blank",
+                      "noopener,noreferrer"
+                    )
+                  }
+                >
+                  Preparar evento: {part.day} · {part.allocatedHours} h
+                </button>
+              ))
+            ) : (
+              <button
+                type="button"
+                className="secondary small"
+                data-testid={`add-to-gcal-${item.itemId}`}
+                style={{
+                  fontSize: "0.8rem",
+                  padding: "4px 8px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+                title="Abre un evento preparado en Google Calendar; revísalo y guárdalo allí"
+                onClick={() => {
+                  const day = alloc
+                    ? alloc.day
+                    : item.dueDate || plan?.targetWeek.startDate || "2026-10-19";
+                  const gcalUrl = buildGoogleCalendarTemplateUrl({
+                    title: item.title,
+                    day,
+                    durationHours: item.estimatedHours || 1,
+                    description: `Categoría: ${item.source}${item.rationale ? `\n${item.rationale}` : ""}`,
+                  });
+                  window.open(gcalUrl, "_blank", "noopener,noreferrer");
+                }}
+              >
+                <span>📅</span>
+                <span>Preparar evento en Google Calendar</span>
+              </button>
+            )}
           </div>
         </details>
       </div>
@@ -696,17 +737,31 @@ export function ActiveWeekScheduleSection({
             <div id="email-summary-card-wrapper">
               <EmailSummaryCard
                 targetWeek={plan?.targetWeek || { startDate: "2026-10-19", endDate: "2026-10-25" }}
-                items={planItems.map((item) => {
+                items={planItems.flatMap((item) => {
+                  const parts = schedule.dailyAllocations.filter(
+                    (row) => row.itemId === item.itemId
+                  );
+                  if (
+                    parts.length > 1 &&
+                    !schedule.timeBlocks.some((row) => row.itemId === item.itemId)
+                  )
+                    return parts.map((part) => ({
+                      title: `${item.title} · ${part.allocatedHours} h`,
+                      day: part.day,
+                      source: item.source,
+                    }));
                   const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
-                  return {
-                    title: item.title,
-                    day:
-                      alloc?.day ||
-                      schedule.timeBlocks.find((row) => row.itemId === item.itemId)?.day ||
-                      plan?.draftContext?.plannedDays?.[item.itemId] ||
-                      item.dueDate,
-                    source: item.source,
-                  };
+                  return [
+                    {
+                      title: item.title,
+                      day:
+                        alloc?.day ||
+                        schedule.timeBlocks.find((row) => row.itemId === item.itemId)?.day ||
+                        plan?.draftContext?.plannedDays?.[item.itemId] ||
+                        item.dueDate,
+                      source: item.source,
+                    },
+                  ];
                 })}
               />
             </div>
