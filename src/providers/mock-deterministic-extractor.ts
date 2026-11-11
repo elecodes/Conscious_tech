@@ -273,7 +273,19 @@ export function splitNotesIntoSegments(text: string): string[] {
     // followed by whitespace and a letter, digit, inverted mark, or bullet.
     // Avoids splitting on decimal numbers (e.g. 6.5) or mid-word periods.
     const sentenceBoundaryRegex = /(?<=[.!?;\n])\s+(?=[A-ZÁÉÍÓÚÑa-záéíóúñ¿¡0-9\-\*])/g;
-    const parts = trimmedLine.split(sentenceBoundaryRegex);
+    // A missing space after a sentence terminator is common in typed notes.
+    // Only infer that boundary when the next clause starts with an action;
+    // preserve dotted project names, URLs and decimal effort values.
+    const spacedLine = trimmedLine.replace(
+      /([.!?;])(?=[A-Za-zÁÉÍÓÚÑáéíóúñ])/g,
+      (mark, _punctuation, offset: number) => {
+        const nextClause = trimmedLine.slice(offset + 1);
+        const previousToken = trimmedLine.slice(0, offset).split(/\s+/).at(-1) ?? "";
+        if (/[/:@]/.test(previousToken) || /^www(?:\.|$)/i.test(previousToken)) return mark;
+        return startsWithActionVerb(nextClause) ? `${mark} ` : mark;
+      }
+    );
+    const parts = spacedLine.split(sentenceBoundaryRegex);
 
     for (const part of parts) {
       const clean = part

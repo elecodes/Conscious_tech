@@ -16,6 +16,27 @@ import { generateWeeklyProposalFromItems } from "../src/application/planning-pip
 describe("MockProvider — Extracción determinista de notas arbitrarias", () => {
   const currentDate = "2026-10-12"; // Monday
 
+  it("separates independent actions after periods without spaces and preserves dotted names", async () => {
+    const result = await extractItems(new MockProvider(), {
+      text: "Estudiar lógica.Practicar typing.Preparar Big school.",
+      currentDate,
+    });
+    expect(result.items.map((item) => item.rawText)).toEqual([
+      "Estudiar lógica.",
+      "Practicar typing.",
+      "Preparar Big school.",
+    ]);
+    expect(splitNotesIntoSegments("Logica.patrones. Practicar typing 2.5 horas.")).toEqual([
+      "Logica.patrones.",
+      "Practicar typing 2.5 horas.",
+    ]);
+    expect(
+      splitNotesIntoSegments(
+        "Revisar https://example.review/docs y https://example.com/learn.study"
+      )
+    ).toHaveLength(1);
+  });
+
   // --------------------------------------------------------------------------
   // 1. Regresión específica del reporte del usuario
   // --------------------------------------------------------------------------

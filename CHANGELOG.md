@@ -920,3 +920,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Make the weeks visibility control prominent with a filled arrow action and
   shorten calendar day effort labels to the hour value (for example, “1 h”).
+
+- In demo extraction, recognize independent action sentences without a space after
+  their terminator, while preserving dotted project names, URLs and decimals.
