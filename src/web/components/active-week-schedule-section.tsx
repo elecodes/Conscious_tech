@@ -87,7 +87,13 @@ export function ActiveWeekScheduleSection({
     const exportItems = planItems.map((item) => {
       const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
       const timeBlock = schedule.timeBlocks.find((tb) => tb.itemId === item.itemId);
-      const day = alloc ? alloc.day : item.dueDate || plan?.targetWeek.startDate || "2026-10-19";
+      const day =
+        alloc?.day ||
+        timeBlock?.day ||
+        plan?.draftContext?.plannedDays?.[item.itemId] ||
+        item.dueDate ||
+        plan?.targetWeek.startDate ||
+        "2026-10-19";
       const isObligation =
         item.source === "Obligación" || item.source?.toLowerCase().includes("obligaci");
       return {
@@ -689,7 +695,11 @@ export function ActiveWeekScheduleSection({
                   const alloc = schedule.dailyAllocations.find((a) => a.itemId === item.itemId);
                   return {
                     title: item.title,
-                    day: alloc ? alloc.day : item.dueDate,
+                    day:
+                      alloc?.day ||
+                      schedule.timeBlocks.find((row) => row.itemId === item.itemId)?.day ||
+                      plan?.draftContext?.plannedDays?.[item.itemId] ||
+                      item.dueDate,
                     source: item.source,
                   };
                 })}

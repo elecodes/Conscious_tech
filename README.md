@@ -299,20 +299,20 @@ review the target dates, and adjust protected space (25% by default). Choose
 **No lo sé todavía** to receive a provisional proposal without a capacity claim.
 Imported calendar commitments are a reference and are not deducted again.
 
-Review the proposal in **Esta semana**, **Si queda espacio**, and **Fuera de esta
-semana**. Unscheduled thoughts remain notes. Open **Detalles y correcciones** on an
-entry to inspect the source and edit dates or estimates. That same panel contains
-**Incluir en esta semana** and its current placement status. Inclusion keeps the
-panel open with the saved hours and date visible. Selecting a source only means
-it can be considered on regeneration; it does not automatically schedule it.
+Choose **Ver mis tareas en el calendario** to go directly from notes to an editable
+weekly calendar. Each task lets you adjust hours, choose a day, include it in this
+week or leave it for later. Deadlines remain separate from chosen days; unknown
+hours stay unestimated. Changes are saved in the local draft, with a visible retry
+if saving fails. Shared focus estimates are adjusted as a whole in advanced options.
 
-Before activation, review the summary of the exact proposal. Return to review to
-change its intention or contents; calendar export and sharing are available from
-**Mi semana** after activation.
+Use **Guardar y activar semana** when ready. **Ver detalle del plan** is optional,
+and **Opciones avanzadas** retains source corrections, capacity, focus controls and
+imports. Returning to your notes without edits preserves the calendar decisions.
+Calendar export and sharing are available from **Mi semana** after activation.
 
 **Mi semana** starts with a task calendar showing its actual week range. The
 **Pendientes** filter hides completed/dropped work; **Todas** restores it. Only
-saved assignments appear in day columns. Weekly work without a day stays in a
+saved assignments or explicitly chosen days appear in day columns. Weekly work without a day stays in a
 separate section, and deadlines are labeled without becoming calendar assignments.
 Select a task to open its existing management controls.
 

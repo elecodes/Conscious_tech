@@ -189,6 +189,24 @@ describe("Atomic daily activity storage", () => {
     await importUserData(JSON.stringify(oldBackup), storage);
     expect((await storage.schedules.getById(schedule.scheduleId))?.itemActivity).toBeUndefined();
   });
+  it("round-trips explicit calendar days without changing old backup compatibility", async () => {
+    const oldBackup = await exportUserData(storage);
+    await storage.plans.save({
+      ...plan,
+      draftContext: { ...plan.draftContext, plannedDays: { c: "2026-12-08" } },
+    });
+    const backup = await exportUserData(storage);
+    await storage.clearAll();
+    storage = await createIndexedDbStorage({ dbName: "activity-test", customFactory: factory });
+    await importUserData(JSON.stringify(backup), storage);
+    expect((await storage.plans.getById(plan.planId))?.draftContext?.plannedDays).toEqual({
+      c: "2026-12-08",
+    });
+    await storage.clearAll();
+    storage = await createIndexedDbStorage({ dbName: "activity-test", customFactory: factory });
+    await importUserData(JSON.stringify(oldBackup), storage);
+    expect((await storage.plans.getById(plan.planId))?.draftContext?.plannedDays).toBeUndefined();
+  });
   it("rejects malformed backup activity before writing any data", async () => {
     await service.recordItemActivity(schedule.scheduleId, command);
     const backup = await exportUserData(storage);

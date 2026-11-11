@@ -204,7 +204,7 @@ export function WeeklySessionView({
         selectedItem.estimatedHours != null ? String(selectedItem.estimatedHours) : ""
       );
       const alloc = schedule?.dailyAllocations.find((a) => a.itemId === selectedItem.itemId);
-      setTaskDayInput(alloc?.day || "");
+      setTaskDayInput(alloc?.day || plan?.draftContext?.plannedDays?.[selectedItem.itemId] || "");
     }
   }, [selectedItem?.itemId, selectedItem?.estimatedHours, schedule]);
 
@@ -511,8 +511,14 @@ export function WeeklySessionView({
       flexibleOptions: updatedFlexible,
     });
 
+    const nextPlannedDays = { ...plan.draftContext?.plannedDays };
+    if (dayToApply) nextPlannedDays[itemId] = dayToApply;
+    else delete nextPlannedDays[itemId];
     const updatedPlan: StoredWeeklyPlan = {
       ...plan,
+      ...(plan.draftContext
+        ? { draftContext: { ...plan.draftContext, plannedDays: nextPlannedDays } }
+        : {}),
       proposal: {
         ...plan.proposal,
         obligations: updatedObligations,

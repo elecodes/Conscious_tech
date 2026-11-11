@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Simplified planning to notes → editable draft calendar → explicit activation.
+  Added hours, inclusion and chosen-day controls directly to calendar task cards;
+  moved detailed review to optional advanced controls and an in-place summary.
+- Saved explicit days without inventing effort, retained source context on activation,
+  and preserved old backups and existing active-week conflict safeguards.
+- Serialized local draft saves, surfaced recoverable save failures and blocked
+  activation until pending/failed saves are resolved.
+
 - Added a responsive task calendar to Mi semana with explicit week dates,
   pending/all filters, distinct progress counts and links to existing task controls.
 - Separated saved day assignments from weekly work without a day, deadlines,

@@ -83,6 +83,9 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
     await page.getByTestId("capture-protected-space").fill("25");
     await page.getByTestId("flow-continue-to-review").click();
     await page.getByTestId("flow-step-review").waitFor();
+    await page.getByTestId("draft-advanced-details").evaluate((el) => {
+      (el as HTMLDetailsElement).open = true;
+    });
     if (!(await page.getByTestId("capacity-sentence-summary").innerText()).includes("8"))
       throw new Error("Proposal lost provided capacity");
 
@@ -112,9 +115,18 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
     });
     await page.reload({ waitUntil: "networkidle" });
     await page.getByTestId("flow-step-review").waitFor();
+    await page.getByTestId("draft-advanced-details").evaluate((el) => {
+      (el as HTMLDetailsElement).open = true;
+    });
+    await page.getByTestId("draft-advanced-details").evaluate((el) => {
+      (el as HTMLDetailsElement).open = true;
+    });
     await page.getByTestId("week-settings-summary").click();
     if ((await page.getByTestId("planning-available-hours-input").inputValue()) !== "8")
       throw new Error("Legacy draft lost capacity");
+    await page.getByTestId("draft-advanced-details").evaluate((el) => {
+      (el as HTMLDetailsElement).open = true;
+    });
     await page.getByTestId("week-settings-summary").click();
 
     // Importing the same calendar twice must not subtract commitments from net free hours.
@@ -130,20 +142,29 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
     await page.getByTestId("ical-file-input").setInputFiles(calendarFile);
     await page.getByText("2h comprometidas en reuniones", { exact: true }).waitFor();
     await page.getByTestId("ical-file-input").setInputFiles(calendarFile);
+    await page.getByTestId("draft-advanced-details").evaluate((el) => {
+      (el as HTMLDetailsElement).open = true;
+    });
     await page.getByTestId("week-settings-summary").click();
     if ((await page.getByTestId("planning-available-hours-input").inputValue()) !== "8")
       throw new Error("Calendar import changed net free hours");
+    await page.getByTestId("draft-advanced-details").evaluate((el) => {
+      (el as HTMLDetailsElement).open = true;
+    });
     await page.getByTestId("week-settings-summary").click();
     await page.getByTestId("planning-options-details").locator(":scope > summary").click();
 
     // Failed regeneration through the progress indicator must not expose activation.
+    await page.getByTestId("draft-advanced-details").evaluate((el) => {
+      (el as HTMLDetailsElement).open = true;
+    });
     await page.getByTestId("week-settings-summary").click();
     await page.getByTestId("planning-available-hours-input").fill("10");
     await page.getByTestId("settings-dropdown").locator("summary").click();
     await page.getByTestId("provider-select").selectOption("groq");
     await page.getByTestId("external-ai-indicator").waitFor();
     await page.getByTestId("settings-dropdown").locator("summary").click();
-    await page.getByTestId("step-indicator-confirm").click();
+    await page.getByTestId("flow-continue-to-confirm").click();
     await page.getByRole("alert").filter({ hasText: "Error de planificación:" }).waitFor();
     if (!(await page.getByTestId("flow-step-review").isVisible()))
       throw new Error("Failed regeneration advanced to confirmation");
@@ -172,7 +193,7 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
         .count()
     )
       throw new Error("Confirmation contains editing or export controls");
-    await page.getByTestId("flow-back-to-review").click();
+    await page.getByTestId("step-indicator-review").click();
     const firstDetails = page.locator('[data-testid^="review-details-"]').first();
     await firstDetails.evaluate((el) => {
       for (let parent = el.parentElement; parent; parent = parent.parentElement) {
@@ -205,6 +226,9 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
     await page.getByRole("button", { name: "No lo sé todavía", exact: true }).click();
     await page.getByTestId("flow-continue-to-review").click();
     await page.getByTestId("flow-step-review").waitFor();
+    await page.getByTestId("draft-advanced-details").evaluate((el) => {
+      (el as HTMLDetailsElement).open = true;
+    });
     await page.getByTestId(editedSourceTestId).evaluate((el) => {
       for (let parent = el.parentElement; parent; parent = parent.parentElement) {
         if (parent instanceof HTMLDetailsElement) parent.open = true;
@@ -225,6 +249,9 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
       throw new Error("Unknown capacity was presented as verified");
     await page.reload({ waitUntil: "networkidle" });
     await page.getByTestId("flow-step-review").waitFor();
+    await page.getByTestId("draft-advanced-details").evaluate((el) => {
+      (el as HTMLDetailsElement).open = true;
+    });
     if (
       !(await page.getByTestId("capacity-sentence-summary").innerText()).includes(
         "Propuesta provisional"
@@ -235,6 +262,9 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
     await page.getByTestId("capture-available-hours").fill("0");
     await page.getByTestId("flow-continue-to-review").click();
     await page.getByTestId("flow-step-review").waitFor();
+    await page.getByTestId("draft-advanced-details").evaluate((el) => {
+      (el as HTMLDetailsElement).open = true;
+    });
     if (
       !(await page.getByTestId("capacity-sentence-summary").innerText()).includes(
         "Tienes 0 h libres"
@@ -285,6 +315,9 @@ export async function verifyPlanningContext(browser: Browser, url: string) {
     await page.getByTestId("flow-textarea").fill("Leer un capítulo la próxima semana (1 hora).");
     await page.getByTestId("flow-continue-to-review").click();
     await page.getByTestId("flow-step-review").waitFor();
+    await page.getByTestId("draft-advanced-details").evaluate((el) => {
+      (el as HTMLDetailsElement).open = true;
+    });
     await page.getByTestId("flow-continue-to-confirm").click();
     await page.getByTestId("flow-step-confirm").waitFor();
     await page.getByTestId("confirm-plan-button").click();

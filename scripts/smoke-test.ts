@@ -1,3 +1,4 @@
+import { verifyDraftCalendar } from "./draft-calendar-smoke";
 import net from "node:net";
 import { verifyPlanningContext } from "./planning-context-smoke";
 import { verifyPlanningReview } from "./planning-review-smoke";
@@ -246,17 +247,17 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     // Check progress indicators
     const stepWriteIndicator = page.locator('[data-testid="step-indicator-write"]');
     const stepReviewIndicator = page.locator('[data-testid="step-indicator-review"]');
-    const stepConfirmIndicator = page.locator('[data-testid="step-indicator-confirm"]');
+    if (await page.getByTestId("step-indicator-confirm").count())
+      throw new Error("Unexpected third step");
     await stepWriteIndicator.waitFor({ state: "visible", timeout: 5000 });
     await stepReviewIndicator.waitFor({ state: "visible", timeout: 5000 });
-    await stepConfirmIndicator.waitFor({ state: "visible", timeout: 5000 });
     if ((await stepWriteIndicator.getAttribute("aria-current")) !== "step") {
       throw new Error("Step 1 (Escribir) indicator must have aria-current='step'");
     }
     if ((await stepReviewIndicator.getAttribute("aria-current")) !== null) {
       throw new Error("Step 2 (Revisar) indicator should not have aria-current during step 1");
     }
-    console.log("  ✓ Visible progress line with 3 steps verified (step 1 active)");
+    console.log("  ✓ Visible navigation with 2 modes verified (step 1 active)");
 
     // 6. Assert empty state on "Mi semana"
     await tabActive.click();
@@ -346,22 +347,10 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
     console.log("  ✓ Step 2 (Revisar): Extraction and proposal generated");
 
-    // Progress line: verify step 1 marked completed with checkmark, step 2 active with aria-current="step"
-    const step1ReviewText = (await stepWriteIndicator.innerText()).trim();
-    if (!step1ReviewText.startsWith("✓")) {
-      throw new Error(
-        `Step 1 indicator should show checkmark (✓) when completed, got: ${step1ReviewText}`
-      );
-    }
-    if ((await stepReviewIndicator.getAttribute("aria-current")) !== "step") {
-      throw new Error("Step 2 indicator must have aria-current='step' in Revisar");
-    }
-    if ((await stepConfirmIndicator.getAttribute("aria-current")) !== null) {
-      throw new Error("Step 3 indicator should not have aria-current in Revisar");
-    }
-    console.log(
-      "  ✓ Progress line updated: Step 1 checked (✓), Step 2 active (aria-current='step')"
-    );
+    await page.getByTestId("draft-task-calendar").waitFor();
+    if (!(await page.getByTestId("confirm-plan-button").isVisible()))
+      throw new Error("Activation requires another step");
+    await page.getByTestId("draft-advanced-details").locator(":scope > summary").click();
 
     // Verify exactly ONE "Continuar a confirmar" button (no top duplicate)
     const continueBtnCount = await page.locator('[data-testid="flow-continue-to-confirm"]').count();
@@ -412,6 +401,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     await page.locator('[data-testid="flow-continue-to-review"]').click();
     await reviewStep.waitFor({ state: "visible", timeout: 15000 });
 
+    await page.getByTestId("draft-advanced-details").locator(":scope > summary").click();
     // Verify collapsed "Añadir más ideas" and "Opciones"
     const addMoreIdeas = page.locator('[data-testid="add-more-ideas-details"]');
     await addMoreIdeas.waitFor({ state: "visible", timeout: 5000 });
@@ -440,25 +430,10 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
     console.log("  ✓ Step 3 (Confirmar) reached");
 
-    // Progress line: verify step 1 & 2 marked completed with checkmark, step 3 active with aria-current="step"
-    const step2ConfirmText = (await stepReviewIndicator.innerText()).trim();
-    if (!step2ConfirmText.startsWith("✓")) {
-      throw new Error(
-        `Step 2 indicator should show checkmark (✓) when completed, got: ${step2ConfirmText}`
-      );
-    }
-    if ((await stepConfirmIndicator.getAttribute("aria-current")) !== "step") {
-      throw new Error("Step 3 indicator must have aria-current='step' in Confirmar");
-    }
-    console.log(
-      "  ✓ Progress line updated: Step 2 checked (✓), Step 3 active (aria-current='step')"
-    );
-
-    // Test back button from Confirmar to Revisar
-    const backToReviewBtn = page.locator('[data-testid="flow-back-to-review"]');
-    await backToReviewBtn.click();
-    await reviewStep.waitFor({ state: "visible", timeout: 5000 });
-    console.log("  ✓ Back to Revisar from Confirmar verified");
+    if ((await stepReviewIndicator.getAttribute("aria-current")) !== "step")
+      throw new Error("Summary left the calendar");
+    await page.getByTestId("step-indicator-review").click();
+    await reviewStep.waitFor();
 
     // Return to Confirmar
     await page.locator('[data-testid="flow-continue-to-confirm"]').click();
@@ -810,6 +785,11 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     }
 
     await verifyPlanningContext(browser, url);
+    await verifyDraftCalendar(
+      browser,
+      url,
+      mode === "preview" ? path.join(outputDir, "draft-calendar-mobile.png") : undefined
+    );
     await verifyPlanningReview(browser, url);
     await verifyActiveWeek(browser, url);
     await browser.close();

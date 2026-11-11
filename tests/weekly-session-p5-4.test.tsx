@@ -209,7 +209,7 @@ describe("Fase P5.4 — Conectar la entrada de ideas con la planificación seman
       );
 
       expect(html).toContain("¿Qué tienes en la cabeza?");
-      expect(html).toContain("Continuar");
+      expect(html).toContain("Ver mis tareas en el calendario");
       expect(html).toContain("Elige qué cuidar esta semana.");
     });
 
@@ -224,7 +224,7 @@ describe("Fase P5.4 — Conectar la entrada de ideas con la planificación seman
         </WeeklySessionReactContext.Provider>
       );
       expect(html).toContain("¿Qué tienes en la cabeza?");
-      expect(html).toContain("Continuar");
+      expect(html).toContain("Ver mis tareas en el calendario");
     });
 
     it("debe advertir si se planifica mientras existe una semana activa", () => {

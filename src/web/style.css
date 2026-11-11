@@ -1154,3 +1154,51 @@ details.calm-details[open] {
     margin: 0;
   }
 }
+
+.draft-calendar-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px;
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+.draft-calendar-card label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.draft-calendar-card input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.draft-calendar-card .calm-muted {
+  font-size: 0.75rem;
+}
+.draft-calendar-placement {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #35543b;
+}
+.draft-calendar-card:focus {
+  outline: 2px solid #35543b;
+  outline-offset: 2px;
+}
+.draft-task-calendar .task-calendar-day {
+  padding: 6px;
+}
+.draft-task-calendar .task-calendar-day .draft-calendar-card {
+  padding: 7px;
+}
+
+.draft-task-calendar .task-calendar-day:has(> ul:empty) {
+  min-height: 0;
+}

@@ -74,6 +74,9 @@ export async function verifyPlanningReview(browser: Browser, url: string) {
       { plan: fixture.plan, items: fixture.items }
     );
     await page.reload({ waitUntil: "networkidle" });
+    await page.getByTestId("draft-advanced-details").evaluate((el) => {
+      (el as HTMLDetailsElement).open = true;
+    });
     await page.getByTestId("planning-review-board").waitFor();
     for (const item of fixture.items) {
       if ((await page.getByTestId(`idea-card-${item.id}`).count()) !== 1)
@@ -168,6 +171,9 @@ export async function verifyPlanningReview(browser: Browser, url: string) {
     const expected = fixture.selectedIds.filter((id) => id !== "g");
     assertMembership(await readDraft(page), expected);
     await page.reload({ waitUntil: "networkidle" });
+    await page.getByTestId("draft-advanced-details").evaluate((el) => {
+      (el as HTMLDetailsElement).open = true;
+    });
     await page.getByTestId("planning-review-board").waitFor();
     for (const item of fixture.items) {
       if ((await page.getByTestId(`idea-card-${item.id}`).count()) !== 1)
@@ -200,7 +206,10 @@ export async function verifyPlanningReview(browser: Browser, url: string) {
     }, fixture.items[3]!);
     await capture.reload({ waitUntil: "networkidle" });
     await capture.getByTestId("step-indicator-review").click();
-    await capture.getByTestId("generate-first-proposal-button").click();
+    await capture.getByTestId("prepare-calendar-button").click();
+    await capture.getByTestId("draft-advanced-details").evaluate((el) => {
+      (el as HTMLDetailsElement).open = true;
+    });
     await capture.getByTestId("planning-review-board").waitFor();
     console.log("  ✓ Captured items without a proposal can generate their first proposal");
   } finally {

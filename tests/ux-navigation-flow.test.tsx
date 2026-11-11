@@ -478,7 +478,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
       },
       extractedCount: 4,
     });
-    expect(step3.message).toBe("Revisa y confirma la propuesta");
+    expect(step3.message).toBe("Organiza tus tareas en el calendario");
     expect(step3.targetSpace).toBe("prepare");
 
     const step3b = resolveNextStep({
@@ -486,7 +486,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
       extractedCount: 4,
       hasPendingProposal: true,
     });
-    expect(step3b.message).toBe("Revisa y confirma la propuesta");
+    expect(step3b.message).toBe("Organiza tus tareas en el calendario");
     expect(step3b.targetSpace).toBe("prepare");
 
     // 4. Semana activa en curso
@@ -662,7 +662,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     expect(htmlDraft).toMatch(
       /<button[^>]*class="[^"]*primary[^"]*"[^>]*data-testid="nav-tab-new-week"/
     );
-    expect(htmlDraft).toContain("Revisa y confirma la propuesta");
+    expect(htmlDraft).toContain("Organiza tus tareas en el calendario");
     expect(htmlDraft).not.toContain('data-testid="next-step-button"');
 
     // D) initialTab explícito no es sobreescrito por el estado
@@ -776,7 +776,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     expect(htmlStep1).toContain("guided-flow-progress");
     expect(htmlStep1).toContain("step-indicator-write");
     expect(htmlStep1).toContain("step-indicator-review");
-    expect(htmlStep1).toContain("step-indicator-confirm");
+    expect(htmlStep1).not.toContain("step-indicator-confirm");
     expect(htmlStep1).toContain("flow-step-write");
     expect(htmlStep1).toContain("flow-continue-to-review");
 
@@ -800,7 +800,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
     );
     expect(htmlStep2).toContain("flow-step-review");
     expect(htmlStep2).toContain("flow-back-to-write");
-    expect(htmlStep2).toContain("flow-continue-to-confirm");
+    expect(htmlStep2).toContain("prepare-calendar-button");
     expect(htmlStep2).toContain("idea-card-item-1");
     expect(htmlStep2).toContain("details-toggle-item-1");
     expect(htmlStep2).toContain("generate-first-proposal-button");
@@ -838,7 +838,7 @@ describe("Flujos de Experiencia de Usuario (UX) guiada y divulgación progresiva
       </WeeklySessionReactContext.Provider>
     );
     expect(htmlStep3).toContain("flow-step-confirm");
-    expect(htmlStep3).toContain("flow-back-to-review");
+    expect(htmlStep3).toContain("draft-task-calendar");
     expect(htmlStep3).toContain("confirm-plan-button");
     expect(htmlStep3).toContain("proposal-more-actions-details");
   });

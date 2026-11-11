@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TargetWeek, TargetWeekSchema, ProposedWeekSchema } from "../week";
+import { TargetWeek, TargetWeekSchema, ProposedWeekSchema, CalendarDateSchema } from "../week";
 import { ExtractedItemSchema } from "../items";
 import { WeeklySchedule } from "../schedule";
 import { CloseWeekOutputSchema, ClosedAtTimestampSchema } from "../close-week";
@@ -96,6 +96,7 @@ export type WeeklyPlanStatus = z.infer<typeof WeeklyPlanStatusSchema>;
 export const WeeklyPlanDraftContextSchema = z
   .object({
     extractedItems: z.array(ExtractedItemSchema).optional(),
+    plannedDays: z.record(z.string(), CalendarDateSchema).optional(),
     acceptedItemIds: z.array(z.string()).optional(),
     selectedCarryOverItemIds: z.array(z.string()).optional(),
     overdueDecisions: z

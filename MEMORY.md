@@ -557,3 +557,27 @@ The product succeeds when the person can say:
   abre sus controles existentes, desplegando ancestros y devolviendo el foco.
 - Es una proyección de lectura, sin cambios de almacenamiento, acciones de dominio,
   integración de calendario externa ni listas de borradores. Responsive en móvil.
+
+## Ajuste de usabilidad: de notas directamente al calendario
+
+- La persona encontró demasiados pasos entre listar tareas y organizar su semana.
+  El flujo principal pasa a Escribir tareas → Calendario editable → Guardar y
+  activar semana, con resumen opcional dentro de la misma vista.
+- Cada tarjeta permite incluir, dejar para después, ajustar horas y elegir día.
+  Se mantienen las protecciones de compromisos y focos agrupados; sus estimaciones
+  compartidas se ajustan en Opciones avanzadas. Las notas no se convierten en tareas
+  hasta una decisión explícita de dedicarles atención.
+- Las horas modificadas actualizan fuente, propuesta y capacidad determinísticamente,
+  sin nuevas llamadas de IA. Cero limpia la estimación, igual que dejarla vacía.
+- `draftContext.plannedDays` es opcional, validado como fechas reales y compatible
+  con copias antiguas. Guarda decisiones de día sin inventar horas. Al activar,
+  solo estimaciones individuales conocidas generan asignaciones de horas; las
+  asignaciones/bloques reales tienen precedencia en Mi semana.
+- La activación conserva las fuentes y días elegidos. No se reutilizan días cuando
+  un proveedor recicla el ID de una fuente distinta. Las ediciones activas actualizan
+  o eliminan el día guardado para evitar que reaparezca una asignación antigua.
+- Guardados de borrador serializados, indicador de progreso, error recuperable y
+  activación bloqueada mientras el guardado está pendiente o ha fallado. Se conserva
+  el bloqueo de propuestas desactualizadas y de otra semana ya activa.
+- El resumen y la revisión detallada quedan como opciones, sin una tercera pantalla.
+  Los días vacíos ocupan menos espacio en móvil; rangos largos se paginan.

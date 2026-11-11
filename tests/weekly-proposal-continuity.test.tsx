@@ -238,7 +238,7 @@ describe("Prioridad: Continuidad de la propuesta semanal (Borradores, recarga y 
     expect(html).toContain('data-testid="modify-capacity-button"');
     expect(html).toContain("Modificar capacidad");
     expect(html).toContain('data-testid="flow-continue-to-confirm"');
-    expect(html).toContain("Continuar a confirmar");
+    expect(html).toContain("Guardar y activar semana");
 
     // Y en el paso de confirmación, se muestra el botón de confirmar y activar semana
     const htmlConfirm = renderToStaticMarkup(

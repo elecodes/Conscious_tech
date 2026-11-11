@@ -1,8 +1,16 @@
+import { DraftTaskCalendar } from "./draft-task-calendar";
+import {
+  retainDraftDays,
+  draftItemHours,
+  editDraftCalendarHours,
+  includedDraftItemIds,
+} from "../draft-calendar-edits";
 import { useState, useRef, useEffect } from "react";
 import { AIProvider } from "../../providers/ai-provider";
 import { MockProvider } from "../../providers/mock-provider";
 import { ExtractedItem, ExtractedItems } from "../../domain/items";
 import {
+  CalendarDateSchema,
   ProposedWeek,
   resolveDefaultTargetWeek,
   TargetWeek,
@@ -121,10 +129,15 @@ export function WeeklyPlanningFromNotes({
   };
 
   // State: Carryover tasks from previous closed weeks or active schedules
+  const draftSaveQueue = useRef<Promise<void>>(Promise.resolve());
+  const draftSaveCount = useRef(0);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [draftSaveError, setDraftSaveError] = useState<string | null>(null);
+  const [plannedDays, setPlannedDays] = useState<Record<string, string>>({});
   const [carryOverTasks, setCarryOverTasks] = useState<PendingCarryOverTask[]>([]);
   const [selectedCarryOverItemIds, setSelectedCarryOverItemIds] = useState<Set<string>>(new Set());
 
-  // State: Guided flow step (1. Escribir -> 2. Revisar -> 3. Confirmar)
+  // State: Capture or calendar; confirm only expands the optional in-place summary.
   const [flowStep, setFlowStep] = useState<"write" | "review" | "confirm">(() => {
     if (initialStep) return initialStep;
     if (initialProposedWeek || (initialItems && initialItems.length > 0)) return "review";
@@ -395,6 +408,7 @@ export function WeeklyPlanningFromNotes({
         if (isCancelled) return;
         if (draft && draft.status === "draft" && draft.proposal) {
           setProposedWeek(draft.proposal);
+          setPlannedDays(draft.draftContext?.plannedDays ?? {});
           if (draft.draftContext) {
             if (draft.draftContext.extractedItems) {
               setExtractedItems(draft.draftContext.extractedItems);
@@ -522,6 +536,7 @@ export function WeeklyPlanningFromNotes({
       proposal: proposalToSave,
       draftContext: {
         extractedItems: extractedItems || undefined,
+        plannedDays,
         acceptedItemIds: Array.from(acceptedItemIds),
         selectedCarryOverItemIds: Array.from(selectedCarryOverItemIds),
         overdueDecisions,
@@ -536,11 +551,63 @@ export function WeeklyPlanningFromNotes({
       createdAt: nowIso,
       updatedAt: nowIso,
     };
+    const save = service.saveDraftPlan.bind(service);
+    draftSaveCount.current += 1;
+    setIsSavingDraft(true);
+    const pending = draftSaveQueue.current.then(async () => {
+      try {
+        await save(draftPlan);
+        setDraftSaveError(null);
+      } catch (e) {
+        logger.error("Failed to save plan draft", e);
+        setDraftSaveError("No se ha podido guardar el borrador. Reintenta antes de activar.");
+      } finally {
+        draftSaveCount.current -= 1;
+        setIsSavingDraft(draftSaveCount.current > 0);
+      }
+    });
+    draftSaveQueue.current = pending;
+    await pending;
+  };
+
+  const editCalendarHours = async (id: string, hours: number | null) => {
+    if (!proposedWeek || !extractedItems) return;
     try {
-      await service.saveDraftPlan(draftPlan);
-    } catch (e) {
-      logger.error("Failed to save plan draft", e);
+      const edited = editDraftCalendarHours(proposedWeek, extractedItems, id, hours);
+      setExtractedItems(edited.items);
+      setProposedWeek(edited.proposal);
+      setPlanningError(null);
+      if (!isProposalDirty && !isCaptureDirty)
+        setLastGeneratedParams((previous) =>
+          previous ? { ...previous, items: itemSignature(edited.items) } : previous
+        );
+      await persistDraft(edited.proposal, { extractedItems: edited.items });
+    } catch (error) {
+      setPlanningError(error instanceof Error ? error.message : "No se pudo ajustar la tarea.");
     }
+  };
+  const editCalendarDay = async (id: string, day: string | null) => {
+    if (!proposedWeek) return;
+    if (
+      day &&
+      (!CalendarDateSchema.safeParse(day).success ||
+        day < proposedWeek.weekSummary.targetWeek.startDate ||
+        day > proposedWeek.weekSummary.targetWeek.endDate)
+    ) {
+      setPlanningError("Elige un día dentro de esta semana.");
+      return;
+    }
+    const next = { ...plannedDays };
+    if (day) next[id] = day;
+    else delete next[id];
+    setPlannedDays(next);
+    setPlanningError(null);
+    await persistDraft(proposedWeek, { plannedDays: next });
+    requestAnimationFrame(() => {
+      const card = document.getElementById(`draft-calendar-source-${id}`);
+      card?.focus({ preventScroll: true });
+      card?.scrollIntoView({ block: "nearest" });
+    });
   };
 
   const handleStartEditCapacity = () => {
@@ -649,6 +716,7 @@ export function WeeklyPlanningFromNotes({
           existingMap.set(item.id, item);
         }
         const merged = Array.from(existingMap.values());
+        setPlannedDays(retainDraftDays(extractedItems, merged, plannedDays));
         setExtractedItems(merged);
         setAcceptedItemIds((prev) => {
           const next = new Set(prev);
@@ -657,6 +725,7 @@ export function WeeklyPlanningFromNotes({
         });
         setSuccessMessage(`Se añadieron ${newItems.length} nueva(s) idea(s) a la lista existente.`);
       } else {
+        setPlannedDays(retainDraftDays(extractedItems ?? [], newItems, plannedDays));
         setExtractedItems(newItems);
         // By default, accept all extracted items for review
         setAcceptedItemIds(new Set(newItems.map((it) => it.id)));
@@ -704,6 +773,10 @@ export function WeeklyPlanningFromNotes({
     const trimmed = noteText.trim();
     if (!trimmed || isExtracting || isPlanning) return;
 
+    if (proposedWeek && !isProposalDirty && !isCaptureDirty) {
+      setFlowStep("review");
+      return;
+    }
     // Changing time or dates must not discard corrections already made to the items.
     if (proposedWeek && extractedItems && !isCaptureDirty) {
       setExtractError(null);
@@ -734,6 +807,8 @@ export function WeeklyPlanningFromNotes({
       if (reqId !== extractRequestIdRef.current) return;
 
       const newItems = result.items || [];
+      const nextPlannedDays = retainDraftDays(extractedItems ?? [], newItems, plannedDays);
+      setPlannedDays(nextPlannedDays);
       setExtractedItems(newItems);
       const newAcceptedIds = new Set(newItems.map((it) => it.id));
       setAcceptedItemIds(newAcceptedIds);
@@ -757,6 +832,7 @@ export function WeeklyPlanningFromNotes({
       setDiagnostics(detailedResult.diagnostics);
       await persistDraft(detailedResult.proposal, {
         extractedItems: newItems,
+        plannedDays: nextPlannedDays,
         acceptedItemIds: Array.from(newAcceptedIds),
         noteText: trimmed,
       });
@@ -788,6 +864,9 @@ export function WeeklyPlanningFromNotes({
   };
 
   const handleStartFreshWeek = async () => {
+    await draftSaveQueue.current;
+    setPlannedDays({});
+    setDraftSaveError(null);
     setExtractedItems(null);
     setAcceptedItemIds(new Set());
     setProposedWeek(null);
@@ -1028,6 +1107,8 @@ export function WeeklyPlanningFromNotes({
     if (
       !proposedWeek ||
       isConfirming ||
+      draftSaveCount.current > 0 ||
+      draftSaveError ||
       confirmationInFlightRef.current ||
       isPlanning ||
       isExtracting
@@ -1039,6 +1120,19 @@ export function WeeklyPlanningFromNotes({
       return;
     }
 
+    for (const [itemId, day] of Object.entries(plannedDays)) {
+      if (
+        includedDraftItemIds(proposedWeek).has(itemId) &&
+        (!CalendarDateSchema.safeParse(day).success ||
+          day < proposedWeek.weekSummary.targetWeek.startDate ||
+          day > proposedWeek.weekSummary.targetWeek.endDate)
+      ) {
+        setPlanningError(
+          "Hay un día elegido fuera de esta semana. Corrígelo en el calendario antes de activar."
+        );
+        return;
+      }
+    }
     confirmationInFlightRef.current = true;
     setIsConfirming(true);
     setConfirmationError(null);
@@ -1065,16 +1159,39 @@ export function WeeklyPlanningFromNotes({
       status: "active",
       targetWeek,
       proposal: proposedWeek,
+      draftContext: {
+        extractedItems: extractedItems ?? undefined,
+        acceptedItemIds: Array.from(acceptedItemIds),
+        plannedDays,
+      },
       createdAt: isSameAsActive ? state.activePlan!.createdAt : nowIso,
       updatedAt: nowIso,
     };
 
+    const includedIds = includedDraftItemIds(proposedWeek);
+    const chosenAllocations = Object.entries(plannedDays).flatMap(([itemId, day]) => {
+      if (!includedIds.has(itemId)) return [];
+      const source = extractedItems?.find((item) => item.id === itemId);
+      const grouped = proposedWeek.foci.some(
+        (focus) =>
+          focus.contributingItemIds.includes(itemId) && focus.contributingItemIds.length > 1
+      );
+      const hours = source ? draftItemHours(proposedWeek, source) : null;
+      if (
+        grouped ||
+        hours == null ||
+        hours <= 0 ||
+        existingSched?.dailyAllocations.some((row) => row.itemId === itemId)
+      )
+        return [];
+      return [{ itemId, day, allocatedHours: hours }];
+    });
     const storedSchedule: WeeklySchedule = {
       scheduleId,
       planId,
       weekRange: targetWeek,
       timeBlocks: existingSched?.timeBlocks ?? [],
-      dailyAllocations: existingSched?.dailyAllocations ?? [],
+      dailyAllocations: [...(existingSched?.dailyAllocations ?? []), ...chosenAllocations],
       dayConstraints: existingSched?.dayConstraints ?? [],
       appliedAdjustments: existingSched?.appliedAdjustments ?? [],
       version: nextVersion,
@@ -1088,6 +1205,7 @@ export function WeeklyPlanningFromNotes({
       if (result.status === "success") {
         setSuccessMessage("¡Semana confirmada y guardada con éxito en tu cuaderno!");
         setProposedWeek(null);
+        setPlannedDays({});
         setDiagnostics([]);
         setExtractedItems(null);
         setNoteText("");
@@ -1137,6 +1255,9 @@ export function WeeklyPlanningFromNotes({
   };
 
   const handleCancelProposal = async () => {
+    await draftSaveQueue.current;
+    setPlannedDays({});
+    setDraftSaveError(null);
     setProposedWeek(null);
     setDiagnostics([]);
     setConfirmationError(null);
@@ -1304,6 +1425,17 @@ export function WeeklyPlanningFromNotes({
             : "pending_decision",
     };
     setDeferredDecisions(nextDeferredDecisions);
+    const nextAcceptedIds =
+      action === "include_flexible" ? new Set([...acceptedItemIds, itemId]) : acceptedItemIds;
+    if (action === "include_flexible") {
+      setAcceptedItemIds(nextAcceptedIds);
+      if (!isProposalDirty && !isCaptureDirty)
+        setLastGeneratedParams((previous) =>
+          previous
+            ? { ...previous, acceptedItemIds: Array.from(nextAcceptedIds).sort().join(",") }
+            : previous
+        );
+    }
 
     let updatedFoci = [...proposedWeek.foci];
     let updatedDeferred = [...proposedWeek.deferredItems];
@@ -1417,6 +1549,7 @@ export function WeeklyPlanningFromNotes({
     setProposedWeek(updatedProposal);
     await persistDraft(updatedProposal, {
       deferredDecisions: nextDeferredDecisions,
+      acceptedItemIds: Array.from(nextAcceptedIds),
       availableHoursInput:
         resolvedTotalHours !== undefined ? String(resolvedTotalHours) : availableHoursInput,
       protectedSpacePercentInput: String(Math.round(resolvedRatio * 100)),
@@ -1709,96 +1842,31 @@ export function WeeklyPlanningFromNotes({
         </div>
       </div>
 
-      {/* Línea de progreso visible: Escribir → Revisar → Confirmar */}
-      <div
+      <nav
         className="guided-flow-progress"
         data-testid="guided-flow-progress"
-        role="navigation"
-        aria-label="Progreso de nueva semana"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          margin: "14px 0 20px 0",
-          background: "var(--surface-warm, #fdfbf7)",
-          border: "1px solid var(--border-color, #e6ded1)",
-          borderRadius: "20px",
-          fontSize: "0.85rem",
-          flexWrap: "wrap",
-        }}
+        aria-label="Nueva semana"
       >
-        {/* Paso 1: Escribir */}
         <button
           type="button"
-          onClick={() => setFlowStep("write")}
           className={flowStep === "write" ? "primary small" : "secondary small"}
-          aria-current={flowStep === "write" ? "step" : undefined}
           data-testid="step-indicator-write"
-          style={{
-            borderRadius: "14px",
-            padding: "3px 12px",
-            fontWeight: flowStep === "write" ? 700 : 500,
-            cursor: "pointer",
-            background: flowStep === "write" ? undefined : "#ffffff",
-          }}
+          aria-current={flowStep === "write" ? "step" : undefined}
+          onClick={() => setFlowStep("write")}
         >
-          {flowStep !== "write" ? "✓ 1. Escribir" : "1. Escribir"}
+          Escribir tareas
         </button>
-
-        <span style={{ color: "#aaa", userSelect: "none" }}>→</span>
-
-        {/* Paso 2: Revisar */}
         <button
           type="button"
-          onClick={() => {
-            if (proposedWeek || (extractedItems && extractedItems.length > 0)) {
-              setFlowStep("review");
-            }
-          }}
-          disabled={!proposedWeek && (!extractedItems || extractedItems.length === 0)}
-          className={flowStep === "review" ? "primary small" : "secondary small"}
-          aria-current={flowStep === "review" ? "step" : undefined}
+          className={flowStep !== "write" ? "primary small" : "secondary small"}
           data-testid="step-indicator-review"
-          style={{
-            borderRadius: "14px",
-            padding: "3px 12px",
-            fontWeight: flowStep === "review" ? 700 : 500,
-            opacity:
-              flowStep === "review" || proposedWeek || (extractedItems && extractedItems.length > 0)
-                ? 1
-                : 0.5,
-            cursor:
-              proposedWeek || (extractedItems && extractedItems.length > 0) ? "pointer" : "default",
-            background: flowStep === "review" ? undefined : "#ffffff",
-          }}
+          aria-current={flowStep !== "write" ? "step" : undefined}
+          disabled={!proposedWeek && !extractedItems?.length}
+          onClick={() => setFlowStep("review")}
         >
-          {flowStep === "confirm" ? "✓ 2. Revisar" : "2. Revisar"}
+          Calendario
         </button>
-
-        <span style={{ color: "#aaa", userSelect: "none" }}>→</span>
-
-        {/* Paso 3: Confirmar */}
-        <button
-          type="button"
-          onClick={() => {
-            void handleContinueToConfirm();
-          }}
-          disabled={!proposedWeek || isPlanning || isExtracting}
-          className={flowStep === "confirm" ? "primary small" : "secondary small"}
-          aria-current={flowStep === "confirm" ? "step" : undefined}
-          data-testid="step-indicator-confirm"
-          style={{
-            borderRadius: "14px",
-            padding: "3px 12px",
-            fontWeight: flowStep === "confirm" ? 700 : 500,
-            opacity: flowStep === "confirm" || proposedWeek ? 1 : 0.5,
-            cursor: proposedWeek ? "pointer" : "default",
-            background: flowStep === "confirm" ? undefined : "#ffffff",
-          }}
-        >
-          3. Confirmar
-        </button>
-      </div>
+      </nav>
 
       {successMessage && (
         <div className="status-message status-info" style={{ marginBottom: "16px" }} role="status">
@@ -1997,7 +2065,7 @@ export function WeeklyPlanningFromNotes({
                     ? "Entendiendo notas..."
                     : isPlanning
                       ? "Preparando propuesta..."
-                      : "Continuar →"}
+                      : "Ver mis tareas en el calendario →"}
                 </button>
               </div>
             </div>
@@ -2019,238 +2087,270 @@ export function WeeklyPlanningFromNotes({
       {/* -------------------------------------------------------------------- */}
       {/* PASO 2: REVISAR                                                     */}
       {/* -------------------------------------------------------------------- */}
-      {flowStep === "review" && (
+      {(flowStep === "review" || flowStep === "confirm") && (
         <fieldset
           className="planning-review-fields"
-          disabled={isPlanning || isExtracting}
+          disabled={isPlanning || isExtracting || isConfirming}
           data-testid="flow-step-review"
         >
-          <PlanningHeaderSection
-            hasActivePlan={hasActivePlan}
-            initialItems={initialItems}
-            successMessage={null}
-            targetWeekStart={targetWeekStart}
-            setTargetWeekStart={setTargetWeekStart}
-            targetWeekEnd={targetWeekEnd}
-            setTargetWeekEnd={setTargetWeekEnd}
-            handleStartFreshWeek={handleStartFreshWeek}
-            draftPlans={state.draftPlans}
-            proposedWeek={proposedWeek}
-            isReviewingSelection={isReviewingSelection}
-            handleReturnToProposal={handleReturnToProposal}
-            handleCancelProposal={handleCancelProposal}
-            carryOverTasks={carryOverTasks}
-            selectedCarryOverItemIds={selectedCarryOverItemIds}
-            handleToggleCarryOverItem={handleToggleCarryOverItem}
-            setSelectedCarryOverItemIds={setSelectedCarryOverItemIds}
-            isPlanning={isPlanning}
-            handleGenerateProposal={handleGenerateProposal}
-            extractedItems={extractedItems}
-            activeTargetWeek={activeTargetWeek}
-            handleCalendarApplied={handleCalendarApplied}
-          />
+          {proposedWeek ? (
+            <>
+              <DraftTaskCalendar
+                proposal={proposedWeek}
+                items={extractedItems ?? []}
+                plannedDays={plannedDays}
+                onHours={(id, hours) => void editCalendarHours(id, hours)}
+                onDay={(id, day) => void editCalendarDay(id, day)}
+                onInclude={(id) => void handleDeferredDecisionChange(id, "include_flexible")}
+                onDefer={(id) => void handleDeferredDecisionChange(id, "postpone")}
+              />
+              {isSavingDraft && (
+                <p role="status" data-testid="draft-saving">
+                  Guardando borrador…
+                </p>
+              )}
+              {draftSaveError && (
+                <div role="alert">
+                  <p>{draftSaveError}</p>
+                  <button type="button" onClick={() => void persistDraft(proposedWeek)}>
+                    Reintentar guardado
+                  </button>
+                </div>
+              )}
+              {planningError && (
+                <p className="status-message status-error" role="alert">
+                  {planningError}
+                </p>
+              )}
+              {(isProposalDirty || isCaptureDirty) && (
+                <div role="status" data-testid="calendar-needs-update">
+                  <p>
+                    Hay cambios en las notas o en los ajustes generales. Actualiza el calendario
+                    antes de activar.
+                  </p>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => void handleGenerateProposal()}
+                    data-testid="update-calendar-button"
+                  >
+                    Actualizar calendario
+                  </button>
+                </div>
+              )}
+              <PlanningProposalReviewFooter
+                inline
+                summaryOpen={flowStep === "confirm"}
+                summaryRef={confirmationStepRef}
+                onOpenSummary={() =>
+                  flowStep === "confirm" ? setFlowStep("review") : void handleContinueToConfirm()
+                }
+                activationBlocked={
+                  isProposalDirty ||
+                  isCaptureDirty ||
+                  isPlanning ||
+                  isExtracting ||
+                  isSavingDraft ||
+                  !!draftSaveError
+                }
+                proposedWeek={proposedWeek}
+                diagnostics={diagnostics}
+                activePlanConflict={activePlanConflict}
+                setActivePlanConflict={setActivePlanConflict}
+                onPlanCreated={onPlanCreated}
+                confirmationError={confirmationError}
+                isConfirming={isConfirming}
+                handleAdjustElements={() => {
+                  handleAdjustElements();
+                  setFlowStep("review");
+                }}
+                setIsReviewingSelection={() => setFlowStep("review")}
+                handleStartFreshWeek={handleStartFreshWeek}
+                handleConfirmPlan={handleConfirmPlan}
+              />
+            </>
+          ) : (
+            <div className="calm-box">
+              <p>Tus tareas están recuperadas. Prepara el calendario para organizarlas.</p>
+              <button
+                type="button"
+                onClick={() => void handleGenerateProposal()}
+                data-testid="prepare-calendar-button"
+              >
+                Preparar calendario
+              </button>
+            </div>
+          )}
+          <details className="calm-details" data-testid="draft-advanced-details">
+            <summary>Opciones avanzadas: capacidad, fuentes y propuesta</summary>
+            <PlanningHeaderSection
+              hasActivePlan={hasActivePlan}
+              initialItems={initialItems}
+              successMessage={null}
+              targetWeekStart={targetWeekStart}
+              setTargetWeekStart={setTargetWeekStart}
+              targetWeekEnd={targetWeekEnd}
+              setTargetWeekEnd={setTargetWeekEnd}
+              handleStartFreshWeek={handleStartFreshWeek}
+              draftPlans={state.draftPlans}
+              proposedWeek={proposedWeek}
+              isReviewingSelection={isReviewingSelection}
+              handleReturnToProposal={handleReturnToProposal}
+              handleCancelProposal={handleCancelProposal}
+              carryOverTasks={carryOverTasks}
+              selectedCarryOverItemIds={selectedCarryOverItemIds}
+              handleToggleCarryOverItem={handleToggleCarryOverItem}
+              setSelectedCarryOverItemIds={setSelectedCarryOverItemIds}
+              isPlanning={isPlanning}
+              handleGenerateProposal={handleGenerateProposal}
+              extractedItems={extractedItems}
+              activeTargetWeek={activeTargetWeek}
+              handleCalendarApplied={handleCalendarApplied}
+            />
 
-          {proposedWeek && (
-            <div
-              style={{
-                marginTop: "24px",
-                paddingTop: "16px",
-                borderTop: "1px solid var(--border-color, #e0e0e0)",
-              }}
-              aria-label="Revisión de propuesta semanal"
-              data-testid="weekly-proposal-screen"
-            >
+            {proposedWeek && (
               <div
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "baseline",
-                  flexWrap: "wrap",
-                  gap: "8px",
+                  marginTop: "24px",
+                  paddingTop: "16px",
+                  borderTop: "1px solid var(--border-color, #e0e0e0)",
                 }}
+                aria-label="Revisión de propuesta semanal"
+                data-testid="weekly-proposal-screen"
               >
-                <div>
-                  <div
-                    className="calm-muted"
-                    style={{
-                      fontSize: "0.8rem",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Propuesta semanal
-                  </div>
-                  <h2 style={{ margin: "2px 0 0 0" }}>
-                    {proposedWeek.weekSummary.intent
-                      ? `«${proposedWeek.weekSummary.intent}»`
-                      : "Plan de la semana"}
-                  </h2>
-                </div>
                 <div
-                  style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                    flexWrap: "wrap",
+                    gap: "8px",
+                  }}
                 >
-                  <span className="badge badge-task">
-                    {proposedWeek.weekSummary.targetWeek.startDate} al{" "}
-                    {proposedWeek.weekSummary.targetWeek.endDate}
-                  </span>
-                  <span className="badge badge-idea" data-testid="draft-notebook-status-badge">
-                    📒 Borrador en cuaderno local
-                  </span>
+                  <div>
+                    <div
+                      className="calm-muted"
+                      style={{
+                        fontSize: "0.8rem",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Propuesta semanal
+                    </div>
+                    <h2 style={{ margin: "2px 0 0 0" }}>
+                      {proposedWeek.weekSummary.intent
+                        ? `«${proposedWeek.weekSummary.intent}»`
+                        : "Plan de la semana"}
+                    </h2>
+                  </div>
+                  <div
+                    style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}
+                  >
+                    <span className="badge badge-task">
+                      {proposedWeek.weekSummary.targetWeek.startDate} al{" "}
+                      {proposedWeek.weekSummary.targetWeek.endDate}
+                    </span>
+                    <span className="badge badge-idea" data-testid="draft-notebook-status-badge">
+                      📒 Borrador en cuaderno local
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <PlanningCapacityHud
-                proposedWeek={proposedWeek}
-                calendarSummary={calendarSummary}
-                isEditingCapacity={isEditingCapacity}
-                setIsEditingCapacity={setIsEditingCapacity}
+                <PlanningCapacityHud
+                  proposedWeek={proposedWeek}
+                  calendarSummary={calendarSummary}
+                  isEditingCapacity={isEditingCapacity}
+                  setIsEditingCapacity={setIsEditingCapacity}
+                  availableHoursInput={availableHoursInput}
+                  setAvailableHoursInput={setAvailableHoursInput}
+                  protectedSpacePercentInput={protectedSpacePercentInput}
+                  setProtectedSpacePercentInput={setProtectedSpacePercentInput}
+                  capacityFeedbackMessage={capacityFeedbackMessage}
+                  onStartEditCapacity={handleStartEditCapacity}
+                  onCancelEditCapacity={handleCancelEditCapacity}
+                  onVerifyCapacity={handleVerifyCapacity}
+                />
+              </div>
+            )}
+
+            {(extractedItems || proposedWeek) && (
+              <PlanningExtractedItemsReview
+                extractedItems={extractedItems ?? []}
+                acceptedItemIds={acceptedItemIds}
+                acceptedCount={acceptedCount}
+                handleAcceptAll={handleAcceptAll}
+                handleDiscardAll={handleDiscardAll}
+                handleStartFreshWeek={handleStartFreshWeek}
+                handleToggleItem={handleToggleItem}
+                handleUpdateItemEffort={handleUpdateItemEffort}
+                handleUpdateItemDeadline={handleUpdateItemDeadline}
+                noteText={noteText}
+                setNoteText={setNoteText}
+                isExtracting={isExtracting}
+                handleExtract={handleExtract}
+                userIntent={userIntent}
+                setUserIntent={setUserIntent}
                 availableHoursInput={availableHoursInput}
                 setAvailableHoursInput={setAvailableHoursInput}
                 protectedSpacePercentInput={protectedSpacePercentInput}
                 setProtectedSpacePercentInput={setProtectedSpacePercentInput}
-                capacityFeedbackMessage={capacityFeedbackMessage}
-                onStartEditCapacity={handleStartEditCapacity}
-                onCancelEditCapacity={handleCancelEditCapacity}
-                onVerifyCapacity={handleVerifyCapacity}
+                isPlanning={isPlanning}
+                planningError={planningError}
+                selectedCarryOverItemIds={selectedCarryOverItemIds}
+                handleGenerateProposal={handleGenerateProposal}
+                isProposalDirty={isProposalDirty}
+                proposedWeek={proposedWeek}
+                reviewContent={
+                  proposedWeek ? (
+                    <PlanningReviewBoard
+                      proposedWeek={proposedWeek}
+                      activeTargetWeek={activeTargetWeek}
+                      extractedItems={extractedItems}
+                      editingProposalItemId={editingProposalItemId}
+                      proposalItemHoursInput={proposalItemHoursInput}
+                      setEditingProposalItemId={setEditingProposalItemId}
+                      setProposalItemHoursInput={setProposalItemHoursInput}
+                      handleDemoteFocusToFlexible={handleDemoteFocusToFlexible}
+                      handlePromoteFlexibleToFocus={handlePromoteFlexibleToFocus}
+                      handleSaveProposalItemHours={handleSaveProposalItemHours}
+                      deferredDecisions={deferredDecisions}
+                      handleDeferredDecisionChange={handleDeferredDecisionChange}
+                      handleApplyOverdueDecision={handleApplyOverdueDecision}
+                      acceptedItemIds={acceptedItemIds}
+                      handleToggleItem={handleToggleItem}
+                      handleUpdateItemEffort={handleUpdateItemEffort}
+                      handleUpdateItemDeadline={handleUpdateItemDeadline}
+                    />
+                  ) : undefined
+                }
               />
+            )}
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginTop: "24px",
+                paddingTop: "16px",
+                borderTop: "1px solid var(--border-color, #e0e0e0)",
+                flexWrap: "wrap",
+                gap: "10px",
+              }}
+            >
+              <button
+                type="button"
+                className="secondary"
+                data-testid="flow-back-to-write"
+                onClick={() => setFlowStep("write")}
+              >
+                ← Volver a escribir
+              </button>
             </div>
-          )}
-
-          {(extractedItems || proposedWeek) && (
-            <PlanningExtractedItemsReview
-              extractedItems={extractedItems ?? []}
-              acceptedItemIds={acceptedItemIds}
-              acceptedCount={acceptedCount}
-              handleAcceptAll={handleAcceptAll}
-              handleDiscardAll={handleDiscardAll}
-              handleStartFreshWeek={handleStartFreshWeek}
-              handleToggleItem={handleToggleItem}
-              handleUpdateItemEffort={handleUpdateItemEffort}
-              handleUpdateItemDeadline={handleUpdateItemDeadline}
-              noteText={noteText}
-              setNoteText={setNoteText}
-              isExtracting={isExtracting}
-              handleExtract={handleExtract}
-              userIntent={userIntent}
-              setUserIntent={setUserIntent}
-              availableHoursInput={availableHoursInput}
-              setAvailableHoursInput={setAvailableHoursInput}
-              protectedSpacePercentInput={protectedSpacePercentInput}
-              setProtectedSpacePercentInput={setProtectedSpacePercentInput}
-              isPlanning={isPlanning}
-              planningError={planningError}
-              selectedCarryOverItemIds={selectedCarryOverItemIds}
-              handleGenerateProposal={handleGenerateProposal}
-              isProposalDirty={isProposalDirty}
-              proposedWeek={proposedWeek}
-              reviewContent={
-                proposedWeek ? (
-                  <PlanningReviewBoard
-                    proposedWeek={proposedWeek}
-                    activeTargetWeek={activeTargetWeek}
-                    extractedItems={extractedItems}
-                    editingProposalItemId={editingProposalItemId}
-                    proposalItemHoursInput={proposalItemHoursInput}
-                    setEditingProposalItemId={setEditingProposalItemId}
-                    setProposalItemHoursInput={setProposalItemHoursInput}
-                    handleDemoteFocusToFlexible={handleDemoteFocusToFlexible}
-                    handlePromoteFlexibleToFocus={handlePromoteFlexibleToFocus}
-                    handleSaveProposalItemHours={handleSaveProposalItemHours}
-                    deferredDecisions={deferredDecisions}
-                    handleDeferredDecisionChange={handleDeferredDecisionChange}
-                    handleApplyOverdueDecision={handleApplyOverdueDecision}
-                    acceptedItemIds={acceptedItemIds}
-                    handleToggleItem={handleToggleItem}
-                    handleUpdateItemEffort={handleUpdateItemEffort}
-                    handleUpdateItemDeadline={handleUpdateItemDeadline}
-                  />
-                ) : undefined
-              }
-            />
-          )}
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginTop: "24px",
-              paddingTop: "16px",
-              borderTop: "1px solid var(--border-color, #e0e0e0)",
-              flexWrap: "wrap",
-              gap: "10px",
-            }}
-          >
-            <button
-              type="button"
-              className="secondary"
-              data-testid="flow-back-to-write"
-              onClick={() => setFlowStep("write")}
-            >
-              ← Volver a escribir
-            </button>
-            <button
-              type="button"
-              className="primary"
-              data-testid="flow-continue-to-confirm"
-              onClick={handleContinueToConfirm}
-              disabled={!proposedWeek || isPlanning || isExtracting}
-            >
-              Continuar a confirmar →
-            </button>
-          </div>
+          </details>
         </fieldset>
-      )}
-
-      {/* -------------------------------------------------------------------- */}
-      {/* PASO 3: CONFIRMAR                                                   */}
-      {/* -------------------------------------------------------------------- */}
-      {flowStep === "confirm" && proposedWeek && (
-        <div
-          data-testid="flow-step-confirm"
-          ref={confirmationStepRef}
-          tabIndex={-1}
-          role="region"
-          aria-label="Confirmación de la semana"
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "16px",
-              flexWrap: "wrap",
-              gap: "10px",
-            }}
-          >
-            <button
-              type="button"
-              className="secondary"
-              data-testid="flow-back-to-review"
-              onClick={() => setFlowStep("review")}
-            >
-              ← Volver a revisar
-            </button>
-          </div>
-
-          <PlanningProposalReviewFooter
-            proposedWeek={proposedWeek}
-            diagnostics={diagnostics}
-            activePlanConflict={activePlanConflict}
-            setActivePlanConflict={setActivePlanConflict}
-            onPlanCreated={onPlanCreated}
-            confirmationError={confirmationError}
-            isConfirming={isConfirming}
-            handleAdjustElements={() => {
-              handleAdjustElements();
-              setFlowStep("review");
-            }}
-            setIsReviewingSelection={() => setFlowStep("review")}
-            handleStartFreshWeek={handleStartFreshWeek}
-            handleConfirmPlan={handleConfirmPlan}
-          />
-        </div>
       )}
     </section>
   );

@@ -523,3 +523,28 @@ Baseline results:
 - Verification: 1,049 tests across 79 files, types, lint, formatting, dependency
   cycles, production build and preview/dev browser checks pass. No persistence,
   domain operation, dependency or external calendar integration changes.
+
+### User walkthrough — direct editable preparation calendar
+
+- Replaced the default three-stage flow with notes and an editable calendar.
+  Activation is one explicit action from that calendar; the summary is optional
+  and opens in place. The detailed board remains under advanced options.
+- Hours, inclusion and chosen-day controls live on each task card. Direct hours
+  edits update capacity without AI regeneration. Grouped focus estimates stay
+  shared, obligations retain their safeguards and thoughts remain notes until
+  explicitly included. Deadline and chosen day are distinct.
+- Persistence design: optional validated `draftContext.plannedDays` keeps explicit
+  day decisions without fabricated effort; known individual estimates become
+  allocations on activation, and existing real assignments take precedence.
+  Activation retains source context. Old backups remain valid, with new/old
+  round-trip regression coverage. This intentionally extends the earlier read-only
+  calendar scope in response to the user's follow-up request.
+- Serial draft writes show progress and recoverable errors, blocking activation
+  while unsaved. Returning to unchanged notes preserves manual decisions. Reused
+  provider IDs cannot carry days into unrelated sources.
+- Added behavior tests and browser coverage for direct edits, storage failure/retry,
+  reload, mobile layout, one-click activation, unknown effort, grouped estimates,
+  exact proposals and conflict protection. Verification: 1,056 tests across 80
+  files, types, lint, formatting, dependency cycles, production build and browser
+  checks in preview and development all pass. Build retains the existing bundle
+  size warning; no dependencies were added.

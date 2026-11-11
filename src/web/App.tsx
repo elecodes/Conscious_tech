@@ -89,9 +89,9 @@ export function resolveNextStep({
   // 3. Proposal pending
   if (hasPendingProposal || state.draftPlan || (state.draftPlans && state.draftPlans.length > 0)) {
     return {
-      message: "Revisa y confirma la propuesta",
+      message: "Organiza tus tareas en el calendario",
       targetSpace: "prepare",
-      buttonText: "Revisar propuesta",
+      buttonText: "Ver calendario",
     };
   }
 

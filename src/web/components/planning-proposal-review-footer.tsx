@@ -1,8 +1,14 @@
+import type { RefObject } from "react";
 import { ProposedWeek, TargetWeek } from "../../domain/week";
 import { PipelineDiagnostic } from "../../application/planning-pipeline";
 import { PlanningConfirmationSummary } from "./planning-confirmation-summary";
 
 export interface PlanningProposalReviewFooterProps {
+  inline?: boolean;
+  summaryOpen?: boolean;
+  summaryRef?: RefObject<HTMLDivElement | null>;
+  onOpenSummary?: () => void;
+  activationBlocked?: boolean;
   proposedWeek: ProposedWeek;
   diagnostics: PipelineDiagnostic[];
   activePlanConflict: {
@@ -21,6 +27,11 @@ export interface PlanningProposalReviewFooterProps {
 
 export function PlanningProposalReviewFooter({
   proposedWeek,
+  inline,
+  summaryOpen,
+  summaryRef,
+  onOpenSummary,
+  activationBlocked,
   diagnostics,
   activePlanConflict,
   setActivePlanConflict,
@@ -186,7 +197,30 @@ export function PlanningProposalReviewFooter({
         </div>
       )}
 
-      <PlanningConfirmationSummary proposal={proposedWeek} />
+      {inline ? (
+        <details className="calm-details" open={summaryOpen} data-testid="calendar-plan-summary">
+          <summary
+            data-testid="flow-continue-to-confirm"
+            onClick={(event) => {
+              event.preventDefault();
+              onOpenSummary?.();
+            }}
+          >
+            Ver detalle del plan
+          </summary>
+          <div
+            ref={summaryRef}
+            tabIndex={-1}
+            role="region"
+            aria-label="Detalle del plan"
+            data-testid="flow-step-confirm"
+          >
+            <PlanningConfirmationSummary proposal={proposedWeek} />
+          </div>
+        </details>
+      ) : (
+        <PlanningConfirmationSummary proposal={proposedWeek} />
+      )}
       <p className="calm-muted activation-explanation" id="activation-explanation">
         Al activar, guardas esta propuesta en este navegador y pasa a ser tu semana activa. Después
         podrás exportarla o compartirla desde Mi semana.
@@ -197,11 +231,15 @@ export function PlanningProposalReviewFooter({
           className="primary"
           aria-label="Confirmar y activar semana"
           aria-describedby="activation-explanation"
-          disabled={isConfirming}
+          disabled={isConfirming || activationBlocked}
           onClick={handleConfirmPlan}
           data-testid="confirm-plan-button"
         >
-          {isConfirming ? "Guardando semana..." : "✓ Confirmar y activar semana"}
+          {isConfirming
+            ? "Guardando semana..."
+            : inline
+              ? "Guardar y activar semana"
+              : "✓ Confirmar y activar semana"}
         </button>
       </div>
       <details className="calm-details" data-testid="proposal-more-actions-details">

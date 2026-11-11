@@ -86,6 +86,8 @@ export function buildTaskCalendar(
     const allocations =
       schedule?.dailyAllocations.filter((row) => row.itemId === task.itemId) ?? [];
     const dates = new Set([...blocks.map((row) => row.day), ...allocations.map((row) => row.day)]);
+    if (!dates.size && plan.draftContext?.plannedDays?.[task.itemId])
+      dates.add(plan.draftContext.plannedDays[task.itemId]!);
     if (!dates.size) undated.push(task);
     for (const date of dates) {
       const daily = allocations.filter((row) => row.day === date);
