@@ -95,11 +95,7 @@ export function DraftTaskCalendar({
           </button>
         )}
         <strong>{item.title}</strong>
-        {todayHours != null && (
-          <span className="draft-day-hours">
-            {todayHours} h este día · {budget ?? "?"} h en total
-          </span>
-        )}
+        {todayHours != null && <span className="draft-day-hours">{todayHours} h</span>}
         <span
           className="draft-calendar-placement"
           role="status"

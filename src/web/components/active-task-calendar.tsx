@@ -111,7 +111,9 @@ export function ActiveTaskCalendar({
             </span>
           ))}
           {entry?.hours !== undefined && (
-            <span className="task-calendar-time">{entry.hours} h asignadas al día</span>
+            <span className="task-calendar-time" title="Horas asignadas a este día">
+              {entry.hours} h
+            </span>
           )}
           {task.dueDate && (
             <span className="task-calendar-meta">

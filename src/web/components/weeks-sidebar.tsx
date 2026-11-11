@@ -33,7 +33,10 @@ export function WeeksSidebar({
       <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
         <summary>
           Mis semanas <span>({weeks.length})</span>
-          <small className="weeks-sidebar-toggle">{open ? "Ocultar panel" : "Mostrar panel"}</small>
+          <span className="weeks-sidebar-toggle">
+            <span aria-hidden="true">{open ? "→" : "←"}</span>
+            {open ? "Ocultar semanas" : "Mostrar semanas"}
+          </span>
         </summary>
         <p className="calm-muted">
           La activa y lo que estás preparando. Las reprogramadas se conservan en su destino.

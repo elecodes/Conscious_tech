@@ -917,3 +917,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Remove repeated allocation totals from calendar card controls. Collapsing Mis
   semanas now releases the sidebar column so the calendar uses the full width.
+
+- Make the weeks visibility control prominent with a filled arrow action and
+  shorten calendar day effort labels to the hour value (for example, “1 h”).

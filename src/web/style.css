@@ -1472,10 +1472,22 @@ details.calm-details[open] {
   cursor: pointer;
 }
 .weeks-sidebar-toggle {
-  display: block;
-  color: var(--text-muted);
-  font-weight: 400;
-  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--accent-sage);
+  border-radius: 8px;
+  background: var(--accent-sage);
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.weeks-sidebar > details > summary:focus-visible {
+  outline: 3px solid var(--accent-sage);
+  outline-offset: 4px;
 }
 .weeks-workspace:has(.weeks-sidebar > details:not([open])) {
   grid-template-columns: minmax(0, 1fr);
