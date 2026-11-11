@@ -933,3 +933,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Recovering a postponement preserves its history and cancels its future suggestion.
 - Add direct hour editing for single-day active tasks; unknown estimates remain
   unknown and can still have a chosen day. Multi-day portions keep their split editor.
+
+- Make the calendar's “Ajustar horas” action compact, with smaller text, padding
+  and corners proportional to the card's other controls.

@@ -170,7 +170,7 @@ export function ActiveTaskCalendar({
           !schedule?.timeBlocks.some((row) => row.itemId === task.itemId) && (
             <button
               type="button"
-              className="secondary small"
+              className="secondary small calendar-adjust-hours"
               disabled={busy}
               onClick={() => openEditor(task, entry?.day ?? model.days[0]!.date)}
             >

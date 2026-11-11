@@ -1682,3 +1682,20 @@ details.calm-details[open] {
   display: grid;
   gap: 6px;
 }
+.calendar-task-card button.calendar-adjust-hours {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  max-width: calc(100% - 16px);
+  min-height: 28px;
+  margin: 0 8px 6px;
+  padding: 3px 6px;
+  border: 1px solid var(--calendar-border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--calendar-tone);
+  font-size: 0.72rem;
+  line-height: 1.3;
+  white-space: normal;
+  box-shadow: none;
+}
