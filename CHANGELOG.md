@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Added an internal foundation for persistent item completion and version-checked
+  undo, with atomic storage, idempotent retries and optional activity history.
+  UI controls and closing integration remain a separate step.
+- Preserved activity through existing schedule writers and backup round trips;
+  old schedules and backups do not acquire inferred progress.
+
 - Consolidated weekly calendar downloads and reminder settings into one calendar
   and sharing section, preserving complete-plan exports and summary contents.
 - Clarified file downloads, event and email preparation, manual calendar imports,

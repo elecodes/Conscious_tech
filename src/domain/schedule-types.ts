@@ -1,3 +1,4 @@
+import { ItemActivitySchema } from "./item-activity-types";
 import { z } from "zod";
 import {
   TargetWeekSchema,
@@ -172,10 +173,19 @@ export const WeeklyScheduleSchema = z
     dailyAllocations: z.array(DailyWorkAllocationSchema).default([]),
     dayConstraints: z.array(DayConstraintSchema).optional(),
     appliedAdjustments: z.array(ScheduleAdjustmentRecordSchema).default([]),
+    itemActivity: ItemActivitySchema.optional(),
     version: z.number().int().positive().default(1),
     createdAt: IsoUtcTimestampSchema,
     updatedAt: IsoUtcTimestampSchema,
   })
-  .strict();
+  .strict()
+  .superRefine((schedule, ctx) => {
+    if (schedule.itemActivity?.history.some((record) => record.appliedVersion > schedule.version))
+      ctx.addIssue({
+        code: "custom",
+        message: "Activity cannot reference a future schedule version",
+        path: ["itemActivity"],
+      });
+  });
 
 export type WeeklySchedule = z.infer<typeof WeeklyScheduleSchema>;

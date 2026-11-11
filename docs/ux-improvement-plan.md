@@ -1,6 +1,6 @@
 # UX improvement plan
 
-Status: steps 0–6 complete; step 7 design documented, implementation pending.
+Status: steps 0–6 and step 7a complete; daily-action UI and closing integration are next.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
@@ -391,3 +391,29 @@ Baseline results:
 - Verification: documentation formatting and diff checks pass. No runtime code,
   dependency, storage schema, or saved user data changed in this checkpoint.
 - Next: 7a, implement and test the minimal persistence contract before adding UI.
+
+### Step 7a — persistence foundation
+
+- Added optional, validated activity outcomes and history to schedules. Extracted
+  the existing item-outcome schema into a shared module without changing the
+  close-week contract or existing import paths.
+- Added pure individual completion/reversal with explicit IDs, idempotent retries,
+  plan membership and version checks. Completion leaves proposal capacity and
+  allocations unchanged; a live postponement blocks contradictory completion.
+- Added an internal service operation using one IndexedDB transaction for plan
+  state, schedule version, outcome and history. It rejects repository-only storage
+  without atomic support rather than using an unsafe read/write fallback.
+- Undo restores the prior outcome or its absence only at the compatible version.
+  Historical data is retained; later changes cannot be overwritten by undo.
+- Existing schedule writers preserve omitted activity. Old backups restore without
+  invented progress, new backups retain it, and invalid activity is rejected.
+- Added 21 domain/storage tests, including two connections, concurrent closure,
+  duplicate requests, failed-write rollback, reload, existing adjustments and backup
+  compatibility. No dependencies or IndexedDB store migration were added.
+- No UI invokes these operations yet. Closing/reopening integration and functional
+  acceptance of daily controls remain step 7b.
+- Verification: 1,008 tests across 76 files, type checking, lint, formatting,
+  dependency-cycle checks, production build and browser smoke tests in preview
+  and dev modes pass.
+- Next: 7b, complete the closing/reopening integration and expose individual
+  completion with safe undo.

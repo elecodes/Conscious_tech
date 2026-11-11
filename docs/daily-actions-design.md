@@ -1,6 +1,7 @@
 # Acciones diarias: contrato previo a la implementación
 
-Estado: diseño propuesto. No hay botones ni cambios de persistencia implementados.
+Estado: contrato de persistencia 7a implementado; interfaz e integración con cierre
+pendientes en 7b. No hay botones nuevos.
 Rama de trabajo: `codex/ux-step-by-step`. Continúa el paso 7 del plan UX.
 
 ## Resultado esperado
@@ -77,7 +78,10 @@ historial en una sola transacción. La comprobación de estado y versión debe
 repetirse dentro de la transacción; una lectura previa no evita otra pestaña.
 Doble activación con el mismo identificador produce un solo efecto. Error de
 almacenamiento: estado anterior intacto y mensaje visible; no mostrar éxito antes
-de persistir. El camino de repositorios en memoria debe ofrecer el mismo contrato.
+de persistir. Los repositorios separados sin soporte transaccional no permiten garantizar esta
+atomicidad. En 7a se rechaza ese camino con `atomic_storage_required` sin escribir;
+las pruebas de persistencia usan IndexedDB en memoria con `fake-indexeddb`, con el
+mismo límite transaccional. Un adaptador alternativo futuro deberá ofrecerlo.
 
 Auditar todos los escritores de agendas (ajustes manuales, radar, guardado,
 importación y reapertura): deben conservar el campo opcional, no reconstruir una
@@ -163,6 +167,28 @@ Antes de habilitar cada control, cubrir:
 4. **7d: aplazar.** Captura reversible, presentación de vigencia y candidatos de
    arrastre. Resolver el caso de postergación seguida de finalización.
 
-Cada entrega requiere su propio commit verificado. Este documento completa la
-investigación del paso 7; la implementación y su aceptación funcional siguen
-pendientes. El próximo incremento es 7a.
+Cada entrega requiere su propio commit verificado. La investigación del paso 7 y el contrato 7a están completos. La aceptación
+funcional de las acciones diarias sigue pendiente de 7b–7d. El próximo incremento
+es 7b; deberá integrar cierre y reapertura antes de habilitar el control.
+
+## Evidencia de 7a
+
+- `applyItemActivity` valida comandos, pertenencia, semana activa, versión,
+  postergación vigente y reversión. Registrar un miembro de un foco conserva la
+  propuesta, la capacidad y las asignaciones. Deshacer restaura el resultado previo
+  o su ausencia; no inventa «no iniciado».
+- `WeeklySessionService.recordItemActivity` escribe mediante una transacción sobre
+  planes y agendas, con lectura/validación dentro de ella. Reintentos idénticos son
+  idempotentes; reutilizar un identificador para otro comando se rechaza.
+- `WeeklySchedule.itemActivity` es opcional, con resultados e historial validados.
+  Los escritores antiguos que omiten el campo lo conservan al guardar normalmente.
+  Una restauración explícita de copia sigue respetando sus datos mediante `force`.
+- Las copias de versión 1 se conservan: el lector nuevo acepta datos antiguos sin
+  actividad y nuevas copias con ella. No cambió la versión de almacenes IndexedDB.
+- 21 pruebas nuevas cubren el dominio, recarga con otra conexión, competencia entre
+  conexiones, cierre concurrente, aborto transaccional, reintentos, compatibilidad
+  de copias y conservación durante ajustes existentes.
+- Todavía no se consume el progreso en el formulario de cierre ni se recuperan sus
+  correcciones al reabrir. Ningún control público invoca la operación antes de esa
+  integración. El historial inicial admite completar/deshacer; 7b deberá extenderlo
+  explícitamente si necesita registrar correcciones del cierre.

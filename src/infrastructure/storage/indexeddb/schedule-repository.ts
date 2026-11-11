@@ -35,6 +35,7 @@ export class IndexedDbWeeklyScheduleRepository implements WeeklyScheduleReposito
     // 1. Read the current version WITHIN this transaction
     const existingRaw = await wrapRequest(store.get(schedule.scheduleId));
     let existingVersion = 0;
+    let existingActivity: WeeklySchedule["itemActivity"];
 
     if (existingRaw) {
       const existingParsed = WeeklyScheduleSchema.safeParse(existingRaw);
@@ -47,6 +48,7 @@ export class IndexedDbWeeklyScheduleRepository implements WeeklyScheduleReposito
         );
       }
       existingVersion = existingParsed.data.version;
+      existingActivity = existingParsed.data.itemActivity;
     }
 
     if (!options?.force) {
@@ -73,6 +75,9 @@ export class IndexedDbWeeklyScheduleRepository implements WeeklyScheduleReposito
     const toWrite: WeeklySchedule = {
       ...schedule,
       version: nextVersion,
+      ...(!options?.force && schedule.itemActivity === undefined && existingActivity
+        ? { itemActivity: existingActivity }
+        : {}),
     };
 
     // 4. Validate schema and domain invariants

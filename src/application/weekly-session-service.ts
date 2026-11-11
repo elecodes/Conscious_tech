@@ -1,3 +1,8 @@
+import { ItemActivityCommand } from "../domain/item-activity-types";
+import {
+  persistItemActivity,
+  PersistItemActivityResult,
+} from "../infrastructure/storage/indexeddb/item-activity";
 import {
   StoredWeeklyPlan,
   StoredCloseWeekReport,
@@ -47,6 +52,20 @@ export * from "./weekly-session-carryover";
 
 export class WeeklySessionService {
   constructor(private readonly deps: WeeklySessionServiceDependencies) {}
+
+  /** Internal foundation only; UI and closing integration follow in step 7b. */
+  async recordItemActivity(
+    scheduleId: string,
+    command: ItemActivityCommand
+  ): Promise<PersistItemActivityResult> {
+    // Separate repository calls cannot guarantee an atomic active-plan/version check.
+    if (!this.deps.getDb) return { status: "failed", reason: "atomic_storage_required" };
+    try {
+      return await persistItemActivity(this.deps.getDb(), scheduleId, command);
+    } catch {
+      return { status: "failed", reason: "activity_storage_failed" };
+    }
+  }
 
   /**
    * Resumes the weekly session by hydrating the active plan, associated schedule,

@@ -473,3 +473,17 @@ The product succeeds when the person can say:
   reapertura deben conservar resultados; arrastre mantiene identidad y selección.
 - Entregas futuras: 7a contrato/persistencia, 7b completar con cierre y deshacer,
   7c mover, 7d aplazar. Todavía no hay controles ni esquemas nuevos implementados.
+
+## UX incremental: base de persistencia 7a
+
+- Implementados `WeeklySchedule.itemActivity` opcional y operación interna
+  `WeeklySessionService.recordItemActivity`: completar un elemento y deshacer con
+  ID idempotente, versión y transacción conjunta de plan/agenda.
+- Reversión solo en la versión compatible; conserva historial y restaura el estado
+  previo o su ausencia. Completar no cambia capacidad ni asignaciones.
+- Una postergación vigente impide completar con evidencia contradictoria. Datos
+  antiguos siguen sin progreso inferido; copias nuevas preservan la actividad.
+- Repositorios sin soporte transaccional reciben `atomic_storage_required`, sin
+  escrituras parciales. Pruebas con IndexedDB en memoria verifican la atomicidad.
+- Sin botones ni conexión al formulario de cierre todavía. En 7b integrar cierre,
+  correcciones y reapertura antes de exponer completar/deshacer.
