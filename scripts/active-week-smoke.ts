@@ -158,6 +158,45 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
     )
       await page.getByTestId("task-more-actions-summary-g").click();
 
+    // A conscious postponement removes a commitment from priorities without losing it.
+    await page.getByTestId("task-more-actions-summary-c").click();
+    await page.getByTestId("postpone-item-c").locator(":scope > summary").click();
+    if (!(await page.getByTestId("save-postpone-c").isDisabled()))
+      throw new Error("Postponement accepts an empty reason");
+    await page.getByTestId("postpone-reason-c").fill("Esperar confirmación");
+    await page.getByTestId("postpone-destination-c").check();
+    await page.getByTestId("postpone-start-c").fill("2026-12-14");
+    await page.getByTestId("postpone-end-c").fill("2026-12-20");
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth))
+      throw new Error("Postponement controls overflow on mobile");
+    const beforePostponement = await readSchedule();
+    await page.getByTestId("save-postpone-c").click();
+    await page.getByTestId("active-week-postponed").getByTestId("active-task-item-c").waitFor();
+    if (await priorities.getByTestId("active-task-item-c").count())
+      throw new Error("Postponed commitment remains in active priorities");
+    if (await page.getByTestId("complete-item-c").count())
+      throw new Error("Completion bypasses a live postponement");
+    const note = await page.getByTestId("postponement-note-c").innerText();
+    if (!note.includes("Esperar confirmación") || !note.includes("2026-12-14"))
+      throw new Error("Postponement lost its reason or destination");
+    if ((await readSchedule()).timeBlocks.some((row) => row.itemId === "c"))
+      throw new Error("Postponement kept an active time block");
+    await page.reload({ waitUntil: "networkidle" });
+    await page.getByTestId("undo-item-c").click();
+    await priorities.getByTestId("active-task-item-c").waitFor();
+    const restoredAfterPostponement = await readSchedule();
+    if (
+      JSON.stringify(restoredAfterPostponement.timeBlocks) !==
+        JSON.stringify(beforePostponement.timeBlocks) ||
+      JSON.stringify(restoredAfterPostponement.dailyAllocations) !==
+        JSON.stringify(beforePostponement.dailyAllocations)
+    )
+      throw new Error("Postponement undo did not restore its exact scope");
+    await page.getByTestId("complete-item-c").click();
+    await page.getByTestId("item-completed-c").waitFor();
+    await page.getByTestId("undo-item-c").click();
+    await page.getByTestId("complete-item-c").waitFor();
+
     // Existing export still receives the complete inventory, independently of its visibility.
     await page.getByTestId("reminders-and-alerts-summary").click();
     if ((await page.getByTestId("add-week-to-gcal-button").count()) !== 1)
@@ -184,6 +223,12 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
     await page.getByTestId("reminders-and-alerts-summary").click();
 
     // An explicit existing adjustment can move deferred work to optional work, never silently to priorities.
+    if (
+      !(await page
+        .getByTestId("active-week-deferred")
+        .evaluate((element) => (element as HTMLDetailsElement).open))
+    )
+      await page.getByTestId("active-week-deferred").locator(":scope > summary").click();
     await page.getByTestId("task-more-actions-summary-g").click();
     await page.getByTestId("adjust-task-g").click();
     await page.getByTestId("task-hours-input").fill("0.75");
@@ -261,7 +306,7 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
       throw new Error("Reopening/undo lost the reviewed correction");
     if (errors.length) throw new Error(errors.join("\n"));
     console.log(
-      "  ✓ Active week: membership, completion, reversible movement, collisions, mobile, closing and reopening verified"
+      "  ✓ Active week: membership, completion, movement, postponement/undo, mobile, closing and reopening verified"
     );
   } finally {
     await context.close();

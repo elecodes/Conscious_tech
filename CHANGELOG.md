@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Added conscious postponement with an explicit reason, optional future destination
+  and safe scoped undo; preserved proposal membership and grouped focus sources.
+- Separated active postponements from priorities, keeping their reason/destination
+  visible and integrating them with existing closing, carryover and backup behavior.
+- Retained independent future-draft decisions when undoing the originating
+  postponement and clarified that full-plan exports also include postponed items.
+
 - Added explicit fixed-block and daily-hours movement with scoped, version-checked
   undo, preserving unrelated assignments, proposal membership and total hours.
 - Preserved movement evidence across reload and backups; reused existing temporal

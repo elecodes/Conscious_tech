@@ -1,6 +1,6 @@
 # UX improvement plan
 
-Status: steps 0–6 and steps 7a–7c complete; reversible postponement is next.
+Status: steps 0–7 complete, including 7a–7d. Ready for a user walkthrough.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
@@ -462,3 +462,29 @@ Baseline results:
   dependency-cycle checks, production build and browser smoke tests in preview and
   dev modes pass.
 - Next: 7d, reversible postponement with explicit destination and carryover semantics.
+
+### Step 7d — reversible conscious postponement
+
+- Added explicit reason and optional future target range under each eligible
+  item's More actions. No destination or hours freed are invented; no future plan
+  is created automatically.
+- Reused existing postponement, atomic activity storage and scoped temporal
+  evidence. Undo restores this item's assignments, previous result and affected
+  adjustment lifecycle at the compatible version, without replacing the agenda.
+- Active postponements now render separately from priorities and original deferred
+  entries. Grouped focus members remain individually accounted for; original
+  proposal membership and aggregate estimates stay unchanged.
+- Existing closing and carryover consume the explicit result and active decision.
+  Verified target filtering, candidate deduplication, backup/restore and retention
+  of an already-selected future draft when the original decision is undone.
+- Added eight domain and four storage regressions. Browser checks cover the
+  mobile form, empty-reason guard, removal from priorities, reason/destination,
+  reload, exact restoration and completion after undo.
+- Preserved the conservative last-compatible-version rule. Old postponements with
+  insufficient evidence and actions followed by other decisions do not receive an
+  unsafe reversal control. Exports still include the full inventory explicitly.
+- Verification: 1,041 tests across 78 files, type checking, lint, formatting,
+  dependency-cycle checks, production build and browser smoke tests in preview and
+  dev modes pass. No dependencies or IndexedDB store migration added.
+- The planned increments are complete. Next: a user walkthrough of capture,
+  proposal review, activation, daily decisions and closing before further changes.

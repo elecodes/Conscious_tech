@@ -74,7 +74,7 @@ export function moveItem(
   return { schedule: result.schedule, temporalChange } as const;
 }
 
-function restoreRows<T>(
+export function restoreRows<T>(
   current: T[],
   after: { index: number; value: T }[],
   before: { index: number; value: T }[]

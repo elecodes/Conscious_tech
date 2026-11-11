@@ -1,5 +1,7 @@
+import { ItemPostponementControls } from "./item-postponement-controls";
+import { activePostponements } from "../../domain/item-postponement";
 import { ItemMovementControls } from "./item-movement-controls";
-import type { MovementAction } from "../../domain/item-activity-types";
+import type { MovementAction, PostponementAction } from "../../domain/item-activity-types";
 import { useState } from "react";
 import { partitionActiveWeekItems } from "../active-week-items";
 import { formatHours } from "./weekly-session-formatters";
@@ -13,6 +15,7 @@ import { CalendarReminderSettings } from "./calendar-reminder-settings";
 import { EmailSummaryCard } from "./email-summary-card";
 
 export interface ActiveWeekScheduleSectionProps {
+  onPostpone?: (itemId: string, action: PostponementAction) => Promise<void>;
   onMove?: (itemId: string, action: MovementAction) => Promise<void>;
   onActivity?: (itemId: string, reversesActionId?: string) => Promise<void>;
   activityBusy?: boolean;
@@ -47,6 +50,7 @@ export function ActiveWeekScheduleSection({
   schedule,
   onActivity,
   onMove,
+  onPostpone,
   activityBusy,
   onReloadActivity,
   plan,
@@ -76,6 +80,7 @@ export function ActiveWeekScheduleSection({
   const [exportNotice, setExportNotice] = useState<string | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const groups = partitionActiveWeekItems(plan, schedule, planItems);
+  const postponedActions = activePostponements(schedule);
 
   const handleDownloadWeekIcs = () => {
     const prefs = getStoredReminderPreferences();
@@ -144,14 +149,17 @@ export function ActiveWeekScheduleSection({
       last.appliedVersion === schedule.version
         ? last.command.actionId
         : undefined;
-    const postponed = schedule.appliedAdjustments.some(
-      (record) =>
-        record.action.type === "postpone_item" &&
-        record.action.itemId === item.itemId &&
-        record.humanDecision === "accepted" &&
-        record.applicationOutcome === "applied" &&
-        record.lifecycleStatus === "active"
-    );
+    const postponement = postponedActions.get(item.itemId);
+    const postponed = !!postponement;
+    const category = plan?.proposal.obligations.some((entry) => entry.itemId === item.itemId)
+      ? "obligations"
+      : plan?.proposal.foci.some((focus) => focus.contributingItemIds.includes(item.itemId))
+        ? "foci"
+        : plan?.proposal.flexibleOptions.some((entry) => entry.itemId === item.itemId)
+          ? "flexible_options"
+          : plan?.proposal.deferredItems.some((entry) => entry.itemId === item.itemId)
+            ? "deferred_items"
+            : undefined;
     return (
       <div
         key={item.itemId}
@@ -179,6 +187,14 @@ export function ActiveWeekScheduleSection({
               {item.source}
             </span>
           </div>
+          {postponement && (
+            <p className="calm-muted" data-testid={`postponement-note-${item.itemId}`}>
+              {postponement.rationale} ·{" "}
+              {postponement.targetWeek
+                ? `${postponement.targetWeek.startDate} al ${postponement.targetWeek.endDate}`
+                : "Sin semana concreta"}
+            </p>
+          )}
           {item.dueDate && (
             <div className="calm-muted" style={{ fontSize: "0.8rem", marginTop: "2px" }}>
               📅 Fecha límite: <strong>{item.dueDate}</strong>
@@ -266,6 +282,21 @@ export function ActiveWeekScheduleSection({
             >
               📅 {alloc ? alloc.day : "En la semana"}
             </span>
+            {onPostpone &&
+              category &&
+              plan?.status === "active" &&
+              !isThought &&
+              !postponed &&
+              outcome?.status !== "completed" &&
+              outcome?.status !== "dropped" && (
+                <ItemPostponementControls
+                  schedule={schedule}
+                  itemId={item.itemId}
+                  category={category}
+                  busy={activityBusy}
+                  onPostpone={(action) => onPostpone(item.itemId, action)}
+                />
+              )}
             {onMove &&
               inProposal &&
               plan?.status === "active" &&
@@ -435,7 +466,7 @@ export function ActiveWeekScheduleSection({
             No hay focos ni compromisos en esta semana. El espacio puede quedarse sin ocupar.
           </p>
         )}
-        {groups.focuses.map(({ focus, items }) => (
+        {groups.focuses.map(({ focus, items, postponedCount }) => (
           <article
             key={focus.id}
             className="calm-box active-focus-card"
@@ -444,8 +475,14 @@ export function ActiveWeekScheduleSection({
             <h4>{focus.title}</h4>
             <p className="calm-text">{focus.desiredOutcome}</p>
             <p className="calm-muted">
-              Tiempo previsto del foco: {formatHours(focus.estimatedHours, "sin estimar")}
+              Estimación original del foco: {formatHours(focus.estimatedHours, "sin estimar")}
             </p>
+            {postponedCount > 0 && (
+              <p className="calm-muted">
+                {postponedCount} elemento(s) aplazado(s). La estimación original no se reparte
+                automáticamente.
+              </p>
+            )}
             {items.length > 0 ? (
               <details data-testid={`active-focus-items-${focus.id}`}>
                 <summary>Ver y ajustar sus elementos ({items.length})</summary>
@@ -469,6 +506,20 @@ export function ActiveWeekScheduleSection({
         )}
       </div>
 
+      {groups.postponed.length > 0 && (
+        <details
+          className="calm-details active-week-secondary"
+          data-testid="active-week-postponed"
+          open={schedule.itemActivity?.history.at(-1)?.command.type === "postpone"}
+        >
+          <summary>Aplazados durante la semana ({groups.postponed.length})</summary>
+          <p className="calm-muted">
+            Se conservan en el plan y en el cierre. La propuesta original no redistribuye sus
+            estimaciones automáticamente.
+          </p>
+          <div className="items-list">{groups.postponed.map(renderItem)}</div>
+        </details>
+      )}
       {groups.flexible.length > 0 && (
         <details className="calm-details active-week-secondary" data-testid="active-week-flexible">
           <summary>Si queda espacio ({groups.flexible.length})</summary>
@@ -566,7 +617,7 @@ export function ActiveWeekScheduleSection({
           >
             <p className="calm-muted" data-testid="active-week-export-scope">
               La exportación y el resumen incluyen el plan completo ({planItems.length} elementos),
-              también las opciones flexibles y los elementos fuera de esta semana.
+              también las opciones flexibles y los elementos aplazados o fuera de esta semana.
             </p>
 
             <div
@@ -659,7 +710,9 @@ export function ActiveWeekScheduleSection({
                   ? "Marcado como completado"
                   : record.command.type === "move"
                     ? "Asignación movida"
-                    : "Se deshizo la última acción"}{" "}
+                    : record.command.type === "postpone"
+                      ? "Elemento aplazado"
+                      : "Se deshizo la última acción"}{" "}
                 · {record.command.decidedAt}
               </li>
             ))}

@@ -325,13 +325,16 @@ items in Mi semana. Results survive reload, prefill closing and retain correctio
 on reopening. Open **Más → Mover una asignación** to select a fixed block or a
 quantity of daily hours. Moving one preserves the other and the total duration or
 hours; the latest compatible movement can also be undone after reload. A stale
-closing requires a fresh review. The persistence,
+closing requires a fresh review. **Más → Aplazar elemento** asks for a reason and
+an optional future destination. Postponed work stays accessible under **Aplazados
+durante la semana**; it becomes a candidate, not an automatic commitment in another
+week. Undo restores its assignments while the version remains compatible. The persistence,
 closing, reopening and carryover behavior, with incremental delivery gates, is
 recorded in [the daily-actions design](docs/daily-actions-design.md).
 
 ### 4. Run Test Suite
 
-Unit, behavioral, and security tests run deterministically with zero token consumption (1,029 tests across 77 suites):
+Unit, behavioral, and security tests run deterministically with zero token consumption (1,041 tests across 78 suites):
 
 ```bash
 npm test

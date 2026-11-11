@@ -520,4 +520,155 @@ describe("Atomic daily activity storage", () => {
     expect((await service.recordItemActivity(schedule.scheduleId, move)).status).toBe("failed");
     expect(await storage.schedules.getById(schedule.scheduleId)).toEqual(schedule);
   });
+  it("offers postponement only for its destination, deduplicates candidates and leaves existing drafts intact on undo", async () => {
+    const targetWeek = { startDate: "2026-12-14", endDate: "2026-12-20" };
+    const postpone: ItemActivityCommand = {
+      ...command,
+      type: "postpone",
+      itemId: "g",
+      actionId: "postpone-g",
+      action: {
+        type: "postpone_item",
+        itemId: "g",
+        currentCategory: "deferred_items",
+        targetReason: "intentional_postponement",
+        hoursFreed: null,
+        rationale: "Necesito espacio",
+        targetWeek,
+      },
+    };
+    expect((await service.recordItemActivity(schedule.scheduleId, postpone)).status).toBe(
+      "success"
+    );
+    const candidates = await service.getPendingCarryOverTasks(targetWeek);
+    expect(candidates.filter((item) => item.itemId === "g")).toHaveLength(1);
+    expect(
+      await service.getPendingCarryOverTasks({ startDate: "2026-12-21", endDate: "2026-12-27" })
+    ).toEqual([]);
+    const draft = {
+      ...plan,
+      planId: "future-draft",
+      status: "draft" as const,
+      draftContext: { ...plan.draftContext, selectedCarryOverItemIds: ["g"] },
+      targetWeek,
+      proposal: { ...plan.proposal, weekSummary: { ...plan.proposal.weekSummary, targetWeek } },
+    };
+    await storage.plans.save(draft);
+    expect(
+      (
+        await service.recordItemActivity(schedule.scheduleId, {
+          ...undo,
+          itemId: "g",
+          reversesActionId: "postpone-g",
+        })
+      ).status
+    ).toBe("success");
+    expect(await service.getPendingCarryOverTasks(targetWeek)).toEqual([]);
+    expect(await storage.plans.getById(draft.planId)).toEqual(draft);
+  });
+  it("retains postponed outcomes and destination through closing/reopening without creating a future plan", async () => {
+    const targetWeek = { startDate: "2026-12-14", endDate: "2026-12-20" };
+    const postpone: ItemActivityCommand = {
+      ...command,
+      type: "postpone",
+      itemId: "g",
+      actionId: "postpone-g",
+      action: {
+        type: "postpone_item",
+        itemId: "g",
+        currentCategory: "deferred_items",
+        targetReason: "intentional_postponement",
+        hoursFreed: null,
+        rationale: "Esperar",
+        targetWeek,
+      },
+    };
+    await service.recordItemActivity(schedule.scheduleId, postpone);
+    const close = await service.closeCurrentWeek({
+      planId: plan.planId,
+      closedAt: "2026-12-13T18:00:00Z",
+      expectedScheduleVersion: 2,
+      itemOutcomes: [],
+    });
+    expect(close.status).toBe("success");
+    if (close.status !== "success") return;
+    expect(
+      close.closeReport.output.classifiedItems.find((item) => item.itemId === "g")?.finalDisposition
+    ).toBe("consciously_postponed");
+    expect(
+      (await service.getPendingCarryOverTasks(targetWeek)).filter((item) => item.itemId === "g")
+    ).toHaveLength(1);
+    expect(await storage.plans.getByWeekRange(targetWeek)).toBeNull();
+    expect((await service.reopenWeek(plan.planId)).status).toBe("success");
+    expect(
+      (await storage.schedules.getById(schedule.scheduleId))?.itemActivity?.outcomes.find(
+        (item) => item.itemId === "g"
+      )?.postponementReason
+    ).toBe("Esperar");
+    expect(
+      (await service.getPendingCarryOverTasks(targetWeek)).filter((item) => item.itemId === "g")
+    ).toHaveLength(1);
+  });
+  it("restores all postponement rows after exporting and restoring a backup", async () => {
+    const postpone: ItemActivityCommand = {
+      ...command,
+      type: "postpone",
+      itemId: "g",
+      actionId: "postpone-g",
+      action: {
+        type: "postpone_item",
+        itemId: "g",
+        currentCategory: "deferred_items",
+        targetReason: "intentional_postponement",
+        hoursFreed: null,
+        rationale: "Sin prisa",
+      },
+    };
+    await service.recordItemActivity(schedule.scheduleId, postpone);
+    const backup = await exportUserData(storage);
+    await storage.clearAll();
+    storage = await createIndexedDbStorage({ dbName: "activity-test", customFactory: factory });
+    await importUserData(JSON.stringify(backup), storage);
+    const restoredService = new WeeklySessionService({ ...storage, getDb: () => storage.db });
+    expect(
+      (
+        await restoredService.recordItemActivity(schedule.scheduleId, {
+          ...undo,
+          itemId: "g",
+          reversesActionId: "postpone-g",
+        })
+      ).status
+    ).toBe("success");
+    const restored = await storage.schedules.getById(schedule.scheduleId);
+    expect(restored?.timeBlocks).toEqual(schedule.timeBlocks);
+    expect(restored?.dailyAllocations).toEqual(schedule.dailyAllocations);
+    expect(restored?.itemActivity?.outcomes).toEqual([]);
+  });
+  it("rolls back postponement assignments, outcomes and histories on an aborted write", async () => {
+    const put = FakeObjectStore.prototype.put;
+    vi.spyOn(FakeObjectStore.prototype, "put").mockImplementation(function (
+      this: IDBObjectStore,
+      ...args: Parameters<IDBObjectStore["put"]>
+    ) {
+      const request = put.apply(this, args);
+      this.transaction.abort();
+      return request;
+    });
+    const postpone: ItemActivityCommand = {
+      ...command,
+      type: "postpone",
+      itemId: "g",
+      actionId: "postpone-g",
+      action: {
+        type: "postpone_item",
+        itemId: "g",
+        currentCategory: "deferred_items",
+        targetReason: "intentional_postponement",
+        hoursFreed: null,
+        rationale: "Esperar",
+      },
+    };
+    expect((await service.recordItemActivity(schedule.scheduleId, postpone)).status).toBe("failed");
+    expect(await storage.schedules.getById(schedule.scheduleId)).toEqual(schedule);
+  });
 });

@@ -1,3 +1,4 @@
+import { postponeItem, undoItemPostponement } from "./item-postponement";
 import { moveItem, undoItemMovement } from "./item-movement";
 import type { TemporalChange } from "./item-activity-types";
 import { ItemActivityCommand, ItemActivityCommandSchema } from "./item-activity-types";
@@ -8,7 +9,7 @@ export type ItemActivityResult =
   | { status: "success" | "already_applied"; schedule: WeeklySchedule }
   | { status: "rejected"; reason: string };
 
-/** Pure completion/reversal. Persistence must check plan and schedule inside one transaction. */
+/** Pure daily activity. Persistence must check plan and schedule inside one transaction. */
 export function applyItemActivity(
   plan: StoredWeeklyPlan,
   schedule: WeeklySchedule,
@@ -48,7 +49,7 @@ export function applyItemActivity(
   if (command.expectedVersion !== schedule.version)
     return { status: "rejected", reason: "stale_version" };
   if (
-    (command.type === "complete" || command.type === "move") &&
+    (command.type === "complete" || command.type === "move" || command.type === "postpone") &&
     schedule.appliedAdjustments.some(
       (record) =>
         record.action.type === "postpone_item" &&
@@ -76,6 +77,20 @@ export function applyItemActivity(
       return { status: "rejected", reason: movement.reason ?? "invalid_movement" };
     temporalSchedule = movement.schedule;
     temporalChange = movement.temporalChange;
+  } else if (command.type === "postpone") {
+    if (before?.status === "completed" || before?.status === "dropped")
+      return { status: "rejected", reason: "item_already_resolved" };
+    const postponed = postponeItem(plan, schedule, command);
+    if (!postponed.schedule)
+      return { status: "rejected", reason: postponed.reason ?? "invalid_postponement" };
+    temporalSchedule = postponed.schedule;
+    temporalChange = postponed.temporalChange;
+    after = {
+      ...before,
+      itemId: command.itemId,
+      status: "consciously_postponed",
+      postponementReason: command.action.rationale,
+    };
   } else {
     const original = activity.history.find(
       (record) => record.command.actionId === command.reversesActionId
@@ -97,6 +112,13 @@ export function applyItemActivity(
         original.temporalChange,
         command
       );
+      if (!reverted.schedule)
+        return { status: "rejected", reason: reverted.reason ?? "undo_not_available" };
+      temporalSchedule = reverted.schedule;
+    }
+    if (original.command.type === "postpone") {
+      if (!original.temporalChange) return { status: "rejected", reason: "undo_not_available" };
+      const reverted = undoItemPostponement(schedule, original.command, original.temporalChange);
       if (!reverted.schedule)
         return { status: "rejected", reason: reverted.reason ?? "undo_not_available" };
       temporalSchedule = reverted.schedule;

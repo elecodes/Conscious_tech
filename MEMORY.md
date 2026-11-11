@@ -516,3 +516,18 @@ The product succeeds when the person can say:
   movimiento; no restaura toda la agenda ni sobrescribe decisiones posteriores.
 - Recarga y copias conservan la reversión. No hay nuevas dependencias o migración.
   Siguiente: 7d, postergación reversible y sus efectos en candidatos de arrastre.
+
+## UX incremental: postergación reversible (7d)
+
+- «Más → Aplazar elemento» exige motivo y ofrece destino futuro opcional. Retira
+  asignaciones y registra una postergación consciente sin modificar la propuesta,
+  repartir horas de grupos ni crear automáticamente otra semana.
+- La presentación prioriza postergaciones vigentes sobre pertenencia original:
+  aparecen en «Aplazados durante la semana», conservando todos los miembros.
+- Deshacer usa evidencia temporal y versión compatible, restaura asignaciones y
+  resultado previos y conserva historial. Una postergación vigente exige deshacer
+  explícitamente antes de completar; no se permite sobrescribir decisiones posteriores.
+- Cierre, candidatos por destino, deduplicación, recarga y copias están cubiertos.
+  Deshacer no elimina un elemento ya elegido en otro borrador independiente.
+- Pasos 0–7 (7a–7d) implementados. Próximo checkpoint: revisión de uso con la persona,
+  antes de ampliar el alcance. La rama sigue local hasta una instrucción de publicar.

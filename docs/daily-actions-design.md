@@ -1,7 +1,7 @@
 # Acciones diarias: contrato previo a la implementación
 
-Estado: 7a–7c implementados. Completar, mover asignaciones y deshacer están
-integrados con el ciclo semanal; aplazar con reversión queda pendiente en 7d.
+Estado: 7a–7d implementados. Completar, mover, aplazar y deshacer están
+integrados con el ciclo semanal, sujetos a la última versión compatible.
 Rama de trabajo: `codex/ux-step-by-step`. Continúa el paso 7 del plan UX.
 
 ## Resultado esperado
@@ -167,8 +167,8 @@ Antes de habilitar cada control, cubrir:
 4. **7d: aplazar.** Captura reversible, presentación de vigencia y candidatos de
    arrastre. Resolver el caso de postergación seguida de finalización.
 
-Cada entrega requiere su propio commit verificado. La investigación del paso 7 y el contrato 7a están completos. La aceptación de completar/deshacer corresponde a 7b; el movimiento reversible corresponde a 7c y aplazar sigue pendiente de 7d.
-El próximo incremento es 7d.
+Cada entrega requiere su propio commit verificado. La investigación del paso 7 y el contrato 7a están completos. La aceptación de completar/deshacer corresponde a 7b; el movimiento reversible corresponde a 7c y la postergación reversible a 7d.
+Los incrementos previstos están implementados; queda la revisión de uso.
 
 ## Evidencia de 7a
 
@@ -252,3 +252,34 @@ El próximo incremento es 7d.
   movimientos, colisión rechazada, recarga/deshacer, móvil y cierre/reapertura.
 - Se mantiene la restricción de deshacer la última acción a su versión compatible;
   una decisión posterior obliga a revisar el estado actual.
+
+## Evidencia de 7d
+
+- «Más → Aplazar elemento» pide un motivo y permite elegir un rango futuro o dejar
+  el destino sin concretar. La confirmación explica que no se añade nada
+  automáticamente a otra semana. Cancelar no escribe datos.
+- La operación reutiliza `postpone_item`, registra un resultado consciente y captura
+  las asignaciones del elemento con la evidencia temporal ya existente. No inventa
+  horas liberadas, reparte estimaciones de focos ni modifica la propuesta original.
+- La vista da prioridad a la decisión vigente y muestra «Aplazados durante la
+  semana», con motivo y destino. Un miembro aplazado sale de la vista activa de su
+  foco sin arrastrar a los demás. Si no quedan miembros activos, ese foco deja de
+  mostrarse como prioridad; se conserva íntegro en los datos originales.
+- Deshacer requiere la versión compatible, restaura solo sus asignaciones y el
+  resultado anterior, comprueba invariantes y conserva el historial. Un conflicto
+  de restauración no modifica el estado. Se reactivan los ajustes del mismo
+  elemento que esa postergación sustituyó.
+- Una postergación vigente impide completar o mover el elemento. La secuencia
+  explícita de deshacer y completar está verificada. Tras decisiones posteriores,
+  un cierre o una reapertura no se ofrece una reversión antigua como si siguiera
+  siendo segura; esa limitación conservadora se mantiene.
+- El cierre precarga el motivo/resultado guardado y mantiene el destino en el
+  historial. Los candidatos respetan el rango elegido y no se duplican. Deshacer
+  retira esa fuente de candidatura, sin eliminar decisiones ya guardadas en otro
+  borrador. Recarga y copias conservan la reversión.
+- Ocho pruebas de dominio cubren alcance, grupos, restauración, motivos/destinos,
+  resultados resueltos y secuencia de completar. Cuatro pruebas de almacenamiento
+  cubren candidatos, borrador seleccionado, cierre/reapertura, copia y rollback.
+  El navegador cubre formulario móvil, resultado visible, recarga y reversión.
+- La exportación sigue incluyendo el inventario completo, también aplazados; el
+  texto de alcance lo explicita. No se añadió una integración de calendario viva.

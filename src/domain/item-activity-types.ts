@@ -1,4 +1,8 @@
-import { ReassignTimeBlockActionSchema, ReallocateDayWorkActionSchema } from "./adjustment";
+import {
+  ReassignTimeBlockActionSchema,
+  ReallocateDayWorkActionSchema,
+  PostponeItemActionSchema,
+} from "./adjustment";
 import { TimeBlockSchema, DailyWorkAllocationSchema } from "./conflict";
 import { z } from "zod";
 import { ItemOutcomeInputSchema } from "./item-outcome";
@@ -15,6 +19,10 @@ export const MovementActionSchema = z.discriminatedUnion("type", [
   ReassignTimeBlockActionSchema,
   ReallocateDayWorkActionSchema,
 ]);
+export const PostponementActionSchema = PostponeItemActionSchema.extend({
+  rationale: z.string().trim().min(1),
+}).strict();
+export type PostponementAction = z.infer<typeof PostponementActionSchema>;
 export type MovementAction = z.infer<typeof MovementActionSchema>;
 const TemporalRowsSchema = z
   .object({
@@ -39,6 +47,9 @@ export type TemporalChange = z.infer<typeof TemporalChangeSchema>;
 export const ItemActivityCommandSchema = z.discriminatedUnion("type", [
   z.object({ ...actionBase, type: z.literal("complete") }).strict(),
   z.object({ ...actionBase, type: z.literal("move"), action: MovementActionSchema }).strict(),
+  z
+    .object({ ...actionBase, type: z.literal("postpone"), action: PostponementActionSchema })
+    .strict(),
   z
     .object({ ...actionBase, type: z.literal("undo"), reversesActionId: z.string().min(1) })
     .strict(),
@@ -97,7 +108,7 @@ export const ItemActivitySchema = z
         ctx.addIssue({ code: "custom", message: "Invalid activity scope or version sequence" });
       if (command.type === "complete" && after?.status !== "completed")
         ctx.addIssue({ code: "custom", message: "Completion must record completed" });
-      if (command.type === "move") {
+      if (command.type === "move" || command.type === "postpone") {
         const change = record.temporalChange;
         const scoped =
           change &&
@@ -114,11 +125,16 @@ export const ItemActivitySchema = z
           !scoped ||
           command.action.itemId !== command.itemId ||
           change.adjustmentId !== command.actionId ||
-          JSON.stringify(before) !== JSON.stringify(after)
+          (command.type === "move"
+            ? JSON.stringify(before) !== JSON.stringify(after)
+            : after?.status !== "consciously_postponed" ||
+              after.postponementReason !== command.action.rationale ||
+              !!change?.after.blocks.length ||
+              !!change?.after.allocations.length)
         )
           ctx.addIssue({ code: "custom", message: "Invalid movement evidence" });
       } else if (record.temporalChange)
-        ctx.addIssue({ code: "custom", message: "Only movements capture temporal rows" });
+        ctx.addIssue({ code: "custom", message: "Only temporal actions capture temporal rows" });
       if (command.type === "undo") {
         const original = actions.get(command.reversesActionId);
         if (
