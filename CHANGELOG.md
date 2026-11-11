@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Placed inclusion decisions and actual weekly placement next to each source's
+  hours/date controls. Kept the source panel open and restored focus after moves.
+- Removed duplicated deferred-item decisions outside those source panels while
+  preserving controls for legacy proposals without sources.
+
 - Added conscious postponement with an explicit reason, optional future destination
   and safe scoped undo; preserved proposal membership and grouped focus sources.
 - Separated active postponements from priorities, keeping their reason/destination

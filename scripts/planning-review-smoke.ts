@@ -119,12 +119,34 @@ export async function verifyPlanningReview(browser: Browser, url: string) {
     await page.getByTestId("promote-flexible-to-focus-d").waitFor();
     assertMembership(await readDraft(page), fixture.selectedIds);
     await page.getByTestId("proposed-deferred-items-summary").click();
-    await page.getByTestId("defer-item-postpone-button-g").click();
+    await page.getByTestId("review-details-g").locator(":scope > summary").click();
+    const gPanel = page.getByTestId("idea-details-g");
+    await gPanel.getByLabel("Fecha límite para Revisar una tarea pendiente").fill("2026-12-12");
+    if (!(await gPanel.getByTestId("defer-item-include-button-g").isVisible()))
+      throw new Error("Inclusion is not available next to hours and date");
+    await gPanel.getByTestId("defer-item-postpone-button-g").click();
     await page.getByTestId("postponed-category-badge-g").waitFor();
     assertMembership(await readDraft(page), fixture.selectedIds);
     await page.getByTestId("defer-item-unschedule-button-g").click();
     await page.getByTestId("defer-item-include-button-g").click();
     await page.getByTestId("proposed-focus-focus-included-g").waitFor();
+    await page
+      .getByTestId("review-placement-status-g")
+      .filter({ hasText: "En esta semana" })
+      .waitFor();
+    await gPanel.getByLabel("Horas estimadas para Revisar una tarea pendiente").waitFor();
+    if (
+      (await gPanel.getByLabel("Fecha límite para Revisar una tarea pendiente").inputValue()) !==
+      "2026-12-12"
+    )
+      throw new Error("Inclusion lost the date in the same panel");
+    await page.waitForFunction(
+      () => document.activeElement?.getAttribute("data-testid") === "idea-card-g"
+    );
+    if ((await page.getByTestId("defer-item-include-button-g").count()) !== 0)
+      throw new Error("An included item still offers inclusion");
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth))
+      throw new Error("Inline inclusion controls overflow on mobile");
     assertMembership(await readDraft(page), fixture.selectedIds);
     if (
       (await readDraft(page)).proposal.foci.find((focus) => focus.id === "focus-included-g")
@@ -133,7 +155,12 @@ export async function verifyPlanningReview(browser: Browser, url: string) {
       throw new Error("Moving a 45-minute item invented hours");
 
     // Selection is distinct from placement, and excluded notes stay inspectable.
-    await page.getByTestId("review-details-g").locator(":scope > summary").click();
+    if (
+      !(await page
+        .getByTestId("review-details-g")
+        .evaluate((element) => (element as HTMLDetailsElement).open))
+    )
+      await page.getByTestId("review-details-g").locator(":scope > summary").click();
     await page.getByTestId("idea-card-g").getByRole("checkbox").uncheck();
     await page.getByTestId("proposal-dirty-banner").waitFor();
     await page.getByTestId("update-proposal-button").click();

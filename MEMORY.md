@@ -531,3 +531,15 @@ The product succeeds when the person can say:
   Deshacer no elimina un elemento ya elegido en otro borrador independiente.
 - Pasos 0–7 (7a–7d) implementados. Próximo checkpoint: revisión de uso con la persona,
   antes de ampliar el alcance. La rama sigue local hasta una instrucción de publicar.
+
+## Ajuste de usabilidad: incluir junto a horas y fecha
+
+- Tras la revisión en la app, la persona pidió que incluir un elemento y ver su
+  posición en la semana estuvieran en el mismo panel que sus horas y fecha.
+- Las tarjetas muestran estado de pertenencia real y la acción de incluir dentro
+  del panel de correcciones. Se conserva abierto tras cambiar de categoría y se
+  devuelve el foco a la misma fuente, sin perder sus valores.
+- Se quitaron los botones de decisión repetidos fuera de esas tarjetas; las
+  propuestas antiguas sin fuentes conservan sus controles anteriores.
+- Selección para regenerar y pertenencia a la propuesta siguen siendo distintas.
+  Se reutilizan las operaciones existentes y sus protecciones de focos agrupados.

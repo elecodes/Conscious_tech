@@ -52,9 +52,31 @@ describe("One proposal decision surface", () => {
     expect(html).toContain(input.extractedItems![1]!.rawText);
     expect(html).toContain("Preocupación");
     expect(html).toContain("Tener en cuenta al actualizar");
-    expect(html).toContain("su posición en la semana se decide en la propuesta");
+    expect(html).toContain("su posición en la semana se decide aquí");
   });
 
+  it("places the inclusion decision and current status inside the hours/date panel", () => {
+    const html = renderToStaticMarkup(<PlanningReviewBoard {...props()} />);
+    const g = html.slice(html.indexOf('data-testid="idea-card-g"'));
+    const details = g.slice(g.indexOf('data-testid="idea-details-g"'), g.indexOf("</li>"));
+    expect(details).toContain('id="item-effort-g"');
+    expect(details).toContain('id="item-deadline-g"');
+    expect(details).toContain('data-testid="review-placement-status-g"');
+    expect(details).toContain('data-testid="defer-item-include-button-g"');
+    expect(html.match(/data-testid="defer-item-include-button-g"/g)).toHaveLength(1);
+    expect(details).toContain("Incluir en esta semana");
+  });
+
+  it("shows real proposal membership and disables inclusion of excluded sources", () => {
+    const input = props();
+    const html = renderToStaticMarkup(<PlanningReviewBoard {...input} />);
+    expect(html).toContain('data-testid="placement-badge-a">En esta semana');
+    expect(html).toContain('data-testid="placement-badge-d">Si queda espacio');
+    expect(html).toMatch(/data-testid="defer-item-include-button-h"/);
+    const h = html.slice(html.indexOf('data-testid="idea-card-h"'));
+    expect(h.slice(0, h.indexOf("</li>"))).toContain('disabled=""');
+    expect(html).not.toContain('data-testid="inline-demote-a"');
+  });
   it("preserves ideas and concerns without assigning them work or mutating their types", () => {
     const input = props();
     const snapshot = JSON.stringify(input.extractedItems);

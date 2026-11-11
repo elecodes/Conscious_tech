@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { extractItemHours } from "../../skills/build-week/deterministic";
 import { ExtractedItem } from "../../domain/items";
 import {
@@ -16,6 +16,8 @@ export interface CalmIdeaCardProps {
   onUpdateDeadline?: (itemId: string, dateStr: string | null) => void;
   detailsOnly?: boolean;
   selectionLabel?: string;
+  placement?: ReactNode;
+  placementLabel?: string;
 }
 
 export function CalmIdeaCard({
@@ -26,6 +28,8 @@ export function CalmIdeaCard({
   onUpdateDeadline,
   detailsOnly = false,
   selectionLabel,
+  placement,
+  placementLabel,
 }: CalmIdeaCardProps) {
   const [isExpanded, setIsExpanded] = useState(detailsOnly);
 
@@ -33,6 +37,8 @@ export function CalmIdeaCard({
     <li
       className="item-card calm-idea-card"
       data-testid={`idea-card-${item.id}`}
+      id={`review-source-${item.id}`}
+      tabIndex={placement ? -1 : undefined}
       style={{
         display: "flex",
         flexDirection: "column",
@@ -87,6 +93,11 @@ export function CalmIdeaCard({
           >
             {item.title}
           </strong>
+          {placementLabel && (
+            <span className="badge badge-muted" data-testid={`placement-badge-${item.id}`}>
+              {placementLabel}
+            </span>
+          )}
           {item.deadline && (
             <span
               className="badge badge-muted"
@@ -236,8 +247,10 @@ export function CalmIdeaCard({
                 aria-label={`Fecha límite para ${item.title}`}
               />
             </label>
+            {placement}
           </div>
         )}
+        {!(isAccepted && onUpdateEffort && onUpdateDeadline) && placement}
       </div>
     </li>
   );

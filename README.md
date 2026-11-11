@@ -301,7 +301,9 @@ Imported calendar commitments are a reference and are not deducted again.
 
 Review the proposal in **Esta semana**, **Si queda espacio**, and **Fuera de esta
 semana**. Unscheduled thoughts remain notes. Open **Detalles y correcciones** on an
-entry to inspect the source and edit dates or estimates. Selecting a source means
+entry to inspect the source and edit dates or estimates. That same panel contains
+**Incluir en esta semana** and its current placement status. Inclusion keeps the
+panel open with the saved hours and date visible. Selecting a source only means
 it can be considered on regeneration; it does not automatically schedule it.
 
 Before activation, review the summary of the exact proposal. Return to review to
@@ -334,7 +336,7 @@ recorded in [the daily-actions design](docs/daily-actions-design.md).
 
 ### 4. Run Test Suite
 
-Unit, behavioral, and security tests run deterministically with zero token consumption (1,041 tests across 78 suites):
+Unit, behavioral, and security tests run deterministically with zero token consumption (1,043 tests across 78 suites):
 
 ```bash
 npm test

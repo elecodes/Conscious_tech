@@ -488,3 +488,18 @@ Baseline results:
   dev modes pass. No dependencies or IndexedDB store migration added.
 - The planned increments are complete. Next: a user walkthrough of capture,
   proposal review, activation, daily decisions and closing before further changes.
+
+### User walkthrough — inclusion in the editing panel
+
+- The user found inclusion confusing when decision buttons were separated from
+  the hours/date panel. Attached inclusion and placement status to that same card.
+- Inclusion reuses the existing placement operation. The panel stays open across
+  category changes, with hours/date preserved and keyboard focus returned to the
+  source. Status reflects actual focus/commitment/optional/deferred membership.
+- Removed repeated decisions outside editable source cards; missing-source legacy
+  entries retain their original controls. Selection still only controls eligibility
+  for regeneration, and grouped focus safeguards are preserved.
+- Added regression coverage for placement next to inputs, excluded-source guards,
+  one inclusion control per source, panel continuity, date preservation, focus and
+  mobile overflow. All 1,043 tests across 78 files and the standard code/build and
+  preview/dev browser checks pass.

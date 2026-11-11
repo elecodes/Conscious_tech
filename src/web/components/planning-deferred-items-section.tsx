@@ -181,43 +181,45 @@ export function PlanningDeferredItemsSection({
                               antes de la semana)
                             </div>
                           )}
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "8px",
-                              marginTop: "6px",
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            <button
-                              type="button"
-                              className="secondary small"
-                              onClick={() => handleDeferredDecisionChange(def.itemId, "postpone")}
-                              data-testid={`defer-item-postpone-button-${def.itemId}`}
+                          {(!renderItemDetails || !sourceItem) && (
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: "8px",
+                                marginTop: "6px",
+                                flexWrap: "wrap",
+                              }}
                             >
-                              Posponer
-                            </button>
-                            <button
-                              type="button"
-                              className="secondary small"
-                              onClick={() =>
-                                handleDeferredDecisionChange(def.itemId, "include_flexible")
-                              }
-                              data-testid={`defer-item-include-button-${def.itemId}`}
-                            >
-                              {includeLabel}
-                            </button>
-                            <button
-                              type="button"
-                              className="secondary small"
-                              onClick={() =>
-                                handleDeferredDecisionChange(def.itemId, "reconsider_unscheduled")
-                              }
-                              data-testid={`defer-item-review-button-${def.itemId}`}
-                            >
-                              Dejar fuera
-                            </button>
-                          </div>
+                              <button
+                                type="button"
+                                className="secondary small"
+                                onClick={() => handleDeferredDecisionChange(def.itemId, "postpone")}
+                                data-testid={`defer-item-postpone-button-${def.itemId}`}
+                              >
+                                Posponer
+                              </button>
+                              <button
+                                type="button"
+                                className="secondary small"
+                                onClick={() =>
+                                  handleDeferredDecisionChange(def.itemId, "include_flexible")
+                                }
+                                data-testid={`defer-item-include-button-${def.itemId}`}
+                              >
+                                {includeLabel}
+                              </button>
+                              <button
+                                type="button"
+                                className="secondary small"
+                                onClick={() =>
+                                  handleDeferredDecisionChange(def.itemId, "reconsider_unscheduled")
+                                }
+                                data-testid={`defer-item-review-button-${def.itemId}`}
+                              >
+                                Dejar fuera
+                              </button>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -317,35 +319,37 @@ export function PlanningDeferredItemsSection({
                               <strong>{originalDueDate}</strong>
                             </div>
                           )}
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "8px",
-                              marginTop: "6px",
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            <button
-                              type="button"
-                              className="secondary small"
-                              onClick={() =>
-                                handleDeferredDecisionChange(def.itemId, "reconsider_unscheduled")
-                              }
-                              data-testid={`defer-item-unschedule-button-${def.itemId}`}
+                          {(!renderItemDetails || !sourceItem) && (
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: "8px",
+                                marginTop: "6px",
+                                flexWrap: "wrap",
+                              }}
                             >
-                              Volver a evaluar
-                            </button>
-                            <button
-                              type="button"
-                              className="secondary small"
-                              onClick={() =>
-                                handleDeferredDecisionChange(def.itemId, "include_flexible")
-                              }
-                              data-testid={`defer-item-include-button-${def.itemId}`}
-                            >
-                              {includeLabel}
-                            </button>
-                          </div>
+                              <button
+                                type="button"
+                                className="secondary small"
+                                onClick={() =>
+                                  handleDeferredDecisionChange(def.itemId, "reconsider_unscheduled")
+                                }
+                                data-testid={`defer-item-unschedule-button-${def.itemId}`}
+                              >
+                                Volver a evaluar
+                              </button>
+                              <button
+                                type="button"
+                                className="secondary small"
+                                onClick={() =>
+                                  handleDeferredDecisionChange(def.itemId, "include_flexible")
+                                }
+                                data-testid={`defer-item-include-button-${def.itemId}`}
+                              >
+                                {includeLabel}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       );
                     })}

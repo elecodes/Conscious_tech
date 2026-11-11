@@ -936,3 +936,22 @@ details.calm-details[open] {
 .active-time-block {
   flex-wrap: wrap;
 }
+
+.review-placement-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-basis: 100%;
+  min-width: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+  overflow-wrap: anywhere;
+}
+.review-placement-controls [role="status"] {
+  font-weight: 600;
+}
+.calm-idea-card:focus {
+  outline: 2px solid var(--accent-color, #2b6cb0);
+  outline-offset: 3px;
+}

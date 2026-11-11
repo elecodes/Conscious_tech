@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   PlanningProposedItemsSection,
   PlanningProposedItemsSectionProps,
@@ -24,6 +25,106 @@ export interface PlanningReviewBoardProps
 /** One primary proposal view, with source corrections attached to each entry. */
 export function PlanningReviewBoard(props: PlanningReviewBoardProps) {
   const { proposedWeek: proposal, acceptedItemIds } = props;
+  const [openSources, setOpenSources] = useState<Set<string>>(new Set());
+  const decideHere = async (id: string, action: () => void) => {
+    setOpenSources((previous) => new Set([...previous, id]));
+    await action();
+    requestAnimationFrame(() => {
+      const card = document.getElementById(`review-source-${id}`);
+      card?.focus({ preventScroll: true });
+      card?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+  };
+  const placementFor = (id: string) => {
+    const focus = proposal.foci.find((focus) => focus.contributingItemIds.includes(id));
+    const obligation = proposal.obligations.some((entry) => entry.itemId === id);
+    const flexible = proposal.flexibleOptions.some((entry) => entry.itemId === id);
+    const deferred = proposal.deferredItems.find((entry) => entry.itemId === id);
+    const label =
+      focus || obligation
+        ? "En esta semana"
+        : flexible
+          ? "Si queda espacio"
+          : deferred?.reason === "intentional_postponement"
+            ? "Pospuesto"
+            : deferred
+              ? "Fuera de esta semana"
+              : "Sin asignar";
+    return { focus, obligation, flexible, deferred, label };
+  };
+  const placementControls = (
+    item: NonNullable<PlanningReviewBoardProps["extractedItems"]>[number]
+  ) => {
+    const { focus, obligation, flexible, deferred, label } = placementFor(item.id);
+    const accepted = acceptedItemIds.has(item.id);
+    const thought = item.type === "idea" || item.type === "concern";
+    return (
+      <div className="review-placement-controls" data-testid={`review-placement-${item.id}`}>
+        <span role="status" data-testid={`review-placement-status-${item.id}`}>
+          {label}
+          {focus ? ` · ${focus.title}` : ""}
+        </span>
+        {!focus && !obligation && (
+          <button
+            type="button"
+            className="secondary small"
+            disabled={!accepted}
+            data-testid={
+              flexible ? `inline-prioritize-${item.id}` : `defer-item-include-button-${item.id}`
+            }
+            onClick={() =>
+              void decideHere(item.id, () =>
+                flexible
+                  ? props.handlePromoteFlexibleToFocus(item.id)
+                  : props.handleDeferredDecisionChange(item.id, "include_flexible")
+              )
+            }
+          >
+            {thought
+              ? "Dedicarle atención esta semana"
+              : flexible
+                ? "Priorizar esta semana"
+                : "Incluir en esta semana"}
+          </button>
+        )}
+        {!focus && !obligation && !flexible && accepted && (
+          <>
+            {deferred?.reason !== "intentional_postponement" && (
+              <button
+                type="button"
+                className="secondary small"
+                data-testid={`defer-item-postpone-button-${item.id}`}
+                onClick={() =>
+                  void decideHere(item.id, () =>
+                    props.handleDeferredDecisionChange(item.id, "postpone")
+                  )
+                }
+              >
+                Posponer
+              </button>
+            )}
+            <button
+              type="button"
+              className="secondary small"
+              data-testid={
+                deferred?.reason === "intentional_postponement"
+                  ? `defer-item-unschedule-button-${item.id}`
+                  : `defer-item-review-button-${item.id}`
+              }
+              onClick={() =>
+                void decideHere(item.id, () =>
+                  props.handleDeferredDecisionChange(item.id, "reconsider_unscheduled")
+                )
+              }
+            >
+              Dejar fuera
+            </button>
+          </>
+        )}
+        {!accepted && <span className="calm-muted">Marca el elemento para poder incluirlo.</span>}
+      </div>
+    );
+  };
   const sources = props.extractedItems ?? [];
   const sourceById = new Map(sources.map((item) => [item.id, item]));
   const coveredIds = new Set([
@@ -56,6 +157,8 @@ export function PlanningReviewBoard(props: PlanningReviewBoardProps) {
       onUpdateEffort={props.handleUpdateItemEffort}
       onUpdateDeadline={props.handleUpdateItemDeadline}
       detailsOnly={detailsOnly}
+      placement={placementControls(item)}
+      placementLabel={placementFor(item.id).label}
       selectionLabel="Tener en cuenta al actualizar"
     />
   );
@@ -73,7 +176,19 @@ export function PlanningReviewBoard(props: PlanningReviewBoardProps) {
             regenerar la propuesta.
           </p>
         )}
-        <details className="review-source-details" data-testid={`review-details-${ids[0]}`}>
+        <details
+          className="review-source-details"
+          data-testid={`review-details-${ids[0]}`}
+          open={ids.some((id) => openSources.has(id))}
+          onToggle={(event) => {
+            const open = event.currentTarget.open;
+            setOpenSources((previous) => {
+              const next = new Set(previous);
+              ids.forEach((id) => (open ? next.add(id) : next.delete(id)));
+              return next;
+            });
+          }}
+        >
           <summary
             aria-label={`Detalles y correcciones de ${items.map((item) => item.title).join(", ") || "este elemento"}`}
           >
@@ -84,7 +199,7 @@ export function PlanningReviewBoard(props: PlanningReviewBoardProps) {
             <>
               <p className="calm-muted">
                 Marcar permite considerar el elemento al actualizar; su posición en la semana se
-                decide en la propuesta.
+                decide aquí, junto a sus horas y fecha.
               </p>
               <ul className="review-source-list">{items.map((item) => sourceCard(item, true))}</ul>
             </>
@@ -103,7 +218,8 @@ export function PlanningReviewBoard(props: PlanningReviewBoardProps) {
       <h3>Decide qué entra en tu semana</h3>
       <p className="calm-muted">
         Revisa la posición de cada elemento. En Detalles y correcciones puedes consultar tus
-        palabras y ajustar fechas o estimaciones.
+        palabras, ajustar fechas o estimaciones e incluir el elemento en esta semana. Su estado
+        queda visible en el mismo panel.
       </p>
       <section aria-label="Esta semana" data-testid="review-this-week">
         <h4>Esta semana</h4>
