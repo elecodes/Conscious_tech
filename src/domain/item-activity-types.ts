@@ -1,3 +1,5 @@
+import { ReassignTimeBlockActionSchema, ReallocateDayWorkActionSchema } from "./adjustment";
+import { TimeBlockSchema, DailyWorkAllocationSchema } from "./conflict";
 import { z } from "zod";
 import { ItemOutcomeInputSchema } from "./item-outcome";
 import { IsoUtcTimestampSchema } from "./memory";
@@ -9,8 +11,34 @@ const actionBase = {
   decidedAt: IsoUtcTimestampSchema,
 };
 
+export const MovementActionSchema = z.discriminatedUnion("type", [
+  ReassignTimeBlockActionSchema,
+  ReallocateDayWorkActionSchema,
+]);
+export type MovementAction = z.infer<typeof MovementActionSchema>;
+const TemporalRowsSchema = z
+  .object({
+    blocks: z.array(
+      z.object({ index: z.number().int().nonnegative(), value: TimeBlockSchema }).strict()
+    ),
+    allocations: z.array(
+      z.object({ index: z.number().int().nonnegative(), value: DailyWorkAllocationSchema }).strict()
+    ),
+  })
+  .strict();
+const TemporalChangeSchema = z
+  .object({
+    adjustmentId: z.string().min(1),
+    before: TemporalRowsSchema,
+    after: TemporalRowsSchema,
+    supersededIds: z.array(z.string().min(1)),
+  })
+  .strict();
+export type TemporalChange = z.infer<typeof TemporalChangeSchema>;
+
 export const ItemActivityCommandSchema = z.discriminatedUnion("type", [
   z.object({ ...actionBase, type: z.literal("complete") }).strict(),
+  z.object({ ...actionBase, type: z.literal("move"), action: MovementActionSchema }).strict(),
   z
     .object({ ...actionBase, type: z.literal("undo"), reversesActionId: z.string().min(1) })
     .strict(),
@@ -23,6 +51,7 @@ export const ItemActivityRecordSchema = z
     appliedVersion: z.number().int().positive(),
     before: ItemOutcomeInputSchema.nullable(),
     after: ItemOutcomeInputSchema.nullable(),
+    temporalChange: TemporalChangeSchema.optional(),
   })
   .strict();
 export type ItemActivityRecord = z.infer<typeof ItemActivityRecordSchema>;
@@ -68,11 +97,33 @@ export const ItemActivitySchema = z
         ctx.addIssue({ code: "custom", message: "Invalid activity scope or version sequence" });
       if (command.type === "complete" && after?.status !== "completed")
         ctx.addIssue({ code: "custom", message: "Completion must record completed" });
+      if (command.type === "move") {
+        const change = record.temporalChange;
+        const scoped =
+          change &&
+          [change.before, change.after].every(
+            (rows) =>
+              [...rows.blocks, ...rows.allocations].every(
+                (row) => row.value.itemId === command.itemId
+              ) &&
+              new Set(rows.blocks.map((row) => row.index)).size === rows.blocks.length &&
+              new Set(rows.allocations.map((row) => row.index)).size === rows.allocations.length
+          );
+        if (
+          !change ||
+          !scoped ||
+          command.action.itemId !== command.itemId ||
+          change.adjustmentId !== command.actionId ||
+          JSON.stringify(before) !== JSON.stringify(after)
+        )
+          ctx.addIssue({ code: "custom", message: "Invalid movement evidence" });
+      } else if (record.temporalChange)
+        ctx.addIssue({ code: "custom", message: "Only movements capture temporal rows" });
       if (command.type === "undo") {
         const original = actions.get(command.reversesActionId);
         if (
           !original ||
-          original.command.type !== "complete" ||
+          original.command.type === "undo" ||
           original.command.itemId !== command.itemId ||
           original.appliedVersion !== command.expectedVersion ||
           JSON.stringify(before) !== JSON.stringify(original.after) ||

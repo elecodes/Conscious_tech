@@ -1,3 +1,4 @@
+import type { MovementAction } from "../../domain/item-activity-types";
 import { useState, useEffect, useRef } from "react";
 import { AIProvider } from "../../providers/ai-provider";
 import { MockProvider } from "../../providers/mock-provider";
@@ -136,7 +137,11 @@ export function WeeklySessionView({
       )
     );
   }, [activeSpace, plan, schedule]);
-  const handleActivity = async (itemId: string, reversesActionId?: string) => {
+  const handleActivity = async (
+    itemId: string,
+    reversesActionId?: string,
+    movement?: MovementAction
+  ) => {
     if (!schedule || !recordItemActivity || activityLock.current) return;
     activityLock.current = true;
     setActivityBusy(true);
@@ -151,20 +156,29 @@ export function WeeklySessionView({
         schedule.scheduleId,
         reversesActionId
           ? { ...base, type: "undo", reversesActionId }
-          : { ...base, type: "complete" }
+          : movement
+            ? { ...base, type: "move", action: movement }
+            : { ...base, type: "complete" }
       );
       setActivityReload(result.status !== "success" && result.status !== "already_applied");
       if (result.status === "success" || result.status === "already_applied")
         setFeedbackMessage(
           reversesActionId
-            ? "Se restauró el resultado anterior."
-            : "Elemento marcado como completado."
+            ? "Se deshizo la última acción."
+            : movement
+              ? "Asignación movida. Las demás asignaciones se conservan."
+              : "Elemento marcado como completado."
         );
       else
         setFeedbackMessage(
           "reason" in result && result.reason === "active_postponement"
             ? "Hay una postergación vigente. Revisa esa decisión antes de completar el elemento."
-            : "No se guardó el cambio. La semana puede haber cambiado; recarga antes de intentarlo otra vez."
+            : movement &&
+                "reason" in result &&
+                result.reason !== "stale_version" &&
+                result.reason !== "activity_storage_failed"
+              ? "No se movió la asignación. Revisa el destino, las horas y la capacidad; puede haber un bloque que se solape."
+              : "No se guardó el cambio. La semana puede haber cambiado; recarga antes de intentarlo otra vez."
         );
     } catch {
       setFeedbackMessage("No se pudo guardar el cambio. Puedes volver a intentarlo.");
@@ -1283,6 +1297,11 @@ export function WeeklySessionView({
           plan={plan}
           planItems={planItems}
           onActivity={recordItemActivity ? handleActivity : undefined}
+          onMove={
+            recordItemActivity
+              ? (itemId, action) => handleActivity(itemId, undefined, action)
+              : undefined
+          }
           activityBusy={activityBusy}
           onReloadActivity={
             activityReload

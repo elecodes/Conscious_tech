@@ -1,3 +1,5 @@
+import { moveItem, undoItemMovement } from "./item-movement";
+import type { TemporalChange } from "./item-activity-types";
 import { ItemActivityCommand, ItemActivityCommandSchema } from "./item-activity-types";
 import { WeeklySchedule, WeeklyScheduleSchema, validateWeeklyScheduleInvariants } from "./schedule";
 import { StoredWeeklyPlan, StoredWeeklyPlanSchema } from "./repositories/types";
@@ -46,7 +48,7 @@ export function applyItemActivity(
   if (command.expectedVersion !== schedule.version)
     return { status: "rejected", reason: "stale_version" };
   if (
-    command.type === "complete" &&
+    (command.type === "complete" || command.type === "move") &&
     schedule.appliedAdjustments.some(
       (record) =>
         record.action.type === "postpone_item" &&
@@ -59,27 +61,50 @@ export function applyItemActivity(
     return { status: "rejected", reason: "active_postponement" };
   const before = activity.outcomes.find((outcome) => outcome.itemId === command.itemId) ?? null;
   let after = before;
+  let temporalChange: TemporalChange | undefined;
+  let temporalSchedule = schedule;
   if (command.type === "complete") {
     if (before?.status === "completed") return { status: "rejected", reason: "already_completed" };
     after = { ...before, itemId: command.itemId, status: "completed" };
     // A completed result must not retain a contradictory postponement reason.
     delete after.postponementReason;
+  } else if (command.type === "move") {
+    if (before?.status === "completed" || before?.status === "dropped")
+      return { status: "rejected", reason: "item_already_resolved" };
+    const movement = moveItem(plan, schedule, command);
+    if (!movement.schedule)
+      return { status: "rejected", reason: movement.reason ?? "invalid_movement" };
+    temporalSchedule = movement.schedule;
+    temporalChange = movement.temporalChange;
   } else {
     const original = activity.history.find(
       (record) => record.command.actionId === command.reversesActionId
     );
     if (
       !original ||
-      original.command.type !== "complete" ||
+      original.command.type === "undo" ||
       original.command.itemId !== command.itemId ||
       original.appliedVersion !== schedule.version ||
       JSON.stringify(before) !== JSON.stringify(original.after)
     )
       return { status: "rejected", reason: "undo_not_available" };
+    if (original.command.type === "move") {
+      if (!original.temporalChange) return { status: "rejected", reason: "undo_not_available" };
+      const reverted = undoItemMovement(
+        plan,
+        schedule,
+        original.command,
+        original.temporalChange,
+        command
+      );
+      if (!reverted.schedule)
+        return { status: "rejected", reason: reverted.reason ?? "undo_not_available" };
+      temporalSchedule = reverted.schedule;
+    }
     after = original.before;
   }
   const next: WeeklySchedule = {
-    ...schedule,
+    ...temporalSchedule,
     version: schedule.version + 1,
     updatedAt: command.decidedAt,
     itemActivity: {
@@ -90,7 +115,13 @@ export function applyItemActivity(
       ],
       history: [
         ...activity.history,
-        { command, appliedVersion: schedule.version + 1, before, after },
+        {
+          command,
+          appliedVersion: schedule.version + 1,
+          before,
+          after,
+          ...(temporalChange ? { temporalChange } : {}),
+        },
       ],
     },
   };

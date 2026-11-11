@@ -1,6 +1,6 @@
 # UX improvement plan
 
-Status: steps 0–6 and steps 7a–7b complete; reversible assignment movement is next.
+Status: steps 0–6 and steps 7a–7c complete; reversible postponement is next.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
@@ -440,3 +440,25 @@ Baseline results:
   dev modes pass.
 - Next: 7c, explicit assignment movement with safe reversal; postponement reversal
   remains 7d.
+
+### Step 7c — scoped assignment movement and undo
+
+- Added an explicit movement form under each eligible item's More actions. It
+  distinguishes fixed blocks from daily hours, requires a selected source and
+  explains which representation stays unchanged. Cancellation writes nothing.
+- Reused deterministic adjustment operations, including collision, duration,
+  capacity and week-range checks. Movement preserves item identity, proposal
+  classification, estimates, deadlines and total allocated hours.
+- Extended activity commands/history with optional scoped temporal evidence. Undo
+  validates the inverse operation and restores affected rows and prior adjustment
+  lifecycle only at the compatible version, preserving unrelated work and history.
+- Existing atomic activity storage now commits movement plus both histories
+  together. Old activity records remain valid without a store migration.
+- Added nine domain and three storage tests, including backup/restore, two
+  connections, tampered evidence and failed-write rollback. Browser checks cover
+  partial hours, block duration, collision rejection, mobile, reload/undo and the
+  complete weekly lifecycle.
+- Verification: 1,029 tests across 77 files, type checking, lint, formatting,
+  dependency-cycle checks, production build and browser smoke tests in preview and
+  dev modes pass.
+- Next: 7d, reversible postponement with explicit destination and carryover semantics.

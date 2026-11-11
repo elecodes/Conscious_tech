@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Added explicit fixed-block and daily-hours movement with scoped, version-checked
+  undo, preserving unrelated assignments, proposal membership and total hours.
+- Preserved movement evidence across reload and backups; reused existing temporal
+  validation and atomic storage for both activity and adjustment histories.
+
 - Enabled individual daily completion and safe undo, with persistent results,
   activity history, duplicate-activation protection and conflict/reload feedback.
 - Integrated progress with closing corrections and atomic reopening; preserved

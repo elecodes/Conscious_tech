@@ -1,7 +1,7 @@
 # Acciones diarias: contrato previo a la implementación
 
-Estado: 7a y 7b implementados. Completar/deshacer, cierre y reapertura integrados;
-mover y aplazar con reversión quedan pendientes en 7c–7d.
+Estado: 7a–7c implementados. Completar, mover asignaciones y deshacer están
+integrados con el ciclo semanal; aplazar con reversión queda pendiente en 7d.
 Rama de trabajo: `codex/ux-step-by-step`. Continúa el paso 7 del plan UX.
 
 ## Resultado esperado
@@ -167,8 +167,8 @@ Antes de habilitar cada control, cubrir:
 4. **7d: aplazar.** Captura reversible, presentación de vigencia y candidatos de
    arrastre. Resolver el caso de postergación seguida de finalización.
 
-Cada entrega requiere su propio commit verificado. La investigación del paso 7 y el contrato 7a están completos. La aceptación de completar/deshacer corresponde a 7b; mover y aplazar siguen
-pendientes de 7c–7d. El próximo incremento es 7c.
+Cada entrega requiere su propio commit verificado. La investigación del paso 7 y el contrato 7a están completos. La aceptación de completar/deshacer corresponde a 7b; el movimiento reversible corresponde a 7c y aplazar sigue pendiente de 7d.
+El próximo incremento es 7d.
 
 ## Evidencia de 7a
 
@@ -222,3 +222,33 @@ pendientes de 7c–7d. El próximo incremento es 7c.
 - Para semanas antiguas cerradas sin agenda, reabrir crea únicamente una agenda
   vacía que conserva los resultados; no inventa bloques ni horas. Si el informe
   referencia una agenda ausente, la operación se rechaza sin eliminar evidencia.
+
+## Evidencia de 7c
+
+- «Más → Mover una asignación» distingue un bloque con hora de una asignación de
+  horas por día. La persona elige el origen; si hay varias asignaciones no se
+  cambia una por suposición. Puede cancelar sin guardar.
+- Mover un bloque conserva su duración y las asignaciones diarias. Mover horas
+  permite trasladar una parte de un día a otro, conservando el total y los bloques.
+  La propuesta, sus miembros, estimaciones y fechas límite permanecen intactos.
+- Los comandos `move` solo admiten las dos acciones temporales existentes. El motor
+  de ajustes valida identidad, origen, rango semanal, colisiones y restricciones
+  de capacidad. No se ofrecen movimientos de notas, resultados resueltos ni
+  postergaciones vigentes. Los controles exigen pertenencia a la propuesta.
+- La evidencia opcional `temporalChange` guarda únicamente filas afectadas, sus
+  posiciones y los ajustes previos que fueron sustituidos. No guarda una copia de
+  la agenda completa ni requiere migración de almacenes.
+- Deshacer valida la versión y el estado posterior, comprueba el movimiento inverso
+  con el mismo motor y restaura esas filas. La coincidencia con la transformación
+  inversa impide restaurar datos no demostrados. Se conserva el historial humano,
+  marcando el movimiento como revertido y reactivando ajustes previos sustituidos
+  dentro de su alcance. No se añade un ajuste inverso como una decisión falsa.
+- Guardado, historial de actividad y de ajustes comparten la transacción existente.
+  Reintentos son idempotentes; versiones desactualizadas y abortos no dejan cambios
+  parciales. Copias y recargas conservan la evidencia para deshacer.
+- Nueve pruebas de dominio cubren conservación, alcance, reversión exacta, errores,
+  vigencia y evidencia inválida. Tres pruebas de almacenamiento cubren restauración
+  desde copia, dos conexiones y fallo transaccional. El navegador prueba ambos
+  movimientos, colisión rechazada, recarga/deshacer, móvil y cierre/reapertura.
+- Se mantiene la restricción de deshacer la última acción a su versión compatible;
+  una decisión posterior obliga a revisar el estado actual.

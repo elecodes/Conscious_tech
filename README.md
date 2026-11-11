@@ -322,13 +322,16 @@ and Gemini receive your notes and required context when you generate.
 
 Daily completion and last-compatible-action undo are available on individual plan
 items in Mi semana. Results survive reload, prefill closing and retain corrections
-on reopening. A stale closing requires a fresh review. The persistence,
+on reopening. Open **Más → Mover una asignación** to select a fixed block or a
+quantity of daily hours. Moving one preserves the other and the total duration or
+hours; the latest compatible movement can also be undone after reload. A stale
+closing requires a fresh review. The persistence,
 closing, reopening and carryover behavior, with incremental delivery gates, is
 recorded in [the daily-actions design](docs/daily-actions-design.md).
 
 ### 4. Run Test Suite
 
-Unit, behavioral, and security tests run deterministically with zero token consumption (1,017 tests across 76 suites):
+Unit, behavioral, and security tests run deterministically with zero token consumption (1,029 tests across 77 suites):
 
 ```bash
 npm test

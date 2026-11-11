@@ -502,3 +502,17 @@ The product succeeds when the person can say:
 - Arrastre excluye completados/descartados activos. No resuelve silenciosamente una
   contradicción entre postergación vigente y resultado completado.
 - Siguiente: 7c mover asignaciones con reversión; 7d postergaciones reversibles.
+
+## UX incremental: movimiento reversible de asignaciones (7c)
+
+- «Más → Mover una asignación» permite elegir un bloque horario o horas de un día.
+  Se conserva duración/total respectivamente, sin mover la otra representación ni
+  cambiar pertenencia, estimaciones o fecha límite. No se adivina el origen.
+- Comandos de actividad `move` reutilizan las acciones temporales del dominio.
+  La evidencia opcional `temporalChange` conserva solo filas afectadas/posiciones y
+  referencias a ajustes sustituidos. Mismos control de versión y transacción.
+- Deshacer comprueba el inverso, restaura ese alcance y conserva la decisión humana
+  del ajuste como revertida. Reactiva únicamente los ajustes sustituidos por ese
+  movimiento; no restaura toda la agenda ni sobrescribe decisiones posteriores.
+- Recarga y copias conservan la reversión. No hay nuevas dependencias o migración.
+  Siguiente: 7d, postergación reversible y sus efectos en candidatos de arrastre.

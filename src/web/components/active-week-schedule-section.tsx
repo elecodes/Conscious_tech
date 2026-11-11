@@ -1,3 +1,5 @@
+import { ItemMovementControls } from "./item-movement-controls";
+import type { MovementAction } from "../../domain/item-activity-types";
 import { useState } from "react";
 import { partitionActiveWeekItems } from "../active-week-items";
 import { formatHours } from "./weekly-session-formatters";
@@ -11,6 +13,7 @@ import { CalendarReminderSettings } from "./calendar-reminder-settings";
 import { EmailSummaryCard } from "./email-summary-card";
 
 export interface ActiveWeekScheduleSectionProps {
+  onMove?: (itemId: string, action: MovementAction) => Promise<void>;
   onActivity?: (itemId: string, reversesActionId?: string) => Promise<void>;
   activityBusy?: boolean;
   onReloadActivity?: () => Promise<void>;
@@ -43,6 +46,7 @@ export interface ActiveWeekScheduleSectionProps {
 export function ActiveWeekScheduleSection({
   schedule,
   onActivity,
+  onMove,
   activityBusy,
   onReloadActivity,
   plan,
@@ -134,7 +138,8 @@ export function ActiveWeekScheduleSection({
     );
     const last = schedule.itemActivity?.history.at(-1);
     const undo =
-      last?.command.type === "complete" &&
+      last?.command.type !== "undo" &&
+      !!last &&
       last.command.itemId === item.itemId &&
       last.appliedVersion === schedule.version
         ? last.command.actionId
@@ -261,6 +266,20 @@ export function ActiveWeekScheduleSection({
             >
               📅 {alloc ? alloc.day : "En la semana"}
             </span>
+            {onMove &&
+              inProposal &&
+              plan?.status === "active" &&
+              !isThought &&
+              !postponed &&
+              outcome?.status !== "completed" &&
+              outcome?.status !== "dropped" && (
+                <ItemMovementControls
+                  schedule={schedule}
+                  itemId={item.itemId}
+                  busy={activityBusy}
+                  onMove={(action) => onMove(item.itemId, action)}
+                />
+              )}
             <button
               type="button"
               className="secondary small"
@@ -638,7 +657,9 @@ export function ActiveWeekScheduleSection({
                 ·{" "}
                 {record.command.type === "complete"
                   ? "Marcado como completado"
-                  : "Se restauró el resultado anterior"}{" "}
+                  : record.command.type === "move"
+                    ? "Asignación movida"
+                    : "Se deshizo la última acción"}{" "}
                 · {record.command.decidedAt}
               </li>
             ))}

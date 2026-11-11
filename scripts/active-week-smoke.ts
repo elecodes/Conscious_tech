@@ -1,3 +1,4 @@
+import type { WeeklySchedule } from "../src/domain/schedule";
 import type { Browser } from "playwright";
 import { createActiveWeekFixture } from "../tests/fixtures/active-week";
 
@@ -5,6 +6,29 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
   const context = await browser.newContext();
   const page = await context.newPage();
   const fixture = createActiveWeekFixture();
+  fixture.schedule.timeBlocks.push({
+    itemId: "c",
+    day: "2026-12-10",
+    startTime: "15:00",
+    endTime: "16:00",
+  });
+  const readSchedule = () =>
+    page.evaluate(async (scheduleId) => {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open("conscious_tech_db");
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      try {
+        return await new Promise<WeeklySchedule>((resolve, reject) => {
+          const request = db.transaction("schedules").objectStore("schedules").get(scheduleId);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+      } finally {
+        db.close();
+      }
+    }, fixture.schedule.scheduleId);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   try {
@@ -73,6 +97,66 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
     await page.setViewportSize({ width: 390, height: 844 });
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth))
       throw new Error("Active week overflows on mobile");
+
+    // Select one daily allocation, move part of it, reload, then restore its exact scope.
+    await page.getByTestId("task-more-actions-summary-g").click();
+    await page.getByTestId("move-item-g").locator(":scope > summary").click();
+    await page.getByTestId("move-source-g").selectOption("day-0");
+    await page.getByTestId("move-day-g").fill("2026-12-10");
+    await page.getByTestId("move-hours-g").fill("0.5");
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth))
+      throw new Error("Movement controls overflow on mobile");
+    await page.getByTestId("save-move-g").click();
+    await page.getByTestId("undo-item-g").waitFor();
+    let moved = await readSchedule();
+    if (
+      moved.dailyAllocations.reduce((sum, row) => sum + row.allocatedHours, 0) !== 1 ||
+      JSON.stringify(moved.timeBlocks) !== JSON.stringify(fixture.schedule.timeBlocks)
+    )
+      throw new Error("Daily movement changed total hours or fixed blocks");
+    await page.reload({ waitUntil: "networkidle" });
+    await page.getByTestId("active-week-deferred").locator(":scope > summary").click();
+    await page.getByTestId("undo-item-g").click();
+    await page.getByTestId("undo-item-g").waitFor({ state: "hidden" });
+    if (
+      JSON.stringify((await readSchedule()).dailyAllocations) !==
+      JSON.stringify(fixture.schedule.dailyAllocations)
+    )
+      throw new Error("Daily movement undo did not restore the original allocation");
+    // A block collision leaves storage unchanged; a valid move preserves duration and daily hours.
+    await page.getByTestId("task-more-actions-summary-g").click();
+    await page.getByTestId("move-item-g").locator(":scope > summary").click();
+    await page.getByTestId("move-source-g").selectOption("block-0");
+    await page.getByTestId("move-day-g").fill("2026-12-10");
+    await page.getByTestId("move-time-g").fill("15:00");
+    const beforeCollision = await readSchedule();
+    await page.getByTestId("save-move-g").click();
+    await page.getByRole("status").filter({ hasText: "No se movió la asignación" }).waitFor();
+    if (JSON.stringify(await readSchedule()) !== JSON.stringify(beforeCollision))
+      throw new Error("Rejected collision changed storage");
+    await page.getByTestId("move-time-g").fill("16:00");
+    await page.getByTestId("save-move-g").click();
+    await page.getByTestId("undo-item-g").waitFor();
+    moved = await readSchedule();
+    if (
+      moved.timeBlocks[0]?.startTime !== "16:00" ||
+      moved.timeBlocks[0]?.endTime !== "17:00" ||
+      JSON.stringify(moved.dailyAllocations) !== JSON.stringify(fixture.schedule.dailyAllocations)
+    )
+      throw new Error("Block movement changed duration or daily hours");
+    await page.getByTestId("undo-item-g").click();
+    await page.getByTestId("undo-item-g").waitFor({ state: "hidden" });
+    if (
+      JSON.stringify((await readSchedule()).timeBlocks) !==
+      JSON.stringify(fixture.schedule.timeBlocks)
+    )
+      throw new Error("Block undo changed another block");
+    if (
+      await page
+        .getByTestId("task-more-actions-g")
+        .evaluate((element) => (element as HTMLDetailsElement).open)
+    )
+      await page.getByTestId("task-more-actions-summary-g").click();
 
     // Existing export still receives the complete inventory, independently of its visibility.
     await page.getByTestId("reminders-and-alerts-summary").click();
@@ -177,7 +261,7 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
       throw new Error("Reopening/undo lost the reviewed correction");
     if (errors.length) throw new Error(errors.join("\n"));
     console.log(
-      "  ✓ Active week: membership, daily completion/undo, reload, stale closing, reopening and export verified"
+      "  ✓ Active week: membership, completion, reversible movement, collisions, mobile, closing and reopening verified"
     );
   } finally {
     await context.close();

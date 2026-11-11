@@ -422,4 +422,102 @@ describe("Atomic daily activity storage", () => {
     expect(restored?.dailyAllocations).toEqual([]);
     expect(await storage.closeReports.getByPlanId(plan.planId)).toBeNull();
   });
+  it("round-trips movement evidence through backup and undoes exactly from a new connection", async () => {
+    const move: ItemActivityCommand = {
+      ...command,
+      type: "move",
+      itemId: "g",
+      actionId: "move-g",
+      action: {
+        type: "reallocate_day_work",
+        itemId: "g",
+        sourceDay: "2026-12-09",
+        targetDay: "2026-12-10",
+        hoursToMove: 0.5,
+        rationale: "Otro día",
+      },
+    };
+    expect((await service.recordItemActivity(schedule.scheduleId, move)).status).toBe("success");
+    const backup = await exportUserData(storage);
+    expect(backup.data.schedules[0]?.itemActivity?.history[0]?.temporalChange).toBeDefined();
+    await storage.clearAll();
+    storage = await createIndexedDbStorage({ dbName: "activity-test", customFactory: factory });
+    await importUserData(JSON.stringify(backup), storage);
+    const reloaded = new WeeklySessionService({ ...storage, getDb: () => storage.db });
+    expect(
+      (
+        await reloaded.recordItemActivity(schedule.scheduleId, {
+          ...undo,
+          itemId: "g",
+          reversesActionId: "move-g",
+        })
+      ).status
+    ).toBe("success");
+    const restored = await storage.schedules.getById(schedule.scheduleId);
+    expect(restored?.dailyAllocations).toEqual(schedule.dailyAllocations);
+    expect(restored?.timeBlocks).toEqual(schedule.timeBlocks);
+    expect(restored?.itemActivity?.history).toHaveLength(2);
+    expect(restored?.appliedAdjustments[0]?.lifecycleStatus).toBe("reverted");
+  });
+  it("serializes competing movements and rejects the stale source version", async () => {
+    const second = await createIndexedDbStorage({
+      dbName: "activity-test",
+      customFactory: factory,
+    });
+    try {
+      const other = new WeeklySessionService({ ...second, getDb: () => second.db });
+      const move: ItemActivityCommand = {
+        ...command,
+        type: "move",
+        itemId: "g",
+        actionId: "move-g",
+        action: {
+          type: "reallocate_day_work",
+          itemId: "g",
+          sourceDay: "2026-12-09",
+          targetDay: "2026-12-10",
+          hoursToMove: 1,
+          rationale: "Otro día",
+        },
+      };
+      const results = await Promise.all([
+        service.recordItemActivity(schedule.scheduleId, move),
+        other.recordItemActivity(schedule.scheduleId, { ...move, actionId: "another-move" }),
+      ]);
+      expect(results.filter((result) => result.status === "success")).toHaveLength(1);
+      expect(results).toContainEqual({ status: "rejected", reason: "stale_version" });
+      expect(
+        (await storage.schedules.getById(schedule.scheduleId))?.appliedAdjustments
+      ).toHaveLength(1);
+    } finally {
+      second.close();
+    }
+  });
+  it("rolls back temporal rows and both histories when a movement write aborts", async () => {
+    const put = FakeObjectStore.prototype.put;
+    vi.spyOn(FakeObjectStore.prototype, "put").mockImplementation(function (
+      this: IDBObjectStore,
+      ...args: Parameters<IDBObjectStore["put"]>
+    ) {
+      const request = put.apply(this, args);
+      this.transaction.abort();
+      return request;
+    });
+    const move: ItemActivityCommand = {
+      ...command,
+      type: "move",
+      itemId: "g",
+      actionId: "move-g",
+      action: {
+        type: "reallocate_day_work",
+        itemId: "g",
+        sourceDay: "2026-12-09",
+        targetDay: "2026-12-10",
+        hoursToMove: 1,
+        rationale: "Otro día",
+      },
+    };
+    expect((await service.recordItemActivity(schedule.scheduleId, move)).status).toBe("failed");
+    expect(await storage.schedules.getById(schedule.scheduleId)).toEqual(schedule);
+  });
 });
