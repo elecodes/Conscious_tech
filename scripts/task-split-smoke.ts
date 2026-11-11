@@ -81,6 +81,22 @@ export async function verifyTaskSplit(browser: Browser, url: string, output?: st
     await page.getByTestId("split-hours-draft-g-2026-12-09").fill("4");
     if (!(await page.getByTestId("save-split-draft-g").isDisabled()))
       throw new Error("Six hours can be allocated to a five-hour task");
+    // Reproduce adding days while the original day's hours remain, then correct explicitly.
+    await partial.getByRole("button", { name: "Repartir 5 h por igual" }).click();
+    if (await page.getByTestId("save-split-draft-g").isDisabled())
+      throw new Error("Equal distribution did not resolve excess hours");
+    if ((await page.getByTestId("split-hours-draft-g-2026-12-07").inputValue()) !== "2.5")
+      throw new Error("Equal distribution retained the original day's full hours");
+    const editorBox = await partial.boundingBox();
+    if (!editorBox || editorBox.width < 400)
+      throw new Error("Split editor is still constrained to the narrow calendar column");
+    await page.setViewportSize({ width: 390, height: 844 });
+    const mobileEditor = await partial.boundingBox();
+    if (!mobileEditor || mobileEditor.x < 0 || mobileEditor.x + mobileEditor.width > 390)
+      throw new Error("Split editor overflows mobile viewport");
+    if (output) await page.screenshot({ path: `${output}/split-editor-mobile.png` });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.getByTestId("split-hours-draft-g-2026-12-07").fill("2");
     await page.getByTestId("split-hours-draft-g-2026-12-09").fill("2");
     await page.getByTestId("split-hours-draft-g-2026-12-11").fill("1");
     await page.getByTestId("save-split-draft-g").click();

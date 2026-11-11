@@ -31,6 +31,7 @@ export function TaskDaySplitEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lock = useRef(false);
+  const panel = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
     setValues(Object.fromEntries(rows.map((row) => [row.day, String(row.allocatedHours)])));
     setError(null);
@@ -53,7 +54,17 @@ export function TaskDaySplitEditor({
     validation = (error as Error).message;
   }
   return (
-    <details className="task-day-split-editor" data-testid={`task-split-${testKey}`}>
+    <details
+      ref={panel}
+      className="task-day-split-editor"
+      data-testid={`task-split-${testKey}`}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && panel.current) {
+          panel.current.open = false;
+          panel.current.querySelector("summary")?.focus();
+        }
+      }}
+    >
       <summary>
         Repartir horas
         {totalHours != null && (
@@ -63,6 +74,15 @@ export function TaskDaySplitEditor({
           </small>
         )}
       </summary>
+      <button
+        type="button"
+        className="secondary small task-split-close"
+        onClick={() => {
+          if (panel.current) panel.current.open = false;
+        }}
+      >
+        Cerrar
+      </button>
       <p>
         Solo «{title}»
         {totalHours != null ? ` · ${totalHours} h para repartir` : " · Horas totales por definir"}
@@ -73,6 +93,10 @@ export function TaskDaySplitEditor({
         <p>Añade las horas totales de esta tarea para repartirlas entre días.</p>
       ) : (
         <>
+          <p>
+            Las horas que ya tenía cada día siguen aquí. Cámbialas o borra el reparto antes de
+            distribuir el total. El calendario cambia al guardar.
+          </p>
           <button
             type="button"
             className="secondary small"
@@ -84,6 +108,31 @@ export function TaskDaySplitEditor({
           >
             Dejar sin días
           </button>
+          {requested.length > 1 && requested.every((row) => row.allocatedHours > 0) && (
+            <button
+              type="button"
+              className="secondary small"
+              disabled={disabled || saving}
+              onClick={() => {
+                const portion = Math.floor((totalHours / requested.length) * 1000000) / 1000000;
+                setValues(
+                  Object.fromEntries(
+                    requested.map((row, index) => [
+                      row.day,
+                      String(
+                        index === requested.length - 1
+                          ? Number((totalHours - portion * (requested.length - 1)).toFixed(6))
+                          : portion
+                      ),
+                    ])
+                  )
+                );
+                setError(null);
+              }}
+            >
+              Repartir {totalHours} h por igual entre los {requested.length} días elegidos
+            </button>
+          )}
           <div className="task-split-days">
             {days.map((day) => (
               <label key={day}>
@@ -111,7 +160,7 @@ export function TaskDaySplitEditor({
           </div>
           <p role="status" data-testid={`split-balance-${testKey}`}>
             {validation
-              ? "Revisa las horas del reparto."
+              ? `Has escrito ${total} h para una tarea de ${totalHours} h. Ajusta las horas para poder guardar.`
               : `${total} h repartidas de ${totalHours} h · ${Number((totalHours - total).toFixed(6))} h por repartir`}
           </p>
           {(error || validation) && <p role="alert">{error || validation}</p>}
@@ -126,8 +175,11 @@ export function TaskDaySplitEditor({
               setSaving(true);
               setError(null);
               try {
-                if (!(await onSave(requested)))
+                if (!(await onSave(requested))) {
                   setError("No se ha guardado el reparto. Revisa el aviso e inténtalo de nuevo.");
+                } else if (panel.current) {
+                  panel.current.open = false;
+                }
               } catch (error) {
                 setError((error as Error).message);
               } finally {

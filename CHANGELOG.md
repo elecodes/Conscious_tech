@@ -910,3 +910,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Prohibited inventing specific calendar dates for broad temporal expressions (e.g. "in November").
   - Prohibited deriving task effort from friction complaints (e.g. "Gradle takes half a day").
   - Enforced atomic separation of independent actions without merging.
+
+- Clarify task hour distribution: open a readable floating editor, explain existing
+  assignments and explicit saving, and offer equal distribution across chosen days
+  to correct totals without retaining the original day's full allocation.

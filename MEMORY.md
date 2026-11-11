@@ -683,3 +683,13 @@ The product succeeds when the person can say:
   el título; no se inventa una hora de inicio.
 - Sin dependencias ni llamadas nuevas de IA. Se conserva la distinción entre
   estimación desconocida, horas explícitas y capacidad disponible.
+
+### Reparto: corregir la confusión al añadir días
+
+- El editor conserva las asignaciones anteriores; añadir días no resta horas del
+  original. Se explica explícitamente y se ofrece repartir el total por igual entre
+  los días con horas, sin guardar ni redistribuir silenciosamente.
+- El formulario abierto sale de la columna estrecha del calendario y se cierra al
+  guardar correctamente. Cerrar sin guardar mantiene el calendario anterior.
+- Comprobado en navegador: exceso de horas, corrección por igual, ancho del editor,
+  reparto por día, persistencia y movimiento de porciones, sin alterar otras tareas.
