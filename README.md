@@ -317,9 +317,17 @@ separate section, and deadlines are labeled without becoming calendar assignment
 Drag included draft tasks onto a day or back to **sin día elegido**; the date
 field remains available for touch and keyboard. In the active week, simple daily
 allocations or single fixed blocks can be dragged between days, or moved with
-**Mover a**. Fixed blocks keep their start/end time; existing domain checks reject
+the compact **Cambiar día** menu inside that task's card. Every included task has
+its own menu; complex assignments open their existing task controls. Saving keeps
+neighbouring menus in place, and feedback names the task that changed. Fixed
+blocks keep their start/end time; existing domain checks reject
 collisions or excess capacity, and **Deshacer** remains available. Split assignments
 keep their detailed movement controls.
+
+Colour, text and symbols distinguish placement and progress: amber **Sin día**,
+blue **Programada**, green **Completada**, purple **Aplazada**, and grey notes or
+excluded work. Scheduled tasks may still be unfinished; the pending filter keeps
+its existing meaning.
 
 Open **Nueva semana → Mes y otras semanas** for a monthly overview of active work
 and saved drafts. Choose a day or a saved week to open its weekly editor. Future

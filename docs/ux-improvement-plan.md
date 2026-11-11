@@ -571,3 +571,21 @@ Baseline results:
   cycles, production build and browser smoke in preview/development pass. Focused
   browser checks also cover dirty-note protection and navigation across New Year.
   The existing bundle-size build warning remains.
+
+### User walkthrough — task-specific movement controls and colour states
+
+- The user reported oversized standalone movement controls and apparent movement
+  of neighbouring tasks. Browser reproduction preserved the other task's data but
+  exposed all movement selectors disappearing/reappearing during a save.
+- Kept controls mounted while busy, reserved save-status space, and contained each
+  compact Cambiar día disclosure inside its task card. All included unfinished
+  tasks expose it, with existing editor access for unsupported direct moves.
+- Named the affected task in confirmation feedback and restored focus to its card.
+- Added labelled colour/symbol states and a legend: amber undated, blue scheduled,
+  green completed, purple postponed, neutral notes/outside. Placement does not
+  replace progress, and pending/all filters keep their meaning.
+- Added regressions for busy DOM stability, individual movement/undo for same-day
+  members of one focus, accessible labels, distinct colours and mobile overflow.
+- Verification: 1,064 tests across 82 files, types, lint, formatting, dependency
+  cycles, production build and browser checks in preview/development pass. The
+  existing bundle-size warning remains. No schema or domain-operation changes.

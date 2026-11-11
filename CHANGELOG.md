@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Replaced oversized standalone movement selects with compact task-specific
+  “Cambiar día” disclosures, including a fallback for tasks without simple allocations.
+- Kept movement controls mounted during saves to prevent neighbouring cards from
+  jumping; restored focus to the changed task and named it in success feedback.
+- Added colour, symbols and a legend distinguishing unscheduled, scheduled,
+  completed, postponed and neutral task cards without changing stored outcomes.
+
 - Added drag/drop between weekly calendar days, with date/select alternatives for
   touch and keyboard. Active simple assignments reuse validated movement and undo;
   split assignments retain their detailed controls.

@@ -179,6 +179,7 @@ export async function verifyDraftCalendar(browser: Browser, url: string, screens
       .getByTestId("calendar-task-g-2026-12-08")
       .dragTo(page.getByTestId("calendar-day-2026-12-10"));
     await page.getByTestId("calendar-task-g-2026-12-10").waitFor();
+    await page.getByTestId("calendar-actions-g-2026-12-10").locator(":scope > summary").click();
     await page
       .getByRole("combobox", {
         name: `Mover ${fixture.items.find((item) => item.id === "g")!.title} a otro día`,

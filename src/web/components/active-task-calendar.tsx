@@ -1,6 +1,7 @@
+import { calendarTaskStatus } from "../calendar-task-status";
 import { useCalendarDrag } from "../use-calendar-drag";
 import { calendarMovement } from "../calendar-movement";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { StoredWeeklyPlan } from "../../domain/repositories/types";
 import type { WeeklySchedule } from "../../domain/schedule";
 import type { PlanItemSummary } from "./weekly-reflective-closing-section";
@@ -10,13 +11,6 @@ const dateLabel = (value: string, options: Intl.DateTimeFormatOptions) =>
   new Intl.DateTimeFormat("es-ES", { ...options, timeZone: "UTC" }).format(
     new Date(`${value}T00:00:00Z`)
   );
-const statusLabel: Record<CalendarTask["state"], string> = {
-  pending: "Pendiente",
-  in_progress: "En curso",
-  completed: "Completado",
-  dropped: "Descartado",
-  consciously_postponed: "Aplazado",
-};
 export function ActiveTaskCalendar({
   plan,
   schedule,
@@ -32,13 +26,27 @@ export function ActiveTaskCalendar({
   onMove?: (id: string, sourceDay: string, targetDay: string) => void;
   busy?: boolean;
 }) {
+  const movedTask = useRef<{ id: string; source: string; target: string } | null>(null);
+  const requestMove = (id: string, source: string, target: string) => {
+    if (busy || source === target) return;
+    movedTask.current = { id, source, target };
+    onMove?.(id, source, target);
+  };
   const drag = useCalendarDrag((id, source, day) => {
-    if (source && day && !busy) onMove?.(id, source, day);
+    if (source && day) requestMove(id, source, day);
   });
+  useEffect(() => {
+    if (busy || !movedTask.current) return;
+    const { id, source, target } = movedTask.current;
+    const card =
+      document.getElementById(`calendar-task-${id}-${target}`) ??
+      document.getElementById(`calendar-task-${id}-${source}`);
+    card?.focus({ preventScroll: true });
+    movedTask.current = null;
+  }, [busy, schedule?.version]);
   const movable = (task: CalendarTask, day: string) =>
     !!onMove &&
     !!schedule &&
-    !busy &&
     task.state !== "completed" &&
     task.state !== "dropped" &&
     !!calendarMovement(
@@ -57,71 +65,112 @@ export function ActiveTaskCalendar({
     showAll || (task.state !== "completed" && task.state !== "dropped");
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const taskCard = (task: CalendarTask, slot: string, entry?: CalendarEntry) => (
-    <li key={`${task.itemId}-${slot}`}>
-      <button
-        type="button"
-        className={`task-calendar-entry task-calendar-${task.state}`}
-        draggable={!!entry && movable(task, entry.day)}
-        onDragStart={(event) => {
-          if (entry && movable(task, entry.day)) drag.start(event, task.itemId, entry.day);
-          else event.preventDefault();
-        }}
-        onDragEnd={drag.end}
-        onClick={() => onInspect(task.itemId)}
-        data-testid={`calendar-task-${task.itemId}-${slot}`}
+  const taskCard = (task: CalendarTask, slot: string, entry?: CalendarEntry) => {
+    const status = calendarTaskStatus(task, !!entry);
+    const canAdjust =
+      !["note", "outside", "postponed"].includes(task.kind) &&
+      task.state !== "completed" &&
+      task.state !== "dropped";
+    return (
+      <li
+        key={`${task.itemId}-${slot}`}
+        className={`calendar-task-card calendar-tone-${status.tone}`}
+        data-testid={`calendar-card-${task.itemId}-${slot}`}
       >
-        <span className="task-calendar-entry-title">{task.title}</span>
-        <span className="task-calendar-tags">
-          <span>
-            {task.kind === "note" && task.state === "pending"
-              ? "Nota"
-              : task.kind === "outside" && task.state === "pending"
-                ? "Fuera de esta semana"
-                : statusLabel[task.state]}
+        <button
+          type="button"
+          className={`task-calendar-entry task-calendar-${task.state}`}
+          draggable={!!entry && !busy && movable(task, entry.day)}
+          onDragStart={(event) => {
+            if (entry && !busy && movable(task, entry.day))
+              drag.start(event, task.itemId, entry.day);
+            else event.preventDefault();
+          }}
+          onDragEnd={drag.end}
+          onClick={() => onInspect(task.itemId)}
+          id={`calendar-task-${task.itemId}-${slot}`}
+          data-testid={`calendar-task-${task.itemId}-${slot}`}
+        >
+          <span className="task-calendar-entry-title">{task.title}</span>
+          <span className="task-calendar-tags">
+            <span className="calendar-status">
+              <span aria-hidden="true">{status.symbol}</span> {status.label}
+            </span>
+            {task.state === "in_progress" && <span>En curso</span>}
+            {task.kind === "optional" && <span>Opcional</span>}
+            {task.kind === "other" && <span>Otra asignación</span>}
           </span>
-          {task.kind === "optional" && <span>Opcional</span>}
-          {task.kind === "other" && <span>Otra asignación</span>}
-        </span>
-        {entry?.blocks.map((block) => (
-          <span key={`${block.startTime}-${block.endTime}`} className="task-calendar-time">
-            {block.startTime}–{block.endTime}
-          </span>
-        ))}
-        {entry?.hours !== undefined && (
-          <span className="task-calendar-time">{entry.hours} h asignadas al día</span>
-        )}
-        {task.dueDate && (
-          <span className="task-calendar-meta">
-            Límite: {dateLabel(task.dueDate, { day: "numeric", month: "short" })}
-          </span>
-        )}
-        {task.kind === "postponed" && (
-          <span className="task-calendar-meta">
-            {task.destination
-              ? `Destino: ${dateLabel(task.destination.startDate, { day: "numeric", month: "short" })}–${dateLabel(task.destination.endDate, { day: "numeric", month: "short", year: "numeric" })}`
-              : "Sin semana de destino"}
-          </span>
-        )}
-      </button>
-      {entry && movable(task, entry.day) && (
-        <label className="calendar-move-select">
-          Mover a
-          <select
-            aria-label={`Mover ${task.title} a otro día`}
-            value={entry.day}
-            onChange={(event) => onMove?.(task.itemId, entry.day, event.target.value)}
+          {entry?.blocks.map((block) => (
+            <span key={`${block.startTime}-${block.endTime}`} className="task-calendar-time">
+              {block.startTime}–{block.endTime}
+            </span>
+          ))}
+          {entry?.hours !== undefined && (
+            <span className="task-calendar-time">{entry.hours} h asignadas al día</span>
+          )}
+          {task.dueDate && (
+            <span className="task-calendar-meta">
+              Límite: {dateLabel(task.dueDate, { day: "numeric", month: "short" })}
+            </span>
+          )}
+          {task.kind === "postponed" && (
+            <span className="task-calendar-meta">
+              {task.destination
+                ? `Destino: ${dateLabel(task.destination.startDate, { day: "numeric", month: "short" })}–${dateLabel(task.destination.endDate, { day: "numeric", month: "short", year: "numeric" })}`
+                : "Sin semana de destino"}
+            </span>
+          )}
+        </button>
+        {canAdjust && (
+          <details
+            className="calendar-task-actions"
+            data-testid={`calendar-actions-${task.itemId}-${slot}`}
           >
-            {model.days.map((day) => (
-              <option key={day.date} value={day.date}>
-                {dateLabel(day.date, { weekday: "short", day: "numeric", month: "short" })}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-    </li>
-  );
+            <summary aria-label={`Cambiar día de ${task.title}`}>Cambiar día</summary>
+            <p className="calendar-action-scope">
+              Solo esta tarea: <strong>{task.title}</strong>
+            </p>
+            {entry && movable(task, entry.day) ? (
+              <label className="calendar-day-picker">
+                Día de esta tarea
+                <select
+                  aria-label={`Mover ${task.title} a otro día`}
+                  disabled={busy}
+                  value={entry.day}
+                  onChange={(event) => {
+                    if (!busy && event.target.value !== entry.day)
+                      requestMove(task.itemId, entry.day, event.target.value);
+                  }}
+                >
+                  {model.days.map((day) => (
+                    <option key={day.date} value={day.date}>
+                      {dateLabel(day.date, { weekday: "short", day: "numeric", month: "short" })}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <>
+                <p className="calendar-action-scope">
+                  {entry
+                    ? "Revisa el día y las asignaciones de esta tarea en sus ajustes."
+                    : "Elige un día para esta tarea en sus ajustes."}
+                </p>
+                <button
+                  type="button"
+                  className="calendar-open-settings"
+                  disabled={busy}
+                  onClick={() => onInspect(task.itemId)}
+                >
+                  Abrir ajustes de esta tarea
+                </button>
+              </>
+            )}
+          </details>
+        )}
+      </li>
+    );
+  };
   const undated = model.undated.filter(visible);
   const extras = model.extras.filter(visible);
   return (
@@ -175,9 +224,17 @@ export function ActiveTaskCalendar({
         </span>
       </p>
       <p className="calm-muted task-calendar-hint">
-        Arrastra una tarea con asignación simple a otro día o usa Mover a. Pulsa la tarea para ver
-        todos sus controles. Solo las asignaciones guardadas aparecen en un día; una fecha límite no
-        asigna la tarea a ese día.
+        Arrastra una tarjeta a otro día o abre «Cambiar día» en esa tarea. Las tareas con varias
+        asignaciones se ajustan desde sus controles. Una fecha límite no elige el día por ti.
+      </p>
+      <ul className="calendar-status-legend" aria-label="Colores y símbolos del calendario">
+        <li className="calendar-tone-undated">○ Sin día</li>
+        <li className="calendar-tone-scheduled">◷ Programada</li>
+        <li className="calendar-tone-completed">✓ Completada</li>
+        <li className="calendar-tone-postponed">↷ Aplazada</li>
+      </ul>
+      <p className="calendar-save-status" role="status" aria-atomic="true">
+        {busy ? "Guardando el cambio de la tarea…" : ""}
       </p>
       {model.pages > 1 && (
         <nav className="task-calendar-pagination" aria-label="Días de esta planificación">

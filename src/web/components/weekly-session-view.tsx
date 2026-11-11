@@ -171,7 +171,7 @@ export function WeeklySessionView({
           reversesActionId
             ? "Se deshizo la última acción."
             : movement
-              ? "Asignación movida. Las demás asignaciones se conservan."
+              ? `Asignación de «${planItems.find((item) => item.itemId === itemId)?.title ?? "esta tarea"}» movida. Las demás asignaciones se conservan.`
               : postponement
                 ? "Elemento aplazado. Puedes consultarlo y deshacer la última acción en «Aplazados durante la semana»."
                 : "Elemento marcado como completado."

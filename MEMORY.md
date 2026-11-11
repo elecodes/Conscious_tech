@@ -605,3 +605,23 @@ The product succeeds when the person can say:
   borradores visibles; también se atienden resultados invalid_data, sin tratarlos
   como un guardado exitoso. No hay nuevos esquemas, dependencias ni llamadas de IA
   para arrastrar, navegar o proyectar el mes.
+
+## Tarjetas del calendario: movimiento individual y colores
+
+- La persona detectó selectores Mover a desproporcionados, presentes solo en algunas
+  tareas, y percibió que dos tareas cambiaban a la vez.
+- Reproducción: al mover una tarea, los selectores de todas las tareas desaparecían
+  durante busy y volvían a aparecer (conteos DOM 3 → 0 → 3), provocando saltos de
+  distribución. En esa reproducción solo cambió la asignación del ID seleccionado.
+- Se separó capacidad de movimiento de busy: los controles permanecen montados y
+  se deshabilitan durante el guardado. El mensaje de progreso tiene espacio fijo.
+- Cada tarjeta incluida pendiente ofrece Cambiar día, con el nombre de la tarea y
+  un selector compacto o acceso a sus controles existentes si no hay asignación
+  simple. El control vive dentro de la tarjeta. Tras mover, el foco vuelve a esa
+  tarea y el aviso de éxito la nombra.
+- Color más texto y símbolo: ámbar Sin día, azul Programada, verde Completada,
+  violeta Aplazada y gris para notas/exclusiones. Programada describe tener día;
+  no significa completada ni cambia el filtro Pendientes.
+- Pruebas específicas verifican que mover/deshacer una de dos tareas del mismo
+  foco y día conserva las asignaciones de la otra, las horas y la propuesta.
+  No se modificaron reglas de dominio, esquemas, proveedores ni dependencias.

@@ -1225,17 +1225,6 @@ details.calm-details[open] {
 [draggable="true"]:active {
   cursor: grabbing;
 }
-.calendar-move-select {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 0.8rem;
-  margin-top: 5px;
-}
-.calendar-move-select select {
-  width: 100%;
-  min-width: 0;
-}
 .month-calendar-navigation input {
   max-width: 100%;
 }
@@ -1303,4 +1292,119 @@ details.calm-details[open] {
   .month-calendar-grid {
     gap: 3px;
   }
+}
+
+/* The card owns its task actions; saving disables controls without removing them. */
+.calendar-tone-undated {
+  --calendar-tone: #8a560e;
+  --calendar-soft: #fff8eb;
+  --calendar-border: #e4bd7c;
+}
+.calendar-tone-scheduled {
+  --calendar-tone: #285d8a;
+  --calendar-soft: #f0f6fd;
+  --calendar-border: #91b5d8;
+}
+.calendar-tone-completed {
+  --calendar-tone: #366747;
+  --calendar-soft: #eff7f0;
+  --calendar-border: #9dbca5;
+}
+.calendar-tone-postponed {
+  --calendar-tone: #705288;
+  --calendar-soft: #f7f1fb;
+  --calendar-border: #c6aed8;
+}
+.calendar-tone-neutral {
+  --calendar-tone: #62615e;
+  --calendar-soft: #f4f3f0;
+  --calendar-border: #cbc7bf;
+}
+.task-calendar .calendar-task-card {
+  border: 1px solid var(--calendar-border);
+  border-left: 3px solid var(--calendar-tone);
+  border-radius: 8px;
+  background: var(--calendar-soft);
+  overflow: hidden;
+  align-self: start;
+}
+.calendar-task-card .task-calendar-entry {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.calendar-task-card .task-calendar-entry:hover {
+  background: rgba(255, 255, 255, 0.55);
+}
+.task-calendar-tags .calendar-status {
+  color: var(--calendar-tone);
+  background: transparent;
+  font-weight: 600;
+  padding-left: 0;
+}
+.task-calendar-tags .calendar-status span {
+  background: transparent;
+  padding: 0;
+}
+.task-calendar .calendar-status-legend {
+  display: flex;
+  gap: 6px 12px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+  font-size: 0.75rem;
+}
+.calendar-status-legend li {
+  color: var(--calendar-tone);
+}
+.calendar-task-actions {
+  padding: 0 9px 8px;
+  font-size: 0.72rem;
+}
+.calendar-task-actions > summary {
+  cursor: pointer;
+  color: var(--calendar-tone);
+  font-size: 0.72rem;
+  padding: 3px 0;
+}
+.calendar-task-actions[open] > summary {
+  margin-bottom: 5px;
+}
+.calendar-action-scope {
+  font-size: 0.72rem;
+  margin: 5px 0;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.calendar-day-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.72rem;
+}
+.calendar-day-picker select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 0.75rem;
+  padding: 5px;
+  border-radius: 5px;
+}
+.calendar-task-actions .calendar-open-settings {
+  color: var(--calendar-tone);
+  background: transparent;
+  border: 1px solid var(--calendar-border);
+  padding: 5px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  width: 100%;
+  white-space: normal;
+}
+.calendar-save-status {
+  min-height: 1.25em;
+  margin: 4px 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.task-calendar-day > ul {
+  align-content: start;
 }
