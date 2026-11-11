@@ -91,6 +91,29 @@ export function applyItemActivity(
       status: "consciously_postponed",
       postponementReason: command.action.rationale,
     };
+  } else if (command.type === "resume") {
+    if (
+      before?.status !== "consciously_postponed" &&
+      !schedule.appliedAdjustments.some(
+        (record) =>
+          record.action.type === "postpone_item" &&
+          record.action.itemId === command.itemId &&
+          record.lifecycleStatus === "active"
+      )
+    )
+      return { status: "rejected", reason: "not_postponed" };
+    after = { ...before, itemId: command.itemId, status: "not_started" };
+    delete after.postponementReason;
+    temporalSchedule = {
+      ...schedule,
+      appliedAdjustments: schedule.appliedAdjustments.map((record) =>
+        record.action.type === "postpone_item" &&
+        record.action.itemId === command.itemId &&
+        record.lifecycleStatus === "active"
+          ? { ...record, lifecycleStatus: "reverted" as const }
+          : record
+      ),
+    };
   } else {
     const original = activity.history.find(
       (record) => record.command.actionId === command.reversesActionId
@@ -98,6 +121,7 @@ export function applyItemActivity(
     if (
       !original ||
       original.command.type === "undo" ||
+      original.command.type === "resume" ||
       original.command.itemId !== command.itemId ||
       original.appliedVersion !== schedule.version ||
       JSON.stringify(before) !== JSON.stringify(original.after)

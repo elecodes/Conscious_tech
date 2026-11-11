@@ -475,3 +475,8 @@ Manual checks for release verification:
 ## License
 
 Private (UNLICENSED)
+
+Las tareas aplazadas o fuera de semana aparecen en una bandeja encima del calendario
+activo. Arrástralas a un día o usa «Añadir a un día» para elegir día y horas antes de
+confirmar. Las tarjetas de un solo día permiten «Ajustar horas» directamente; para
+varios días se conserva «Repartir horas».

@@ -21,6 +21,7 @@ export function ActiveTaskCalendar({
   onInspect,
   onMove,
   onDistribute,
+  onSchedule,
   busy = false,
 }: {
   plan: StoredWeeklyPlan;
@@ -29,6 +30,7 @@ export function ActiveTaskCalendar({
   onInspect: (id: string) => void;
   onMove?: (id: string, sourceDay: string, targetDay: string) => void;
   onDistribute?: (id: string, rows: DailyWorkAllocation[]) => Promise<boolean>;
+  onSchedule?: (id: string, day: string, hours: number | null) => Promise<boolean>;
   busy?: boolean;
 }) {
   const movedTask = useRef<{ id: string; source: string; target: string } | null>(null);
@@ -37,8 +39,28 @@ export function ActiveTaskCalendar({
     movedTask.current = { id, source, target };
     onMove?.(id, source, target);
   };
+  const [editing, setEditing] = useState<{ task: CalendarTask; day: string } | null>(null);
+  const [hours, setHours] = useState("");
+  const [editError, setEditError] = useState<string | null>(null);
+  const editor = useRef<HTMLDialogElement>(null);
+  const editLock = useRef(false);
+  const openEditor = (task: CalendarTask, day: string) => {
+    setEditing({ task, day });
+    setHours(task.estimatedHours == null ? "" : String(task.estimatedHours));
+    setEditError(null);
+    editor.current?.showModal();
+  };
+  const recoverable = (task: CalendarTask) =>
+    !!onSchedule &&
+    (task.kind === "outside" || task.kind === "postponed") &&
+    task.state !== "completed" &&
+    task.state !== "dropped";
   const drag = useCalendarDrag((id, source, day) => {
     if (source && day) requestMove(id, source, day);
+    else if (day) {
+      const task = model.extras.find((row) => row.itemId === id);
+      if (task && recoverable(task)) openEditor(task, day);
+    }
   });
   useEffect(() => {
     if (busy || !movedTask.current) return;
@@ -85,14 +107,17 @@ export function ActiveTaskCalendar({
         <button
           type="button"
           className={`task-calendar-entry task-calendar-${task.state}`}
-          draggable={!!entry && !busy && movable(task, entry.day)}
+          draggable={!busy && (recoverable(task) || (!!entry && movable(task, entry.day)))}
           onDragStart={(event) => {
             if (entry && !busy && movable(task, entry.day))
               drag.start(event, task.itemId, entry.day);
+            else if (!busy && recoverable(task)) drag.start(event, task.itemId, null);
             else event.preventDefault();
           }}
           onDragEnd={drag.end}
-          onClick={() => onInspect(task.itemId)}
+          onClick={() =>
+            recoverable(task) ? openEditor(task, model.days[0]!.date) : onInspect(task.itemId)
+          }
           id={`calendar-task-${task.itemId}-${slot}`}
           data-testid={`calendar-task-${task.itemId}-${slot}`}
         >
@@ -128,6 +153,30 @@ export function ActiveTaskCalendar({
             </span>
           )}
         </button>
+        {recoverable(task) && (
+          <button
+            type="button"
+            className="secondary small"
+            disabled={busy}
+            onClick={() => openEditor(task, model.days[0]!.date)}
+          >
+            Añadir a un día
+          </button>
+        )}
+        {canAdjust &&
+          onSchedule &&
+          (schedule?.dailyAllocations.filter((row) => row.itemId === task.itemId).length ?? 0) <=
+            1 &&
+          !schedule?.timeBlocks.some((row) => row.itemId === task.itemId) && (
+            <button
+              type="button"
+              className="secondary small"
+              disabled={busy}
+              onClick={() => openEditor(task, entry?.day ?? model.days[0]!.date)}
+            >
+              Ajustar horas
+            </button>
+          )}
         {canAdjust && onDistribute && (
           <TaskDaySplitEditor
             id={task.itemId}
@@ -284,6 +333,101 @@ export function ActiveTaskCalendar({
           </button>
         </nav>
       )}
+      {!!extras.filter(recoverable).length && (
+        <section
+          className="calendar-recovery-tray"
+          aria-label="Tareas para traer al calendario"
+          data-testid="calendar-recovery-tray"
+        >
+          <h4>Para traer a esta semana</h4>
+          <p className="calm-muted">
+            Arrastra una tarea a un día o pulsa «Añadir a un día». Ajusta las horas antes de
+            guardar.
+          </p>
+          <ul>{extras.filter(recoverable).map((task) => taskCard(task, "outside"))}</ul>
+        </section>
+      )}
+      <dialog
+        data-testid="calendar-task-editor"
+        ref={editor}
+        className="calendar-task-editor"
+        onCancel={() => setEditing(null)}
+      >
+        {editing && (
+          <form
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (busy || editLock.current) return;
+              editLock.current = true;
+              setEditError(null);
+              try {
+                const parsed = hours.trim() ? Number(hours) : null;
+                if (parsed !== null && (!Number.isFinite(parsed) || parsed <= 0))
+                  throw new Error("Introduce horas mayores que cero o deja el campo vacío.");
+                if (await onSchedule?.(editing.task.itemId, editing.day, parsed)) {
+                  editor.current?.close();
+                  setEditing(null);
+                } else setEditError("No se guardó la tarea. Inténtalo de nuevo.");
+              } catch (error) {
+                setEditError((error as Error).message);
+              } finally {
+                editLock.current = false;
+              }
+            }}
+          >
+            <h3>{editing.task.title}</h3>
+            <label>
+              Día
+              <select
+                aria-label="Día de la tarea"
+                value={editing.day}
+                disabled={busy}
+                onChange={(event) => setEditing({ ...editing, day: event.target.value })}
+              >
+                {model.days.map((day) => (
+                  <option key={day.date} value={day.date}>
+                    {dateLabel(day.date, { weekday: "long", day: "numeric", month: "short" })}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Horas totales
+              <input
+                aria-label="Horas de la tarea"
+                type="number"
+                min="0"
+                step="any"
+                placeholder="Sin estimar"
+                value={hours}
+                disabled={busy}
+                onChange={(event) => setHours(event.target.value)}
+              />
+            </label>
+            <p className="calm-muted">
+              Después puedes usar «Repartir horas» para dividirlas entre varios días.
+            </p>
+            {editing.task.kind === "postponed" && (
+              <p>Guardar recupera esta tarea aplazada para esta semana.</p>
+            )}
+            {editError && <p role="alert">{editError}</p>}
+            <button
+              type="button"
+              className="secondary"
+              disabled={busy}
+              onClick={() => {
+                editor.current?.close();
+                setEditing(null);
+              }}
+            >
+              Cancelar
+            </button>
+            <button type="submit" className="primary" disabled={busy}>
+              {busy ? "Guardando…" : "Guardar en el calendario"}
+            </button>
+          </form>
+        )}
+      </dialog>
       <div className="task-calendar-grid">
         {model.days.map((day) => {
           const entries = day.entries.filter((entry) => visible(entry.task));
@@ -327,10 +471,15 @@ export function ActiveTaskCalendar({
           <p className="calm-muted">No hay tareas por asignar a un día en esta vista.</p>
         )}
       </section>
-      {!!extras.length && (
+      {!!extras.filter((task) => !recoverable(task)).length && (
         <details className="task-calendar-extras" data-testid="calendar-extras">
-          <summary>Aplazados, fuera de esta semana y notas ({extras.length})</summary>
-          <ul>{extras.map((task) => taskCard(task, "outside"))}</ul>
+          <summary>
+            Aplazados, fuera de esta semana y notas (
+            {extras.filter((task) => !recoverable(task)).length})
+          </summary>
+          <ul>
+            {extras.filter((task) => !recoverable(task)).map((task) => taskCard(task, "outside"))}
+          </ul>
         </details>
       )}
       {!!model.outOfRange.length && (

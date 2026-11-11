@@ -633,3 +633,17 @@ Baseline results:
 - Validation: 1,075 tests across 84 files passed; typecheck, lint, formatting,
   dependency-cycle check and production build passed. Full browser smoke passed
   in preview and development, including split allocation and prior workflows.
+
+### User walkthrough — bring deferred work straight into the active calendar
+
+- A visible tray above the days offers drag/drop and an equivalent day action.
+  Dropping opens a focused day/hour editor; cancellation writes nothing, and saving
+  atomically includes only the chosen task with a version check.
+- Single-day cards offer direct hour editing. Unknown estimates stay unknown,
+  fixed blocks stay explicit, and shared estimates remain protected.
+- An audited resume command recovers postponed work independently of intervening
+  unrelated actions, retaining the original postponement history and other outcomes.
+- Unit and browser checks cover inclusion, cancellation, postponed recovery, capacity,
+  unknown hours, independent-task preservation, reload and mobile editor fit.
+- Validation: 1,081 tests across 85 files, typecheck, lint, formatting, cycle check
+  and production build passed. Full browser smoke passed in preview and development.

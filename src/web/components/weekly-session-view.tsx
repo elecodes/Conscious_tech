@@ -1,3 +1,4 @@
+import { scheduleCalendarTask } from "../schedule-calendar-task";
 import { distributionHours, replaceTaskDistribution } from "../task-distribution";
 import { WeekAvailabilityEditor } from "./week-availability-editor";
 import { editWeekAvailability } from "../week-availability";
@@ -149,6 +150,32 @@ export function WeeklySessionView({
       )
     );
   }, [activeSpace, plan, schedule]);
+  const scheduleFromCalendar = async (id: string, day: string, hours: number | null) => {
+    if (!plan || !schedule || activityLock.current) return false;
+    const item = planItems.find((row) => row.itemId === id);
+    if (!item) return false;
+    activityLock.current = true;
+    setActivityBusy(true);
+    try {
+      const next = scheduleCalendarTask(
+        plan,
+        schedule,
+        item,
+        day,
+        hours,
+        new Date().toISOString(),
+        crypto.randomUUID()
+      );
+      const result = await createOrSavePlan(next.plan, next.schedule, schedule.version);
+      if (result.status !== "success")
+        throw new Error("La semana ha cambiado. Recarga antes de volver a guardar.");
+      setFeedbackMessage(`«${item.title}» guardada en el calendario.`);
+      return true;
+    } finally {
+      activityLock.current = false;
+      setActivityBusy(false);
+    }
+  };
   const saveActiveSplit = async (id: string, rows: DailyWorkAllocation[]) => {
     if (!plan || !schedule || activityLock.current) return false;
     const allocations = replaceTaskDistribution(
@@ -1392,6 +1419,7 @@ export function WeeklySessionView({
           items={planItems}
           busy={activityBusy}
           onDistribute={saveActiveSplit}
+          onSchedule={scheduleFromCalendar}
           onMove={
             recordItemActivity && schedule
               ? (id, sourceDay, targetDay) => {

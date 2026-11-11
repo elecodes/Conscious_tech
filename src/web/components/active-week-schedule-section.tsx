@@ -167,6 +167,7 @@ export function ActiveWeekScheduleSection({
     const last = schedule.itemActivity?.history.at(-1);
     const undo =
       last?.command.type !== "undo" &&
+      last?.command.type !== "resume" &&
       !!last &&
       last.command.itemId === item.itemId &&
       last.appliedVersion === schedule.version
@@ -778,13 +779,15 @@ export function ActiveWeekScheduleSection({
                 {planItems.find((item) => item.itemId === record.command.itemId)?.title ??
                   "Elemento guardado"}{" "}
                 ·{" "}
-                {record.command.type === "complete"
-                  ? "Marcado como completado"
-                  : record.command.type === "move"
-                    ? "Asignación movida"
-                    : record.command.type === "postpone"
-                      ? "Elemento aplazado"
-                      : "Se deshizo la última acción"}{" "}
+                {record.command.type === "resume"
+                  ? "Reincluida en la semana"
+                  : record.command.type === "complete"
+                    ? "Marcado como completado"
+                    : record.command.type === "move"
+                      ? "Asignación movida"
+                      : record.command.type === "postpone"
+                        ? "Elemento aplazado"
+                        : "Se deshizo la última acción"}{" "}
                 · {record.command.decidedAt}
               </li>
             ))}

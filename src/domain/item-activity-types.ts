@@ -46,6 +46,7 @@ export type TemporalChange = z.infer<typeof TemporalChangeSchema>;
 
 export const ItemActivityCommandSchema = z.discriminatedUnion("type", [
   z.object({ ...actionBase, type: z.literal("complete") }).strict(),
+  z.object({ ...actionBase, type: z.literal("resume") }).strict(),
   z.object({ ...actionBase, type: z.literal("move"), action: MovementActionSchema }).strict(),
   z
     .object({ ...actionBase, type: z.literal("postpone"), action: PostponementActionSchema })
@@ -106,6 +107,8 @@ export const ItemActivitySchema = z
         record.appliedVersion <= previousVersion
       )
         ctx.addIssue({ code: "custom", message: "Invalid activity scope or version sequence" });
+      if (command.type === "resume" && after?.status !== "not_started")
+        ctx.addIssue({ code: "custom", message: "Resumption must record not_started" });
       if (command.type === "complete" && after?.status !== "completed")
         ctx.addIssue({ code: "custom", message: "Completion must record completed" });
       if (command.type === "move" || command.type === "postpone") {
@@ -140,6 +143,7 @@ export const ItemActivitySchema = z
         if (
           !original ||
           original.command.type === "undo" ||
+          original.command.type === "resume" ||
           original.command.itemId !== command.itemId ||
           original.appliedVersion !== command.expectedVersion ||
           JSON.stringify(before) !== JSON.stringify(original.after) ||

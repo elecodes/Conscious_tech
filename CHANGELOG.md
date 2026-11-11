@@ -927,3 +927,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Recognize compact lists of three or more short names separated by periods in
   demo capture, including “Typing.logica.python.patrones.big school.apps” as six
   independent items. Clarify the same intent in the AI extraction prompt.
+
+- Show deferred and postponed work in a tray above the active calendar. Drag to a
+  day or use “Añadir a un día” to edit day/hours and include the task atomically.
+  Recovering a postponement preserves its history and cancels its future suggestion.
+- Add direct hour editing for single-day active tasks; unknown estimates remain
+  unknown and can still have a chosen day. Multi-day portions keep their split editor.

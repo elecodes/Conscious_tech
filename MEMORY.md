@@ -700,3 +700,19 @@ The product succeeds when the person can say:
   detalles y balances permanecen dentro del editor.
 - Mis semanas indica Mostrar/Ocultar panel. Al contraerlo se libera la columna
   lateral y el calendario ocupa el ancho disponible; se puede expandir de nuevo.
+
+### Traer tareas al calendario activo
+
+- Las tareas fuera de semana y aplazadas se muestran en una bandeja visible encima
+  de los días. Arrastrar o Añadir a un día abre un diálogo con día y horas; cancelar
+  no escribe nada. Guardar incluye solo esa tarea y guarda agenda/propuesta juntas
+  con la versión esperada. No se inventan horas cuando el campo queda vacío.
+- Las tareas con una sola asignación tienen Ajustar horas en su propia tarjeta.
+  Los repartos y horarios fijos conservan sus controles específicos; las estimaciones
+  compartidas no se cambian desde una tarjeta individual.
+- Recuperar una tarea aplazada utiliza la acción auditada resume: registra su vuelta
+  a not_started y revierte únicamente sus aplazamientos activos. Funciona después
+  de cambios en otras tareas; no utiliza el undo de la última acción ni borra historia.
+  Resume no ofrece deshacer como si fuera un movimiento simple.
+- Sin IA ni dependencias nuevas. El balance se recalcula con el esfuerzo explícito;
+  se validan límites diarios, fechas, tareas cerradas y concurrencia antes de guardar.
