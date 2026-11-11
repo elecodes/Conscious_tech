@@ -183,9 +183,14 @@ export async function findPendingCarryOverTasks(
 
   // --- Fuente 2: Postergaciones en agendas activas persistidas ---
   const activePlans = await deps.plans.getActivePlans();
+  const resolvedActiveIds = new Set<string>();
   for (const activePlan of activePlans) {
     const activeSchedule = await deps.schedules.getByPlanId(activePlan.planId);
     if (!activeSchedule || !activeSchedule.appliedAdjustments) continue;
+    for (const outcome of activeSchedule.itemActivity?.outcomes ?? []) {
+      if (outcome.status === "completed" || outcome.status === "dropped")
+        resolvedActiveIds.add(outcome.itemId);
+    }
 
     // Index metadata from active plan
     const activePlanItemMap = new Map<
@@ -235,6 +240,10 @@ export async function findPendingCarryOverTasks(
         adj.lifecycleStatus === "active"
       ) {
         const itemId = adj.action.itemId;
+        const outcome = activeSchedule.itemActivity?.outcomes.find(
+          (outcome) => outcome.itemId === itemId
+        );
+        if (outcome?.status === "completed" || outcome?.status === "dropped") continue;
         const explicitTarget = adj.action.targetWeek;
 
         if (explicitTarget) {
@@ -266,5 +275,6 @@ export async function findPendingCarryOverTasks(
     }
   }
 
+  for (const itemId of resolvedActiveIds) resultsMap.delete(itemId);
   return Array.from(resultsMap.values());
 }

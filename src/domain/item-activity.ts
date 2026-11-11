@@ -83,6 +83,7 @@ export function applyItemActivity(
     version: schedule.version + 1,
     updatedAt: command.decidedAt,
     itemActivity: {
+      ...activity,
       outcomes: [
         ...activity.outcomes.filter((outcome) => outcome.itemId !== command.itemId),
         ...(after ? [after] : []),

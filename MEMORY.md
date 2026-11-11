@@ -487,3 +487,18 @@ The product succeeds when the person can say:
   escrituras parciales. Pruebas con IndexedDB en memoria verifican la atomicidad.
 - Sin botones ni conexión al formulario de cierre todavía. En 7b integrar cierre,
   correcciones y reapertura antes de exponer completar/deshacer.
+
+## UX incremental: completar/deshacer con cierre y reapertura (7b)
+
+- Mi semana permite completar un elemento del plan y deshacer la última acción
+  compatible tras recargar. No cambia capacidad, asignaciones ni otros miembros
+  de su foco. Ideas/preocupaciones permanecen como notas.
+- El cierre precarga resultados y permite corregirlos o dejarlos sin revisar.
+  Comprueba versión y estado dentro de la transacción plan/agenda/informe; cambios
+  posteriores requieren recargar/revisar, sin sobrescribir decisiones.
+- Reabrir conserva resultados explícitos mediante `itemActivity.reviewCheckpoint`
+  (referencia al informe, versión, antes/después), mantiene historial y elimina el
+  informe en la misma transacción. No permite deshacer una acción anterior al cierre.
+- Arrastre excluye completados/descartados activos. No resuelve silenciosamente una
+  contradicción entre postergación vigente y resultado completado.
+- Siguiente: 7c mover asignaciones con reversión; 7d postergaciones reversibles.

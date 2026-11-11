@@ -51,6 +51,21 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
     await page.getByTestId("active-week-technical-details").locator(":scope > summary").click();
     await page.getByTestId("schedule-adjustments-history").waitFor();
     await page.getByTestId("active-week-technical-details").locator(":scope > summary").click();
+    // Daily completion is individual, persists, and can be undone after a reload.
+    await page.getByTestId("active-focus-items-group-focus").locator(":scope > summary").click();
+    await page.getByTestId("complete-item-a").evaluate((button) => {
+      (button as HTMLButtonElement).click();
+      (button as HTMLButtonElement).click();
+    });
+    await page.getByTestId("item-completed-a").waitFor();
+    if (await page.getByTestId("item-completed-b").count())
+      throw new Error("Completion affected another group member");
+    await page.reload({ waitUntil: "networkidle" });
+    await page.getByTestId("active-focus-items-group-focus").locator(":scope > summary").click();
+    await page.getByTestId("undo-item-a").click();
+    await page.getByTestId("complete-item-a").waitFor();
+    await page.getByTestId("complete-item-a").click();
+    await page.getByTestId("item-completed-a").waitFor();
     const deferred = page.getByTestId("active-week-deferred");
     await deferred.locator(":scope > summary").focus();
     await page.keyboard.press("Enter");
@@ -106,6 +121,11 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
     await page.getByTestId("close-week-button").click();
     if (await page.getByTestId("confirm-early-close-button").isVisible())
       await page.getByTestId("confirm-early-close-button").click();
+    if (
+      (await page.getByTestId("item-disposition-a").getByRole("combobox").inputValue()) !==
+      "completed"
+    )
+      throw new Error("Closing lost saved completion");
     for (const item of fixture.items) {
       await page
         .getByTestId(`item-disposition-${item.itemId}`)
@@ -113,11 +133,51 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
         .selectOption("not_started");
     }
     await page.getByTestId("go-to-reflection-step-button").click();
+    // Another tab changes the version while this review is open.
+    await page.evaluate(async (scheduleId) => {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open("conscious_tech_db");
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const tx = db.transaction("schedules", "readwrite");
+          const store = tx.objectStore("schedules");
+          const request = store.get(scheduleId);
+          request.onsuccess = () =>
+            store.put({ ...request.result, version: request.result.version + 1 });
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      } finally {
+        db.close();
+      }
+    }, fixture.schedule.scheduleId);
+    await page.getByRole("button", { name: "Confirmar cierre de semana", exact: true }).click();
+    await page.getByRole("alert").filter({ hasText: "La semana cambió" }).waitFor();
+    await page.getByRole("button", { name: "Recargar y revisar de nuevo", exact: true }).click();
+    for (const item of fixture.items)
+      await page
+        .getByTestId(`item-disposition-${item.itemId}`)
+        .getByRole("combobox")
+        .selectOption("not_started");
+    await page.getByTestId("go-to-reflection-step-button").click();
     await page.getByRole("button", { name: "Confirmar cierre de semana", exact: true }).click();
     await page.getByText("Semana cerrada exitosamente.", { exact: false }).waitFor();
+    await page.getByTestId("reopen-closed-week-button").click();
+    await priorities.waitFor();
+    await page.getByTestId("active-focus-items-group-focus").locator(":scope > summary").click();
+    await page.getByTestId("complete-item-a").click();
+    await page.getByTestId("undo-item-a").click();
+    await page.getByTestId("complete-item-a").waitFor();
+    await page.reload({ waitUntil: "networkidle" });
+    await priorities.waitFor();
+    if (await page.getByTestId("item-completed-a").count())
+      throw new Error("Reopening/undo lost the reviewed correction");
     if (errors.length) throw new Error(errors.join("\n"));
     console.log(
-      "  ✓ Active week: membership, disclosures, export, adjustment, reload and complete closing verified"
+      "  ✓ Active week: membership, daily completion/undo, reload, stale closing, reopening and export verified"
     );
   } finally {
     await context.close();

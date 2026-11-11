@@ -1,6 +1,6 @@
 # UX improvement plan
 
-Status: steps 0–6 and step 7a complete; daily-action UI and closing integration are next.
+Status: steps 0–6 and steps 7a–7b complete; reversible assignment movement is next.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
@@ -417,3 +417,26 @@ Baseline results:
   and dev modes pass.
 - Next: 7b, complete the closing/reopening integration and expose individual
   completion with safe undo.
+
+### Step 7b — individual completion through the weekly lifecycle
+
+- Exposed individual completion and last-compatible-action undo with persistence,
+  duplicate-activation protection, visible errors/reload and inspectable history.
+  Notes remain notes; completing a source does not complete its whole focus.
+- Closing prefills stored results, preserves explicit corrections/unreviewed
+  choices and checks the reviewed schedule version inside the same transaction as
+  report creation and plan closure. Conflicts require a fresh review.
+- Reopening preserves reviewed outcomes in an optional, validated checkpoint before
+  removing the report. It retains action history and blocks stale undo across the
+  lifecycle boundary. The reopen control is accessible immediately after closing.
+- Carryover excludes completed/dropped active outcomes and continues to respect
+  existing report candidates, targets and item identity.
+- Added nine service regressions for corrections, stale/concurrent close,
+  concurrent reopen, postponement contradictions and transaction rollback. Extended
+  browser checks through completion, reload, undo, correction, stale closing and
+  reopening. No dependencies or store migration added.
+- Verification: 1,017 tests across 76 files, type checking, lint, formatting,
+  dependency-cycle checks, production build and browser smoke tests in preview and
+  dev modes pass.
+- Next: 7c, explicit assignment movement with safe reversal; postponement reversal
+  remains 7d.

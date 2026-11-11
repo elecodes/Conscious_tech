@@ -320,9 +320,15 @@ and send; **Copiar resumen** copies the full text. In **Ajustes**, browser stora
 and backups are separate from AI processing: Mock uses no external AI, while Groq
 and Gemini receive your notes and required context when you generate.
 
+Daily completion and last-compatible-action undo are available on individual plan
+items in Mi semana. Results survive reload, prefill closing and retain corrections
+on reopening. A stale closing requires a fresh review. The persistence,
+closing, reopening and carryover behavior, with incremental delivery gates, is
+recorded in [the daily-actions design](docs/daily-actions-design.md).
+
 ### 4. Run Test Suite
 
-Unit, behavioral, and security tests run deterministically with zero token consumption (1,008 tests across 76 suites):
+Unit, behavioral, and security tests run deterministically with zero token consumption (1,017 tests across 76 suites):
 
 ```bash
 npm test
@@ -408,10 +414,3 @@ Manual checks for release verification:
 ## License
 
 Private (UNLICENSED)
-
-### Daily actions: design checkpoint
-
-The internal persistence foundation for daily completion and undo is implemented;
-the controls and closing integration are not exposed yet. The persistence,
-closing, reopening and carryover behavior, with incremental delivery gates, is
-recorded in [the daily-actions design](docs/daily-actions-design.md).

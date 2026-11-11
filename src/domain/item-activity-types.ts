@@ -31,6 +31,15 @@ export const ItemActivitySchema = z
   .object({
     outcomes: z.array(ItemOutcomeInputSchema),
     history: z.array(ItemActivityRecordSchema),
+    reviewCheckpoint: z
+      .object({
+        reportId: z.string().min(1),
+        appliedVersion: z.number().int().positive(),
+        before: z.array(ItemOutcomeInputSchema),
+        after: z.array(ItemOutcomeInputSchema),
+      })
+      .strict()
+      .optional(),
   })
   .strict()
   .superRefine((activity, ctx) => {
@@ -38,6 +47,12 @@ export const ItemActivitySchema = z
     const actionIds = activity.history.map((record) => record.command.actionId);
     if (new Set(ids).size !== ids.length || new Set(actionIds).size !== actionIds.length)
       ctx.addIssue({ code: "custom", message: "Duplicate item or action identifiers" });
+    if (activity.reviewCheckpoint) {
+      for (const outcomes of [activity.reviewCheckpoint.before, activity.reviewCheckpoint.after]) {
+        if (new Set(outcomes.map((outcome) => outcome.itemId)).size !== outcomes.length)
+          ctx.addIssue({ code: "custom", message: "Duplicate reviewed outcomes" });
+      }
+    }
     let previousVersion = 0;
     const actions = new Map<string, ItemActivityRecord>();
     for (const record of activity.history) {
@@ -69,7 +84,13 @@ export const ItemActivitySchema = z
       actions.set(command.actionId, record);
     }
     // Each item's latest event must agree with its current stored outcome.
-    const latest = new Map(activity.history.map((record) => [record.command.itemId, record.after]));
+    const latest = new Map(
+      activity.reviewCheckpoint?.after.map((outcome) => [outcome.itemId, outcome]) ?? []
+    );
+    for (const record of activity.history) {
+      if (record.appliedVersion > (activity.reviewCheckpoint?.appliedVersion ?? 0))
+        latest.set(record.command.itemId, record.after!);
+    }
     for (const [id, after] of latest) {
       const current = activity.outcomes.find((outcome) => outcome.itemId === id) ?? null;
       if (JSON.stringify(current) !== JSON.stringify(after))

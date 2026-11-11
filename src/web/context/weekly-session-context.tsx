@@ -1,3 +1,5 @@
+import { ItemActivityCommand } from "../../domain/item-activity-types";
+import { PersistItemActivityResult } from "../../application/weekly-session-service";
 import React, {
   createContext,
   useContext,
@@ -301,11 +303,24 @@ export class WeeklySessionController {
    * Guards against concurrent close triggers and updates latestClosedPlan.
    * NEVER auto-saves memory items.
    */
+  public async recordItemActivity(
+    scheduleId: string,
+    command: ItemActivityCommand
+  ): Promise<PersistItemActivityResult> {
+    const result = await this.service.recordItemActivity(scheduleId, command);
+    if (result.status === "success" || result.status === "already_applied") {
+      this.setState((state) => ({ ...state, activeSchedule: result.schedule }));
+    }
+    return result;
+  }
+
   public async closeWeek(params: {
     planId: string;
     closedAt: string;
     itemOutcomes: ItemOutcomeInput[];
     userReflection?: UserReflectionInput;
+    expectedScheduleVersion?: number;
+    unreviewedItemIds?: string[];
   }): Promise<CloseWeekServiceResult> {
     if (this.isClosing) {
       return {
@@ -616,11 +631,17 @@ export interface WeeklySessionContextValue {
     humanDecision: HumanDecision;
     decidedAt?: string;
   }) => Promise<ApplyAdjustmentServiceResult>;
+  recordItemActivity?: (
+    scheduleId: string,
+    command: ItemActivityCommand
+  ) => Promise<PersistItemActivityResult>;
   closeWeek: (params: {
     planId: string;
     closedAt: string;
     itemOutcomes: ItemOutcomeInput[];
     userReflection?: UserReflectionInput;
+    expectedScheduleVersion?: number;
+    unreviewedItemIds?: string[];
   }) => Promise<CloseWeekServiceResult>;
   reopenWeek?: (planId: string) => Promise<ReopenWeekResult>;
   confirmMemoryCandidate: (
@@ -743,6 +764,8 @@ function WeeklySessionProviderWithService({
       createOrSavePlan: (plan, schedule, expectedVersion) =>
         controller.createOrSavePlan(plan, schedule, expectedVersion),
       applyAdjustment: (params) => controller.applyAdjustment(params),
+      recordItemActivity: (scheduleId, command) =>
+        controller.recordItemActivity(scheduleId, command),
       closeWeek: (params) => controller.closeWeek(params),
       reopenWeek: (planId) => controller.reopenWeek(planId),
       confirmMemoryCandidate: (candidate, decision) =>

@@ -180,7 +180,10 @@ export const WeeklyScheduleSchema = z
   })
   .strict()
   .superRefine((schedule, ctx) => {
-    if (schedule.itemActivity?.history.some((record) => record.appliedVersion > schedule.version))
+    if (
+      schedule.itemActivity?.history.some((record) => record.appliedVersion > schedule.version) ||
+      (schedule.itemActivity?.reviewCheckpoint?.appliedVersion ?? 0) > schedule.version
+    )
       ctx.addIssue({
         code: "custom",
         message: "Activity cannot reference a future schedule version",

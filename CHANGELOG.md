@@ -11,9 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Enabled individual daily completion and safe undo, with persistent results,
+  activity history, duplicate-activation protection and conflict/reload feedback.
+- Integrated progress with closing corrections and atomic reopening; preserved
+  reviewed outcomes and blocked stale closes without overwriting later decisions.
+- Excluded completed/dropped active outcomes from carryover candidates.
+
 - Added an internal foundation for persistent item completion and version-checked
   undo, with atomic storage, idempotent retries and optional activity history.
-  UI controls and closing integration remain a separate step.
 - Preserved activity through existing schedule writers and backup round trips;
   old schedules and backups do not acquire inferred progress.
 

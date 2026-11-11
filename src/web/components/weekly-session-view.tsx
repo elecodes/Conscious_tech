@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AIProvider } from "../../providers/ai-provider";
 import { MockProvider } from "../../providers/mock-provider";
 import { useWeeklySession } from "../context/weekly-session-context";
@@ -76,6 +76,7 @@ export function WeeklySessionView({
     createOrSavePlan,
     applyAdjustment,
     closeWeek,
+    recordItemActivity,
     reopenWeek,
     confirmMemoryCandidate,
     archiveMemory,
@@ -110,6 +111,68 @@ export function WeeklySessionView({
   const plan = state.activePlan;
   const schedule = state.activeSchedule;
   const planItems = extractPlanItems(plan, schedule);
+  const reviewPlan = useRef<string | null>(null);
+  const [reviewVersion, setReviewVersion] = useState<number | undefined>();
+  const [reviewOutcomes, setReviewOutcomes] = useState(schedule?.itemActivity?.outcomes ?? []);
+  const activityLock = useRef(false);
+  const [activityBusy, setActivityBusy] = useState(false);
+  const [activityReload, setActivityReload] = useState(false);
+  useEffect(() => {
+    if (activeSpace !== undefined && activeSpace !== "review") {
+      reviewPlan.current = null;
+      return;
+    }
+    if (!plan || reviewPlan.current === plan.planId) return;
+    reviewPlan.current = plan.planId;
+    setReviewVersion(schedule?.version);
+    const outcomes = schedule?.itemActivity?.outcomes ?? [];
+    setReviewOutcomes(outcomes);
+    setDispositions(
+      Object.fromEntries(
+        outcomes.map((outcome) => [
+          outcome.itemId,
+          { status: outcome.status, postponementReason: outcome.postponementReason ?? "" },
+        ])
+      )
+    );
+  }, [activeSpace, plan, schedule]);
+  const handleActivity = async (itemId: string, reversesActionId?: string) => {
+    if (!schedule || !recordItemActivity || activityLock.current) return;
+    activityLock.current = true;
+    setActivityBusy(true);
+    try {
+      const base = {
+        itemId,
+        actionId: crypto.randomUUID(),
+        expectedVersion: schedule.version,
+        decidedAt: new Date().toISOString(),
+      };
+      const result = await recordItemActivity(
+        schedule.scheduleId,
+        reversesActionId
+          ? { ...base, type: "undo", reversesActionId }
+          : { ...base, type: "complete" }
+      );
+      setActivityReload(result.status !== "success" && result.status !== "already_applied");
+      if (result.status === "success" || result.status === "already_applied")
+        setFeedbackMessage(
+          reversesActionId
+            ? "Se restauró el resultado anterior."
+            : "Elemento marcado como completado."
+        );
+      else
+        setFeedbackMessage(
+          "reason" in result && result.reason === "active_postponement"
+            ? "Hay una postergación vigente. Revisa esa decisión antes de completar el elemento."
+            : "No se guardó el cambio. La semana puede haber cambiado; recarga antes de intentarlo otra vez."
+        );
+    } catch {
+      setFeedbackMessage("No se pudo guardar el cambio. Puedes volver a intentarlo.");
+    } finally {
+      activityLock.current = false;
+      setActivityBusy(false);
+    }
+  };
   const effectiveItemId = selectedAdjustmentItemId || planItems[0]?.itemId || "";
   const selectedItem = planItems.find((i) => i.itemId === effectiveItemId) || planItems[0];
 
@@ -501,6 +564,9 @@ export function WeeklySessionView({
         setFeedbackMessage(
           "Semana reabierta exitosamente. Ahora puedes continuar planificando o modificando tus tareas."
         );
+        setCloseStep("dispositions");
+        setIsEarlyCloseConfirmed(false);
+        onNavigateSpace?.("active");
       } else if (res.status === "conflict_active_plan_exists") {
         setReopenFeedback(
           `No es posible reabrir esta semana porque ya existe otra semana activa (${res.existingActivePlanId}). Cierra o elimina la semana activa antes de reabrir esta.`
@@ -1216,6 +1282,16 @@ export function WeeklySessionView({
           schedule={schedule}
           plan={plan}
           planItems={planItems}
+          onActivity={recordItemActivity ? handleActivity : undefined}
+          activityBusy={activityBusy}
+          onReloadActivity={
+            activityReload
+              ? async () => {
+                  await reloadSession();
+                  setActivityReload(false);
+                }
+              : undefined
+          }
           selectedAdjustmentItemId={selectedAdjustmentItemId}
           setSelectedAdjustmentItemId={setSelectedAdjustmentItemId}
           isAdjustmentOpen={isAdjustmentOpen}
@@ -1264,9 +1340,17 @@ export function WeeklySessionView({
             handlePostponementReasonChange={handlePostponementReasonChange}
             reflectionNotes={reflectionNotes}
             setReflectionNotes={setReflectionNotes}
+            expectedScheduleVersion={reviewVersion}
+            savedOutcomes={reviewOutcomes}
+            onReloadReview={async () => {
+              reviewPlan.current = null;
+              await reloadSession();
+            }}
             closeWeek={closeWeek}
             setFeedbackMessage={setFeedbackMessage}
           />
+
+          {plan?.status === "closed" && renderLatestClosedWeekSection()}
 
           {/* Confirmed Close Report Section (shown only after persistence) */}
           {state.latestCloseReport && (

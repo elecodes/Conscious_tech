@@ -1,3 +1,4 @@
+import { ItemOutcomeInput, UserReflectionInput } from "../domain/close-week";
 import {
   WeeklyPlanRepository,
   WeeklyScheduleRepository,
@@ -103,4 +104,13 @@ export interface WeeklySessionServiceDependencies {
   closeReports: WeeklyCloseRepository;
   memories: MemoryRepository;
   getDb?: () => IDBDatabase;
+}
+
+export interface CloseWeekParams {
+  planId: string;
+  closedAt: string;
+  itemOutcomes: ItemOutcomeInput[];
+  userReflection?: UserReflectionInput;
+  expectedScheduleVersion?: number;
+  unreviewedItemIds?: string[];
 }

@@ -1,3 +1,8 @@
+import {
+  closeWeekAtomically,
+  reopenWeekAtomically,
+} from "../infrastructure/storage/indexeddb/weekly-lifecycle";
+import { CloseWeekParams } from "./weekly-session-service-types";
 import { ItemActivityCommand } from "../domain/item-activity-types";
 import {
   persistItemActivity,
@@ -14,7 +19,6 @@ import {
 import { TargetWeek } from "../domain/week";
 import { WeeklySchedule, HumanDecision, applyAdjustmentToSchedule } from "../domain/schedule";
 import { SuggestedAdjustmentAction } from "../domain/adjustment";
-import { ItemOutcomeInput, UserReflectionInput } from "../domain/close-week";
 import { executeCloseWeekDeterministic } from "../skills/close-week/deterministic";
 import { MemoryOperation, MemoryItemSchema } from "../domain/memory";
 import {
@@ -53,7 +57,7 @@ export * from "./weekly-session-carryover";
 export class WeeklySessionService {
   constructor(private readonly deps: WeeklySessionServiceDependencies) {}
 
-  /** Internal foundation only; UI and closing integration follow in step 7b. */
+  /** Record explicit daily progress through atomic, version-checked storage. */
   async recordItemActivity(
     scheduleId: string,
     command: ItemActivityCommand
@@ -489,12 +493,17 @@ export class WeeklySessionService {
    * Closes the current week deterministically and persists the report.
    * Returns memory candidates without auto-persisting them.
    */
-  async closeCurrentWeek(params: {
-    planId: string;
-    closedAt: string;
-    itemOutcomes: ItemOutcomeInput[];
-    userReflection?: UserReflectionInput;
-  }): Promise<CloseWeekServiceResult> {
+  async closeCurrentWeek(params: CloseWeekParams): Promise<CloseWeekServiceResult> {
+    if (this.deps.getDb) {
+      try {
+        return await closeWeekAtomically(this.deps.getDb(), params);
+      } catch {
+        return {
+          status: "failed",
+          reason: "No se pudo acceder al almacenamiento para cerrar la semana.",
+        };
+      }
+    }
     const plan = await this.deps.plans.getById(params.planId);
     if (!plan) {
       return { status: "not_found", reason: `Plan "${params.planId}" not found` };
@@ -531,44 +540,8 @@ export class WeeklySessionService {
       output: closeOutput,
     };
 
-    // Atomically persist close report and close plan status
-    if (this.deps.getDb) {
-      const db = this.deps.getDb();
-      const tx = db.transaction([STORES.CLOSE_REPORTS, STORES.PLANS], "readwrite");
-      try {
-        const closeStore = tx.objectStore(STORES.CLOSE_REPORTS);
-        const plansStore = tx.objectStore(STORES.PLANS);
-
-        // Put close report
-        closeStore.put(storedReport);
-
-        // Retrieve plan, update status, and put
-        const rawPlan = await wrapRequest(plansStore.get(params.planId));
-        if (rawPlan) {
-          (rawPlan as StoredWeeklyPlan).status = "closed";
-          (rawPlan as StoredWeeklyPlan).updatedAt = params.closedAt.includes("T")
-            ? params.closedAt
-            : new Date().toISOString();
-          plansStore.put(rawPlan);
-        }
-
-        await waitForTransaction(tx);
-      } catch (err) {
-        try {
-          tx.abort();
-        } catch {
-          // Ignored if already aborted
-        }
-        return {
-          status: "failed",
-          reason: (err as Error).message || "Atomic close week transaction failed",
-        };
-      }
-    } else {
-      // Fallback for mock/in-memory repositories without direct IDBDatabase access
-      await this.deps.closeReports.save(storedReport);
-      await this.deps.plans.updateStatus(params.planId, "closed");
-    }
+    await this.deps.closeReports.save(storedReport);
+    await this.deps.plans.updateStatus(params.planId, "closed");
 
     return {
       status: "success",
@@ -587,6 +560,16 @@ export class WeeklySessionService {
    * plan exists.
    */
   async reopenWeek(planId: string): Promise<ReopenWeekResult> {
+    if (this.deps.getDb) {
+      try {
+        return await reopenWeekAtomically(this.deps.getDb(), planId);
+      } catch {
+        return {
+          status: "failed",
+          reason: "No se pudo acceder al almacenamiento para reabrir la semana.",
+        };
+      }
+    }
     const plan = await this.deps.plans.getById(planId);
     if (!plan) {
       return { status: "not_found", reason: `Plan "${planId}" not found` };
@@ -615,36 +598,8 @@ export class WeeklySessionService {
       updatedAt: new Date().toISOString(),
     };
 
-    if (this.deps.getDb) {
-      const db = this.deps.getDb();
-      const tx = db.transaction([STORES.CLOSE_REPORTS, STORES.PLANS], "readwrite");
-      try {
-        const closeStore = tx.objectStore(STORES.CLOSE_REPORTS);
-        const plansStore = tx.objectStore(STORES.PLANS);
-
-        if (existingClose) {
-          closeStore.delete(existingClose.reportId);
-        }
-
-        plansStore.put(updatedPlan);
-        await waitForTransaction(tx);
-      } catch (err) {
-        try {
-          tx.abort();
-        } catch {
-          // Ignored if already aborted
-        }
-        return {
-          status: "failed",
-          reason: (err as Error).message || "Atomic reopen week transaction failed",
-        };
-      }
-    } else {
-      if (existingClose) {
-        await this.deps.closeReports.delete(existingClose.reportId);
-      }
-      await this.deps.plans.save(updatedPlan);
-    }
+    if (existingClose) await this.deps.closeReports.delete(existingClose.reportId);
+    await this.deps.plans.save(updatedPlan);
 
     return {
       status: "success",
@@ -898,3 +853,5 @@ export class WeeklySessionService {
     );
   }
 }
+
+export type { PersistItemActivityResult } from "../infrastructure/storage/indexeddb/item-activity";

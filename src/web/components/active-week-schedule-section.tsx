@@ -11,6 +11,9 @@ import { CalendarReminderSettings } from "./calendar-reminder-settings";
 import { EmailSummaryCard } from "./email-summary-card";
 
 export interface ActiveWeekScheduleSectionProps {
+  onActivity?: (itemId: string, reversesActionId?: string) => Promise<void>;
+  activityBusy?: boolean;
+  onReloadActivity?: () => Promise<void>;
   schedule: WeeklySchedule;
   plan: StoredWeeklyPlan | null;
   planItems: PlanItemSummary[];
@@ -39,6 +42,9 @@ export interface ActiveWeekScheduleSectionProps {
 
 export function ActiveWeekScheduleSection({
   schedule,
+  onActivity,
+  activityBusy,
+  onReloadActivity,
   plan,
   planItems,
   selectedAdjustmentItemId,
@@ -113,6 +119,34 @@ export function ActiveWeekScheduleSection({
     const isObligation =
       item.source === "Obligación" || item.source?.toLowerCase().includes("obligaci");
 
+    const original = plan?.draftContext?.extractedItems?.find(
+      (source) => source.id === item.itemId
+    );
+    const isThought = original?.type === "idea" || original?.type === "concern";
+    const inProposal =
+      !!plan &&
+      (plan.proposal.foci.some((focus) => focus.contributingItemIds.includes(item.itemId)) ||
+        plan.proposal.obligations.some((entry) => entry.itemId === item.itemId) ||
+        plan.proposal.flexibleOptions.some((entry) => entry.itemId === item.itemId) ||
+        plan.proposal.deferredItems.some((entry) => entry.itemId === item.itemId));
+    const outcome = schedule.itemActivity?.outcomes.find(
+      (outcome) => outcome.itemId === item.itemId
+    );
+    const last = schedule.itemActivity?.history.at(-1);
+    const undo =
+      last?.command.type === "complete" &&
+      last.command.itemId === item.itemId &&
+      last.appliedVersion === schedule.version
+        ? last.command.actionId
+        : undefined;
+    const postponed = schedule.appliedAdjustments.some(
+      (record) =>
+        record.action.type === "postpone_item" &&
+        record.action.itemId === item.itemId &&
+        record.humanDecision === "accepted" &&
+        record.applicationOutcome === "applied" &&
+        record.lifecycleStatus === "active"
+    );
     return (
       <div
         key={item.itemId}
@@ -147,6 +181,42 @@ export function ActiveWeekScheduleSection({
           )}
         </div>
 
+        {outcome?.status === "completed" && (
+          <span className="badge" data-testid={`item-completed-${item.itemId}`}>
+            Completado
+          </span>
+        )}
+        {onActivity && plan?.status === "active" && (
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {outcome?.status !== "completed" && !postponed && !isThought && inProposal && (
+              <button
+                type="button"
+                className="secondary small"
+                disabled={activityBusy}
+                data-testid={`complete-item-${item.itemId}`}
+                onClick={() => void onActivity(item.itemId)}
+              >
+                Marcar como completado
+              </button>
+            )}
+            {undo && (
+              <button
+                type="button"
+                className="secondary small"
+                disabled={activityBusy}
+                data-testid={`undo-item-${item.itemId}`}
+                onClick={() => void onActivity(item.itemId, undo)}
+              >
+                Deshacer
+              </button>
+            )}
+            {postponed && (
+              <span className="calm-muted">
+                Postergación vigente · revisa esa decisión antes de completar.
+              </span>
+            )}
+          </div>
+        )}
         <details
           className="calm-details item-more-actions"
           data-testid={`task-more-actions-${item.itemId}`}
@@ -265,6 +335,14 @@ export function ActiveWeekScheduleSection({
         </div>
       </div>
 
+      {onReloadActivity && (
+        <p role="alert">
+          El cambio no se ha guardado.{" "}
+          <button type="button" className="secondary small" onClick={() => void onReloadActivity()}>
+            Recargar semana
+          </button>
+        </p>
+      )}
       {exportNotice && (
         <div
           className="status-message status-success"
@@ -549,6 +627,31 @@ export function ActiveWeekScheduleSection({
         </details>
       )}
 
+      {!!schedule.itemActivity?.history.length && (
+        <details className="calm-details" data-testid="daily-activity-history">
+          <summary>Actividad registrada ({schedule.itemActivity.history.length})</summary>
+          <ul>
+            {schedule.itemActivity.history.map((record) => (
+              <li key={record.command.actionId}>
+                {planItems.find((item) => item.itemId === record.command.itemId)?.title ??
+                  "Elemento guardado"}{" "}
+                ·{" "}
+                {record.command.type === "complete"
+                  ? "Marcado como completado"
+                  : "Se restauró el resultado anterior"}{" "}
+                · {record.command.decidedAt}
+              </li>
+            ))}
+          </ul>
+          {schedule.itemActivity.reviewCheckpoint && (
+            <p>Resultados actualizados al reabrir el último cierre.</p>
+          )}
+          <p className="calm-muted">
+            Deshacer está disponible en el elemento de la última acción si la semana no ha cambiado
+            después.
+          </p>
+        </details>
+      )}
       <ActiveWeekAdjustmentPanel
         schedule={schedule}
         plan={plan}

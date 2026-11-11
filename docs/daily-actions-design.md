@@ -1,7 +1,7 @@
 # Acciones diarias: contrato previo a la implementación
 
-Estado: contrato de persistencia 7a implementado; interfaz e integración con cierre
-pendientes en 7b. No hay botones nuevos.
+Estado: 7a y 7b implementados. Completar/deshacer, cierre y reapertura integrados;
+mover y aplazar con reversión quedan pendientes en 7c–7d.
 Rama de trabajo: `codex/ux-step-by-step`. Continúa el paso 7 del plan UX.
 
 ## Resultado esperado
@@ -167,9 +167,8 @@ Antes de habilitar cada control, cubrir:
 4. **7d: aplazar.** Captura reversible, presentación de vigencia y candidatos de
    arrastre. Resolver el caso de postergación seguida de finalización.
 
-Cada entrega requiere su propio commit verificado. La investigación del paso 7 y el contrato 7a están completos. La aceptación
-funcional de las acciones diarias sigue pendiente de 7b–7d. El próximo incremento
-es 7b; deberá integrar cierre y reapertura antes de habilitar el control.
+Cada entrega requiere su propio commit verificado. La investigación del paso 7 y el contrato 7a están completos. La aceptación de completar/deshacer corresponde a 7b; mover y aplazar siguen
+pendientes de 7c–7d. El próximo incremento es 7c.
 
 ## Evidencia de 7a
 
@@ -188,7 +187,38 @@ es 7b; deberá integrar cierre y reapertura antes de habilitar el control.
 - 21 pruebas nuevas cubren el dominio, recarga con otra conexión, competencia entre
   conexiones, cierre concurrente, aborto transaccional, reintentos, compatibilidad
   de copias y conservación durante ajustes existentes.
-- Todavía no se consume el progreso en el formulario de cierre ni se recuperan sus
-  correcciones al reabrir. Ningún control público invoca la operación antes de esa
-  integración. El historial inicial admite completar/deshacer; 7b deberá extenderlo
-  explícitamente si necesita registrar correcciones del cierre.
+- En el checkpoint 7a todavía no se consumía el progreso en el cierre ni se
+  recuperaban sus correcciones al reabrir. Esa integración y los controles se
+  incorporaron posteriormente en 7b, conservando el historial inicial.
+
+## Evidencia de 7b
+
+- Mi semana ofrece completar elementos individuales del plan, sin completar su
+  foco entero, cambiar capacidad o retirar asignaciones. Ideas y preocupaciones
+  conservan su tratamiento como notas; los elementos solo presentes en agenda no
+  reciben un control cuyo resultado el cierre no pueda clasificar.
+- El resultado aparece después de persistir. Un bloqueo inmediato evita activación
+  repetida; fallos y conflictos ofrecen recargar. Deshacer sigue disponible después
+  de recargar si la versión es compatible. El historial permanece consultable.
+- El cierre precarga resultados guardados sin sobrescribir ediciones durante la
+  revisión. Las correcciones y «sin revisar» prevalecen explícitamente sobre esos
+  valores iniciales. Se conservan horas reales y notas existentes.
+- Plan, agenda e informe comparten la transacción de cierre. Una versión revisada
+  desactualizada impide guardar y ofrece recargar/revisar. Dos cierres concurrentes
+  devuelven un único informe. Una postergación contradictoria exige aclaración.
+- La reapertura comprueba estado y unicidad dentro de la transacción y copia los
+  resultados explícitos del informe antes de retirarlo. `reviewCheckpoint` conserva
+  los resultados anteriores/posteriores y la referencia al informe, sin borrar el
+  historial de acciones. Su versión impide deshacer una acción anterior al cierre.
+- El arrastre excluye completados/descartados activos, además de seguir el informe
+  cerrado y las decisiones vigentes. No cambia decisiones de otros borradores.
+- Pruebas de servicio cubren correcciones, no revisados, candidatos, cierre y
+  reapertura concurrentes, y rollback de informes y resultados. El navegador cubre
+  doble activación, miembros de foco, recarga/deshacer, cierre desactualizado,
+  corrección, reapertura y nueva reversión.
+- Limitación deliberada: no hay reversión arbitraria de acciones antiguas ni de
+  postergaciones; se mantiene la regla conservadora de última versión compatible.
+
+- Para semanas antiguas cerradas sin agenda, reabrir crea únicamente una agenda
+  vacía que conserva los resultados; no inventa bloques ni horas. Si el informe
+  referencia una agenda ausente, la operación se rechaza sin eliminar evidencia.

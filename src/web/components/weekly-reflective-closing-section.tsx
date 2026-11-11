@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { StoredWeeklyPlan } from "../../domain/repositories/types";
 import { ItemOutcomeInput } from "../../domain/close-week";
 import { EmailSummaryCard } from "./email-summary-card";
@@ -20,6 +21,9 @@ export interface PlanItemSummary {
 }
 
 export interface WeeklyReflectiveClosingSectionProps {
+  expectedScheduleVersion?: number;
+  savedOutcomes?: ItemOutcomeInput[];
+  onReloadReview?: () => Promise<void>;
   plan: StoredWeeklyPlan | null;
   isEarlyCloseConfirmed: boolean;
   setIsEarlyCloseConfirmed: (val: boolean) => void;
@@ -36,13 +40,18 @@ export interface WeeklyReflectiveClosingSectionProps {
     planId: string;
     closedAt: string;
     itemOutcomes: ItemOutcomeInput[];
+    expectedScheduleVersion?: number;
+    unreviewedItemIds?: string[];
     userReflection?: { generalNotes: string };
-  }) => Promise<{ status: string }>;
+  }) => Promise<{ status: string; reason?: string }>;
   setFeedbackMessage: (msg: string | null) => void;
 }
 
 export function WeeklyReflectiveClosingSection({
   plan,
+  expectedScheduleVersion,
+  savedOutcomes = [],
+  onReloadReview,
   isEarlyCloseConfirmed,
   setIsEarlyCloseConfirmed,
   onNavigateSpace,
@@ -57,6 +66,10 @@ export function WeeklyReflectiveClosingSection({
   closeWeek,
   setFeedbackMessage,
 }: WeeklyReflectiveClosingSectionProps) {
+  const closingLock = useRef(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [closeError, setCloseError] = useState<string | null>(null);
+
   const todayStr = new Date().toISOString().split("T")[0]!;
   const isEarly = Boolean(plan && plan.targetWeek.endDate > todayStr);
 
@@ -337,6 +350,24 @@ export function WeeklyReflectiveClosingSection({
           />
         </div>
 
+        {closeError && (
+          <div role="alert">
+            <p>{closeError}</p>
+            {onReloadReview && (
+              <button
+                type="button"
+                className="secondary"
+                onClick={async () => {
+                  await onReloadReview();
+                  setCloseError(null);
+                  setCloseStep("dispositions");
+                }}
+              >
+                Recargar y revisar de nuevo
+              </button>
+            )}
+          </div>
+        )}
         <div className="actions" style={{ marginTop: "16px", display: "flex", gap: "10px" }}>
           <button
             type="button"
@@ -350,35 +381,54 @@ export function WeeklyReflectiveClosingSection({
             type="button"
             className="primary"
             aria-label="Confirmar cierre de semana"
+            disabled={isSaving}
             onClick={async () => {
-              if (!plan) return;
-              const closedAtTimestamp = new Date().toISOString();
-              const outcomes: ItemOutcomeInput[] = Object.entries(dispositions)
-                .filter(([_, disp]) => disp.status !== "unreviewed")
-                .map(([itemId, disp]) => ({
-                  itemId,
-                  status: disp.status as ItemOutcomeInput["status"],
-                  ...(disp.status === "consciously_postponed" && disp.postponementReason.trim()
-                    ? { postponementReason: disp.postponementReason.trim() }
-                    : {}),
-                }));
+              if (!plan || closingLock.current) return;
+              closingLock.current = true;
+              setIsSaving(true);
+              setCloseError(null);
+              try {
+                const closedAtTimestamp = new Date().toISOString();
+                const outcomes: ItemOutcomeInput[] = Object.entries(dispositions)
+                  .filter(([_, disp]) => disp.status !== "unreviewed")
+                  .map(([itemId, disp]) => ({
+                    ...savedOutcomes.find((outcome) => outcome.itemId === itemId),
+                    itemId,
+                    postponementReason: undefined,
+                    status: disp.status as ItemOutcomeInput["status"],
+                    ...(disp.status === "consciously_postponed" && disp.postponementReason.trim()
+                      ? { postponementReason: disp.postponementReason.trim() }
+                      : {}),
+                  }));
 
-              const res = await closeWeek({
-                planId: plan.planId,
-                closedAt: closedAtTimestamp,
-                itemOutcomes: outcomes,
-                userReflection: reflectionNotes.trim()
-                  ? { generalNotes: reflectionNotes.trim() }
-                  : undefined,
-              });
+                const res = await closeWeek({
+                  planId: plan.planId,
+                  closedAt: closedAtTimestamp,
+                  itemOutcomes: outcomes,
+                  expectedScheduleVersion,
+                  unreviewedItemIds: Object.entries(dispositions)
+                    .filter(([, disposition]) => disposition.status === "unreviewed")
+                    .map(([id]) => id),
+                  userReflection: reflectionNotes.trim()
+                    ? { generalNotes: reflectionNotes.trim() }
+                    : undefined,
+                });
 
-              if (res.status === "success") {
-                setFeedbackMessage(
-                  "Semana cerrada exitosamente. Revisa el informe y los candidatos de memoria."
-                );
-                if (onNavigateSpace) {
-                  onNavigateSpace("review");
+                if (res.status === "success") {
+                  setFeedbackMessage(
+                    "Semana cerrada exitosamente. Revisa el informe y los candidatos de memoria."
+                  );
+                  if (onNavigateSpace) {
+                    onNavigateSpace("review");
+                  }
+                } else {
+                  setCloseError(res.reason ?? "No se pudo cerrar la semana.");
                 }
+              } catch {
+                setCloseError("No se pudo guardar el cierre. Puedes volver a intentarlo.");
+              } finally {
+                closingLock.current = false;
+                setIsSaving(false);
               }
             }}
           >
