@@ -134,6 +134,21 @@ export async function verifyTaskSplit(browser: Browser, url: string, output?: st
         .reduce((sum, row) => sum + row.allocatedHours, 0) !== 5
     )
       throw new Error("Activation did not keep all portions");
+    const splitSummary = page
+      .getByTestId("task-split-active-g-2026-12-07")
+      .locator(":scope > summary");
+    if ((await splitSummary.innerText()).trim() !== "Repartir horas")
+      throw new Error("Calendar card repeats the distribution total");
+    const main = page.locator(".weeks-main");
+    const beforeCollapse = (await main.boundingBox())!.width;
+    const sidebarToggle = page.getByTestId("weeks-sidebar").locator(":scope > details > summary");
+    await sidebarToggle.click();
+    const afterCollapse = (await main.boundingBox())!.width;
+    if (afterCollapse <= beforeCollapse + 200)
+      throw new Error("Collapsing weeks does not release calendar width");
+    await sidebarToggle.click();
+    if (Math.abs((await main.boundingBox())!.width - beforeCollapse) > 1)
+      throw new Error("Expanding weeks does not restore the sidebar layout");
     await page.getByTestId("task-split-active-g-2026-12-07").locator(":scope > summary").click();
     await page.getByTestId("split-hours-active-g-2026-12-07-2026-12-07").fill("1");
     await page.getByTestId("split-hours-active-g-2026-12-07-2026-12-08").fill("1");
@@ -183,9 +198,9 @@ export async function verifyTaskSplit(browser: Browser, url: string, output?: st
     await page.getByTestId("save-task-adjustment-button").click();
     await page
       .getByTestId("task-split-active-g-2026-12-07")
-      .locator(":scope > summary")
-      .filter({ hasText: "5 / 6 h" })
-      .waitFor();
+      .locator("p")
+      .filter({ hasText: "6 h para repartir" })
+      .waitFor({ state: "attached" });
     const extended = (await readStored(page)).schedules.find(
       (row) => row.planId === active.planId
     )!;
@@ -197,9 +212,9 @@ export async function verifyTaskSplit(browser: Browser, url: string, output?: st
     await page.getByTestId("save-task-adjustment-button").click();
     await page
       .getByTestId("task-split-active-g-2026-12-07")
-      .locator(":scope > summary")
-      .filter({ hasText: "5 / 5 h" })
-      .waitFor();
+      .locator("p")
+      .filter({ hasText: "5 h para repartir" })
+      .waitFor({ state: "attached" });
     await page.getByTestId("reminders-and-alerts-details").locator(":scope > summary").click();
     const downloadPromise = page.waitForEvent("download");
     await page.getByTestId("add-week-to-gcal-button").click();

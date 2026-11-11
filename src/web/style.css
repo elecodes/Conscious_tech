@@ -1471,6 +1471,24 @@ details.calm-details[open] {
   font-weight: 600;
   cursor: pointer;
 }
+.weeks-sidebar-toggle {
+  display: block;
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.75rem;
+}
+.weeks-workspace:has(.weeks-sidebar > details:not([open])) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.weeks-workspace:has(.weeks-sidebar > details:not([open])) .weeks-sidebar {
+  grid-column: 1;
+  grid-row: 1;
+  position: static;
+  justify-self: end;
+}
+.weeks-workspace:has(.weeks-sidebar > details:not([open])) .weeks-main {
+  grid-row: 2;
+}
 .weeks-sidebar > details[open] {
   max-height: calc(100vh - 56px);
   overflow-y: auto;

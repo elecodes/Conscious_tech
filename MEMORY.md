@@ -693,3 +693,10 @@ The product succeeds when the person can say:
   guardar correctamente. Cerrar sin guardar mantiene el calendario anterior.
 - Comprobado en navegador: exceso de horas, corrección por igual, ancho del editor,
   reparto por día, persistencia y movimiento de porciones, sin alterar otras tareas.
+
+### Calendario más despejado
+
+- El control cerrado Repartir horas ya no repite el total en cada tarjeta; los
+  detalles y balances permanecen dentro del editor.
+- Mis semanas indica Mostrar/Ocultar panel. Al contraerlo se libera la columna
+  lateral y el calendario ocupa el ancho disponible; se puede expandir de nuevo.

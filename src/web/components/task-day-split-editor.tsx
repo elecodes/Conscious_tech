@@ -65,15 +65,7 @@ export function TaskDaySplitEditor({
         }
       }}
     >
-      <summary>
-        Repartir horas
-        {totalHours != null && (
-          <small>
-            {" "}
-            · {distributionHours(rows)} / {totalHours} h
-          </small>
-        )}
-      </summary>
+      <summary>Repartir horas</summary>
       <button
         type="button"
         className="secondary small task-split-close"

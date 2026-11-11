@@ -914,3 +914,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clarify task hour distribution: open a readable floating editor, explain existing
   assignments and explicit saving, and offer equal distribution across chosen days
   to correct totals without retaining the original day's full allocation.
+
+- Remove repeated allocation totals from calendar card controls. Collapsing Mis
+  semanas now releases the sidebar column so the calendar uses the full width.
