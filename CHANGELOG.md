@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Expose every stored closed week through “Mis semanas → Semanas anteriores”,
+  with read-only plan/task/outcome inspection independent of the active week.
+  Validate archive references and report incomplete weeks without deleting them.
+- Explain browser/profile/origin-local persistence and display the current notebook
+  address in settings. Confirm before backup restore replaces that address's data.
+- Verify actual browser close/relaunch with a persistent profile, past-dated active
+  week recovery, closed history, backup coverage and isolation between ports.
+
 - Open the active calendar with all tasks, retaining completed work in its day
   with a green check and struck-through title. Pending-only filtering is optional.
 - Complete tasks directly on calendar cards or in a local task inspector, without

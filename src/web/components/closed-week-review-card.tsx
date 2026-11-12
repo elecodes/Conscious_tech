@@ -2,6 +2,8 @@ import { ClosedWeekSummary } from "../../domain/repositories/types";
 
 export interface ClosedWeekReviewCardProps {
   latestClosedWeek: ClosedWeekSummary;
+  heading?: string;
+  allowReopen?: boolean;
   isClosedWeekDetailsOpen: boolean;
   setIsClosedWeekDetailsOpen: (val: boolean) => void;
   isReopening: boolean;
@@ -11,6 +13,8 @@ export interface ClosedWeekReviewCardProps {
 
 export function ClosedWeekReviewCard({
   latestClosedWeek,
+  heading = "Última semana cerrada",
+  allowReopen = true,
   isClosedWeekDetailsOpen,
   setIsClosedWeekDetailsOpen,
   isReopening,
@@ -25,7 +29,9 @@ export function ClosedWeekReviewCard({
         background: "var(--card-bg, #fbfbfb)",
         borderColor: "var(--border-color, #e0e0e0)",
       }}
-      aria-label="Historial del último cierre semanal"
+      aria-label={
+        allowReopen ? "Historial del último cierre semanal" : "Consulta de semana cerrada"
+      }
       data-testid="latest-closed-week-card"
     >
       <div
@@ -37,7 +43,7 @@ export function ClosedWeekReviewCard({
           gap: "8px",
         }}
       >
-        <h3>Última semana cerrada</h3>
+        <h3>{heading}</h3>
         <span className="badge badge-muted">
           {latestClosedWeek.plan.targetWeek.startDate} al {latestClosedWeek.plan.targetWeek.endDate}
         </span>
@@ -91,20 +97,22 @@ export function ClosedWeekReviewCard({
           {isClosedWeekDetailsOpen ? "Ocultar detalle de la semana" : "Ver detalle de la semana"}
         </button>
 
-        <button
-          type="button"
-          className="btn-secondary"
-          data-testid="reopen-closed-week-button"
-          disabled={isReopening}
-          onClick={() => handleReopenWeek(latestClosedWeek.plan.planId)}
-          style={{
-            fontSize: "0.88rem",
-            padding: "6px 12px",
-            cursor: isReopening ? "not-allowed" : "pointer",
-          }}
-        >
-          {isReopening ? "Reabriendo semana..." : "Reabrir semana para modificar"}
-        </button>
+        {allowReopen && (
+          <button
+            type="button"
+            className="btn-secondary"
+            data-testid="reopen-closed-week-button"
+            disabled={isReopening}
+            onClick={() => handleReopenWeek(latestClosedWeek.plan.planId)}
+            style={{
+              fontSize: "0.88rem",
+              padding: "6px 12px",
+              cursor: isReopening ? "not-allowed" : "pointer",
+            }}
+          >
+            {isReopening ? "Reabriendo semana..." : "Reabrir semana para modificar"}
+          </button>
+        )}
       </div>
 
       {reopenFeedback && (

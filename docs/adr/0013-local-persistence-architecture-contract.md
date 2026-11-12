@@ -353,3 +353,19 @@ El diseño separa estrictamente los contratos de dominio de la implementación t
 - Queda establecido el contrato normativo para la persistencia local de Conscious Tech.
 - Se resuelve la discrepancia de identidad entre `ProposedWeek` y `WeeklySchedule` mediante el patrón envolvente `StoredWeeklyPlan`.
 - Se preserva el 100 % de la privacidad y el principio rector: **la IA propone; la persona decide**.
+
+## Alcance del almacenamiento local — revisión del 12 de noviembre de 2026
+
+IndexedDB queda asociado al origen del navegador (protocolo, host y puerto) y al
+perfil. localhost:5180 y localhost:5181 son cuadernos separados; cambiar de puerto
+no migra ni elimina el anterior. Actualizar la interfaz no realiza un borrado del
+cuaderno. La semana activa se recupera al abrir de nuevo el mismo origen y perfil;
+el vencimiento de fechas no implica borrado o cierre automático.
+
+El historial completo conserva plan, agenda y cierre, y su consulta es de lectura.
+Ajustes muestra el origen y explica que no existe sincronización en la nube. Las
+copias incluyen activa, borradores, semanas cerradas y recuerdos. La restauración
+actual es replace: la interfaz requiere confirmación antes de invocarla y permite
+cancelar sin modificar datos. Para conservar dos cuadernos de distintos puertos,
+exportar ambos antes de restaurar. Navegación privada, borrado de datos del sitio
+o pérdida del perfil quedan fuera de la garantía del guardado local normal.

@@ -67,3 +67,18 @@ Para evitar errores de tipo `TypeError: this.service.reopenWeek is not a functio
 ### Negativas / Mitigaciones
 
 - Reabrir una semana elimina el informe de cierre preliminar. Esto es deliberado: evita informes huérfanos desfasados respecto al nuevo estado activo del plan. Cuando el usuario concluya su semana, generará un nuevo informe fiel a la realidad.
+
+## Extensión: historial completo — 12 de noviembre de 2026
+
+La persistencia ya conservaba todas las semanas cerradas, pero la interfaz hacía
+accesible principalmente la última. Mis semanas → Semanas anteriores lista ahora
+los planes con estado closed por fecha de semana y cruza su cierre y agenda.
+Reutiliza la inspección detallada existente con reapertura desactivada en el
+historial. Consultar una semana no altera la activa ni reabre, elimina o escribe datos.
+La reapertura explícita de la última semana conserva su flujo y restricciones previos.
+
+El servicio lee los registros cuando se abre el historial. Las referencias o informes
+incompletos se indican por fechas y no impiden consultar las demás semanas válidas.
+No cambia el esquema de IndexedDB ni el formato de las copias. Se verifica que
+consultar no modifica los registros y que todos sobreviven a un reinicio completo
+del navegador con el mismo perfil, incluida una semana activa con fecha ya pasada.

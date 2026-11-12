@@ -1,3 +1,4 @@
+import { WeekHistory } from "./components/week-history";
 import { WeeksSidebar } from "./components/weeks-sidebar";
 import type { TargetWeek } from "../domain/week";
 import { useState } from "react";
@@ -134,6 +135,7 @@ export function resolveLandingTab(
 
 function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | NavigationSpace }) {
   const { state, exportBackup, importBackup } = useWeeklySession();
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [userSelectedTab, setUserSelectedTab] = useState<NavigationSpace | null>(null);
 
   const resolveExplicitSpace = (tab: "dump" | "weekly" | NavigationSpace): NavigationSpace => {
@@ -252,6 +254,12 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
     try {
       setBackupStatus(null);
       const content = await file.text();
+      if (
+        !window.confirm(
+          "Restaurar esta copia reemplazará el cuaderno guardado en esta dirección. Descarga antes una copia del cuaderno actual si quieres conservarlo. ¿Continuar?"
+        )
+      )
+        return;
       const res = await importBackup(content);
       setBackupStatus({
         type: "success",
@@ -377,9 +385,28 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
                   className="calm-muted"
                   style={{ margin: "0 0 10px 0", fontSize: "0.8rem", lineHeight: 1.4 }}
                 >
-                  La app guarda tus planes, agendas, cierres y recuerdos en este navegador. Puedes
-                  descargar una copia de seguridad o restaurarla en cualquier momento.
+                  Tu semana activa y las semanas cerradas se guardan al volver a abrir este
+                  navegador. El cuaderno es local: otra dirección o puerto (por ejemplo, 5180 y
+                  5181), otro navegador o perfil tienen datos separados. No hay sincronización en la
+                  nube. Descargar una copia incluye planes, agendas, cierres y recuerdos.
+                  Restaurarla reemplaza el cuaderno de esta dirección.
                 </p>
+                <p
+                  className="calm-muted"
+                  data-testid="storage-origin"
+                  style={{ fontSize: "0.75rem", overflowWrap: "anywhere" }}
+                >
+                  Dirección de este cuaderno:{" "}
+                  {typeof window !== "undefined" ? window.location.origin : "esta dirección"}
+                </p>
+                <button
+                  type="button"
+                  className="secondary small"
+                  data-testid="settings-open-week-history"
+                  onClick={() => setHistoryOpen(true)}
+                >
+                  Consultar semanas anteriores
+                </button>
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                   <button
                     type="button"
@@ -703,12 +730,14 @@ function AppContent({ initialTab }: { initialTab?: "dump" | "weekly" | Navigatio
         )}
       </header>
 
+      <WeekHistory open={historyOpen} onClose={() => setHistoryOpen(false)} />
       <div className="weeks-workspace">
         <WeeksSidebar
           active={state.activePlan}
           schedule={state.activeSchedule}
           drafts={state.draftPlans ?? []}
           previous={state.latestClosedWeek}
+          onHistory={state.latestClosedWeek ? () => setHistoryOpen(true) : undefined}
           disabled={!!requestedWeek}
           onOpen={(week, active) => (active ? setActiveSpace("active") : openPlanningWeek(week))}
         />

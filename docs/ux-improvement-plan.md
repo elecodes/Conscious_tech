@@ -758,3 +758,24 @@ Validation: 1,088 tests across 87 files passed. Types, lint, formatting, cycles 
 production build passed. Full preview/development browser smoke covers local
 inspection, visible completion, reload, latest-action undo, split-task completion,
 explicit pending filtering and mobile layout.
+
+### Persistence review and full closed-week history — 12 November 2026
+
+- Existing IndexedDB recovery retains the active plan, schedule, outcomes and drafts
+  across browser sessions; dates expiring do not delete or automatically close a week.
+- All closed plans, schedules and reports were retained, but the UI mainly exposed
+  the latest. Mis semanas now opens Semanas anteriores: all valid closed weeks,
+  detailed source plan and final outcomes, without reactivation or active-week changes.
+- Validate stored links and report incomplete history separately without mutating it.
+  Reuse ClosedWeekReviewCard with archive reopening disabled. Queries run on demand.
+- Settings show the notebook origin and explain browser/profile/port isolation.
+  Restore remains replace and requires confirmation; cancellation preserves data.
+- Browser coverage uses a real persistent profile, closes/relaunches the browser,
+  recovers a past-dated active week, reads two closed weeks, checks unchanged records,
+  exported backup contents, cancelled restore, a second port and mobile history fit.
+
+Validation: 1,092 tests across 88 files passed, with types, lint, formatting, cycles
+and production build. Full browser smoke passed in preview and development. The
+new persistence check actually closes/relaunches Chromium with the same profile,
+verifies two closed weeks plus the active past-dated week, and confirms read-only
+history, complete backup export, cancelled restore, port isolation and mobile fit.

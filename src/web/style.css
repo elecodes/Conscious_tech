@@ -1737,3 +1737,44 @@ details.calm-details[open] {
 .calendar-tone-completed .task-calendar-entry-title {
   text-decoration: line-through;
 }
+.week-history-dialog {
+  width: min(54rem, calc(100vw - 2rem));
+}
+.week-history-list {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+}
+.week-history-list > li {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.week-history-list small {
+  color: var(--text-muted);
+}
+.sidebar-history {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+.sidebar-history button {
+  white-space: normal;
+  width: 100%;
+}
+.week-history-dialog > header {
+  position: sticky;
+  top: -24px;
+  z-index: 1;
+  padding: 8px 0;
+  background: var(--surface-color);
+}
+.week-history-dialog .btn-secondary {
+  color: var(--accent-sage);
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}

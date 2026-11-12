@@ -820,3 +820,28 @@ The product succeeds when the person can say:
   Deshacer completado solo cuando lo permite la última acción/versionado vigente.
 - La prueba de navegador verifica panel/directo, recarga, deshacer, doble clic,
   filtros explícitos, todas las partes de un reparto y presentación en móvil.
+
+### Revisión de persistencia e historial — 12 de noviembre de 2026
+
+- La persona pregunta dónde quedan semanas terminadas y si la activa vuelve al abrir
+  el navegador. Se confirma IndexedDB: activa, agenda, estados y borradores se recuperan
+  en el mismo origen/perfil; pasar la fecha no cierra ni borra automáticamente.
+- Todas las cerradas ya estaban persistidas, pero solo la última tenía acceso claro.
+  Se añade Mis semanas → Semanas anteriores, lista completa ordenada por semana y
+  consulta detallada de plan, tareas y cierre. No se reactiva ni modifica la activa.
+  Historial de solo lectura; la reapertura previa sigue independiente y explícita.
+- Las referencias incompletas se muestran por fecha sin eliminar registros ni bloquear
+  las semanas válidas. Se reutiliza la validación de cierre/agenda sin cambiar esquemas.
+- Hallazgo clave para el Mac: 5180 y 5181 son orígenes/cuadernos distintos. No prometer
+  sincronización entre puertos, perfiles, navegadores o dispositivos. Se pidió la URL
+  actual para mantenerla. Ajustes muestra origen y explica almacenamiento local.
+- Restaurar copias usa replace; se añade confirmación real antes de importar. Cancelar
+  no cambia datos. Recomendar exportar ambos cuadernos antes de trasladar/restaurar.
+- Prueba Chromium con perfil persistente: cerrar navegador completo y abrirlo de nuevo
+  recupera activa con fechas pasadas y dos cerradas; consulta no muta registros;
+  exportación incluye el historial, cancelar importación conserva datos y otro puerto
+  no ve el IndexedDB original. No es una prueba de sincronización en la nube.
+
+- URL confirmada por la persona: **http://localhost:5181**. Mantener 5181 en las
+  instrucciones de arranque/actualización (`--strictPort --open`), no sugerir 5180
+  como sustitución automática: son almacenes separados y no se migra nada hoy.

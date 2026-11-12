@@ -31,7 +31,7 @@ siguen protegidas. El dictado sigue dependiendo de la precisión del navegador y
 puedes corregir sus resultados con «Editar tarea». Las completadas permanecen
 visibles en el calendario; puedes completar en la tarjeta o abrir su panel local.
 
-Última verificación: 1.088 pruebas en 87 archivos, tipos, lint y compilación.
+Última verificación: 1.092 pruebas en 88 archivos, tipos, lint y compilación.
 El recorrido completo del navegador pasó en preview y desarrollo, incluida captura,
 edición, recarga y anexado. Las pruebas de voz usan eventos simulados del servicio.
 No se ha publicado una nueva versión.
@@ -426,6 +426,29 @@ durante la semana**; it becomes a candidate, not an automatic commitment in anot
 week. Undo restores its assignments while the version remains compatible. The persistence,
 closing, reopening and carryover behavior, with incremental delivery gates, is
 recorded in [the daily-actions design](docs/daily-actions-design.md).
+
+### Tu cuaderno: guardado e historial
+
+La semana activa, sus tareas, asignaciones, estados y los borradores se guardan en
+IndexedDB del navegador. Al cerrar y volver a abrir la app con el **mismo perfil y
+la misma dirección**, se recupera la semana activa, aunque su fecha ya haya pasado.
+Cambiar de fecha no la borra ni la cierra automáticamente.
+
+Al usar **Cerrar semana**, se conservan el plan, la agenda y el informe de cierre.
+En **Mis semanas → Semanas anteriores** puedes consultar cualquier semana cerrada,
+con sus tareas, resultados y reflexión. Consultarla no reactiva esa semana ni
+sustituye la activa. Los registros incompletos se indican y no se eliminan.
+
+El cuaderno es local: `http://localhost:5180` y `http://localhost:5181` tienen datos
+separados, igual que distintos navegadores, perfiles o equipos. No hay sincronización
+en la nube. Usar navegación privada o borrar los datos del sitio puede eliminar el
+almacenamiento; conviene descargar copias periódicas desde **Ajustes → Tus datos**.
+Los ajustes muestran la dirección exacta del cuaderno actual.
+
+La copia JSON incluye semanas activas/cerradas, borradores, agendas, cierres y
+recuerdos. **Restaurar reemplaza** los datos de la dirección actual y pide confirmación;
+si hay información en dos puertos, descarga primero una copia de cada uno antes de
+restaurar cualquiera. Cambiar de puerto por sí solo no traslada ni borra el otro cuaderno.
 
 ### 4. Run Test Suite
 

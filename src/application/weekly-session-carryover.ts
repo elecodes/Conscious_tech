@@ -4,6 +4,7 @@ import {
   LatestClosedWeekResult,
   PendingCarryOverTask,
 } from "./weekly-session-service-types";
+import type { StoredCloseWeekReport, ClosedWeekSummary } from "../domain/repositories/types";
 import { TargetWeek } from "../domain/week";
 import { WeeklySchedule } from "../domain/schedule";
 
@@ -22,7 +23,13 @@ export async function findLatestClosedWeek(
     return b.reportId.localeCompare(a.reportId);
   });
 
-  const latestReport = sortedReports[0]!;
+  return readClosedWeekSummary(deps, sortedReports[0]!);
+}
+
+async function readClosedWeekSummary(
+  deps: WeeklySessionServiceDependencies,
+  latestReport: StoredCloseWeekReport
+): Promise<LatestClosedWeekResult> {
   const plan = await deps.plans.getById(latestReport.planId);
   if (!plan) {
     return {
@@ -93,6 +100,50 @@ export async function findLatestClosedWeek(
       schedule,
     },
   };
+}
+
+/** Read-only archive, independent of the current active session. */
+export async function findClosedWeekHistory(deps: WeeklySessionServiceDependencies) {
+  const [plans, reports] = await Promise.all([deps.plans.getAll(), deps.closeReports.getAll()]);
+  const weeks: ClosedWeekSummary[] = [];
+  const issues: { planId: string; week: TargetWeek; reason: string }[] = [];
+  const closed = plans
+    .filter((plan) => plan.status === "closed")
+    .sort(
+      (a, b) =>
+        b.targetWeek.startDate.localeCompare(a.targetWeek.startDate) ||
+        b.planId.localeCompare(a.planId)
+    );
+  for (const plan of closed) {
+    const report = reports
+      .filter((row) => row.planId === plan.planId)
+      .sort(
+        (a, b) => b.closedAt.localeCompare(a.closedAt) || b.reportId.localeCompare(a.reportId)
+      )[0];
+    if (
+      !report ||
+      report.output.status === "invalid_request" ||
+      report.output.weekRange.startDate !== plan.targetWeek.startDate ||
+      report.output.weekRange.endDate !== plan.targetWeek.endDate
+    ) {
+      issues.push({
+        planId: plan.planId,
+        week: plan.targetWeek,
+        reason: report ? "inconsistent_close_report" : "missing_close_report",
+      });
+      continue;
+    }
+    const result = await readClosedWeekSummary(deps, report);
+    if (result.status === "found" && result.summary.plan.status === "closed")
+      weeks.push(result.summary);
+    else
+      issues.push({
+        planId: plan.planId,
+        week: plan.targetWeek,
+        reason: result.status === "inconsistent" ? result.reason : "week_changed_during_read",
+      });
+  }
+  return { weeks, issues };
 }
 
 export async function findPendingCarryOverTasks(

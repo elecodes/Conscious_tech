@@ -11,8 +11,10 @@ export function WeeksSidebar({
   onOpen,
   previous,
   disabled = false,
+  onHistory,
 }: {
   disabled?: boolean;
+  onHistory?: () => void;
   active: StoredWeeklyPlan | null;
   schedule: WeeklySchedule | null;
   drafts: StoredWeeklyPlan[];
@@ -23,7 +25,7 @@ export function WeeksSidebar({
     () => typeof window !== "undefined" && window.innerWidth >= 1100
   );
   const weeks = weeksOverview(active, schedule, drafts, previous);
-  if (!weeks.length) return null;
+  if (!weeks.length && !onHistory) return null;
   return (
     <aside
       className="weeks-sidebar"
@@ -32,7 +34,7 @@ export function WeeksSidebar({
     >
       <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
         <summary>
-          Mis semanas <span>({weeks.length})</span>
+          Mis semanas {weeks.length > 0 && <span>({weeks.length})</span>}
           <span className="weeks-sidebar-toggle">
             <span aria-hidden="true">{open ? "→" : "←"}</span>
             {open ? "Ocultar semanas" : "Mostrar semanas"}
@@ -94,6 +96,19 @@ export function WeeksSidebar({
           <p className="calm-muted">
             Aquí verás las semanas que guardes y las tareas que reprogrames.
           </p>
+        )}
+        {onHistory && (
+          <div className="sidebar-history">
+            <button
+              type="button"
+              className="secondary small"
+              data-testid="open-week-history"
+              onClick={onHistory}
+            >
+              Semanas anteriores
+            </button>
+            <p className="calm-muted">Cuaderno guardado en este navegador.</p>
+          </div>
         )}
       </details>
     </aside>

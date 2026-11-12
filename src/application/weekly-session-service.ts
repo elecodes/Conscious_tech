@@ -45,7 +45,11 @@ import {
   PurgePlanResult,
   ReopenWeekResult,
 } from "./weekly-session-service-types";
-import { findLatestClosedWeek, findPendingCarryOverTasks } from "./weekly-session-carryover";
+import {
+  findLatestClosedWeek,
+  findPendingCarryOverTasks,
+  findClosedWeekHistory,
+} from "./weekly-session-carryover";
 
 export * from "./weekly-session-service-types";
 export * from "./weekly-session-carryover";
@@ -193,6 +197,10 @@ export class WeeklySessionService {
    */
   async getLatestClosedWeek(): Promise<LatestClosedWeekResult> {
     return findLatestClosedWeek(this.deps);
+  }
+
+  async getClosedWeekHistory() {
+    return findClosedWeekHistory(this.deps);
   }
 
   /**
