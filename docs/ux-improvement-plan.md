@@ -695,6 +695,7 @@ Pauses and numbers remain content, protecting durations and quantities.
 Unit checks verify three extracted tasks with their separate effort estimates;
 browser service simulations verify live replacement, opt-out and both languages.
 Real recognition of the new command remains for the user to confirm on the Mac.
+
 - Verification: 1,083 tests across 86 files, types, lint, format, cycle checks and
   production build passed. Updated voice-service browser simulation passed in
   development and preview, including explicit separators, language and opt-out.
