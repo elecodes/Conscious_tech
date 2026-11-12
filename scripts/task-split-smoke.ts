@@ -121,6 +121,16 @@ export async function verifyTaskSplit(browser: Browser, url: string, output?: st
         .screenshot({ path: `${output}/draft-task-split.png` });
     await page.getByTestId("confirm-plan-button").click();
     await page.getByTestId("active-task-calendar").waitFor();
+    const help = page.getByTestId("calendar-help");
+    if (await help.evaluate((element) => (element as HTMLDetailsElement).open))
+      throw new Error("Calendar help is expanded by default");
+    await help.locator(":scope > summary").focus();
+    await page.keyboard.press("Enter");
+    await help.getByLabel("Colores y símbolos del calendario").waitFor();
+    await page.keyboard.press("Enter");
+    if (await help.getByLabel("Colores y símbolos del calendario").isVisible())
+      throw new Error("Calendar help cannot be collapsed with the keyboard");
+
     for (const day of ["2026-12-07", "2026-12-09", "2026-12-11"])
       await page.getByTestId(`calendar-task-g-${day}`).waitFor();
     if (!(await page.getByTestId("calendar-counts").innerText()).includes("4 pendientes"))

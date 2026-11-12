@@ -1699,3 +1699,20 @@ details.calm-details[open] {
   white-space: normal;
   box-shadow: none;
 }
+.calendar-help {
+  margin: 8px 0;
+  font-size: 0.78rem;
+}
+.calendar-help > summary {
+  cursor: pointer;
+  color: var(--accent-sage);
+  width: fit-content;
+  padding: 5px 0;
+}
+.calendar-help > summary:focus-visible {
+  outline: 2px solid var(--accent-sage);
+  outline-offset: 3px;
+}
+.calendar-help .calendar-status-legend {
+  margin-bottom: 8px;
+}

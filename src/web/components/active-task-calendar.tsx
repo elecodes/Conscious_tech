@@ -297,16 +297,19 @@ export function ActiveTaskCalendar({
           {model.postponed} {model.postponed === 1 ? "aplazada" : "aplazadas"}
         </span>
       </p>
-      <p className="calm-muted task-calendar-hint">
-        Usa «Repartir horas» para distribuir una tarea entre varios días. Arrastrar una parte o usar
-        «Cambiar día» mueve solo esa asignación. Una fecha límite no elige el día por ti.
-      </p>
-      <ul className="calendar-status-legend" aria-label="Colores y símbolos del calendario">
-        <li className="calendar-tone-undated">○ Sin día</li>
-        <li className="calendar-tone-scheduled">◷ Programada</li>
-        <li className="calendar-tone-completed">✓ Completada</li>
-        <li className="calendar-tone-postponed">↷ Aplazada</li>
-      </ul>
+      <details className="calendar-help" data-testid="calendar-help">
+        <summary>Cómo usar el calendario</summary>
+        <p className="calm-muted task-calendar-hint">
+          Usa «Repartir horas» para distribuir una tarea entre varios días. Arrastrar una parte o
+          usar «Cambiar día» mueve solo esa asignación. Una fecha límite no elige el día por ti.
+        </p>
+        <ul className="calendar-status-legend" aria-label="Colores y símbolos del calendario">
+          <li className="calendar-tone-undated">○ Sin día</li>
+          <li className="calendar-tone-scheduled">◷ Programada</li>
+          <li className="calendar-tone-completed">✓ Completada</li>
+          <li className="calendar-tone-postponed">↷ Aplazada</li>
+        </ul>
+      </details>
       <p className="calendar-save-status" role="status" aria-atomic="true">
         {busy ? "Guardando el cambio de la tarea…" : ""}
       </p>
@@ -340,10 +343,7 @@ export function ActiveTaskCalendar({
           data-testid="calendar-recovery-tray"
         >
           <h4>Para traer a esta semana</h4>
-          <p className="calm-muted">
-            Arrastra una tarea a un día o pulsa «Añadir a un día». Ajusta las horas antes de
-            guardar.
-          </p>
+          <p className="calm-muted">Arrastra a un día o pulsa «Añadir a un día».</p>
           <ul>{extras.filter(recoverable).map((task) => taskCard(task, "outside"))}</ul>
         </section>
       )}
@@ -447,7 +447,7 @@ export function ActiveTaskCalendar({
               {entries.length ? (
                 <ul>{entries.map((entry) => taskCard(entry.task, day.date, entry))}</ul>
               ) : (
-                <p className="task-calendar-empty">Sin tareas asignadas</p>
+                <p className="task-calendar-empty">Sin tareas</p>
               )}
             </section>
           );
@@ -461,14 +461,13 @@ export function ActiveTaskCalendar({
         <h4>
           En esta semana · sin día asignado <span>({undated.length})</span>
         </h4>
-        <p className="calm-muted">
-          Estas tareas están incluidas en la semana mostrada, pero aún no tienen día ni horario
-          guardado.
-        </p>
+        {!!undated.length && (
+          <p className="calm-muted">Incluidas en la semana, pendientes de elegir día.</p>
+        )}
         {undated.length ? (
           <ul>{undated.map((task) => taskCard(task, "undated"))}</ul>
         ) : (
-          <p className="calm-muted">No hay tareas por asignar a un día en esta vista.</p>
+          <p className="calm-muted">Todo tiene día asignado.</p>
         )}
       </section>
       {!!extras.filter((task) => !recoverable(task)).length && (

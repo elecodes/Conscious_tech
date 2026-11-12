@@ -11,13 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Pending review
 
-- Reduce calendar text with compact disclosures while keeping primary actions visible.
 - Investigate user-reported voice dictation failure; the cause and browser conditions
   have not yet been reproduced.
 - Enable direct calendar drag/drop for tasks already included in the active week
   but still without a day. This is distinct from the implemented deferred-task tray.
 
 ### Changed
+
+- Collapse calendar instructions and the status legend behind keyboard-accessible
+  help disclosures, keeping task actions visible and shortening empty-state text.
 
 - Clarify task hour distribution: open a readable floating editor, explain existing
   assignments and explicit saving, and offer equal distribution across chosen days

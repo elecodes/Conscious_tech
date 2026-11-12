@@ -44,8 +44,9 @@ semanal. Persistencia, capacidad, fechas y cambios concurrentes siguen validados
 La recuperación de tareas aplazadas no elimina silenciosamente un plan futuro que
 la persona haya organizado de forma independiente.
 
-Quedan pendientes los desplegables para reducir más texto, el diagnóstico del
-fallo comunicado del dictado y el arrastre de tareas **ya incluidas pero sin día**.
+El 12 de noviembre se agrupan instrucciones y leyenda en desplegables de ayuda,
+con las acciones visibles. Quedan pendientes el diagnóstico del fallo comunicado
+del dictado y el arrastre de tareas **ya incluidas pero sin día**.
 No confundir este último caso con la bandeja de tareas fuera de semana implementada.
 
 ## Evidencia y seguimiento

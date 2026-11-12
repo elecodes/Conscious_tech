@@ -734,3 +734,12 @@ The product succeeds when the person can say:
 - ADR 0029 consolida las decisiones del calendario. ADR 0019 registra el problema
   pendiente del dictado. README y plan UX enlazan el punto de reanudación; Changelog
   reúne los cambios recientes bajo Unreleased, sin alterar versiones publicadas.
+
+### Reanudación — 12 de noviembre de 2026, primer paso
+
+- La persona pide continuar. Se aplica primero la simplificación de texto acordada:
+  instrucciones del borrador y ayuda/leyenda del calendario activo tras desplegables
+  cerrados. Tareas, días, horas y acciones siguen visibles. Textos vacíos y bandeja
+  se acortan. No se modifican decisiones, asignaciones ni persistencia.
+- Continúan pendientes el diagnóstico del dictado real y el drag/drop de las tareas
+  incluidas sin día asignado. El arrastre desde la bandeja de aplazadas ya existe.

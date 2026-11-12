@@ -1,17 +1,18 @@
 # UX improvement plan
 
-Status: steps 0–7 and subsequent calendar walkthrough changes complete. Paused after user review; the next three items below remain pending.
+Status: resumed on 12 November 2026. Calendar text simplification implemented; voice diagnosis and undated-task drag/drop remain pending.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
 ## Next session — agreed at the end of the walkthrough
 
 Checkpoint: `d556170` on `codex/ux-step-by-step` (latest application change).
-Documentation-only session close follows this checkpoint; no further UI work today.
+Documentation-only session close followed this checkpoint. Work resumed on 12 November.
 
-1. **Less calendar text.** Review the weekly view and put secondary explanations
-   behind compact disclosures. Keep tasks, dates, daily hours and primary actions
-   visible. Check narrow columns, expanded/collapsed sidebar and mobile.
+1. **Less calendar text — completed, 12 November.** Draft instructions and active
+   calendar instructions/colour legend now sit in collapsed help disclosures.
+   Tasks, dates, daily hours and actions stay visible; empty-state and tray copy is
+   shorter. Native disclosures support keyboard opening/closing.
 2. **Voice dictation.** Reproduce the reported failure with the user's browser,
    microphone permissions and language. Inspect the existing Web Speech API flow,
    error/end events and input updates. Do not claim a fix until actual speech input
@@ -25,7 +26,7 @@ The implemented tray recovers **outside/postponed tasks**. It does not yet make 
 separate **included, undated tasks** draggable. Keep this distinction when resuming.
 
 Start with the calendar disclosures, then dictation, then undated-task movement,
-in separate small steps. The user has paused implementation for today.
+in separate small steps. Next: reproduce the voice dictation failure.
 
 ## Goal
 

@@ -10,11 +10,11 @@ Trabajo guardado en `codex/ux-step-by-step`; todavía no integrado en `main`.
 El calendario permite repartir horas entre días, mover asignaciones y mostrar u
 ocultar el panel de semanas. Las tareas aplazadas o fuera de semana aparecen en
 una bandeja encima de los días: arrástralas o usa «Añadir a un día» y confirma día
-y horas. Las tarjetas de un solo día ofrecen «Ajustar horas» en formato compacto.
+y horas. Las tarjetas de un solo día ofrecen «Ajustar horas» en formato compacto. Las
+instrucciones y la leyenda se consultan desde desplegables de ayuda.
 
 Pendiente para la próxima sesión:
 
-- Reducir el texto del calendario mediante desplegables claros.
 - Diagnosticar el dictado por voz: se ha comunicado que no funciona; aún no está corregido.
 - Añadir drag/drop desde las tareas incluidas en la semana que siguen sin día asignado.
 

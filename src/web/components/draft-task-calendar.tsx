@@ -216,11 +216,13 @@ export function DraftTaskCalendar({
         Semana del {format(start, { day: "numeric", month: "long" })} al{" "}
         {format(end, { day: "numeric", month: "long", year: "numeric" })}
       </p>
-      <p className="calm-muted">
-        Para varios días, abre «Repartir horas» y elige las horas de cada día. Arrastrar una parte
-        mueve solo esas horas. Los cambios se guardan en el borrador; la semana se activa cuando tú
-        decidas.
-      </p>
+      <details className="calendar-help" data-testid="draft-calendar-help">
+        <summary>Cómo organizar tus tareas</summary>
+        <p className="calm-muted">
+          Para varios días, abre «Repartir horas». Arrastrar una parte mueve solo esas horas. Los
+          cambios se guardan en el borrador; la semana se activa cuando tú decidas.
+        </p>
+      </details>
       <p className="calm-muted" data-testid="draft-calendar-capacity">
         {proposal.weekSummary.capacity.knownEstimatedHours ?? 0} h estimadas
         {proposal.weekSummary.capacity.totalAvailableHours != null
