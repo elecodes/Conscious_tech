@@ -699,3 +699,25 @@ Real recognition of the new command remains for the user to confirm on the Mac.
 - Verification: 1,083 tests across 86 files, types, lint, format, cycle checks and
   production build passed. Updated voice-service browser simulation passed in
   development and preview, including explicit separators, language and opt-out.
+
+### Short voice commands and accessible correction — 12 November 2026
+
+The user reports the long voice command still appears as one task, and the footer's
+edit action appears ineffective. Accept “siguiente”/“next” as the short command,
+keep the long form, and normalize at both extraction entry points, not just live
+speech. The shared mode switch applies to initial and additional notes and protects
+free-text opt-out; common next-week/day/month references remain intact.
+
+Draft cards now expose Editar tarea. The footer opens a native dialog with editable
+intent and task names, explicit save/cancel, and no hidden advanced-section dependency.
+Renaming preserves IDs, original raw evidence, estimates, days, allocations and
+choices; source/proposal titles are updated together and survive reload.
+
+Añadir más ideas opens and focuses the additional-notes field. Appending remaps
+colliding provider IDs without overwriting prior corrections. Browser coverage now
+includes actual capture → extraction → calendar, modal cancel/save, reload, footer
+navigation and appending, beyond simulated speech events alone.
+
+Verification of this step: 1,085 tests across 87 files, typecheck, lint, formatting,
+cycle check and production build passed. Full browser smoke passed in preview and
+development, including the capture/extraction/edit/reload/append regression.

@@ -13,19 +13,24 @@ una bandeja encima de los días: arrástralas o usa «Añadir a un día» y conf
 y horas. Las tarjetas de un solo día ofrecen «Ajustar horas» en formato compacto. Las
 instrucciones y la leyenda se consultan desde desplegables de ayuda.
 
-El dictado de tareas permite decir «siguiente tarea» para empezar otra línea.
-Por ejemplo: «Comprar pan, siguiente tarea, estudiar Python». Se puede desactivar
+El dictado de tareas permite decir «siguiente» para empezar otra línea;
+«siguiente tarea» sigue siendo válido.
+Por ejemplo: «Comprar pan, siguiente, estudiar Python». Se puede desactivar
 «Separar tareas por voz» en las opciones para dictar texto libre. No se usan las
 pausas ni los números como separadores. La persona ha confirmado que la repetición
 de frases en Chrome ya está corregida; queda probar el nuevo comando con voz real.
+
+Cada tarjeta del borrador permite «Editar tarea». «Más acciones → Editar intención
+o elementos» abre un editor visible; guardar conserva identidad, horas y días.
+«Añadir más ideas» abre directamente el campo de notas y conserva las tareas previas.
 
 Pendiente para la próxima sesión:
 
 - Añadir drag/drop desde las tareas incluidas en la semana que siguen sin día asignado.
 
-Última verificación: 1.083 pruebas en 86 archivos, tipos, lint y compilación.
-El recorrido completo del navegador pasó antes de la separación por voz; esta
-mejora se verifica con eventos de reconocimiento simulados y en la versión compilada.
+Última verificación: 1.085 pruebas en 87 archivos, tipos, lint y compilación.
+El recorrido completo del navegador pasó en preview y desarrollo, incluida captura,
+edición, recarga y anexado. Las pruebas de voz usan eventos simulados del servicio.
 No se ha publicado una nueva versión.
 
 Seguimiento: [plan UX](docs/ux-improvement-plan.md) y

@@ -11,12 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Pending review
 
-- Confirm spoken recognition of the new “siguiente tarea” command on the user's Mac.
+- Confirm spoken recognition of the shorter “siguiente” command on the user's Mac.
   The user confirms the preceding Chrome transcript duplication fix.
 - Enable direct calendar drag/drop for tasks already included in the active week
   but still without a day. This is distinct from the implemented deferred-task tray.
 
 ### Changed
+
+- Accept the shorter “siguiente” / “next” task separator, retain the long command,
+  and apply separation at both initial extraction and additional-note extraction.
+  Protect ordinary references to next week/day/month and keep free-text mode optional.
+- Open a visible editor from “Editar intención o elementos” and add per-card
+  “Editar tarea” in drafts. Preserve source evidence, identifiers, hours and days.
+- Open the additional-notes field from “Añadir más ideas”; assign collision-free
+  IDs to appended provider results so existing tasks are not overwritten.
 
 - In task capture/review dictation, convert the explicit spoken command
   “siguiente tarea” (English: “next task”) into a line break. Show an example and

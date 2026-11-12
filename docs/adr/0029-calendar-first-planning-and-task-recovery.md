@@ -60,3 +60,11 @@ No confundir este último caso con la bandeja de tareas fuera de semana implemen
 - Decisiones relacionadas: [flujo guiado](0027-guided-flow-and-card-simplification.md),
   [persistencia local](0013-local-persistence-architecture-contract.md) y
   [dictado nativo](0019-native-voice-dictation-and-mcp-integration-architecture.md).
+
+## Corrección visible de tareas — 12 de noviembre de 2026
+
+Las tarjetas del borrador ofrecen Editar tarea y el pie Editar intención o elementos
+abre un diálogo explícito, en lugar de activar una revisión que quedaba oculta en
+secciones cerradas. Guardar cambia los nombres en fuente y propuesta preservando
+ID, procedencia original, decisiones, horas y asignaciones. Cancelar no escribe.
+Añadir más ideas abre el campo correspondiente y evita colisiones de ID al anexar.

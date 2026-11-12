@@ -12,6 +12,7 @@ export function DraftTaskCalendar({
   items,
   plannedDays,
   onHours,
+  onEdit,
   onDay,
   onInclude,
   onDefer,
@@ -24,6 +25,7 @@ export function DraftTaskCalendar({
   items: ExtractedItem[];
   plannedDays: Record<string, string>;
   onHours: (id: string, hours: number | null) => void;
+  onEdit?: (id: string) => void;
   onDay: (id: string, day: string | null) => void;
   onInclude: (id: string) => void;
   onDefer: (id: string) => void;
@@ -95,6 +97,16 @@ export function DraftTaskCalendar({
           </button>
         )}
         <strong>{item.title}</strong>
+        {onEdit && (
+          <button
+            type="button"
+            className="secondary small draft-edit-task"
+            disabled={saving}
+            onClick={() => onEdit(item.id)}
+          >
+            Editar tarea
+          </button>
+        )}
         {todayHours != null && <span className="draft-day-hours">{todayHours} h</span>}
         <span
           className="draft-calendar-placement"

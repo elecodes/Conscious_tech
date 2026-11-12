@@ -93,7 +93,7 @@ export async function verifyVoiceDictation(browser: Browser, url: string, output
     await page.evaluate("window.__voice.started()");
     await page.evaluate("window.__voice.emit([['Estudiar Python 2 horas, siguiente', false]])");
     await page.waitForFunction(
-      "document.querySelector('[data-testid=flow-textarea]').value === 'Estudiar Python 2 horas, siguiente'"
+      "document.querySelector('[data-testid=flow-textarea]').value === 'Estudiar Python 2 horas\\n'"
     );
     await page.evaluate(
       "window.__voice.emit([['Estudiar Python 2 horas, siguiente tarea, practicar typing 1 hora', false]])"
@@ -174,6 +174,52 @@ export async function verifyVoiceDictation(browser: Browser, url: string, output
       )
     )
       throw new Error("Leaving capture does not release the voice session");
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.getByTestId("nav-tab-new-week").click();
+    await page.getByTestId("settings-dropdown").locator("summary").click();
+    await page.getByTestId("provider-select").selectOption("mock");
+    await page.getByTestId("settings-dropdown").locator("summary").click();
+    await input.fill(
+      "Estudiar patrones siguiente tarea practicar typing la siguiente tarea seguir con lógica"
+    );
+    await page.getByTestId("flow-continue-to-review").click();
+    const calendar = page.getByTestId("draft-task-calendar");
+    await calendar.waitFor();
+    if ((await calendar.locator(".draft-calendar-card").count()) !== 3)
+      throw new Error("Capture/extraction still merges explicit spoken tasks");
+    const first = calendar.locator(".draft-calendar-card").first();
+    await first.getByRole("button", { name: "Editar tarea", exact: true }).click();
+    const editor = page.getByTestId("draft-task-editor");
+    await editor.waitFor();
+    await editor.locator("textarea").fill("Cambio que no se guarda");
+    await editor.getByRole("button", { name: "Cancelar", exact: true }).click();
+    if ((await first.innerText()).includes("Cambio que no se guarda"))
+      throw new Error("Cancel renamed the task");
+    await page.getByTestId("proposal-more-actions-summary").click();
+    await page.getByTestId("adjust-elements-button").click();
+    await editor.waitFor();
+    await editor.getByLabel("Intención de la semana", { exact: true }).fill("Una semana clara");
+    await editor.locator("textarea").first().fill("Patrones corregidos");
+    await editor.getByRole("button", { name: "Guardar cambios", exact: true }).click();
+    await editor.waitFor({ state: "hidden" });
+    await calendar.getByText("Patrones corregidos", { exact: true }).waitFor();
+    await page.reload({ waitUntil: "networkidle" });
+    await calendar.getByText("Patrones corregidos", { exact: true }).waitFor();
+    await page.getByTestId("proposal-more-actions-summary").click();
+    await page.getByTestId("add-more-ideas-button").click();
+    const additional = page.locator("#planning-notes-input");
+    await additional.waitFor();
+    await additional.fill("Leer documentación siguiente caminar 1 hora");
+    await page.getByTestId("extract-append-button").click();
+    await page.waitForFunction(() => {
+      const saved = JSON.parse(
+        localStorage.getItem("conscious_tech_transient_dump_result") || "null"
+      );
+      return (
+        saved?.items?.length === 5 &&
+        saved.items.some((item: { title: string }) => item.title === "Patrones corregidos")
+      );
+    });
     console.log(
       "  ✓ Voice service simulation: start/stop, interim/final text, repeat events, manual edits, errors, task separators, free-text mode, language and mobile verified (not real audio)"
     );

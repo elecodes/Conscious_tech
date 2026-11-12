@@ -105,3 +105,35 @@ export function retainDraftDays(
     })
   );
 }
+
+/** Rename one source without changing its identity, provenance, decisions or assignments. */
+export function renameDraftTask(
+  proposal: ProposedWeek,
+  items: ExtractedItem[],
+  id: string,
+  value: string
+) {
+  const title = value.trim();
+  if (!title) throw new Error("Escribe un nombre para cada tarea.");
+  if (!items.some((item) => item.id === id)) throw new Error("La tarea ya no existe.");
+  return {
+    items: items.map((item) => (item.id === id ? { ...item, title } : item)),
+    proposal: {
+      ...proposal,
+      foci: proposal.foci.map((focus) =>
+        focus.contributingItemIds.length === 1 && focus.contributingItemIds[0] === id
+          ? { ...focus, title }
+          : focus
+      ),
+      obligations: proposal.obligations.map((item) =>
+        item.itemId === id ? { ...item, title } : item
+      ),
+      flexibleOptions: proposal.flexibleOptions.map((item) =>
+        item.itemId === id ? { ...item, title } : item
+      ),
+      deferredItems: proposal.deferredItems.map((item) =>
+        item.itemId === id ? { ...item, title } : item
+      ),
+    },
+  };
+}

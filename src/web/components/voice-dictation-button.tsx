@@ -7,6 +7,8 @@ export interface VoiceDictationButtonProps {
   getText: () => string;
   defaultLang?: string;
   taskList?: boolean;
+  separateTasksValue?: boolean;
+  onSeparateTasksChange?: (value: boolean) => void;
   disabled?: boolean;
 }
 
@@ -15,9 +17,16 @@ export function VoiceDictationButton({
   getText,
   defaultLang = "es-ES",
   taskList = false,
+  separateTasksValue,
+  onSeparateTasksChange,
   disabled = false,
 }: VoiceDictationButtonProps) {
-  const [separateTasks, setSeparateTasks] = useState(taskList);
+  const [localSeparateTasks, setLocalSeparateTasks] = useState(taskList);
+  const separateTasks = separateTasksValue ?? localSeparateTasks;
+  const setSeparateTasks = (value: boolean) => {
+    setLocalSeparateTasks(value);
+    onSeparateTasksChange?.(value);
+  };
   const {
     isSupported,
     isListening,
@@ -209,8 +218,8 @@ export function VoiceDictationButton({
           style={{ flexBasis: "100%", fontSize: "0.78rem", lineHeight: 1.4 }}
         >
           {lang.startsWith("en")
-            ? "Say “next task” between tasks."
-            : "Di «siguiente tarea» entre tareas. Ejemplo: «Comprar pan, siguiente tarea, estudiar Python»."}
+            ? "Say “next” between tasks."
+            : "Di «siguiente» entre tareas. Ejemplo: «Comprar pan, siguiente, estudiar Python»."}
         </span>
       )}
       {statusMessage && !errorMessage && (

@@ -1,3 +1,5 @@
+import { formatTaskDictation } from "../task-dictation";
+import { renameDraftTask } from "../draft-calendar-edits";
 import type { DailyWorkAllocation } from "../../domain/schedule";
 import {
   distributionHours,
@@ -92,6 +94,14 @@ export function WeeklyPlanningFromNotes({
     currentDate || new Date().toISOString().split("T")[0] || "2026-10-12";
 
   // Target week being planned (customizable by human)
+  const [voiceTaskListMode, setVoiceTaskListMode] = useState(true);
+  const taskEditor = useRef<HTMLDialogElement>(null);
+  const advancedEditor = useRef<HTMLDetailsElement>(null);
+  const [editingTaskIds, setEditingTaskIds] = useState<string[]>([]);
+  const [editingTitles, setEditingTitles] = useState<Record<string, string>>({});
+  const [editingIntent, setEditingIntent] = useState("");
+  const [taskEditorError, setTaskEditorError] = useState<string | null>(null);
+  const taskEditLock = useRef(false);
   const [savedPlanningContext] = useState(readPlanningContext);
   const defaultTargetWeek = state?.activePlan
     ? resolveDefaultTargetWeek(state.activePlan.targetWeek.endDate)
@@ -890,7 +900,7 @@ export function WeeklyPlanningFromNotes({
   // Handlers: Step 1 - Extract Items
   // --------------------------------------------------------------------------
   const handleExtract = async (mode: "replace" | "append" = "replace") => {
-    const trimmed = noteText.trim();
+    const trimmed = (voiceTaskListMode ? formatTaskDictation(noteText, "es-ES") : noteText).trim();
     if (!trimmed || isExtracting) return;
 
     const reqId = ++extractRequestIdRef.current;
@@ -909,7 +919,14 @@ export function WeeklyPlanningFromNotes({
       // Discard stale responses if user triggered another extraction in the meantime
       if (reqId !== extractRequestIdRef.current) return;
 
-      const newItems = result.items || [];
+      const usedIds = new Set(mode === "append" ? extractedItems?.map((item) => item.id) : []);
+      const newItems = (result.items || []).map((item) => {
+        let id = item.id;
+        let suffix = 1;
+        while (usedIds.has(id)) id = `${item.id}-added-${suffix++}`;
+        usedIds.add(id);
+        return id === item.id ? item : { ...item, id };
+      });
       if (mode === "append" && extractedItems && extractedItems.length > 0) {
         const existingMap = new Map(extractedItems.map((i) => [i.id, i]));
         for (const item of newItems) {
@@ -974,7 +991,7 @@ export function WeeklyPlanningFromNotes({
   };
 
   const handleContinueFromWrite = async () => {
-    const trimmed = noteText.trim();
+    const trimmed = (voiceTaskListMode ? formatTaskDictation(noteText, "es-ES") : noteText).trim();
     if (!trimmed || isExtracting || isPlanning) return;
 
     if (proposedWeek && !isProposalDirty && !isCaptureDirty) {
@@ -1010,7 +1027,14 @@ export function WeeklyPlanningFromNotes({
 
       if (reqId !== extractRequestIdRef.current) return;
 
-      const newItems = result.items || [];
+      const usedIds = new Set<string>();
+      const newItems = (result.items || []).map((item) => {
+        let id = item.id;
+        let suffix = 1;
+        while (usedIds.has(id)) id = `${item.id}-added-${suffix++}`;
+        usedIds.add(id);
+        return id === item.id ? item : { ...item, id };
+      });
       const nextPlannedDays = retainDraftDays(extractedItems ?? [], newItems, plannedDays);
       setPlannedDays(nextPlannedDays);
       const nextAllocations = retainDraftAllocations(
@@ -1047,6 +1071,7 @@ export function WeeklyPlanningFromNotes({
         acceptedItemIds: Array.from(newAcceptedIds),
         noteText: trimmed,
       });
+      setNoteText(trimmed);
       setLastGeneratedParams({
         acceptedItemIds: Array.from(newAcceptedIds).sort().join(","),
         carryOverIds: Array.from(selectedCarryOverItemIds).sort().join(","),
@@ -1500,9 +1525,43 @@ export function WeeklyPlanningFromNotes({
     }
   };
 
+  const openTaskEditor = (id?: string) => {
+    const sources = (extractedItems ?? []).filter((item) => !id || item.id === id);
+    setEditingTaskIds(sources.map((item) => item.id));
+    setEditingTitles(Object.fromEntries(sources.map((item) => [item.id, item.title])));
+    setEditingIntent(userIntent);
+    setTaskEditorError(null);
+    taskEditor.current?.showModal();
+  };
   const handleAdjustElements = () => {
-    setIsReviewingSelection(true);
+    openTaskEditor();
     setConfirmationError(null);
+  };
+  const saveTaskEdits = async () => {
+    if (!proposedWeek || !extractedItems || taskEditLock.current) return;
+    taskEditLock.current = true;
+    setTaskEditorError(null);
+    try {
+      let next = { proposal: proposedWeek, items: extractedItems };
+      for (const id of editingTaskIds)
+        next = renameDraftTask(next.proposal, next.items, id, editingTitles[id] ?? "");
+      const intent = editingIntent.trim();
+      if (intent !== userIntent.trim())
+        next.proposal = { ...next.proposal, weekSummary: { ...next.proposal.weekSummary, intent } };
+      if (!(await persistDraft(next.proposal, { extractedItems: next.items, userIntent: intent })))
+        throw new Error("No se guardaron los cambios. Inténtalo de nuevo.");
+      setExtractedItems(next.items);
+      setProposedWeek(next.proposal);
+      setUserIntent(intent);
+      setLastGeneratedParams((previous) =>
+        previous ? { ...previous, items: itemSignature(next.items), userIntent: intent } : previous
+      );
+      taskEditor.current?.close();
+    } catch (error) {
+      setTaskEditorError((error as Error).message);
+    } finally {
+      taskEditLock.current = false;
+    }
   };
 
   const handleReturnToProposal = () => {
@@ -2265,6 +2324,8 @@ export function WeeklyPlanningFromNotes({
               </label>
               <VoiceDictationButton
                 taskList
+                separateTasksValue={voiceTaskListMode}
+                onSeparateTasksChange={setVoiceTaskListMode}
                 disabled={isExtracting || isPlanning}
                 getText={() => noteText}
                 onTranscript={setNoteText}
@@ -2434,6 +2495,51 @@ export function WeeklyPlanningFromNotes({
       {/* -------------------------------------------------------------------- */}
       {/* PASO 2: REVISAR                                                     */}
       {/* -------------------------------------------------------------------- */}
+      <dialog ref={taskEditor} className="calendar-task-editor" data-testid="draft-task-editor">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void saveTaskEdits();
+          }}
+        >
+          <h3>Editar intención y tareas</h3>
+          <label>
+            Intención de la semana
+            <input
+              aria-label="Intención de la semana"
+              value={editingIntent}
+              disabled={isSavingDraft}
+              onChange={(event) => setEditingIntent(event.target.value)}
+            />
+          </label>
+          {editingTaskIds.map((id) => (
+            <label key={id}>
+              Nombre de la tarea
+              <textarea
+                aria-label={`Nombre de la tarea ${id}`}
+                value={editingTitles[id] ?? ""}
+                disabled={isSavingDraft}
+                onChange={(event) =>
+                  setEditingTitles((old) => ({ ...old, [id]: event.target.value }))
+                }
+              />
+            </label>
+          ))}
+          <p className="calm-muted">Se conservan las horas y los días elegidos.</p>
+          {taskEditorError && <p role="alert">{taskEditorError}</p>}
+          <button
+            type="button"
+            className="secondary"
+            disabled={isSavingDraft}
+            onClick={() => taskEditor.current?.close()}
+          >
+            Cancelar
+          </button>
+          <button type="submit" className="primary" disabled={isSavingDraft}>
+            Guardar cambios
+          </button>
+        </form>
+      </dialog>
       {calendarView === "week" && (flowStep === "review" || flowStep === "confirm") && (
         <fieldset
           className="planning-review-fields"
@@ -2457,6 +2563,7 @@ export function WeeklyPlanningFromNotes({
                 onSplit={saveDraftSplit}
                 onMovePortion={(id, source, target) => void moveDraftPortion(id, source, target)}
                 onHours={(id, hours) => void editCalendarHours(id, hours)}
+                onEdit={openTaskEditor}
                 onDay={(id, day) => void editCalendarDay(id, day)}
                 onInclude={(id) => void handleDeferredDecisionChange(id, "include_flexible")}
                 onDefer={(id) => void handleDeferredDecisionChange(id, "postpone")}
@@ -2521,7 +2628,25 @@ export function WeeklyPlanningFromNotes({
                   handleAdjustElements();
                   setFlowStep("review");
                 }}
-                setIsReviewingSelection={() => setFlowStep("review")}
+                setIsReviewingSelection={() => {
+                  setFlowStep("review");
+                  setIsReviewingSelection(true);
+                  requestAnimationFrame(() => {
+                    const advanced = advancedEditor.current;
+                    if (!advanced) return;
+                    advanced.open = true;
+                    const input = advanced.querySelector<HTMLTextAreaElement>(
+                      "textarea#planning-notes-input"
+                    );
+                    let parent = input?.parentElement;
+                    while (parent && parent !== advanced) {
+                      if (parent instanceof HTMLDetailsElement) parent.open = true;
+                      parent = parent.parentElement;
+                    }
+                    input?.focus();
+                    input?.scrollIntoView({ block: "center" });
+                  });
+                }}
                 handleStartFreshWeek={handleStartFreshWeek}
                 handleConfirmPlan={handleConfirmPlan}
               />
@@ -2538,7 +2663,11 @@ export function WeeklyPlanningFromNotes({
               </button>
             </div>
           )}
-          <details className="calm-details" data-testid="draft-advanced-details">
+          <details
+            ref={advancedEditor}
+            className="calm-details"
+            data-testid="draft-advanced-details"
+          >
             <summary>Opciones avanzadas: capacidad, fuentes y propuesta</summary>
             <PlanningHeaderSection
               hasActivePlan={hasActivePlan}
@@ -2634,6 +2763,8 @@ export function WeeklyPlanningFromNotes({
 
             {(extractedItems || proposedWeek) && (
               <PlanningExtractedItemsReview
+                voiceTaskListMode={voiceTaskListMode}
+                onVoiceTaskListModeChange={setVoiceTaskListMode}
                 extractedItems={extractedItems ?? []}
                 acceptedItemIds={acceptedItemIds}
                 acceptedCount={acceptedCount}

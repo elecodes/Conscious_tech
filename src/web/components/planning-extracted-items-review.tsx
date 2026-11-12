@@ -7,6 +7,8 @@ import { formatIdeasSplitExplanation } from "../labels";
 
 export interface PlanningExtractedItemsReviewProps {
   reviewContent?: ReactNode;
+  voiceTaskListMode?: boolean;
+  onVoiceTaskListModeChange?: (value: boolean) => void;
   extractedItems: ExtractedItem[];
   acceptedItemIds: Set<string>;
   acceptedCount: number;
@@ -37,6 +39,8 @@ export interface PlanningExtractedItemsReviewProps {
 export function PlanningExtractedItemsReview({
   extractedItems,
   reviewContent,
+  voiceTaskListMode,
+  onVoiceTaskListModeChange,
   acceptedItemIds,
   acceptedCount,
   handleAcceptAll,
@@ -245,6 +249,8 @@ export function PlanningExtractedItemsReview({
               </span>
               <VoiceDictationButton
                 taskList
+                separateTasksValue={voiceTaskListMode}
+                onSeparateTasksChange={onVoiceTaskListModeChange}
                 getText={() => noteText}
                 onTranscript={(t) => setNoteText(t)}
               />

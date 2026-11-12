@@ -33,3 +33,19 @@ describe("Explicit voice task separators", () => {
     ).toBe("Escribir las siguientes tareas y revisar tarea uno 2.5 horas");
   });
 });
+
+it("accepts short and legacy commands from the user's captured example and protects next-week context", async () => {
+  const text =
+    "Seguir avanzando en patrones siguiente tarea seguir con lessons de Big school siguiente seguir con mis apps la siguiente tarea a seguir con lógica";
+  const normalized = formatTaskDictation(text, "es-ES");
+  expect(normalized.split("\n")).toHaveLength(4);
+  const result = await extractItems(new MockProvider(), {
+    text: normalized,
+    currentDate: "2026-11-12",
+  });
+  expect(result.items).toHaveLength(4);
+  expect(result.items.some((item) => /siguiente/.test(item.title))).toBe(false);
+  expect(formatTaskDictation("Preparar la siguiente semana 2 horas", "es-ES")).toBe(
+    "Preparar la siguiente semana 2 horas"
+  );
+});

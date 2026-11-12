@@ -99,3 +99,15 @@ pueden formar parte de horas, cantidades o de una misma tarea. Los resultados
 provisionales se reconstruyen para que el comando no reintroduzca duplicados.
 La separación en líneas y su extracción se prueban con eventos simulados y casos
 unitarios; queda pendiente probar el nuevo comando hablado en el Mac.
+
+## Comando corto y protección en extracción — 12 de noviembre de 2026
+
+Tras el aviso de que aún se conserva una frase única, se admite «siguiente» y se
+mantiene «siguiente tarea» (incluida la variante transcrita «la siguiente tarea»).
+El modo se comparte entre captura y notas adicionales; aplica la separación tanto
+al habla provisional como antes de cada extracción. El modo de texto libre evita
+la transformación. Referencias como «la siguiente semana» se conservan.
+
+La regresión se prueba hasta las tarjetas del calendario, no solo en la salida del
+hook. La palabra corta y su reconocimiento real requieren la prueba de la persona
+con Chrome. Los números siguen sin usarse como separadores por su ambigüedad.

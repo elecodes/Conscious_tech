@@ -1716,3 +1716,10 @@ details.calm-details[open] {
 .calendar-help .calendar-status-legend {
   margin-bottom: 8px;
 }
+.draft-calendar-card button.draft-edit-task {
+  width: fit-content;
+  padding: 3px 6px;
+  font-size: 0.72rem;
+  border-radius: 5px;
+  margin: 2px 0 6px;
+}

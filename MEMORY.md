@@ -771,3 +771,21 @@ The product succeeds when the person can say:
 - Validación con texto reconocido simulado y extracción de líneas; aún falta que
   la persona compruebe el comando nuevo con voz real. El arrastre de incluidas sin
   día sigue pendiente.
+
+### Revisión de separadores y edición — 12 de noviembre de 2026
+
+- La persona comunica que la frase con «siguiente tarea» aún queda como una sola
+  tarjeta y que Editar intención o elementos no funciona. No dar por resuelta la
+  aceptación con pruebas solo del hook.
+- Comando preferido ahora «siguiente»; alias largo y «la siguiente tarea» se
+  conservan. Separación aplicada a captura inicial y añadir/reemplazar notas, con
+  un mismo modo de lista opcional. Se protegen referencias a la siguiente semana.
+- Editar intención o elementos abre un diálogo visible. Cada tarjeta del borrador
+  tiene Editar tarea. Guardar sincroniza títulos de fuente y propuesta y conserva
+  IDs, rawText original, horas, días y repartos; cancelar no guarda.
+- Añadir más ideas abre el campo y remapea IDs de proveedor si chocan con los
+  existentes. Así no se sobrescriben tareas/correcciones anteriores al anexar.
+- Pruebas de navegador cubren extracción real con mock → tres tarjetas, edición,
+  cancelar, persistencia tras recarga y anexado con conservación de tareas.
+- Sigue pendiente el drag/drop de tareas incluidas sin día. Voz real con el nuevo
+  comando corto todavía requiere confirmación de la persona en su Mac.
