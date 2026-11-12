@@ -47,8 +47,8 @@ la persona haya organizado de forma independiente.
 El 12 de noviembre se agrupan instrucciones y leyenda en desplegables de ayuda,
 con las acciones visibles. La persona confirma corregida la repetición del dictado Chrome ese mismo día.
 La separación de tareas por el comando explícito «siguiente tarea» se incorpora
-después (ver ADR 0019). Quedan pendientes su comprobación hablada por la persona
-y el arrastre de tareas **ya incluidas pero sin día**.
+después (ver ADR 0019). La persona confirma su funcionamiento después de actualizar la app local. Las
+correcciones de nombres siguen disponibles para errores de transcripción.
 No confundir este último caso con la bandeja de tareas fuera de semana implementada.
 
 ## Evidencia y seguimiento
@@ -68,3 +68,13 @@ abre un diálogo explícito, en lugar de activar una revisión que quedaba ocult
 secciones cerradas. Guardar cambia los nombres en fuente y propuesta preservando
 ID, procedencia original, decisiones, horas y asignaciones. Cancelar no escribe.
 Añadir más ideas abre el campo correspondiente y evita colisiones de ID al anexar.
+
+## Asignar día a tareas incluidas — 12 de noviembre de 2026
+
+La bandeja Por asignar a un día aparece encima del calendario y admite arrastre y
+Elegir día. Ambas acciones abren el editor existente: cancelar no escribe; guardar
+conserva el ID y la inclusión, sin duplicar tareas ni horas. Las tareas cerradas no
+se pueden arrastrar. El foco compartido conserva su total y la fuente individual;
+las horas de un miembro solo se asignan dentro de su esfuerzo conocido y del límite
+del foco. Si no hay horas elegidas, se guarda el día sin inventar una asignación.
+La escritura atómica y la comprobación de versión siguen siendo las existentes.

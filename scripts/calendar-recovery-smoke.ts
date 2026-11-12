@@ -46,6 +46,53 @@ export async function verifyCalendarRecovery(browser: Browser, url: string, outp
       { plan: f.plan, schedule: postponed.schedule }
     );
     await page.reload({ waitUntil: "networkidle" });
+    const undated = page.getByTestId("calendar-undated");
+    const pendingBefore = await page.getByTestId("calendar-counts").innerText();
+    await undated
+      .getByTestId("calendar-task-a-undated")
+      .evaluate((element) => element.scrollIntoView({ block: "center" }));
+    await undated
+      .getByTestId("calendar-task-a-undated")
+      .dragTo(page.getByTestId("calendar-day-2026-12-08"), { targetPosition: { x: 25, y: 100 } });
+    const undatedEditor = page.getByTestId("calendar-task-editor");
+    await undatedEditor.waitFor();
+    if ((await undatedEditor.getByLabel("Horas de la tarea").inputValue()) !== "2")
+      throw new Error("Shared focus total was copied to the member");
+    await undatedEditor.getByRole("button", { name: "Cancelar", exact: true }).click();
+    await undated.getByTestId("calendar-task-a-undated").waitFor();
+    await undated
+      .getByTestId("calendar-card-a-undated")
+      .getByRole("button", { name: "Elegir día", exact: true })
+      .focus();
+    await page.keyboard.press("Enter");
+    await undatedEditor.getByLabel("Día de la tarea").selectOption("2026-12-08");
+    await undatedEditor.getByLabel("Horas de la tarea").fill("1");
+    await undatedEditor.getByRole("button", { name: "Guardar en el calendario" }).click();
+    await page.getByTestId("calendar-task-a-2026-12-08").waitFor();
+    if ((await page.getByTestId("calendar-counts").innerText()) !== pendingBefore)
+      throw new Error("Choosing a day changed task counts");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await undated
+      .getByTestId("calendar-card-b-undated")
+      .getByRole("button", { name: "Elegir día", exact: true })
+      .click();
+    await undatedEditor.getByLabel("Día de la tarea").selectOption("2026-12-09");
+    await undatedEditor.getByLabel("Horas de la tarea").fill("");
+    const mobileUndatedEditor = await undatedEditor.boundingBox();
+    if (
+      !mobileUndatedEditor ||
+      mobileUndatedEditor.x < 0 ||
+      mobileUndatedEditor.x + mobileUndatedEditor.width > 390
+    )
+      throw new Error("Undated-task editor overflows mobile");
+    await undatedEditor.getByRole("button", { name: "Guardar en el calendario" }).click();
+    await page.getByTestId("calendar-task-b-2026-12-09").waitFor();
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.reload({ waitUntil: "networkidle" });
+    await page.getByTestId("calendar-task-a-2026-12-08").waitFor();
+    await page.getByTestId("calendar-task-b-2026-12-09").waitFor();
+    if (await page.getByTestId("calendar-task-a-undated").count())
+      throw new Error("Scheduled work still appears as undated");
     const tray = page.getByTestId("calendar-recovery-tray");
     await tray.getByTestId("calendar-task-g-outside").waitFor();
     await tray.scrollIntoViewIfNeeded();
@@ -100,7 +147,7 @@ export async function verifyCalendarRecovery(browser: Browser, url: string, outp
       throw new Error("Recovery editor overflows mobile");
     if (output) await page.screenshot({ path: `${output}/calendar-recovery-mobile.png` });
     console.log(
-      "  ✓ Calendar tray: drag, cancellation, day/hours editing, postponed recovery, unknown effort, reload and mobile verified"
+      "  ✓ Calendar tray and included undated tasks: drag, shared estimates, keyboard, cancellation, day/hours editing, postponed recovery, unknown effort, reload and mobile verified"
     );
   } finally {
     await context.close();

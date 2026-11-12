@@ -789,3 +789,19 @@ The product succeeds when the person can say:
   cancelar, persistencia tras recarga y anexado con conservación de tareas.
 - Sigue pendiente el drag/drop de tareas incluidas sin día. Voz real con el nuevo
   comando corto todavía requiere confirmación de la persona en su Mac.
+
+### Tareas incluidas sin día — 12 de noviembre de 2026
+
+- La persona confirma que la separación de voz funciona después de actualizar;
+  acepta que la transcripción del navegador aún puede equivocarse. Usar strictPort
+  al iniciar en el Mac ayuda a no confundir pestañas/instancias antiguas.
+- Se completa el último pendiente acordado: bandeja de incluidas sin día encima
+  del calendario, arrastre y Elegir día (teclado/móvil). Al soltar se confirman día
+  y horas con el editor existente; cancelar no escribe ni cambia la inclusión.
+- No se duplica la estimación semanal ni el recuento. Elegir un día sin editar el
+  esfuerzo conserva la capacidad y la fuente original. Un miembro de foco usa su
+  esfuerzo propio, mantiene el total compartido y no copia el agregado a cada tarea.
+- Sin horas se guarda solo el día. Se conservan las otras asignaciones, se comprueba
+  la versión y se respetan límites diarios y compartidos. Sin IA ni dependencias.
+- Los tres pasos acordados están implementados; seguir con validación de la persona
+  y nuevo feedback concreto, sin ampliar alcance por iniciativa propia.

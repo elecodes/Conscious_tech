@@ -24,11 +24,13 @@ Cada tarjeta del borrador permite «Editar tarea». «Más acciones → Editar i
 o elementos» abre un editor visible; guardar conserva identidad, horas y días.
 «Añadir más ideas» abre directamente el campo de notas y conserva las tareas previas.
 
-Pendiente para la próxima sesión:
+Las tareas ya incluidas sin día aparecen encima del calendario en «Por asignar a
+un día». Puedes arrastrarlas o usar «Elegir día» y confirmar día/horas. Asignar un
+día conserva su inclusión, recuento y estimación semanal; las horas compartidas
+siguen protegidas. El dictado sigue dependiendo de la precisión del navegador y
+puedes corregir sus resultados con «Editar tarea».
 
-- Añadir drag/drop desde las tareas incluidas en la semana que siguen sin día asignado.
-
-Última verificación: 1.085 pruebas en 87 archivos, tipos, lint y compilación.
+Última verificación: 1.087 pruebas en 87 archivos, tipos, lint y compilación.
 El recorrido completo del navegador pasó en preview y desarrollo, incluida captura,
 edición, recarga y anexado. Las pruebas de voz usan eventos simulados del servicio.
 No se ha publicado una nueva versión.

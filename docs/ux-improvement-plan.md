@@ -1,6 +1,6 @@
 # UX improvement plan
 
-Status: resumed on 12 November 2026. Calendar text simplification implemented; voice duplication fix confirmed by user and explicit voice task separators implemented; undated-task drag/drop remains pending.
+Status: the three agreed follow-up steps are implemented. User confirms voice separation after updating; included undated tasks now support direct calendar placement.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
@@ -21,16 +21,16 @@ Documentation-only session close followed this checkpoint. Work resumed on 12 No
    recognition was verified by the assistant; the user then confirmed the repetition
    is corrected. New explicit task-list commands are implemented with an opt-out;
    recognition of “siguiente tarea” itself still needs the user's spoken check.
-3. **Included tasks without a day.** Add drag/drop from the undated section into a
-   calendar day, plus a keyboard/touch equivalent and local hour editing. Preserve
-   their inclusion, estimates and other assignments; do not duplicate tasks or invent
-   hours. Verify cancellation, saving, capacity, persistence and mobile layout.
+3. **Included tasks without a day — completed, 12 November.** The undated tray is
+   above the calendar. Dragging or Elegir día opens the existing day/hour dialog;
+   cancellation writes nothing. Placement preserves inclusion, counts, estimates,
+   source evidence and other tasks, with daily/shared-focus checks. Known shared
+   effort is shown per member; no aggregate is copied or divided automatically.
 
-The implemented tray recovers **outside/postponed tasks**. It does not yet make the
-separate **included, undated tasks** draggable. Keep this distinction when resuming.
-
-Start with the calendar disclosures, then dictation, then undated-task movement,
-in separate small steps. Next: confirm the spoken task separator on the user’s Mac, then undated-task movement.
+The user confirmed the short voice separator works after updating the local app.
+Browser recognition accuracy still varies; task names can be corrected directly.
+All three agreed follow-up steps are implemented. Continue with user walkthroughs
+and their next concrete feedback rather than introducing more features now.
 
 ## Goal
 
@@ -721,3 +721,17 @@ navigation and appending, beyond simulated speech events alone.
 Verification of this step: 1,085 tests across 87 files, typecheck, lint, formatting,
 cycle check and production build passed. Full browser smoke passed in preview and
 development, including the capture/extraction/edit/reload/append regression.
+
+### Included undated tasks — 12 November 2026
+
+- Show included undated work above the days, with drag/drop and an accessible
+  Elegir día alternative. Reuse the native day/hour editor and version-checked save.
+- Preserve inclusion, counts, source effort and capacity when only choosing a day.
+  Group allocations use each member's known effort and retain the original shared
+  estimate. Choosing no hours saves a day without inventing an allocation.
+- Unit and browser checks cover cancellation, keyboard placement, shared budgets,
+  unchanged totals, unknown hours, reload, other tasks and mobile editor fit.
+
+Validation: 1,087 tests across 87 files, typecheck, lint, formatting, cycle check and
+production build passed. Full browser smoke passed in preview and development,
+including included-undated placement with shared/unknown hours and mobile controls.

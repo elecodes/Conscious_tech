@@ -9,14 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Pending review
+### Known limitations
 
-- Confirm spoken recognition of the shorter “siguiente” command on the user's Mac.
-  The user confirms the preceding Chrome transcript duplication fix.
-- Enable direct calendar drag/drop for tasks already included in the active week
-  but still without a day. This is distinct from the implemented deferred-task tray.
+- Voice-to-text accuracy still depends on the browser service. The user confirms
+  task separation works after updating; transcript names remain manually editable.
 
 ### Changed
+
+- Move included undated tasks above the active calendar and allow drag/drop or
+  “Elegir día”, opening the existing day/hour editor with save/cancel.
+- Preserve task counts, inclusion, source effort and weekly totals when choosing a
+  day. Group members use individual effort without copying/changing the shared total;
+  unknown hours stay unallocated and daily/group limits remain validated.
 
 - Accept the shorter “siguiente” / “next” task separator, retain the long command,
   and apply separation at both initial extraction and additional-note extraction.

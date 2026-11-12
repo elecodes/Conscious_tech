@@ -120,7 +120,7 @@ describe("Schedule tasks directly from the calendar tray", () => {
     expect(WeeklyScheduleSchema.safeParse(result.schedule).success).toBe(true);
     expect(result.schedule.version).toBe(4);
   });
-  it("rejects invalid hours, out-of-week days, closed tasks, capacity and shared estimate edits", () => {
+  it("rejects invalid hours, out-of-week days, closed tasks and daily capacity", () => {
     const { plan, schedule, items } = fixture();
     const g = items.find((row) => row.itemId === "g")!;
     for (const hours of [-1, 0, NaN, Infinity])
@@ -132,20 +132,38 @@ describe("Schedule tasks directly from the calendar tray", () => {
     expect(() => scheduleCalendarTask(plan, schedule, g, "2026-12-08", 2, now, "add")).toThrow(
       "disponibles"
     );
-    expect(() =>
-      scheduleCalendarTask(
-        plan,
-        schedule,
-        items.find((row) => row.itemId === "a")!,
-        "2026-12-08",
-        2,
-        now,
-        "add"
-      )
-    ).toThrow("comparte");
     schedule.itemActivity = { outcomes: [{ itemId: "g", status: "completed" }], history: [] };
     expect(() => scheduleCalendarTask(plan, schedule, g, "2026-12-08", 1, now, "add")).toThrow(
       "cerrada"
     );
+  });
+  it("places an included undated group member without changing estimates, decisions or weekly totals", () => {
+    const { plan, schedule, items } = fixture();
+    const before = structuredClone(plan.proposal);
+    const a = items.find((row) => row.itemId === "a")!;
+    const next = scheduleCalendarTask(plan, schedule, a, "2026-12-08", 1, now, "place-a");
+    expect(next.plan.proposal).toEqual(before);
+    expect(next.plan.draftContext!.extractedItems).toEqual(plan.draftContext!.extractedItems);
+    expect(next.schedule.dailyAllocations).toEqual([
+      ...schedule.dailyAllocations,
+      { itemId: "a", day: "2026-12-08", allocatedHours: 1 },
+    ]);
+    expect(next.plan.proposal.foci[0]!.estimatedHours).toBe(4);
+    expect(() => scheduleCalendarTask(plan, schedule, a, "2026-12-08", 3, now, "place-a")).toThrow(
+      "total"
+    );
+    const noHours = scheduleCalendarTask(plan, schedule, a, "2026-12-08", null, now, "place-a");
+    expect(noHours.schedule.dailyAllocations).toEqual(schedule.dailyAllocations);
+    expect(noHours.plan.draftContext!.plannedDays!.a).toBe("2026-12-08");
+    expect(noHours.plan.proposal).toEqual(before);
+  });
+  it("assigns an included single task without counting its effort a second time", () => {
+    const { plan, schedule, items } = fixture();
+    const before = structuredClone(plan.proposal.weekSummary.capacity);
+    const d = items.find((row) => row.itemId === "d")!;
+    const next = scheduleCalendarTask(plan, schedule, d, "2026-12-08", 1, now, "place-d");
+    expect(next.plan.proposal.weekSummary.capacity).toEqual(before);
+    expect(next.plan.proposal.flexibleOptions).toEqual(plan.proposal.flexibleOptions);
+    expect(next.plan.proposal.deferredItems).toEqual(plan.proposal.deferredItems);
   });
 });

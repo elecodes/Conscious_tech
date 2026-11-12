@@ -4,7 +4,7 @@ import { activePostponements } from "../domain/item-postponement";
 import type { StoredWeeklyPlan } from "../domain/repositories/types";
 import { WeeklyScheduleSchema, type WeeklySchedule } from "../domain/schedule";
 import { editDraftCalendarHours, includedDraftItemIds } from "./draft-calendar-edits";
-import { replaceTaskDistribution } from "./task-distribution";
+import { replaceTaskDistribution, taskHoursBudget } from "./task-distribution";
 import type { PlanItemSummary } from "./components/weekly-reflective-closing-section";
 
 /** Explicitly include one calendar task and assign only its chosen day, atomically. */
@@ -64,12 +64,24 @@ export function scheduleCalendarTask(
           },
         ],
       };
-  const edited = editDraftCalendarHours(
-    proposal,
-    plan.draftContext?.extractedItems ?? [],
-    item.itemId,
-    hours
+  const sources = plan.draftContext?.extractedItems ?? [];
+  const shared = proposal.foci.some(
+    (focus) =>
+      focus.contributingItemIds.length > 1 && focus.contributingItemIds.includes(item.itemId)
   );
+  const estimateChanged =
+    !included ||
+    (!shared &&
+      taskHoursBudget(
+        plan.proposal,
+        sources,
+        item.itemId,
+        schedule.dailyAllocations.filter((row) => row.itemId === item.itemId)
+      ) !== hours);
+  const edited =
+    shared || !estimateChanged
+      ? { proposal, items: sources }
+      : editDraftCalendarHours(proposal, sources, item.itemId, hours);
   const entries = [
     ...edited.proposal.foci,
     ...edited.proposal.obligations,
@@ -96,7 +108,14 @@ export function scheduleCalendarTask(
           }
         : undefined,
   });
-  edited.proposal.weekSummary = { ...edited.proposal.weekSummary, capacity };
+  edited.proposal = {
+    ...edited.proposal,
+    weekSummary: {
+      ...edited.proposal.weekSummary,
+      capacity: estimateChanged ? capacity : oldCapacity,
+    },
+    ...(!estimateChanged ? { unplannedSpace: plan.proposal.unplannedSpace } : {}),
+  };
   const rows = hours === null ? [] : [{ itemId: item.itemId, day, allocatedHours: hours }];
   const allocations = replaceTaskDistribution(
     edited.proposal,
