@@ -28,9 +28,10 @@ Las tareas ya incluidas sin día aparecen encima del calendario en «Por asignar
 un día». Puedes arrastrarlas o usar «Elegir día» y confirmar día/horas. Asignar un
 día conserva su inclusión, recuento y estimación semanal; las horas compartidas
 siguen protegidas. El dictado sigue dependiendo de la precisión del navegador y
-puedes corregir sus resultados con «Editar tarea».
+puedes corregir sus resultados con «Editar tarea». Las completadas permanecen
+visibles en el calendario; puedes completar en la tarjeta o abrir su panel local.
 
-Última verificación: 1.087 pruebas en 87 archivos, tipos, lint y compilación.
+Última verificación: 1.088 pruebas en 87 archivos, tipos, lint y compilación.
 El recorrido completo del navegador pasó en preview y desarrollo, incluida captura,
 edición, recarga y anexado. Las pruebas de voz usan eventos simulados del servicio.
 No se ha publicado una nueva versión.
@@ -380,8 +381,11 @@ keep their detailed movement controls.
 
 Colour, text and symbols distinguish placement and progress: amber **Sin día**,
 blue **Programada**, green **Completada**, purple **Aplazada**, and grey notes or
-excluded work. Scheduled tasks may still be unfinished; the pending filter keeps
-its existing meaning.
+excluded work. The calendar opens with **Todas**, so completed tasks remain in
+place with a check, green colour and a struck-through name. **Pendientes** is an
+explicit optional filter. Complete directly on the card or click its name to open
+a local task panel; the panel does not scroll to lower sections. Undo of the latest
+completion remains available under the existing version rules.
 
 The collapsible **Mis semanas** sidebar shows the active week, saved drafts and
 explicitly rescheduled destinations with their tasks and separate availability.

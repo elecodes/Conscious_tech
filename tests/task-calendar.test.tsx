@@ -32,7 +32,7 @@ describe("Read-only active task calendar", () => {
     expect(model.pending).toBe(3);
     expect(model.optional).toBe(1);
   });
-  it("counts distinct unfinished work and excludes completion/dropped outcomes from pending", () => {
+  it("counts only unfinished work while keeping completed and dropped outcomes visible in the all-task view", () => {
     const { plan, schedule, items } = createActiveWeekFixture();
     schedule.itemActivity = {
       outcomes: [
@@ -55,8 +55,8 @@ describe("Read-only active task calendar", () => {
     const html = renderToStaticMarkup(
       <ActiveTaskCalendar plan={plan} schedule={schedule} items={items} onInspect={vi.fn()} />
     );
-    expect(html).not.toContain('data-testid="calendar-task-a-undated"');
-    expect(html).not.toContain('data-testid="calendar-task-b-undated"');
+    expect(html).toContain('data-testid="calendar-task-a-undated"');
+    expect(html).toContain('data-testid="calendar-task-b-undated"');
     expect(html).toContain("En curso");
   });
   it("shows human postponement with its destination rather than as an active assigned task", () => {

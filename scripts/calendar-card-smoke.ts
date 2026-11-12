@@ -126,6 +126,10 @@ export async function verifyCalendarCards(browser: Browser, url: string, output?
         .getByTestId("active-task-calendar")
         .screenshot({ path: `${output}/calendar-cards-desktop.png` });
     await page.getByTestId("calendar-task-a-2026-12-09").click();
+    await page
+      .getByTestId("calendar-task-inspector")
+      .getByRole("button", { name: "Ver otros controles" })
+      .click();
     await page.getByTestId("undo-item-a").click();
     await page.getByTestId("calendar-task-a-2026-12-08").waitFor();
     if (

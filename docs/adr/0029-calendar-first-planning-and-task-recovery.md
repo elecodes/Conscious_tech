@@ -78,3 +78,16 @@ se pueden arrastrar. El foco compartido conserva su total y la fuente individual
 las horas de un miembro solo se asignan dentro de su esfuerzo conocido y del límite
 del foco. Si no hay horas elegidas, se guarda el día sin inventar una asignación.
 La escritura atómica y la comprobación de versión siguen siendo las existentes.
+
+## Completado visible y controles locales — 12 de noviembre de 2026
+
+El calendario abre Todas para conservar las tarjetas completadas en sus días,
+con ✓, verde y nombre tachado. Pendientes sigue disponible como filtro explícito;
+completar desde el calendario vuelve a Todas para mostrar el resultado.
+
+Se añade Completar en cada tarjeta elegible y un panel local al pulsar el nombre.
+El panel conserva el nombre y muestra el estado actualizado sin desplazar a otra
+sección. Solo Ver otros controles navega a los ajustes inferiores, centrando y
+focalizando la tarjeta correcta. Se reutilizan las acciones auditadas y su versión;
+no se borra ni mueve una asignación para completar, tampoco en tareas repartidas.
+Deshacer completado mantiene el límite existente a la última acción vigente.

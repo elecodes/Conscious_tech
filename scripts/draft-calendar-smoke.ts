@@ -211,6 +211,10 @@ export async function verifyDraftCalendar(browser: Browser, url: string, screens
     )
       throw new Error("Group was changed");
     await page.getByTestId("calendar-task-g-2026-12-08").click();
+    await page
+      .getByTestId("calendar-task-inspector")
+      .getByRole("button", { name: "Ver otros controles" })
+      .click();
     await page.getByTestId("undo-item-g").click();
     await page.getByTestId("calendar-task-g-2026-12-10").waitFor();
     const afterUndo = await readStored(page);

@@ -72,6 +72,11 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
       throw new Error("Calendar viewing changed stored assignments");
     await page.getByTestId("calendar-task-a-undated").focus();
     await page.keyboard.press("Enter");
+    await page.getByTestId("calendar-task-inspector").waitFor();
+    await page
+      .getByTestId("calendar-task-inspector")
+      .getByRole("button", { name: "Ver otros controles" })
+      .click();
     await page.waitForFunction(
       () => document.activeElement?.getAttribute("data-testid") === "active-task-item-a"
     );
@@ -100,9 +105,12 @@ export async function verifyActiveWeek(browser: Browser, url: string) {
       (button as HTMLButtonElement).click();
     });
     await page.getByTestId("item-completed-a").waitFor();
-    if (await page.getByTestId("calendar-task-a-undated").count())
-      throw new Error("Completed work remains in pending calendar filter");
+    await page.getByTestId("calendar-task-a-undated").waitFor();
+    if (!(await page.getByTestId("calendar-task-a-undated").innerText()).includes("Completada"))
+      throw new Error("Completion removed the visible calendar status");
     const afterCompletion = await readSchedule();
+    await page.getByTestId("calendar-filter-pending").click();
+    await page.getByTestId("calendar-task-a-undated").waitFor({ state: "hidden" });
     await page.getByTestId("calendar-filter-all").click();
     await page.getByTestId("calendar-task-a-undated").waitFor();
     await page.getByTestId("calendar-filter-pending").click();

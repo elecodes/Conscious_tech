@@ -252,7 +252,7 @@ export function WeeklySessionView({
     movement?: MovementAction,
     postponement?: PostponementAction
   ) => {
-    if (!schedule || !recordItemActivity || activityLock.current) return;
+    if (!schedule || !recordItemActivity || activityLock.current) return false;
     activityLock.current = true;
     setActivityBusy(true);
     try {
@@ -281,7 +281,7 @@ export function WeeklySessionView({
               ? `Asignación de «${planItems.find((item) => item.itemId === itemId)?.title ?? "esta tarea"}» movida. Las demás asignaciones se conservan.`
               : postponement
                 ? "Elemento aplazado. Puedes consultarlo y deshacer la última acción en «Aplazados durante la semana»."
-                : "Elemento marcado como completado."
+                : `«${planItems.find((item) => item.itemId === itemId)?.title ?? "Tarea"}» completada.`
         );
       else
         setFeedbackMessage(
@@ -296,8 +296,10 @@ export function WeeklySessionView({
                 ? "No se movió la asignación. Revisa el destino, las horas y la capacidad; puede haber un bloque que se solape."
                 : "No se guardó el cambio. La semana puede haber cambiado; recarga antes de intentarlo otra vez."
         );
+      return result.status === "success" || result.status === "already_applied";
     } catch {
       setFeedbackMessage("No se pudo guardar el cambio. Puedes volver a intentarlo.");
+      return false;
     } finally {
       activityLock.current = false;
       setActivityBusy(false);
@@ -1420,6 +1422,7 @@ export function WeeklySessionView({
           busy={activityBusy}
           onDistribute={saveActiveSplit}
           onSchedule={scheduleFromCalendar}
+          onComplete={recordItemActivity ? (id, undo) => handleActivity(id, undo) : undefined}
           onMove={
             recordItemActivity && schedule
               ? (id, sourceDay, targetDay) => {
@@ -1435,8 +1438,11 @@ export function WeeklySessionView({
               if (parent instanceof HTMLDetailsElement) parent.open = true;
               parent = parent.parentElement;
             }
-            card?.focus({ preventScroll: true });
-            card?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+            setSelectedAdjustmentItemId(id);
+            requestAnimationFrame(() => {
+              card?.scrollIntoView({ block: "center", behavior: "auto" });
+              card?.focus({ preventScroll: true });
+            });
           }}
         />
       )}
@@ -1477,15 +1483,25 @@ export function WeeklySessionView({
           schedule={schedule}
           plan={plan}
           planItems={planItems}
-          onActivity={recordItemActivity ? handleActivity : undefined}
+          onActivity={
+            recordItemActivity
+              ? async (id, undo) => {
+                  await handleActivity(id, undo);
+                }
+              : undefined
+          }
           onPostpone={
             recordItemActivity
-              ? (itemId, action) => handleActivity(itemId, undefined, undefined, action)
+              ? async (itemId, action) => {
+                  await handleActivity(itemId, undefined, undefined, action);
+                }
               : undefined
           }
           onMove={
             recordItemActivity
-              ? (itemId, action) => handleActivity(itemId, undefined, action)
+              ? async (itemId, action) => {
+                  await handleActivity(itemId, undefined, action);
+                }
               : undefined
           }
           activityBusy={activityBusy}

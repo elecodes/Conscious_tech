@@ -137,6 +137,63 @@ export async function verifyCalendarRecovery(browser: Browser, url: string, outp
     await page.getByTestId("calendar-task-g-2026-12-08").waitFor();
     await page.getByTestId("calendar-task-d-2026-12-11").waitFor();
     await page.getByTestId("calendar-task-c-2026-12-10").waitFor();
+    await page.getByTestId("calendar-task-a-2026-12-08").click();
+    const inspector = page.getByTestId("calendar-task-inspector");
+    await inspector.waitFor();
+    if (!(await inspector.innerText()).includes("Investigar el proyecto"))
+      throw new Error("Inspector shows the wrong task");
+    await inspector.getByRole("button", { name: "Marcar como completada" }).click();
+    await inspector.getByText("✓ Completada", { exact: true }).waitFor();
+    await inspector.getByRole("button", { name: "Cerrar", exact: true }).click();
+    const completed = page.getByTestId("calendar-task-a-2026-12-08");
+    await completed.waitFor();
+    if (!(await completed.innerText()).includes("Completada"))
+      throw new Error("Completed task disappeared");
+    if ((await completed.getAttribute("draggable")) !== "false")
+      throw new Error("Completed task can still be dragged");
+    if (
+      !(
+        await completed
+          .locator(".task-calendar-entry-title")
+          .evaluate((element) => getComputedStyle(element).textDecorationLine)
+      ).includes("line-through")
+    )
+      throw new Error("Completed title has no visual mark");
+    if ((await page.getByTestId("calendar-task-b-2026-12-09").innerText()).includes("Completada"))
+      throw new Error("Completion changed its group neighbour");
+    await page.reload({ waitUntil: "networkidle" });
+    await completed.waitFor();
+    await page.getByTestId("calendar-undo-a-2026-12-08").click();
+    await page.getByTestId("calendar-complete-a-2026-12-08").waitFor();
+    const split = page.getByTestId("task-split-active-d-2026-12-11");
+    await split.locator("summary").click();
+    await page.getByTestId("split-hours-active-d-2026-12-11-2026-12-11").fill("1");
+    await page.getByTestId("split-hours-active-d-2026-12-11-2026-12-12").fill("1");
+    await page.getByTestId("save-split-active-d-2026-12-11").click();
+    await page.getByTestId("calendar-task-d-2026-12-12").waitFor();
+    await page.getByTestId("calendar-complete-d-2026-12-11").evaluate((button) => {
+      (button as HTMLButtonElement).click();
+      (button as HTMLButtonElement).click();
+    });
+    await page
+      .getByTestId("calendar-task-d-2026-12-11")
+      .getByText("Completada", { exact: false })
+      .waitFor();
+    await page
+      .getByTestId("calendar-task-d-2026-12-12")
+      .getByText("Completada", { exact: false })
+      .waitFor();
+    await page.getByTestId("calendar-filter-pending").click();
+    await page.getByTestId("calendar-task-d-2026-12-11").waitFor({ state: "hidden" });
+    await page.getByTestId("calendar-filter-all").click();
+    await page.getByTestId("calendar-task-d-2026-12-11").waitFor();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByTestId("calendar-task-d-2026-12-11").click();
+    const detailBox = await inspector.boundingBox();
+    if (!detailBox || detailBox.x < 0 || detailBox.x + detailBox.width > 390)
+      throw new Error("Task inspector overflows mobile");
+    if (output) await page.screenshot({ path: `${output}/completed-task-mobile.png` });
+    await inspector.getByRole("button", { name: "Cerrar", exact: true }).click();
     await page.setViewportSize({ width: 390, height: 844 });
     await page
       .getByTestId("calendar-card-g-2026-12-08")
@@ -147,7 +204,7 @@ export async function verifyCalendarRecovery(browser: Browser, url: string, outp
       throw new Error("Recovery editor overflows mobile");
     if (output) await page.screenshot({ path: `${output}/calendar-recovery-mobile.png` });
     console.log(
-      "  ✓ Calendar tray and included undated tasks: drag, shared estimates, keyboard, cancellation, day/hours editing, postponed recovery, unknown effort, reload and mobile verified"
+      "  ✓ Calendar tray and included undated tasks: drag, shared estimates, keyboard, cancellation, day/hours editing, postponed recovery, unknown effort, visible completion, inspector, undo, split completion, reload and mobile verified"
     );
   } finally {
     await context.close();

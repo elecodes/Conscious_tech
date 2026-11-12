@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Open the active calendar with all tasks, retaining completed work in its day
+  with a green check and struck-through title. Pending-only filtering is optional.
+- Complete tasks directly on calendar cards or in a local task inspector, without
+  scrolling to lower controls. Keep task-specific feedback, latest-completion undo
+  and shared/multi-day task identity under existing activity/version rules.
+- Centre and focus the selected task when explicitly opening its additional controls.
+
 - Move included undated tasks above the active calendar and allow drag/drop or
   “Elegir día”, opening the existing day/hour editor with save/cancel.
 - Preserve task counts, inclusion, source effort and weekly totals when choosing a

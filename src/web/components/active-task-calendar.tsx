@@ -22,6 +22,7 @@ export function ActiveTaskCalendar({
   onMove,
   onDistribute,
   onSchedule,
+  onComplete,
   busy = false,
 }: {
   plan: StoredWeeklyPlan;
@@ -31,6 +32,7 @@ export function ActiveTaskCalendar({
   onMove?: (id: string, sourceDay: string, targetDay: string) => void;
   onDistribute?: (id: string, rows: DailyWorkAllocation[]) => Promise<boolean>;
   onSchedule?: (id: string, day: string, hours: number | null) => Promise<boolean>;
+  onComplete?: (id: string, undoActionId?: string) => Promise<boolean>;
   busy?: boolean;
 }) {
   const movedTask = useRef<{ id: string; source: string; target: string } | null>(null);
@@ -96,7 +98,7 @@ export function ActiveTaskCalendar({
       day,
       day === plan.targetWeek.startDate ? plan.targetWeek.endDate : plan.targetWeek.startDate
     );
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(true);
   const [page, setPage] = useState(0);
   useEffect(() => {
     setPage(0);
@@ -104,6 +106,56 @@ export function ActiveTaskCalendar({
   const model = buildTaskCalendar(plan, schedule, items, page);
   const visible = (task: CalendarTask) =>
     showAll || (task.state !== "completed" && task.state !== "dropped");
+  const inspector = useRef<HTMLDialogElement>(null);
+  const [inspectedId, setInspectedId] = useState<string | null>(null);
+  const [activityMessage, setActivityMessage] = useState<string | null>(null);
+  const completionLock = useRef(false);
+  const allTasks = [
+    ...model.days.flatMap((day) => day.entries.map((entry) => entry.task)),
+    ...model.undated,
+    ...model.extras,
+    ...model.outOfRange.map((entry) => entry.task),
+  ];
+  const inspected = allTasks.find((task) => task.itemId === inspectedId);
+  const canComplete = (task: CalendarTask) =>
+    !!onComplete &&
+    !["note", "outside", "postponed"].includes(task.kind) &&
+    task.state !== "completed" &&
+    task.state !== "dropped";
+  const undoCompletion = (task: CalendarTask) => {
+    const last = schedule?.itemActivity?.history.at(-1);
+    return task.state === "completed" &&
+      last?.command.type === "complete" &&
+      last.command.itemId === task.itemId &&
+      last.appliedVersion === schedule?.version
+      ? last.command.actionId
+      : undefined;
+  };
+  const completeTask = async (task: CalendarTask, undo?: string) => {
+    if (busy || completionLock.current || !onComplete) return;
+    completionLock.current = true;
+    setActivityMessage(null);
+    setShowAll(true);
+    try {
+      const saved = await onComplete(task.itemId, undo);
+      setActivityMessage(
+        saved
+          ? undo
+            ? `«${task.title}» vuelve a estar pendiente.`
+            : `✓ «${task.title}» completada. Se conserva en el calendario.`
+          : `No se guardó el cambio de «${task.title}». Recarga e inténtalo de nuevo.`
+      );
+    } catch {
+      setActivityMessage(`No se pudo guardar el cambio de «${task.title}». Inténtalo de nuevo.`);
+    } finally {
+      completionLock.current = false;
+    }
+  };
+  const inspectTask = (task: CalendarTask) => {
+    setInspectedId(task.itemId);
+    setActivityMessage(null);
+    inspector.current?.showModal();
+  };
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const taskCard = (task: CalendarTask, slot: string, entry?: CalendarEntry) => {
@@ -130,7 +182,7 @@ export function ActiveTaskCalendar({
           }}
           onDragEnd={drag.end}
           onClick={() =>
-            recoverable(task) ? openEditor(task, model.days[0]!.date) : onInspect(task.itemId)
+            recoverable(task) ? openEditor(task, model.days[0]!.date) : inspectTask(task)
           }
           id={`calendar-task-${task.itemId}-${slot}`}
           data-testid={`calendar-task-${task.itemId}-${slot}`}
@@ -167,6 +219,29 @@ export function ActiveTaskCalendar({
             </span>
           )}
         </button>
+        {canComplete(task) && (
+          <button
+            type="button"
+            className="secondary small calendar-adjust-hours"
+            disabled={busy}
+            aria-label={`Marcar ${task.title} como completada`}
+            data-testid={`calendar-complete-${task.itemId}-${slot}`}
+            onClick={() => void completeTask(task)}
+          >
+            ✓ Completar
+          </button>
+        )}
+        {onComplete && undoCompletion(task) && (
+          <button
+            type="button"
+            className="secondary small calendar-adjust-hours"
+            disabled={busy}
+            data-testid={`calendar-undo-${task.itemId}-${slot}`}
+            onClick={() => void completeTask(task, undoCompletion(task))}
+          >
+            Deshacer completado
+          </button>
+        )}
         {canPlace(task) && (
           <button
             type="button"
@@ -312,6 +387,93 @@ export function ActiveTaskCalendar({
           {model.postponed} {model.postponed === 1 ? "aplazada" : "aplazadas"}
         </span>
       </p>
+      {activityMessage && !inspected && (
+        <p
+          role="status"
+          className="calendar-completion-feedback"
+          data-testid="calendar-completion-feedback"
+        >
+          {activityMessage}
+        </p>
+      )}
+      <dialog
+        ref={inspector}
+        onClose={() => setInspectedId(null)}
+        className="calendar-task-editor"
+        aria-label="Detalle de la tarea"
+        data-testid="calendar-task-inspector"
+      >
+        {inspected && (
+          <div className="calendar-inspector-content">
+            <h3>{inspected.title}</h3>
+            <strong
+              className={`calendar-status calendar-tone-${
+                calendarTaskStatus(
+                  inspected,
+                  model.days.some((day) =>
+                    day.entries.some((entry) => entry.task.itemId === inspected.itemId)
+                  )
+                ).tone
+              }`}
+            >
+              {inspected.state === "completed"
+                ? "✓ Completada"
+                : calendarTaskStatus(
+                    inspected,
+                    model.days.some((day) =>
+                      day.entries.some((entry) => entry.task.itemId === inspected.itemId)
+                    )
+                  ).label}
+            </strong>
+            {model.days
+              .filter((day) => day.entries.some((entry) => entry.task.itemId === inspected.itemId))
+              .map((day) => (
+                <p key={day.date}>
+                  {dateLabel(day.date, { weekday: "long", day: "numeric", month: "short" })}
+                  {day.entries.find((entry) => entry.task.itemId === inspected.itemId)?.hours !=
+                  null
+                    ? ` · ${day.entries.find((entry) => entry.task.itemId === inspected.itemId)!.hours} h`
+                    : ""}
+                </p>
+              ))}
+            {canComplete(inspected) && (
+              <button
+                type="button"
+                className="primary"
+                disabled={busy}
+                onClick={() => void completeTask(inspected)}
+              >
+                ✓ Marcar como completada
+              </button>
+            )}
+            {onComplete && undoCompletion(inspected) && (
+              <button
+                type="button"
+                className="secondary"
+                disabled={busy}
+                onClick={() => void completeTask(inspected, undoCompletion(inspected))}
+              >
+                Deshacer completado
+              </button>
+            )}
+            {activityMessage && <p role="status">{activityMessage}</p>}
+            <button
+              type="button"
+              className="secondary"
+              disabled={busy}
+              onClick={() => {
+                inspector.current?.close();
+                onInspect(inspected.itemId);
+              }}
+            >
+              Ver otros controles
+            </button>
+            <button type="button" className="secondary" onClick={() => inspector.current?.close()}>
+              Cerrar
+            </button>
+          </div>
+        )}
+      </dialog>
       <details className="calendar-help" data-testid="calendar-help">
         <summary>Cómo usar el calendario</summary>
         <p className="calm-muted task-calendar-hint">

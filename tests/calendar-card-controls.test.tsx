@@ -84,6 +84,33 @@ describe("Individual task card controls", () => {
     if (undo.status !== "success") throw new Error(JSON.stringify(undo));
     expect(undo.schedule.dailyAllocations).toEqual(schedule.dailyAllocations);
   });
+  it("keeps completed work in its calendar day by default with undo and the same allocations", () => {
+    const { plan, schedule, items } = fixture();
+    const result = applyItemActivity(plan, schedule, {
+      type: "complete",
+      itemId: "a",
+      actionId: "complete-visible-a",
+      expectedVersion: 1,
+      decidedAt: "2026-12-08T08:00:00Z",
+    });
+    if (result.status === "rejected") throw new Error(result.reason);
+    const html = renderToStaticMarkup(
+      <ActiveTaskCalendar
+        plan={plan}
+        schedule={result.schedule}
+        items={items}
+        onInspect={vi.fn()}
+        onComplete={async () => true}
+      />
+    );
+    expect(html).toContain('data-testid="calendar-task-a-2026-12-08"');
+    expect(html).toContain('data-testid="calendar-undo-a-2026-12-08"');
+    expect(html).not.toContain('data-testid="calendar-complete-a-2026-12-08"');
+    expect(html).toContain('data-testid="calendar-complete-b-2026-12-08"');
+    expect(html).toContain("calendar-tone-completed");
+    expect(html).toContain("Completada");
+    expect(result.schedule.dailyAllocations).toEqual(schedule.dailyAllocations);
+  });
   it("separates scheduling colour from unfinished progress and always includes text and symbols", () => {
     const task: CalendarTask = {
       itemId: "a",

@@ -735,3 +735,26 @@ development, including the capture/extraction/edit/reload/append regression.
 Validation: 1,087 tests across 87 files, typecheck, lint, formatting, cycle check and
 production build passed. Full browser smoke passed in preview and development,
 including included-undated placement with shared/unknown hours and mobile controls.
+
+### Visible completion and local task inspection — 12 November 2026
+
+User reports completed work disappears and card clicks scroll to controls that are
+hard to find. The default is now Todas, retaining completed cards in their original
+days with green, a check and struck-through names; Pendientes remains an explicit
+filter. Completing directly from the calendar switches back to the all-task view.
+
+Cards offer compact completion and, when allowed, undo of the latest completion.
+Clicking the title opens a native local inspector with the selected task's name,
+state, visible assigned days and completion actions. Additional controls require
+an explicit action and centre/focus the correct underlying card.
+
+No new completion domain or storage protocol: reuse audited activity commands,
+version checking, locking and existing undo rules. Completing a split task marks
+all its parts while retaining allocations, estimates and neighbours. Browser
+checks cover direct/panel completion, double click, green/strike state, reload,
+undo, optional filtering, split tasks, keyboard inspection and mobile fit.
+
+Validation: 1,088 tests across 87 files passed. Types, lint, formatting, cycles and
+production build passed. Full preview/development browser smoke covers local
+inspection, visible completion, reload, latest-action undo, split-task completion,
+explicit pending filtering and mobile layout.

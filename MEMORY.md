@@ -805,3 +805,18 @@ The product succeeds when the person can say:
   la versión y se respetan límites diarios y compartidos. Sin IA ni dependencias.
 - Los tres pasos acordados están implementados; seguir con validación de la persona
   y nuevo feedback concreto, sin ampliar alcance por iniciativa propia.
+
+### Completar sin perder la tarjeta — 12 de noviembre de 2026
+
+- La persona pide que completar sea visual y no saque la tarea del calendario,
+  y que pulsarla no obligue a buscar sus controles abajo.
+- El calendario abre Todas. Completadas permanecen en sus días, verdes, con ✓ y
+  nombre tachado. Pendientes es opcional; completar desde una tarjeta vuelve a Todas.
+- Completar en la propia tarjeta y un inspector local al pulsar el nombre: estado,
+  fechas y acciones de la tarea concreta, sin scroll. Ver otros controles es una
+  acción secundaria explícita que centra/focaliza la tarjeta inferior seleccionada.
+- Se reutiliza handleActivity con retorno de éxito y los comandos de actividad
+  existentes. No se cambian horas, filas, decisiones ni historial al mostrar tarjetas.
+  Deshacer completado solo cuando lo permite la última acción/versionado vigente.
+- La prueba de navegador verifica panel/directo, recarga, deshacer, doble clic,
+  filtros explícitos, todas las partes de un reparto y presentación en móvil.

@@ -1723,3 +1723,17 @@ details.calm-details[open] {
   border-radius: 5px;
   margin: 2px 0 6px;
 }
+.calendar-inspector-content {
+  display: grid;
+  gap: 12px;
+}
+.calendar-inspector-content .calendar-status {
+  color: var(--calendar-tone);
+}
+.calendar-completion-feedback {
+  font-size: 0.8rem;
+  color: var(--accent-sage);
+}
+.calendar-tone-completed .task-calendar-entry-title {
+  text-decoration: line-through;
+}
