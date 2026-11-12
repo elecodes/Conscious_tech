@@ -11,12 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Pending review
 
-- Investigate user-reported voice dictation failure; the cause and browser conditions
-  have not yet been reproduced.
+- Confirm real-microphone dictation on the user’s Mac after the Chrome transcript
+  duplication fix; simulated service events do not validate audio recognition.
 - Enable direct calendar drag/drop for tasks already included in the active week
   but still without a day. This is distinct from the implemented deferred-task tray.
 
 ### Changed
+
+- Replace interim dictation text instead of appending the whole field repeatedly,
+  rebuild revised browser results without duplicate finals, and preserve manual edits.
+- Show voice startup/stop status and actionable service errors; end recognition
+  explicitly instead of silently restarting after failures. Keep existing notes.
 
 - Collapse calendar instructions and the status legend behind keyboard-accessible
   help disclosures, keeping task actions visible and shortening empty-state text.

@@ -45,8 +45,9 @@ La recuperación de tareas aplazadas no elimina silenciosamente un plan futuro q
 la persona haya organizado de forma independiente.
 
 El 12 de noviembre se agrupan instrucciones y leyenda en desplegables de ayuda,
-con las acciones visibles. Quedan pendientes el diagnóstico del fallo comunicado
-del dictado y el arrastre de tareas **ya incluidas pero sin día**.
+con las acciones visibles. La repetición de texto del dictado Chrome se corrige
+en la app ese mismo día (ver ADR 0019); quedan pendientes la confirmación con el
+micrófono real de la persona y el arrastre de tareas **ya incluidas pero sin día**.
 No confundir este último caso con la bandeja de tareas fuera de semana implementada.
 
 ## Evidencia y seguimiento

@@ -51,6 +51,7 @@ export function getSpeechRecognitionClass(): { new (): ISpeechRecognition } | nu
 
 export interface UseSpeechRecognitionOptions {
   initialLang?: string;
+  /** Receives the complete updated field value, including interim corrections. */
   onTranscript?: (newText: string) => void;
   getText?: () => string;
 }
@@ -58,6 +59,9 @@ export interface UseSpeechRecognitionOptions {
 export interface UseSpeechRecognitionReturn {
   isSupported: boolean;
   isListening: boolean;
+  isStarting: boolean;
+  isStopping: boolean;
+  statusMessage: string | null;
   lang: string;
   setLang: (lang: string) => void;
   startListening: () => void;
@@ -66,154 +70,175 @@ export interface UseSpeechRecognitionReturn {
   errorMessage: string | null;
 }
 
+export function speechErrorMessage(code: string) {
+  const messages: Record<string, string> = {
+    "not-allowed":
+      "El micrófono está bloqueado. Permite su uso para esta página en el navegador y en Ajustes del Sistema → Privacidad y seguridad → Micrófono de tu Mac.",
+    "service-not-allowed":
+      "El navegador no permite el servicio de dictado. Revisa sus ajustes de voz o prueba otro navegador compatible.",
+    "audio-capture":
+      "No se puede acceder al micrófono. Comprueba que esté conectado, seleccionado y permitido en los ajustes del sistema.",
+    "no-speech":
+      "No se ha detectado voz. Comprueba el micrófono y pulsa Dictar por voz para intentarlo de nuevo.",
+    network:
+      "No se pudo conectar con el servicio de dictado del navegador. Comprueba la conexión y vuelve a intentarlo.",
+    "language-not-supported":
+      "El servicio de dictado no admite este idioma. Prueba otro idioma en las opciones de voz.",
+    aborted: "El dictado se ha interrumpido. Puedes iniciarlo de nuevo.",
+  };
+  return (
+    messages[code] ??
+    "El navegador no pudo completar el dictado. Puedes volver a intentarlo o escribir el texto."
+  );
+}
+
 export function useSpeechRecognition({
   initialLang = "es-ES",
   onTranscript,
   getText,
 }: UseSpeechRecognitionOptions = {}): UseSpeechRecognitionReturn {
-  const [isListening, setIsListening] = useState(false);
-  const [lang, setLang] = useState(initialLang);
+  const [status, setStatus] = useState<"idle" | "starting" | "listening" | "stopping">("idle");
+  const [lang, updateLang] = useState(initialLang);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
-  const isExplicitlyStoppedRef = useRef(true);
-  const baseTextRef = useRef("");
-  const accumulatedFinalRef = useRef("");
-
+  const callbacks = useRef({ onTranscript, getText });
+  callbacks.current = { onTranscript, getText };
+  const stopping = useRef(false);
   const SpeechRecognitionClass = getSpeechRecognitionClass();
-  const isSupported = Boolean(SpeechRecognitionClass);
 
   const cleanupRecognition = useCallback(() => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.onresult = null;
-        recognitionRef.current.onerror = null;
-        recognitionRef.current.onend = null;
-        recognitionRef.current.onstart = null;
-        recognitionRef.current.abort();
-      } catch {
-        // Ignore abort errors during cleanup
-      }
-      recognitionRef.current = null;
+    const recognition = recognitionRef.current;
+    recognitionRef.current = null;
+    if (!recognition) return;
+    recognition.onresult = recognition.onerror = null;
+    recognition.onend = recognition.onstart = null;
+    try {
+      recognition.abort();
+    } catch {
+      /* Already ended. */
     }
   }, []);
 
   const stopListening = useCallback(() => {
-    isExplicitlyStoppedRef.current = true;
-    setIsListening(false);
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {
-        // Ignore
-      }
+    if (!recognitionRef.current || stopping.current) return;
+    stopping.current = true;
+    setStatus("stopping");
+    try {
+      recognitionRef.current.stop();
+    } catch {
+      cleanupRecognition();
+      setStatus("idle");
+      setStatusMessage("Dictado detenido. El texto se conserva.");
     }
-  }, []);
+  }, [cleanupRecognition]);
 
   const startListening = useCallback(() => {
+    if (recognitionRef.current) return;
     if (!SpeechRecognitionClass) {
-      setErrorMessage("Tu navegador no soporta reconocimiento de voz nativo (Web Speech API).");
+      setErrorMessage(
+        "Este navegador no admite el dictado. Puedes usar el dictado de macOS o un navegador compatible."
+      );
       return;
     }
-
-    cleanupRecognition();
+    if (typeof window !== "undefined" && window.isSecureContext === false) {
+      setErrorMessage("Abre la app en localhost o con HTTPS para usar el micrófono.");
+      return;
+    }
     setErrorMessage(null);
-    isExplicitlyStoppedRef.current = false;
-
-    // Capture initial text before starting speech
-    baseTextRef.current = getText ? getText() : "";
-    accumulatedFinalRef.current = "";
-
+    setStatusMessage("Conectando con el micrófono. Acepta el permiso si el navegador lo solicita.");
+    setStatus("starting");
+    stopping.current = false;
+    const base = callbacks.current.getText?.() ?? "";
+    let lastPublished = base;
+    let receivedText = false;
     try {
       const recognition = new SpeechRecognitionClass();
+      recognitionRef.current = recognition;
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = lang;
-
       recognition.onstart = () => {
-        setIsListening(true);
+        if (recognitionRef.current !== recognition || stopping.current) return;
+        setStatus("listening");
+        setStatusMessage("Escuchando. Habla y el texto aparecerá aquí.");
       };
-
       recognition.onresult = (event: SpeechRecognitionEvent) => {
-        let interimText = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const res = event.results[i]!;
-          const transcriptPiece = res[0]?.transcript || "";
-          if (res.isFinal) {
-            accumulatedFinalRef.current +=
-              (accumulatedFinalRef.current ? " " : "") + transcriptPiece.trim();
-          } else {
-            interimText += (interimText ? " " : "") + transcriptPiece.trim();
-          }
+        if (recognitionRef.current !== recognition) return;
+        // Browser results contain the whole session, including revised interim results.
+        // Rebuild instead of appending a final result again on repeated events.
+        const current = callbacks.current.getText?.();
+        if (current !== undefined && current !== lastPublished) {
+          cleanupRecognition();
+          setStatus("idle");
+          setStatusMessage(
+            "Has editado el texto. El dictado se ha detenido para conservar tus cambios; puedes iniciarlo de nuevo."
+          );
+          return;
         }
-
-        const currentSpeech = (accumulatedFinalRef.current + " " + interimText).trim();
-        if (currentSpeech && onTranscript) {
-          const combined = baseTextRef.current.trim()
-            ? `${baseTextRef.current.trim()} ${currentSpeech}`
-            : currentSpeech;
-          onTranscript(combined);
+        const parts: string[] = [];
+        for (let i = 0; i < event.results.length; i++) {
+          const text = event.results[i]?.[0]?.transcript.trim();
+          if (text) parts.push(text);
         }
+        const speech = parts.join(" ");
+        if (!speech) return;
+        lastPublished = base + (base && !/\s$/.test(base) ? " " : "") + speech;
+        receivedText = true;
+        callbacks.current.onTranscript?.(lastPublished);
       };
-
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        if (event.error === "no-speech") {
-          // Normal timeout on silence, continue listening unless explicitly stopped
-          return;
-        }
-        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-          setErrorMessage("Permiso de micrófono no otorgado.");
-          isExplicitlyStoppedRef.current = true;
-          setIsListening(false);
-          return;
-        }
-        setErrorMessage(`Aviso de voz: ${event.error}`);
+        if (recognitionRef.current !== recognition) return;
+        const explicitAbort = stopping.current && event.error === "aborted";
+        cleanupRecognition();
+        setStatus("idle");
+        setStatusMessage(explicitAbort ? "Dictado detenido. El texto se conserva." : null);
+        if (!explicitAbort) setErrorMessage(speechErrorMessage(event.error));
       };
-
       recognition.onend = () => {
-        // If the browser prematurely closes the stream but user didn't stop, seamlessly restart
-        if (!isExplicitlyStoppedRef.current) {
-          try {
-            // Update baseText with whatever was finalized before restart
-            if (getText) {
-              baseTextRef.current = getText();
-              accumulatedFinalRef.current = "";
-            }
-            recognition.start();
-            return;
-          } catch {
-            // Fallthrough to stopped
-          }
-        }
-        setIsListening(false);
+        if (recognitionRef.current !== recognition) return;
+        cleanupRecognition();
+        setStatus("idle");
+        setStatusMessage(
+          receivedText || stopping.current
+            ? "Dictado detenido. El texto se conserva; puedes continuar dictando cuando quieras."
+            : "El dictado terminó sin recibir texto. Comprueba el micrófono e inténtalo de nuevo."
+        );
       };
-
-      recognitionRef.current = recognition;
       recognition.start();
-    } catch (err) {
-      setErrorMessage((err as Error).message || "No se pudo iniciar el micrófono.");
-      setIsListening(false);
+    } catch {
+      cleanupRecognition();
+      setStatus("idle");
+      setStatusMessage(null);
+      setErrorMessage(
+        "No se pudo iniciar el dictado. Revisa el permiso del micrófono y vuelve a intentarlo."
+      );
     }
-  }, [SpeechRecognitionClass, cleanupRecognition, getText, lang, onTranscript]);
+  }, [SpeechRecognitionClass, cleanupRecognition, lang]);
 
   const toggleListening = useCallback(() => {
-    if (isListening) {
-      stopListening();
-    } else {
-      startListening();
-    }
-  }, [isListening, startListening, stopListening]);
-
-  // Clean up when unmounting or changing language
-  useEffect(() => {
-    return () => {
+    if (recognitionRef.current) stopListening();
+    else startListening();
+  }, [startListening, stopListening]);
+  const setLang = useCallback(
+    (value: string) => {
       cleanupRecognition();
-    };
-  }, [cleanupRecognition]);
+      stopping.current = true;
+      setStatus("idle");
+      setErrorMessage(null);
+      setStatusMessage(null);
+      updateLang(value);
+    },
+    [cleanupRecognition]
+  );
+  useEffect(() => cleanupRecognition, [cleanupRecognition]);
 
   return {
-    isSupported,
-    isListening,
+    isSupported: Boolean(SpeechRecognitionClass),
+    isListening: status === "listening",
+    isStarting: status === "starting",
+    isStopping: status === "stopping",
+    statusMessage,
     lang,
     setLang,
     startListening,

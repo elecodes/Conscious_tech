@@ -15,7 +15,8 @@ instrucciones y la leyenda se consultan desde desplegables de ayuda.
 
 Pendiente para la próxima sesión:
 
-- Diagnosticar el dictado por voz: se ha comunicado que no funciona; aún no está corregido.
+- Probar el dictado con el micrófono real en Chrome del Mac: corregida la acumulación
+  de frases provisionales en la app; pendiente confirmar el resultado con voz real.
 - Añadir drag/drop desde las tareas incluidas en la semana que siguen sin día asignado.
 
 Última verificación funcional completa: 1.081 pruebas en 85 archivos y pruebas de

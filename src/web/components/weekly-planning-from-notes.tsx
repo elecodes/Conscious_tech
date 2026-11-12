@@ -2266,9 +2266,7 @@ export function WeeklyPlanningFromNotes({
               <VoiceDictationButton
                 disabled={isExtracting || isPlanning}
                 getText={() => noteText}
-                onTranscript={(transcript) => {
-                  setNoteText((prev) => (prev ? `${prev}\n${transcript}` : transcript));
-                }}
+                onTranscript={setNoteText}
               />
             </div>
 

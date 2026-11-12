@@ -743,3 +743,17 @@ The product succeeds when the person can say:
   se acortan. No se modifican decisiones, asignaciones ni persistencia.
 - Continúan pendientes el diagnóstico del dictado real y el drag/drop de las tareas
   incluidas sin día asignado. El arrastre desde la bandeja de aplazadas ya existe.
+
+### Dictado Chrome — 12 de noviembre de 2026
+
+- La persona confirma que el fallo es repetición progresiva de palabras en Chrome.
+  Causa reproducida: la captura inicial concatenaba cada snapshot completo que el
+  hook devuelve. Se cambia a sustituir el valor, como ya hacían revisión y Radar.
+- El hook reconstruye la lista de resultados, conserva notas y finales tras Parar,
+  usa callbacks actuales y detiene la sesión si la persona edita manualmente. No
+  reinicia a escondidas tras fin/error. Inicio/parada y errores tienen feedback claro.
+- Smoke con eventos de servicio simulados verifica frases crecientes, finales
+  repetidos, texto existente, parada, errores, idioma, móvil y limpieza al salir.
+  NO equivale a probar audio real: pendiente que la persona lo confirme con su
+  micrófono en Chrome del Mac. No declarar validada la transcripción real aún.
+- Sigue pendiente el arrastre de tareas ya incluidas pero sin día.

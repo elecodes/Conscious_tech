@@ -1,6 +1,8 @@
+import { useEffect, useId } from "react";
 import { useSpeechRecognition } from "../hooks/use-speech-recognition";
 
 export interface VoiceDictationButtonProps {
+  /** Complete field value, including existing notes; replace the value instead of appending it. */
   onTranscript: (newText: string) => void;
   getText: () => string;
   defaultLang?: string;
@@ -13,12 +15,28 @@ export function VoiceDictationButton({
   defaultLang = "es-ES",
   disabled = false,
 }: VoiceDictationButtonProps) {
-  const { isSupported, isListening, lang, setLang, toggleListening, errorMessage } =
-    useSpeechRecognition({
-      initialLang: defaultLang,
-      onTranscript,
-      getText,
-    });
+  const {
+    isSupported,
+    isListening,
+    isStarting,
+    isStopping,
+    statusMessage,
+    stopListening,
+    lang,
+    setLang,
+    toggleListening,
+    errorMessage,
+  } = useSpeechRecognition({
+    initialLang: defaultLang,
+    onTranscript,
+    getText,
+  });
+
+  const languageId = useId();
+  const active = isListening || isStarting || isStopping;
+  useEffect(() => {
+    if (disabled) stopListening();
+  }, [disabled, stopListening]);
 
   if (!isSupported) {
     return (
@@ -27,7 +45,7 @@ export function VoiceDictationButton({
         style={{ fontSize: "0.78rem" }}
         title="Web Speech API no disponible en este navegador"
       >
-        🎙️ (Voz no soportada)
+        🎙️ Voz no soportada. Usa el dictado de macOS o un navegador compatible.
       </span>
     );
   }
@@ -37,6 +55,8 @@ export function VoiceDictationButton({
       style={{
         display: "inline-flex",
         alignItems: "center",
+        flexWrap: "wrap",
+        maxWidth: "100%",
         gap: "4px",
         position: "relative",
       }}
@@ -44,11 +64,11 @@ export function VoiceDictationButton({
       <button
         type="button"
         data-testid="voice-dictation-btn"
-        className={isListening ? "primary small" : "secondary small"}
+        className={active ? "primary small" : "secondary small"}
         onClick={toggleListening}
-        disabled={disabled}
-        aria-pressed={isListening}
-        aria-label={isListening ? "Detener dictado por voz" : "Iniciar dictado por voz"}
+        disabled={disabled || isStopping}
+        aria-pressed={active}
+        aria-label={active ? "Detener dictado por voz" : "Iniciar dictado por voz"}
         title="Dictar por voz (Web Speech API)"
         style={{
           display: "inline-flex",
@@ -73,7 +93,15 @@ export function VoiceDictationButton({
         >
           {isListening ? "🔴" : "🎙️"}
         </span>
-        <span>{isListening ? "Escuchando... (Parar)" : "Dictar por voz"}</span>
+        <span>
+          {isStarting
+            ? "Conectando… (Parar)"
+            : isStopping
+              ? "Terminando…"
+              : isListening
+                ? "Escuchando… (Parar)"
+                : "Dictar por voz"}
+        </span>
       </button>
 
       {/* Language selector and privacy notice inside compact options popover/details */}
@@ -122,18 +150,18 @@ export function VoiceDictationButton({
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <label
-              htmlFor="voice-lang-select"
+              htmlFor={languageId}
               style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-main)" }}
             >
               Idioma:
             </label>
             <select
-              id="voice-lang-select"
+              id={languageId}
               data-testid="voice-lang-select"
               value={lang}
               onChange={(e) => setLang(e.target.value)}
               aria-label="Idioma del dictado por voz"
-              disabled={disabled || isListening}
+              disabled={disabled || active}
               style={{
                 fontSize: "0.78rem",
                 padding: "2px 6px",
@@ -160,9 +188,21 @@ export function VoiceDictationButton({
         </div>
       </details>
 
+      {statusMessage && !errorMessage && (
+        <span
+          role="status"
+          data-testid="voice-status"
+          style={{ flexBasis: "100%", fontSize: "0.78rem", lineHeight: 1.4 }}
+        >
+          {statusMessage}
+        </span>
+      )}
       {errorMessage && (
         <span
+          role="alert"
+          data-testid="voice-error"
           style={{
+            flexBasis: "100%",
             fontSize: "0.78rem",
             color: "#dc2626",
             marginLeft: "4px",

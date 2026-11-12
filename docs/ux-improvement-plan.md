@@ -1,6 +1,6 @@
 # UX improvement plan
 
-Status: resumed on 12 November 2026. Calendar text simplification implemented; voice diagnosis and undated-task drag/drop remain pending.
+Status: resumed on 12 November 2026. Calendar text simplification implemented; voice transcript duplication corrected with real-microphone confirmation pending; undated-task drag/drop remains pending.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
@@ -13,10 +13,12 @@ Documentation-only session close followed this checkpoint. Work resumed on 12 No
    calendar instructions/colour legend now sit in collapsed help disclosures.
    Tasks, dates, daily hours and actions stay visible; empty-state and tray copy is
    shorter. Native disclosures support keyboard opening/closing.
-2. **Voice dictation.** Reproduce the reported failure with the user's browser,
-   microphone permissions and language. Inspect the existing Web Speech API flow,
-   error/end events and input updates. Do not claim a fix until actual speech input
-   is verified; automated mocks alone cannot establish microphone recognition.
+2. **Voice dictation — app fix implemented, 12 November; microphone confirmation pending.**
+   User confirms Chrome repeats each growing phrase. Capture appended each full-field
+   transcript snapshot instead of replacing it. Corrected that integration and rebuilt
+   results without accumulating repeated finals. Startup/stop, service errors, manual
+   edits and teardown are covered by browser service-event simulations. No real audio
+   recognition was verified here; confirm by speaking into the user's Mac microphone.
 3. **Included tasks without a day.** Add drag/drop from the undated section into a
    calendar day, plus a keyboard/touch equivalent and local hour editing. Preserve
    their inclusion, estimates and other assignments; do not duplicate tasks or invent
@@ -26,7 +28,7 @@ The implemented tray recovers **outside/postponed tasks**. It does not yet make 
 separate **included, undated tasks** draggable. Keep this distinction when resuming.
 
 Start with the calendar disclosures, then dictation, then undated-task movement,
-in separate small steps. Next: reproduce the voice dictation failure.
+in separate small steps. Next: confirm real-microphone dictation on the user’s Mac, then undated-task movement.
 
 ## Goal
 
@@ -671,3 +673,10 @@ Baseline results:
   unknown hours, independent-task preservation, reload and mobile editor fit.
 - Validation: 1,081 tests across 85 files, typecheck, lint, formatting, cycle check
   and production build passed. Full browser smoke passed in preview and development.
+
+### Voice dictation verification — 12 November 2026
+
+- 1,081 tests across 85 files passed; types, lint, format, cycles and production
+  build passed. Full browser smoke passed in preview and development, including
+  simulated Chrome-style provisional/final results and microphone-service failures.
+- Real microphone/audio recognition on the user's Mac remains to be confirmed.
