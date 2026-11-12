@@ -13,15 +13,20 @@ una bandeja encima de los días: arrástralas o usa «Añadir a un día» y conf
 y horas. Las tarjetas de un solo día ofrecen «Ajustar horas» en formato compacto. Las
 instrucciones y la leyenda se consultan desde desplegables de ayuda.
 
+El dictado de tareas permite decir «siguiente tarea» para empezar otra línea.
+Por ejemplo: «Comprar pan, siguiente tarea, estudiar Python». Se puede desactivar
+«Separar tareas por voz» en las opciones para dictar texto libre. No se usan las
+pausas ni los números como separadores. La persona ha confirmado que la repetición
+de frases en Chrome ya está corregida; queda probar el nuevo comando con voz real.
+
 Pendiente para la próxima sesión:
 
-- Probar el dictado con el micrófono real en Chrome del Mac: corregida la acumulación
-  de frases provisionales en la app; pendiente confirmar el resultado con voz real.
 - Añadir drag/drop desde las tareas incluidas en la semana que siguen sin día asignado.
 
-Última verificación funcional completa: 1.081 pruebas en 85 archivos y pruebas de
-navegador en preview/desarrollo. El ajuste visual posterior del botón también se
-verificó en navegador, tipos y lint. No se ha publicado una nueva versión.
+Última verificación: 1.083 pruebas en 86 archivos, tipos, lint y compilación.
+El recorrido completo del navegador pasó antes de la separación por voz; esta
+mejora se verifica con eventos de reconocimiento simulados y en la versión compilada.
+No se ha publicado una nueva versión.
 
 Seguimiento: [plan UX](docs/ux-improvement-plan.md) y
 [ADR 0029](docs/adr/0029-calendar-first-planning-and-task-recovery.md).

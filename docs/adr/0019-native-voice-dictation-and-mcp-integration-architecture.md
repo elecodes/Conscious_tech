@@ -84,3 +84,18 @@ texto previo, parada con resultado final, edición manual, errores, idioma y sal
 de la captura. Verifica la integración de la app, **no** la transcripción de audio
 real. Queda pendiente confirmar el dictado hablado en Chrome del Mac de la persona.
 No se añaden servicios de transcripción, dependencias, grabaciones ni registro de voz.
+
+## Separación explícita de tareas — 12 de noviembre de 2026
+
+La persona confirma que ya no se repiten frases en Chrome. Solicita separar las
+tareas dictadas sin depender de la puntuación del servicio. En captura y revisión
+se habilita el modo de lista: «siguiente tarea» (en inglés «next task») inicia otra
+línea. Una indicación con ejemplo explica el comando; puede desactivarse desde las
+opciones si la expresión debe conservarse literalmente. Radar mantiene texto libre.
+
+La transformación determinista se aplica solo al habla de la sesión actual antes
+de combinarla con las notas previas. No interpreta pausas ni numeraciones, que
+pueden formar parte de horas, cantidades o de una misma tarea. Los resultados
+provisionales se reconstruyen para que el comando no reintroduzca duplicados.
+La separación en líneas y su extracción se prueban con eventos simulados y casos
+unitarios; queda pendiente probar el nuevo comando hablado en el Mac.

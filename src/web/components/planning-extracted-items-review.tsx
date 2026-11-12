@@ -243,7 +243,11 @@ export function PlanningExtractedItemsReview({
               <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
                 {noteText.length} caracteres
               </span>
-              <VoiceDictationButton getText={() => noteText} onTranscript={(t) => setNoteText(t)} />
+              <VoiceDictationButton
+                taskList
+                getText={() => noteText}
+                onTranscript={(t) => setNoteText(t)}
+              />
             </div>
           </div>
           <textarea

@@ -757,3 +757,17 @@ The product succeeds when the person can say:
   NO equivale a probar audio real: pendiente que la persona lo confirme con su
   micrófono en Chrome del Mac. No declarar validada la transcripción real aún.
 - Sigue pendiente el arrastre de tareas ya incluidas pero sin día.
+
+### Separación de tareas dictadas — 12 de noviembre de 2026
+
+- La persona confirma que la repetición está corregida en su Chrome. El siguiente
+  problema es que el habla sin puntuación produce una sola tarea.
+- Se adopta un comando explícito: decir «siguiente tarea» crea otra línea (inglés:
+  «next task»). Captura y revisión muestran un ejemplo y habilitan esta separación;
+  puede desactivarse en las opciones. Radar no cambia de modo.
+- No se interpreta el silencio ni «uno, dos, tres» como delimitadores: pueden ser
+  parte de una idea, horas o cantidades. Solo se transforma el habla nueva; las
+  notas previas se conservan. Sin IA nueva ni dependencias.
+- Validación con texto reconocido simulado y extracción de líneas; aún falta que
+  la persona compruebe el comando nuevo con voz real. El arrastre de incluidas sin
+  día sigue pendiente.

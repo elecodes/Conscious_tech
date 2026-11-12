@@ -11,12 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Pending review
 
-- Confirm real-microphone dictation on the user’s Mac after the Chrome transcript
-  duplication fix; simulated service events do not validate audio recognition.
+- Confirm spoken recognition of the new “siguiente tarea” command on the user's Mac.
+  The user confirms the preceding Chrome transcript duplication fix.
 - Enable direct calendar drag/drop for tasks already included in the active week
   but still without a day. This is distinct from the implemented deferred-task tray.
 
 ### Changed
+
+- In task capture/review dictation, convert the explicit spoken command
+  “siguiente tarea” (English: “next task”) into a line break. Show an example and
+  offer a free-text opt-out. Numbers, durations and pauses are not separators.
 
 - Replace interim dictation text instead of appending the whole field repeatedly,
   rebuild revised browser results without duplicate finals, and preserve manual edits.

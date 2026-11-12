@@ -88,6 +88,38 @@ export async function verifyVoiceDictation(browser: Browser, url: string, output
     await page.evaluate("window.__voice.emit([['No sobrescribir.', true]])");
     if ((await input.inputValue()) !== "Corrección manual que debe conservarse")
       throw new Error("Dictation overwrote manual edits");
+    await input.fill("");
+    await button.click();
+    await page.evaluate("window.__voice.started()");
+    await page.evaluate("window.__voice.emit([['Estudiar Python 2 horas, siguiente', false]])");
+    await page.waitForFunction(
+      "document.querySelector('[data-testid=flow-textarea]').value === 'Estudiar Python 2 horas, siguiente'"
+    );
+    await page.evaluate(
+      "window.__voice.emit([['Estudiar Python 2 horas, siguiente tarea, practicar typing 1 hora', false]])"
+    );
+    await page.waitForFunction(
+      "document.querySelector('[data-testid=flow-textarea]').value === 'Estudiar Python 2 horas\\npracticar typing 1 hora'"
+    );
+    await page.evaluate(
+      "window.__voice.emit([['Estudiar Python 2 horas, siguiente tarea, practicar typing 1 hora', true]])"
+    );
+    await button.click();
+    await page.evaluate("window.__voice.ended()");
+    await page.getByTestId("voice-options-popover").locator("summary").click();
+    await page.getByLabel("Separar tareas por voz").uncheck();
+    await input.fill("");
+    await button.click();
+    await page.evaluate("window.__voice.started()");
+    await page.evaluate("window.__voice.emit([['Revisar la siguiente tarea del proyecto', true]])");
+    await page.waitForFunction(
+      "document.querySelector('[data-testid=flow-textarea]').value === 'Revisar la siguiente tarea del proyecto'"
+    );
+    await button.click();
+    await page.evaluate("window.__voice.ended()");
+    await page.getByLabel("Separar tareas por voz").check();
+    await page.getByTestId("voice-options-popover").locator("summary").click();
+    await input.fill("Corrección manual que debe conservarse");
     for (const [code, message] of [
       ["not-allowed", "micrófono está bloqueado"],
       ["network", "conectar"],
@@ -109,12 +141,19 @@ export async function verifyVoiceDictation(browser: Browser, url: string, output
     }
     await page.getByTestId("voice-options-popover").locator("summary").click();
     await page.getByTestId("voice-lang-select").selectOption("en-US");
+    await input.fill("");
     await button.click();
     if (await page.evaluate("window.__voice.instances.at(-1).lang !== 'en-US'"))
       throw new Error("Language selection ignored");
     if (!(await page.getByTestId("voice-lang-select").isDisabled()))
       throw new Error("Language can change during start");
-    await page.evaluate("window.__voice.started();window.__voice.ended()");
+    await page.evaluate("window.__voice.started()");
+    await page.evaluate("window.__voice.emit([['Read a book, next task, write a report', true]])");
+    await page.waitForFunction(
+      "document.querySelector('[data-testid=flow-textarea]').value === 'Read a book\\nwrite a report'"
+    );
+    await page.evaluate("window.__voice.ended()");
+
     if (await page.evaluate("window.__voice.instances.at(-1).starts !== 1"))
       throw new Error("Unexpected restart on silence/end");
     await page.evaluate("window.__voice.failStart = true");
@@ -136,7 +175,7 @@ export async function verifyVoiceDictation(browser: Browser, url: string, output
     )
       throw new Error("Leaving capture does not release the voice session");
     console.log(
-      "  ✓ Voice service simulation: start/stop, interim/final text, repeat events, manual edits, errors, language and mobile verified (not real audio)"
+      "  ✓ Voice service simulation: start/stop, interim/final text, repeat events, manual edits, errors, task separators, free-text mode, language and mobile verified (not real audio)"
     );
   } finally {
     await context.close();

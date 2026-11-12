@@ -1,3 +1,4 @@
+import { formatTaskDictation } from "../task-dictation";
 import { useState, useEffect, useRef, useCallback } from "react";
 
 // Web Speech API interface abstractions for TypeScript
@@ -51,6 +52,7 @@ export function getSpeechRecognitionClass(): { new (): ISpeechRecognition } | nu
 
 export interface UseSpeechRecognitionOptions {
   initialLang?: string;
+  separateTasks?: boolean;
   /** Receives the complete updated field value, including interim corrections. */
   onTranscript?: (newText: string) => void;
   getText?: () => string;
@@ -94,6 +96,7 @@ export function speechErrorMessage(code: string) {
 
 export function useSpeechRecognition({
   initialLang = "es-ES",
+  separateTasks = false,
   onTranscript,
   getText,
 }: UseSpeechRecognitionOptions = {}): UseSpeechRecognitionReturn {
@@ -181,9 +184,11 @@ export function useSpeechRecognition({
           const text = event.results[i]?.[0]?.transcript.trim();
           if (text) parts.push(text);
         }
-        const speech = parts.join(" ");
+        const rawSpeech = parts.join(" ");
+        const speech = separateTasks ? formatTaskDictation(rawSpeech, lang) : rawSpeech;
         if (!speech) return;
-        lastPublished = base + (base && !/\s$/.test(base) ? " " : "") + speech;
+        lastPublished =
+          base + (base && !/\s$/.test(base) && !speech.startsWith("\n") ? " " : "") + speech;
         receivedText = true;
         callbacks.current.onTranscript?.(lastPublished);
       };
@@ -214,7 +219,7 @@ export function useSpeechRecognition({
         "No se pudo iniciar el dictado. Revisa el permiso del micrófono y vuelve a intentarlo."
       );
     }
-  }, [SpeechRecognitionClass, cleanupRecognition, lang]);
+  }, [SpeechRecognitionClass, cleanupRecognition, lang, separateTasks]);
 
   const toggleListening = useCallback(() => {
     if (recognitionRef.current) stopListening();

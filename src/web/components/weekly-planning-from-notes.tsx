@@ -2264,6 +2264,7 @@ export function WeeklyPlanningFromNotes({
                 ¿Qué tienes en la cabeza?
               </label>
               <VoiceDictationButton
+                taskList
                 disabled={isExtracting || isPlanning}
                 getText={() => noteText}
                 onTranscript={setNoteText}

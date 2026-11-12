@@ -1,4 +1,4 @@
-import { useEffect, useId } from "react";
+import { useEffect, useId, useState } from "react";
 import { useSpeechRecognition } from "../hooks/use-speech-recognition";
 
 export interface VoiceDictationButtonProps {
@@ -6,6 +6,7 @@ export interface VoiceDictationButtonProps {
   onTranscript: (newText: string) => void;
   getText: () => string;
   defaultLang?: string;
+  taskList?: boolean;
   disabled?: boolean;
 }
 
@@ -13,8 +14,10 @@ export function VoiceDictationButton({
   onTranscript,
   getText,
   defaultLang = "es-ES",
+  taskList = false,
   disabled = false,
 }: VoiceDictationButtonProps) {
+  const [separateTasks, setSeparateTasks] = useState(taskList);
   const {
     isSupported,
     isListening,
@@ -28,6 +31,7 @@ export function VoiceDictationButton({
     errorMessage,
   } = useSpeechRecognition({
     initialLang: defaultLang,
+    separateTasks,
     onTranscript,
     getText,
   });
@@ -175,6 +179,17 @@ export function VoiceDictationButton({
               <option value="en-US">en-US</option>
             </select>
           </div>
+          {taskList && (
+            <label style={{ fontSize: "0.78rem", display: "flex", gap: "6px" }}>
+              <input
+                type="checkbox"
+                checked={separateTasks}
+                disabled={disabled || active}
+                onChange={(event) => setSeparateTasks(event.target.checked)}
+              />
+              Separar tareas por voz
+            </label>
+          )}
           <span
             data-testid="voice-dictation-privacy-notice"
             style={{
@@ -188,6 +203,16 @@ export function VoiceDictationButton({
         </div>
       </details>
 
+      {taskList && separateTasks && (
+        <span
+          data-testid="voice-task-hint"
+          style={{ flexBasis: "100%", fontSize: "0.78rem", lineHeight: 1.4 }}
+        >
+          {lang.startsWith("en")
+            ? "Say “next task” between tasks."
+            : "Di «siguiente tarea» entre tareas. Ejemplo: «Comprar pan, siguiente tarea, estudiar Python»."}
+        </span>
+      )}
       {statusMessage && !errorMessage && (
         <span
           role="status"

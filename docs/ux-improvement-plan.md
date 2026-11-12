@@ -1,6 +1,6 @@
 # UX improvement plan
 
-Status: resumed on 12 November 2026. Calendar text simplification implemented; voice transcript duplication corrected with real-microphone confirmation pending; undated-task drag/drop remains pending.
+Status: resumed on 12 November 2026. Calendar text simplification implemented; voice duplication fix confirmed by user and explicit voice task separators implemented; undated-task drag/drop remains pending.
 
 Base: `main` at `11e2f95`. Working branch: `codex/ux-step-by-step`.
 
@@ -13,12 +13,14 @@ Documentation-only session close followed this checkpoint. Work resumed on 12 No
    calendar instructions/colour legend now sit in collapsed help disclosures.
    Tasks, dates, daily hours and actions stay visible; empty-state and tray copy is
    shorter. Native disclosures support keyboard opening/closing.
-2. **Voice dictation — app fix implemented, 12 November; microphone confirmation pending.**
+2. **Voice dictation — repetition fixed and confirmed by user, 12 November.**
    User confirms Chrome repeats each growing phrase. Capture appended each full-field
    transcript snapshot instead of replacing it. Corrected that integration and rebuilt
    results without accumulating repeated finals. Startup/stop, service errors, manual
    edits and teardown are covered by browser service-event simulations. No real audio
-   recognition was verified here; confirm by speaking into the user's Mac microphone.
+   recognition was verified by the assistant; the user then confirmed the repetition
+   is corrected. New explicit task-list commands are implemented with an opt-out;
+   recognition of “siguiente tarea” itself still needs the user's spoken check.
 3. **Included tasks without a day.** Add drag/drop from the undated section into a
    calendar day, plus a keyboard/touch equivalent and local hour editing. Preserve
    their inclusion, estimates and other assignments; do not duplicate tasks or invent
@@ -28,7 +30,7 @@ The implemented tray recovers **outside/postponed tasks**. It does not yet make 
 separate **included, undated tasks** draggable. Keep this distinction when resuming.
 
 Start with the calendar disclosures, then dictation, then undated-task movement,
-in separate small steps. Next: confirm real-microphone dictation on the user’s Mac, then undated-task movement.
+in separate small steps. Next: confirm the spoken task separator on the user’s Mac, then undated-task movement.
 
 ## Goal
 
@@ -680,3 +682,19 @@ Baseline results:
   build passed. Full browser smoke passed in preview and development, including
   simulated Chrome-style provisional/final results and microphone-service failures.
 - Real microphone/audio recognition on the user's Mac remains to be confirmed.
+
+### Voice task separation — 12 November 2026
+
+The user confirms repetition is fixed but unpunctuated speech becomes one item.
+Task dictation now converts the explicit “siguiente tarea” / “next task” command
+into a line break, including revised interim results. Capture and additional-task
+review enable this mode and show an example; the voice options allow opting out.
+Radar retains free text. Only new dictated text is transformed, not existing notes.
+Pauses and numbers remain content, protecting durations and quantities.
+
+Unit checks verify three extracted tasks with their separate effort estimates;
+browser service simulations verify live replacement, opt-out and both languages.
+Real recognition of the new command remains for the user to confirm on the Mac.
+- Verification: 1,083 tests across 86 files, types, lint, format, cycle checks and
+  production build passed. Updated voice-service browser simulation passed in
+  development and preview, including explicit separators, language and opt-out.
