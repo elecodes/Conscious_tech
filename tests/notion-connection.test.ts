@@ -1,3 +1,9 @@
+import {
+  document as modernDocument,
+  wrap as modernWrap,
+  url as modernUrl,
+} from "./fixtures/notion-database";
+import { notionSnapshotHash } from "../src/infrastructure/notion/send-calendar";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import http from "node:http";
 import { mkdtemp, readdir, readFile, rm, stat } from "node:fs/promises";
@@ -73,6 +79,7 @@ async function harness(
     rejectRefresh?: boolean;
     rejectAuthorization?: boolean;
     viewLink?: boolean;
+    modernRecovery?: boolean;
   } = {}
 ) {
   const directory = await mkdtemp(path.join(os.tmpdir(), "ct-notion-test-"));
@@ -124,13 +131,45 @@ async function harness(
             "notion-create-database",
             "notion-create-pages",
             "notion-create-view",
+            ...(options.modernRecovery ? ["notion-search", "notion-query-data-sources"] : []),
             ...(options.toolMissing ? [] : ["notion-fetch"]),
           ].map((name) => ({ name })),
         };
       else {
         expect(headers.get("Mcp-Name")).toBe(request.params.name);
         calls.push({ name: request.params.name, args: request.params.arguments });
-        if (request.params.name === "notion-create-database")
+        if (options.modernRecovery && request.params.name === "notion-search")
+          result = {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({ results: [{ title: snapshot.title, url: modernUrl }] }),
+              },
+            ],
+          };
+        else if (options.modernRecovery && request.params.name === "notion-query-data-sources")
+          result = {
+            content: [{ type: "text", text: JSON.stringify({ results: [], has_more: false }) }],
+          };
+        else if (
+          options.modernRecovery &&
+          request.params.name === "notion-fetch" &&
+          request.params.arguments.id !== "notion://docs/view-dsl-spec"
+        )
+          result = modernWrap(modernDocument({ title: snapshot.title }));
+        else if (request.params.name === "notion-create-database")
+          result = {
+            content: [
+              {
+                type: "text",
+                text: `<database url="https://www.notion.so/${dbId}"><data-source url="collection://${dsId}"></data-source></database>`,
+              },
+            ],
+          };
+        else if (
+          request.params.name === "notion-fetch" &&
+          request.params.arguments.id !== "notion://docs/view-dsl-spec"
+        )
           result = {
             content: [
               {
@@ -366,6 +405,28 @@ describe("Notion account connection and calendar delivery", () => {
     expect(status).toMatchObject({ connected: false, code: "NOTION_AUTH_HTTP_400" });
     expect(status.message).toContain("No se ha creado");
     expect(h.calls).toHaveLength(0);
+  });
+  it("routes read-only diagnosis and explicit recovery of a legacy copy without another database creation", async () => {
+    const h = await harness({ modernRecovery: true });
+    const { cookie, callback } = await h.connect();
+    await h.req(callback, undefined, cookie);
+    const store = new NotionConnectionStore(h.directory);
+    const key = "session:" + cookie.slice(cookie.indexOf("=") + 1);
+    const session = (await store.read<NotionSession>(key))!;
+    session.exports[notionSnapshotHash(snapshot)] = { status: "uncertain", sent: 0 };
+    await store.write(key, session);
+    const diagnosis = await (await h.req("/diagnose", snapshot, cookie)).json();
+    expect(diagnosis.candidates).toMatchObject([{ url: modernUrl }]);
+    expect(h.calls.some((call) => call.name.startsWith("notion-create"))).toBe(false);
+    expect((await h.req("/recover", { snapshot, url: modernUrl })).status).toBe(401);
+    const recovered = await (await h.req("/recover", { snapshot, url: modernUrl }, cookie)).json();
+    expect(recovered).toMatchObject({ status: "complete", sent: 3, url: modernUrl });
+    expect(h.calls.some((call) => call.name === "notion-create-database")).toBe(false);
+    expect(h.calls.filter((call) => call.name === "notion-create-view")).toHaveLength(1);
+    const count = h.calls.length;
+    h.restart();
+    await h.req("/recover", { snapshot, url: modernUrl }, cookie);
+    expect(h.calls).toHaveLength(count);
   });
   it("keeps undated work and zero hours distinct, validates dates and authenticates vault ciphertext", async () => {
     expect(notionPageProperties({ ...snapshot.rows[2]!, hours: 0 })).toMatchObject({

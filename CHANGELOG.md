@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Direct Notion delivery accepts modern `app.notion.com/p` links, double-brace markup and JSON-wrapped database responses. It fetches the created database before populating its calendar. Read-only checking can locate legacy partial copies; explicit recovery fills only a verified empty original table, without creating another database or repeating ambiguous writes. Failure stage and safe codes are retained.
+
 - Notion authorization now opens the send review automatically and checks completion even if the provider detaches the popup. It explicitly distinguishes connecting from creating a calendar. Failed callbacks show a return link and safe diagnostic codes in the app; missing calendar tools are identified before creating anything.
 
 ### Added

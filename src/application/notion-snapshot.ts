@@ -49,3 +49,7 @@ export function notionPageProperties(row: NotionSnapshot["rows"][number]) {
   }
   return properties;
 }
+
+export const NotionRecoveryRequestSchema = z
+  .object({ snapshot: NotionSnapshotSchema, url: z.url() })
+  .strict();

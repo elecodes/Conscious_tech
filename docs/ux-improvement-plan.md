@@ -791,3 +791,7 @@ history, complete backup export, cancelled restore, port isolation and mobile fi
 ### 2026-11-13 — Conectar Notion desde la app
 
 Flujo en Calendario y compartir e historial: Conectar Notion → autorizar → Enviar calendario → revisar entradas → Confirmar y enviar → abrir calendario. Conservar CSV como alternativa, cuaderno local y control explícito. La vista de prueba usa MCP OAuth/PKCE con almacén local cifrado, no sincroniza cambios. Pendiente probar autorización, fechas y calendario creados con una cuenta real de Notion. Véase ADR 0031.
+
+### 2026-11-13 — Respuestas reales de Notion y recuperación
+
+La inspección real confirmó dos bases de la semana creadas, vacías y con la vista inicial: el parser rechazaba JSON/envueltas `{{…}}` y enlaces `app.notion.com/p`. Se corrige esa compatibilidad y se consulta la base creada antes de poblarla. Para los envíos previos sin enlace: Comprobar este envío → seleccionar una copia → Completar esta copia → confirmar. Búsqueda de solo lectura; recuperación limitada a título/esquema originales, tabla sin filtros y cero filas activas/archivadas. No crea otra base ni elimina las otras copias. Pruebas de regresión, HTTP y recorrido Chrome pasan; la finalización real requiere confirmar desde el navegador que guarda las tareas.

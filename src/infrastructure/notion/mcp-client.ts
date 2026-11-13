@@ -25,11 +25,26 @@ export type NotionSession = {
   connectionError?: { message: string; code: string };
   exports: Record<
     string,
-    { status: "sending" | "complete" | "uncertain"; url?: string; sent: number }
+    {
+      status: "sending" | "complete" | "uncertain";
+      url?: string;
+      sent: number;
+      stage?:
+        | "create_database"
+        | "read_database_response"
+        | "fetch_database"
+        | "create_calendar"
+        | "create_tasks";
+      code?: string;
+      recoveryAttempted?: boolean;
+    }
   >;
 };
 export class NotionRemoteError extends Error {
-  constructor(public status = 502) {
+  constructor(
+    public status = 502,
+    public code = `NOTION_HTTP_${status}`
+  ) {
     super("Notion request failed");
   }
 }
@@ -215,6 +230,17 @@ export class NotionMcpClient {
         result: z.record(z.string(), z.unknown()).optional(),
       })
       .parse(message);
+    if (envelope.result?.isError) {
+      const text = JSON.stringify(envelope.result.content ?? "").toLowerCase();
+      const code = /validat|invalid.{0,20}(param|argument)|required/.test(text)
+        ? "NOTION_TOOL_VALIDATION"
+        : /permission|forbidden|not authorized|access.denied|restricted/.test(text)
+          ? "NOTION_TOOL_ACCESS"
+          : /rate.limit|too many requests/.test(text)
+            ? "NOTION_TOOL_RATE_LIMIT"
+            : "NOTION_TOOL_ERROR";
+      throw new NotionRemoteError(502, code);
+    }
     if (
       envelope.error ||
       !envelope.result ||

@@ -1,3 +1,8 @@
+import {
+  recoverNotionCalendar,
+  NotionRecoveryError,
+} from "../infrastructure/notion/recover-calendar";
+import { checkNotionDelivery } from "../infrastructure/notion/check-delivery";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { createHash, randomBytes } from "node:crypto";
 import path from "node:path";
@@ -12,7 +17,7 @@ import {
   sendNotionCalendar,
   NotionCalendarUnavailableError,
 } from "../infrastructure/notion/send-calendar";
-import { NotionSnapshotSchema } from "../application/notion-snapshot";
+import { NotionSnapshotSchema, NotionRecoveryRequestSchema } from "../application/notion-snapshot";
 import { SimpleRateLimiter } from "./rate-limiter";
 
 export function createNotionHandler(
@@ -95,6 +100,8 @@ export function createNotionHandler(
       "/callback": "GET",
       "/connect": "POST",
       "/send": "POST",
+      "/diagnose": "POST",
+      "/recover": "POST",
       "/disconnect": "POST",
     };
     if (!methods[route] || req.method !== methods[route]) {
@@ -138,12 +145,12 @@ export function createNotionHandler(
         );
         return;
       }
-      json(callback ? 400 : route === "/send" ? 401 : 200, {
+      json(callback ? 400 : ["/send", "/diagnose", "/recover"].includes(route) ? 401 : 200, {
         available: true,
         connected: false,
         message: callback
           ? "La autorización ha caducado. Conecta de nuevo."
-          : route === "/send"
+          : ["/send", "/diagnose", "/recover"].includes(route)
             ? "Conecta tu cuenta de Notion primero."
             : undefined,
       });
@@ -266,7 +273,7 @@ export function createNotionHandler(
         }
         return;
       }
-      if (route !== "/send" || req.method !== "POST") {
+      if (!["/send", "/diagnose", "/recover"].includes(route) || req.method !== "POST") {
         json(404, { message: "Ruta no encontrada." });
         return;
       }
@@ -285,8 +292,14 @@ export function createNotionHandler(
         }
         chunks.push(buffer);
       }
+      const raw = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+      const recovery = route === "/recover" ? NotionRecoveryRequestSchema.safeParse(raw) : null;
+      if (recovery && !recovery.success) {
+        json(400, { message: "La copia seleccionada no es válida." });
+        return;
+      }
       const parsed = NotionSnapshotSchema.safeParse(
-        JSON.parse(Buffer.concat(chunks).toString("utf8"))
+        recovery?.success ? recovery.data.snapshot : raw
       );
       if (!parsed.success) {
         json(400, { message: "Revisa los datos de la semana antes de enviarla." });
@@ -352,15 +365,27 @@ export function createNotionHandler(
         }
         throw new NotionRemoteError();
       };
-      const job = await sendNotionCalendar(parsed.data, session, call, list, save);
+      if (route === "/diagnose") {
+        json(200, await checkNotionDelivery(parsed.data, session, list, call));
+        return;
+      }
+      const job = recovery?.success
+        ? await recoverNotionCalendar(parsed.data, recovery.data.url, session, list, call, save)
+        : await sendNotionCalendar(parsed.data, session, call, list, save);
       json(200, {
         ...job,
         message:
           job.status === "complete"
             ? "Calendario enviado a Notion. Si se abre la tabla, elige la vista «Calendario»."
-            : "El envío no se ha podido confirmar completo. Revisa la copia en Notion antes de volver a enviar; no se repetirá automáticamente.",
+            : job.stage
+              ? `El envío se detuvo ${{ create_database: "al crear la base", read_database_response: "al interpretar la respuesta de creación", fetch_database: "al consultar la base", create_calendar: "al crear la vista de calendario", create_tasks: "al guardar las tareas" }[job.stage]}. Código: ${job.code ?? "NOTION_DELIVERY_INTERRUPTED"}. No se repetirá automáticamente.`
+              : "Este envío quedó incompleto en una versión anterior, que no guardó el motivo. Usa «Comprobar este envío»; no se creará otra copia.",
       });
     } catch (error) {
+      if (error instanceof NotionRecoveryError) {
+        json(409, { code: error.code, message: error.message });
+        return;
+      }
       if (error instanceof NotionCalendarUnavailableError) {
         json(502, { code: error.code, message: error.message });
         return;

@@ -33,3 +33,11 @@ Los permisos disponibles dependen del workspace, la cuenta y las herramientas ex
 Pruebas de integración HTTP con proveedor simulado: PKCE, state/cookie/issuer, replay, renovación, cifrado y reinicio, aislamiento, errores parciales y ausencia de repetición. Prueba de interfaz en Chromium con OAuth y respuestas simuladas, más recorrido general de la aplicación. La consulta real de metadatos oficiales se verificó; no se ha autorizado una cuenta ni escrito en un workspace real durante el desarrollo.
 
 Referencias: [Cliente MCP para Notion](https://developers.notion.com/guides/mcp/build-mcp-client), [Herramientas](https://developers.notion.com/guides/mcp/mcp-supported-tools), [Streamable HTTP 2026-07-28](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2026-07-28/basic/transports/streamable-http.mdx).
+
+## Corrección y recuperación de copias parciales — 2026-11-13
+
+La comprobación real de solo lectura confirmó una incompatibilidad del parser: Notion devuelve documentos JSON con enlaces `app.notion.com/p` y atributos envueltos en `{{…}}`. La base se creaba, pero la app se detenía antes de configurar su calendario y filas. Se admiten esos formatos y se consulta la base creada para obtener su fuente.
+
+Los registros anteriores carecen del motivo del fallo y mantienen su bloqueo contra duplicados. Una comprobación explícita puede localizar por búsqueda posibles copias con el mismo título; no crea contenido ni elimina los marcadores. La recuperación se confirma por separado y se limita a una base con título y esquema originales, una única tabla sin filtros y resultados vacíos tanto para tareas activas como archivadas. Si no se puede probar esto, no escribe. Las demás copias se conservan. Se guarda un marcador de recuperación antes de modificar vistas o filas; una respuesta perdida no provoca repetición automática. Los nuevos fallos conservan paso y código seguro, nunca texto bruto del proveedor ni credenciales.
+
+Las pruebas de regresión utilizan una versión anonimizada del documento observado, casos de rechazo, llamadas HTTP reales con proveedor simulado y el recorrido de recuperación en Chromium. La inspección real fue solo de lectura; la finalización real utiliza las tareas del navegador de la persona y su confirmación en la app.

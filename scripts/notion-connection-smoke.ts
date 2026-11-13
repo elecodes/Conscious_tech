@@ -36,6 +36,7 @@ export async function verifyNotionConnection(
   page.on("pageerror", (error) => errors.push(error.message));
   let connected = false;
   let sendCount = 0;
+  let recoverCount = 0;
   let delivered: NotionSnapshot | undefined;
   await context.route("**/api/notion/**", async (route) => {
     const pathname = new URL(route.request().url()).pathname;
@@ -77,9 +78,39 @@ export async function verifyNotionConnection(
       }
       await route.fulfill({
         json: {
+          status: "uncertain",
+          sent: 0,
+          message: "Este envío quedó incompleto en una versión anterior.",
+        },
+      });
+      return;
+    }
+    if (pathname.endsWith("/diagnose")) {
+      await route.fulfill({
+        json: {
+          code: "NOTION_LEGACY_INCOMPLETE",
+          message: "Se han encontrado posibles copias.",
+          candidates: [
+            {
+              title: "Conscious Tech · copia",
+              url: "https://app.notion.com/p/a1111111111141118111111111111111",
+            },
+          ],
+        },
+      });
+      return;
+    }
+    if (pathname.endsWith("/recover")) {
+      recoverCount++;
+      const data = route.request().postDataJSON();
+      if (data.url !== "https://app.notion.com/p/a1111111111141118111111111111111")
+        throw new Error("Recovery selected a different copy");
+      delivered = data.snapshot;
+      await route.fulfill({
+        json: {
           status: "complete",
           sent: delivered!.rows.length,
-          url: "https://www.notion.so/a1111111111141118111111111111111",
+          url: data.url,
           message: "Calendario enviado a Notion.",
         },
       });
@@ -139,7 +170,27 @@ export async function verifyNotionConnection(
     await section.getByRole("button", { name: "Confirmar y enviar", exact: true }).click();
     await section.getByRole("alert").getByText("Notion no responde.", { exact: false }).waitFor();
     await section.getByRole("button", { name: "Confirmar y enviar", exact: true }).click();
+    await section.getByText("Este envío quedó incompleto", { exact: false }).waitFor();
+    if (await section.getByRole("link", { name: "Revisar copia en Notion" }).count())
+      throw new Error("Legacy send unexpectedly has a saved URL");
+    await section.getByRole("button", { name: "Comprobar este envío", exact: true }).click();
+    await section.getByTestId("notion-delivery-diagnosis").waitFor();
+    if (Number(sendCount) !== 2 || Number(recoverCount) !== 0)
+      throw new Error("Read-only check wrote a copy");
+    await section.getByRole("button", { name: "Completar esta copia", exact: true }).click();
+    await section.getByRole("button", { name: "Cancelar", exact: true }).click();
+    if (recoverCount !== 0) throw new Error("Cancelling recovery sent tasks");
+    await section.getByRole("button", { name: "Completar esta copia", exact: true }).click();
+    await section.getByRole("button", { name: "Confirmar y completar copia", exact: true }).click();
     await section.getByRole("link", { name: "Abrir calendario en Notion" }).waitFor();
+    if (Number(recoverCount) !== 1 || Number(sendCount) !== 2)
+      throw new Error("Recovery created a fresh database request");
+    if (
+      !(
+        await section.getByRole("link", { name: "Abrir calendario en Notion" }).getAttribute("href")
+      )?.startsWith("https://app.notion.com/p/")
+    )
+      throw new Error("Modern Notion link is missing");
     const portions = delivered!.rows.filter((row) => row.taskId.endsWith("/c"));
     if (
       JSON.stringify(portions.map((row) => [row.date, row.hours])) !==

@@ -43,13 +43,20 @@ export function NotionConnection({
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<NotionSnapshot | null>(null);
+  const [recoveryUrl, setRecoveryUrl] = useState<string | null>(null);
   const [result, setResult] = useState<SendResult | null>(null);
+  const [diagnosis, setDiagnosis] = useState<{
+    message: string;
+    code: string;
+    candidates: { url: string; title: string }[];
+  } | null>(null);
   const sending = useRef(false);
   const connectRequested = useRef(false);
   const refreshVersion = useRef(0);
   const latest = useRef({ title, getRows });
   latest.current = { title, getRows };
   const preparePreview = () => {
+    setRecoveryUrl(null);
     setError(null);
     setResult(null);
     try {
@@ -160,10 +167,39 @@ export function NotionConnection({
             onClick={async () => {
               setBusy(true);
               setError(null);
+              setDiagnosis(null);
+              try {
+                const snapshot = {
+                  title: latest.current.title,
+                  rows: latest.current
+                    .getRows()
+                    .map((row) => ({ ...row, date: iso(row.date), deadline: iso(row.deadline) })),
+                };
+                setDiagnosis(await request("diagnose", snapshot));
+              } catch (error) {
+                setError((error as Error).message);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Comprobar este envío
+          </button>
+          <p className="calm-muted">
+            La comprobación busca esta semana en Notion sin crear ni volver a enviar nada.
+          </p>
+          <button
+            type="button"
+            className="secondary small"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              setError(null);
               try {
                 await request("disconnect", {});
                 setPreview(null);
                 setResult(null);
+                setDiagnosis(null);
                 await refresh();
                 window.dispatchEvent(new Event("notion-connection-changed"));
               } catch (e) {
@@ -241,10 +277,17 @@ export function NotionConnection({
       {preview && (
         <div className="notion-send-preview" data-testid="notion-send-preview">
           <strong>{preview.title}</strong>
-          <p>
-            Se creará una base privada nueva en {connection?.workspace ?? "tu espacio de Notion"},
-            con una vista de calendario.
-          </p>
+          {recoveryUrl ? (
+            <p>
+              Se completará la copia seleccionada, sin crear otra base. Primero se comprobará que
+              esté vacía y conserve el formato original; si contiene tareas, no se modificará.
+            </p>
+          ) : (
+            <p>
+              Se creará una base privada nueva en {connection?.workspace ?? "tu espacio de Notion"},
+              con una vista de calendario.
+            </p>
+          )}
           <p>
             {preview.rows.length} entradas: {preview.rows.filter((row) => row.date).length} con
             fecha y {preview.rows.filter((row) => !row.date).length} sin día. Cada parte repartida
@@ -260,8 +303,9 @@ export function NotionConnection({
           </ul>
           <p>
             Se enviarán nombres, fechas, estados y horas, incluidos los elementos sin día. No se
-            enviarán notas originales ni la copia completa del cuaderno. Si la semana ha cambiado o
-            has conectado la cuenta de nuevo, se creará otra copia.
+            enviarán notas originales ni la copia completa del cuaderno.{" "}
+            {!recoveryUrl &&
+              "Si la semana ha cambiado o has conectado la cuenta de nuevo, se creará otra copia."}
           </p>
           <button
             type="button"
@@ -273,7 +317,10 @@ export function NotionConnection({
               setBusy(true);
               setError(null);
               try {
-                const data = await request("send", preview);
+                const data = await request(
+                  recoveryUrl ? "recover" : "send",
+                  recoveryUrl ? { snapshot: preview, url: recoveryUrl } : preview
+                );
                 setResult(data);
                 setPreview(null);
               } catch (e) {
@@ -285,7 +332,11 @@ export function NotionConnection({
               }
             }}
           >
-            {busy ? "Enviando…" : "Confirmar y enviar"}
+            {busy
+              ? "Enviando…"
+              : recoveryUrl
+                ? "Confirmar y completar copia"
+                : "Confirmar y enviar"}
           </button>
           <button
             type="button"
@@ -305,13 +356,38 @@ export function NotionConnection({
       {result && (
         <div role="status">
           <p>{result.message}</p>
-          {result.url && /^https:\/\/(www\.)?notion\.so\//.test(result.url) && (
-            <a href={result.url} target="_blank" rel="noopener noreferrer">
-              {result.status === "complete"
-                ? "Abrir calendario en Notion"
-                : "Revisar copia en Notion"}
-            </a>
-          )}
+          {result.url &&
+            /^https:\/\/(?:(?:www\.)?notion\.so\/|app\.notion\.com\/p\/)/.test(result.url) && (
+              <a href={result.url} target="_blank" rel="noopener noreferrer">
+                {result.status === "complete"
+                  ? "Abrir calendario en Notion"
+                  : "Revisar copia en Notion"}
+              </a>
+            )}
+        </div>
+      )}
+      {diagnosis && (
+        <div role="status" data-testid="notion-delivery-diagnosis">
+          <p>{diagnosis.message}</p>
+          <p>Código: {diagnosis.code}</p>
+          {diagnosis.candidates.map((candidate) => (
+            <p key={candidate.url}>
+              <a href={candidate.url} target="_blank" rel="noopener noreferrer">
+                Revisar posible copia: {candidate.title}
+              </a>{" "}
+              <button
+                type="button"
+                className="secondary small"
+                disabled={busy}
+                onClick={() => {
+                  preparePreview();
+                  setRecoveryUrl(candidate.url);
+                }}
+              >
+                Completar esta copia
+              </button>
+            </p>
+          ))}
         </div>
       )}
       {error && <p role="alert">{error}</p>}
