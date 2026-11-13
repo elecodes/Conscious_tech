@@ -807,3 +807,7 @@ La persona prefiere la integración anterior a configurar un proyecto OAuth de G
 - OAuth permanece apartado en `codex/google-calendar-oauth-experiment` (`a9bc2ba`); no requiere configuración para usar la vista de prueba actual.
 - Trabajo activo en `codex/ux-step-by-step`, sin merge a main. Usar `http://localhost:5181` para conservar el cuaderno de este navegador.
 - Última validación técnica: 1.120 pruebas / 92 archivos, tipos, lint, formato, build y recorrido completo de navegador en preview/desarrollo. El cierre actual modifica documentación únicamente.
+
+### Pendiente añadido al cierre — revisión de archivos
+
+La persona cuestiona si todos los archivos generados son necesarios. Revisar el inventario del repositorio, separar código/documentación/pruebas de artefactos generados y dependencias, comprobar referencias y detectar duplicados, código sin uso y restos de experimentos. Proponer qué conservar, agrupar, excluir de Git o eliminar, justificando cada cambio. Esta sesión solo registra el pendiente; no inicia la limpieza. Se mantiene también la revisión de sincronización con Google Calendar.

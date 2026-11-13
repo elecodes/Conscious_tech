@@ -584,3 +584,5 @@ Se mantiene la integración anterior: importar disponibilidad mediante iCal y ex
 El experimento de conexión directa con OAuth se conserva aparte en la rama `codex/google-calendar-oauth-experiment` (commit `a9bc2ba`). Sus instrucciones y pruebas están en esa rama; no forma parte de la interfaz ni del servidor de la vista de prueba actual.
 
 **Pendiente al retomar:** revisar la sincronización de Google Calendar: envío puntual frente a actualización de eventos, dirección de los cambios, conexión sencilla y tratamiento de duplicados/conflictos. El flujo actual iCal/ICS sigue disponible; esta revisión no implica activar el experimento OAuth ni prometer sincronización automática.
+
+**También pendiente:** revisar la cantidad y necesidad de archivos del repositorio: código sin uso, documentación o scripts duplicados, archivos generados que no deban versionarse y restos de experimentos. Preparar una propuesta de simplificación basada en referencias y uso real antes de eliminar o fusionar archivos.
