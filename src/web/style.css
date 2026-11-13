@@ -1778,3 +1778,21 @@ details.calm-details[open] {
   border: 1px solid var(--border-color);
   border-radius: 6px;
 }
+.notion-export {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.notion-export p,
+.notion-export details {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin: 8px 0;
+}
+.notion-export summary {
+  cursor: pointer;
+  color: var(--accent-sage);
+}
+.notion-export ol {
+  padding-left: 20px;
+}

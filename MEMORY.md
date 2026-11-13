@@ -845,3 +845,9 @@ The product succeeds when the person can say:
 - URL confirmada por la persona: **http://localhost:5181**. Mantener 5181 en las
   instrucciones de arranque/actualización (`--strictPort --open`), no sugerir 5180
   como sustitución automática: son almacenes separados y no se migra nada hoy.
+
+## 2026-11-13 — Optional Notion portability
+
+First incremental step: user-triggered CSV download from the active week and read-only history. No Notion account connection, server credentials or automatic synchronization. Import and Calendar view creation are manual in Notion. Preserve split assignments, individual group budgets, undated effort and closed-report dispositions; deadlines remain separate. This is distinct from the deferred authenticated MCP context bridges in ADR 0019. Local notebook origin remains localhost:5181. Live Notion import has not been exercised in a connected workspace.
+
+Validation: complete unit suite passed (1,095 tests), plus the added unknown-estimate test passed with all four exporter tests. Typecheck, lint, format, cycles and build passed. Full preview/dev smoke passed, including active/history CSV downloads, historical completion, unchanged notebook data, persistent browser restart and mobile archive layout. No live Notion account import or synchronization was tested.

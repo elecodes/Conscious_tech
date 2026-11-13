@@ -779,3 +779,11 @@ and production build. Full browser smoke passed in preview and development. The
 new persistence check actually closes/relaunches Chromium with the same profile,
 verifies two closed weeks plus the active past-dated week, and confirms read-only
 history, complete backup export, cancelled restore, port isolation and mobile fit.
+
+### 2026-11-13 — Portabilidad opcional a Notion
+
+- Semana activa → Calendario y compartir → Exportar para Notion (.csv).
+- Historial → abrir semana → mismo botón, sin reactivar la semana.
+- Importación manual en Notion y vista Calendario sobre `Fecha`; guía desplegable tras descargar.
+- Repartos diarios, estados finales e información sin fecha conservados. No sincroniza ni reemplaza la copia JSON. Véase ADR 0030.
+- Pendiente: validar el resultado importado con una cuenta real de Notion y feedback de uso antes de plantear una conexión permanente.

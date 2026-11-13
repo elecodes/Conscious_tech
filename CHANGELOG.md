@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Optional CSV snapshot for Notion from the active week and closed-week history, with assigned dates, daily hours, fixed-time labels, undated remaining effort and historical completion. In-app import instructions explain the manual calendar-view setup and lack of synchronization.
+
 ### Known limitations
 
 - Voice-to-text accuracy still depends on the browser service. The user confirms

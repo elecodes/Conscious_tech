@@ -115,6 +115,13 @@ export async function verifyPersistenceHistory(browser: Browser, url: string, ou
     );
     await page.reload({ waitUntil: "networkidle" });
     await page.getByTestId("calendar-task-a-2026-10-26").waitFor();
+    await page.getByTestId("reminders-and-alerts-summary").click();
+    const activeDownloadPromise = page.waitForEvent("download");
+    await page.getByTestId("export-notion-button").click();
+    const activeDownload = await activeDownloadPromise;
+    if (!activeDownload.suggestedFilename().includes("2026-10-26"))
+      throw new Error("Notion export selected the wrong active week");
+    await page.getByTestId("reminders-and-alerts-summary").click();
     const before = await readNotebook(page);
     await page.getByTestId("open-week-history").click();
     const history = page.getByTestId("week-history");
@@ -126,6 +133,19 @@ export async function verifyPersistenceHistory(browser: Browser, url: string, ou
       throw new Error("Wrong archived week opened");
     if (await history.getByTestId("reopen-closed-week-button").count())
       throw new Error("Reading history offers implicit reactivation");
+    const notionDownload = page.waitForEvent("download");
+    await history.getByTestId("export-notion-button").click();
+    const notionFile = await notionDownload;
+    const notionStream = await notionFile.createReadStream();
+    const notionChunks: Buffer[] = [];
+    for await (const chunk of notionStream!) notionChunks.push(Buffer.from(chunk));
+    const notionCsv = Buffer.concat(notionChunks).toString("utf8");
+    if (!notionCsv.includes('"10/12/2026"') || !notionCsv.includes('"Completada"'))
+      throw new Error("Notion snapshot lost assigned dates or historical completion");
+    await history
+      .getByTestId("notion-export-help")
+      .getByText("Añade una vista", { exact: false })
+      .waitFor();
     await history.getByRole("button", { name: "Cerrar historial", exact: true }).click();
     if (JSON.stringify(await readNotebook(page)) !== JSON.stringify(before))
       throw new Error("Reading history modified persisted data");

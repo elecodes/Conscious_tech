@@ -1,3 +1,4 @@
+import { NotionExportButton } from "./notion-export-button";
 import { distributionHours } from "../task-distribution";
 import type { TargetWeek } from "../../domain/week";
 import { ItemPostponementControls } from "./item-postponement-controls";
@@ -735,6 +736,7 @@ export function ActiveWeekScheduleSection({
                 </a>
               </div>
             </div>
+            {plan && <NotionExportButton plan={plan} schedule={schedule} />}
             <div id="email-summary-card-wrapper">
               <EmailSummaryCard
                 targetWeek={plan?.targetWeek || { startDate: "2026-10-19", endDate: "2026-10-25" }}

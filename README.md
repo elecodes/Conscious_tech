@@ -538,3 +538,13 @@ Manual checks for release verification:
 ## License
 
 Private (UNLICENSED)
+
+### Copia opcional para Notion
+
+En «Mi semana», abre las opciones de calendario/exportación y pulsa **Exportar para Notion (.csv)**. También está disponible al consultar una semana del historial.
+
+En Notion web o escritorio: **Ajustes → Importar → CSV**. Comprueba que `Fecha` sea una propiedad Fecha y crea una vista Calendario usando esa propiedad. El CSV usa mes/día/año, según el [importador de Notion](https://www.notion.com/help/import-data-into-notion).
+
+Cada reparto diario o bloque tiene su propia fila y horas. Las tareas sin día y las horas pendientes de repartir siguen en la tabla; la fecha límite no asigna un día. Los horarios fijos se incluyen como texto en `Horario`.
+
+Es una copia puntual, sin conexión de cuentas ni sincronización. Reimportar puede duplicar filas. No sustituye la copia JSON del cuaderno y no crea automáticamente la vista de calendario en Notion. Mantén `http://localhost:5181` para seguir usando el mismo guardado local.

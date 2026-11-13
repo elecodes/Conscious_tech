@@ -1,3 +1,4 @@
+import { NotionExportButton } from "./notion-export-button";
 import { useEffect, useRef, useState } from "react";
 import { useWeeklySession } from "../context/weekly-session-context";
 import type { ClosedWeekSummary } from "../../domain/repositories/types";
@@ -94,6 +95,11 @@ export function WeekHistory({ open, onClose }: { open: boolean; onClose: () => v
               >
                 ← Volver al historial
               </button>
+              <NotionExportButton
+                plan={selected.plan}
+                schedule={selected.schedule}
+                report={selected.closeReport}
+              />
               <ClosedWeekReviewCard
                 latestClosedWeek={selected}
                 heading="Semana consultada"

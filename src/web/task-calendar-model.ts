@@ -116,6 +116,7 @@ export function buildTaskCalendar(
   const unresolved = (task: CalendarTask) => task.state !== "completed" && task.state !== "dropped";
   return {
     range,
+    tasks,
     days,
     pages,
     currentPage,
