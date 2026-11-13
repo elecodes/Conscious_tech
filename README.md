@@ -574,30 +574,8 @@ Pulsa **Comprobar este envío**. La app busca únicamente el título de esta sem
 
 El formato de respuesta de Notion puede incluir JSON, enlaces `https://app.notion.com/p/…` y marcadores `{{…}}`. La aplicación los acepta y consulta la base recién creada para obtener su fuente de datos. Los envíos nuevos conservan el paso del fallo y un código seguro; los registros antiguos mantienen la protección contra reintentos automáticos. La recuperación tampoco se repite automáticamente si se pierde una respuesta después de empezar a escribir.
 
-### Conectar Google Calendar
+### Google Calendar: flujo habitual
 
-En «Mi semana → Calendario y compartir» y en el historial aparece **Tu semana en Google Calendar**. La conexión directa usa OAuth y la API oficial; el lector iCal y las descargas anteriores siguen disponibles.
+Se mantiene la integración anterior: importar disponibilidad mediante iCal y exportar la semana como `.ics`, con los accesos ya existentes a Google Calendar. No necesitas crear un proyecto de Google Cloud ni configurar credenciales OAuth para este flujo. La conexión de Notion mediante MCP permanece disponible.
 
-**Configuración de esta instalación (una vez):**
-
-1. En [Google Cloud](https://console.cloud.google.com/), crea o elige un proyecto y habilita **Google Calendar API**.
-2. En **Google Auth Platform**, configura la pantalla de consentimiento. Para pruebas externas, elige Testing y añade tu cuenta como usuario de prueba. En acceso a datos solicita `https://www.googleapis.com/auth/calendar.calendarlist.readonly` y `https://www.googleapis.com/auth/calendar.events.owned`.
-3. Crea un cliente OAuth de tipo **Aplicación web** y registra exactamente esta URI de redirección: `http://localhost:5181/api/google-calendar/callback`.
-4. Añade estas variables a tu `.env.local`, conservando las que ya tengas. Sustituye los valores de ejemplo con los del cliente creado. No uses el prefijo `VITE_`, no subas el archivo a Git ni compartas el secreto en el chat.
-
-```dotenv
-GOOGLE_CALENDAR_CLIENT_ID=tu-cliente.apps.googleusercontent.com
-GOOGLE_CALENDAR_CLIENT_SECRET=tu-secreto
-GOOGLE_CALENDAR_APP_ORIGIN=http://localhost:5181
-```
-
-5. Detén el servidor actual con Ctrl+C y reinícialo en el mismo puerto: `npm run dev -- --port 5181 --strictPort --open`.
-6. En la app: **Conectar Google Calendar → autorizar → elegir un calendario propio → Revisar envío → Confirmar cambios en Google Calendar**.
-
-La revisión indica eventos nuevos, actualizaciones, eliminaciones de eventos previamente enviados por esta app y partes sin fecha. Estas últimas permanecen en el cuaderno. Los repartos sin reloj se muestran como eventos de día completo, con horas previstas en la descripción; los bloques con horario mantienen sus horas y zona horaria. No se sincronizan cambios en segundo plano.
-
-Al repetir el envío se reutilizan los identificadores de los eventos. Las ediciones manuales detectadas en Google bloquean la actualización hasta revisarlas. Si se pierde una respuesta, pulsa **Revisar envío** de nuevo antes de confirmar: la app comprueba lo que ya existe. Solo muestra éxito tras verificar lo guardado.
-
-**Desconectar** elimina las credenciales de la sesión, conservando eventos. La autorización también puede revocarse en la cuenta de Google. Las credenciales y la identidad de instalación se guardan cifradas en `.google-calendar-local/`; no publiques, compartas ni borres esa carpeta para reintentar un envío. El identificador no secreto del cuaderno se conserva en este navegador/origen. Cambiar de cuaderno/instalación no es una migración ni sincronización de eventos.
-
-El modo Testing de Google puede hacer caducar los permisos a los siete días. Para distribuir la app puede ser necesaria la verificación de Google. Esta versión usa el servidor local de un solo proceso y todavía requiere probar la autorización y eventos con una cuenta real; no se ha desplegado un backend público. Consulta [ADR 0032](docs/adr/0032-direct-google-calendar-oauth.md) y la [guía oficial de OAuth](https://developers.google.com/identity/protocols/oauth2/web-server).
+El experimento de conexión directa con OAuth se conserva aparte en la rama `codex/google-calendar-oauth-experiment` (commit `a9bc2ba`). Sus instrucciones y pruebas están en esa rama; no forma parte de la interfaz ni del servidor de la vista de prueba actual.

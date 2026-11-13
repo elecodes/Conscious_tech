@@ -12,4 +12,5 @@ coverage/
 # Local encrypted Notion connections (never commit vault or key)
 .notion-local/
 
+# Keep any local credentials from the separate OAuth experiment private.
 .google-calendar-local/

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Keep the original Google Calendar iCal/ICS workflow as the main option. Move the direct OAuth experiment to `codex/google-calendar-oauth-experiment`; remove its UI, server endpoints and setup requirements from the active preview. Existing local credential folders remain ignored by Git. Notion MCP remains available.
+
 ### Fixed
 
 - Direct Notion delivery accepts modern `app.notion.com/p` links, double-brace markup and JSON-wrapped database responses. It fetches the created database before populating its calendar. Read-only checking can locate legacy partial copies; explicit recovery fills only a verified empty original table, without creating another database or repeating ambiguous writes. Failure stage and safe codes are retained.
@@ -16,8 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Notion authorization now opens the send review automatically and checks completion even if the provider detaches the popup. It explicitly distinguishes connecting from creating a calendar. Failed callbacks show a return link and safe diagnostic codes in the app; missing calendar tools are identified before creating anything.
 
 ### Added
-
-- Local preview: direct Google Calendar OAuth connection, owned-calendar selection and explicit review/confirmation, deterministic event identifiers, manual updates/removals of app-managed events, ETag conflict protection and read-back verification. Google Cloud OAuth client configuration and real-account validation are still required. No background synchronization or account writes were performed during development.
 
 - Local preview: direct Notion MCP account connection through OAuth/PKCE, calendar-send preview and explicit confirmation, private database/calendar creation, encrypted server-local credential persistence, disconnect and duplicate/partial-write guards. Existing CSV export remains available. Account authorization and live workspace delivery still require real-account validation; no automatic synchronization or public hosting was added.
 

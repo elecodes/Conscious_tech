@@ -1,4 +1,3 @@
-import { GoogleCalendarConnection } from "./google-calendar-connection";
 import { NotionExportButton } from "./notion-export-button";
 import { distributionHours } from "../task-distribution";
 import type { TargetWeek } from "../../domain/week";
@@ -737,7 +736,6 @@ export function ActiveWeekScheduleSection({
                 </a>
               </div>
             </div>
-            {plan && <GoogleCalendarConnection plan={plan} schedule={schedule} />}
             {plan && <NotionExportButton plan={plan} schedule={schedule} />}
             <div id="email-summary-card-wrapper">
               <EmailSummaryCard
