@@ -795,3 +795,7 @@ Flujo en Calendario y compartir e historial: Conectar Notion → autorizar → E
 ### 2026-11-13 — Respuestas reales de Notion y recuperación
 
 La inspección real confirmó dos bases de la semana creadas, vacías y con la vista inicial: el parser rechazaba JSON/envueltas `{{…}}` y enlaces `app.notion.com/p`. Se corrige esa compatibilidad y se consulta la base creada antes de poblarla. Para los envíos previos sin enlace: Comprobar este envío → seleccionar una copia → Completar esta copia → confirmar. Búsqueda de solo lectura; recuperación limitada a título/esquema originales, tabla sin filtros y cero filas activas/archivadas. No crea otra base ni elimina las otras copias. Pruebas de regresión, HTTP y recorrido Chrome pasan; la finalización real requiere confirmar desde el navegador que guarda las tareas.
+
+### 2026-11-13 — Google Calendar directo
+
+Notion confirmado funcionando por la persona. Siguiente paso aceptado: Google Calendar con OAuth/API oficial. Vista de semana e historial ofrecen conexión, calendario propio, zona horaria y revisión explícita antes de cambiar eventos. Repartos diarios sin reloj se envían como día completo; bloques fijos conservan horas. Repetir reutiliza IDs; cambios manuales y vistas desactualizadas detienen la confirmación. Google Cloud debe configurarse una vez y queda pendiente probar una cuenta real. ADR 0032 y README contienen los pasos.

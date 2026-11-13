@@ -907,3 +907,7 @@ No recordar:
 ## Vista de prueba local — Portabilidad a Notion (2026-11-13)
 
 La rama UX incorpora exportación CSV y una conexión opcional al MCP oficial de Notion para enviar explícitamente una copia de la semana como base privada con vista Calendario. El cuaderno local sigue siendo independiente. No hay sincronización continua ni importación de contexto desde Notion. OAuth, credenciales cifradas y marcadores de envío permanecen en el servidor local de un solo proceso; no se ha desplegado un servicio público. Pendiente validación con una cuenta real. Decisiones y límites: ADR 0030 y ADR 0031.
+
+## Vista de prueba local — Google Calendar directo (2026-11-13)
+
+Conexión opcional mediante OAuth y API oficial de Google Calendar, con calendario propio de destino, revisión manual de altas/cambios/bajas y confirmación. Se conserva la independencia del cuaderno local; no hay sincronización automática. Los eventos gestionados usan IDs deterministas, control de versiones y verificación tras guardar. Requiere registrar un cliente OAuth de Google Cloud; autorización y eventos reales aún pendientes de probar. Alcance local de un único servidor; véase ADR 0032.

@@ -11,3 +11,5 @@ coverage/
 
 # Local encrypted Notion connections (never commit vault or key)
 .notion-local/
+
+.google-calendar-local/

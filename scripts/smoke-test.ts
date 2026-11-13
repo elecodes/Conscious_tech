@@ -1,3 +1,4 @@
+import { verifyGoogleCalendar } from "./google-calendar-smoke";
 import { verifyNotionConnection } from "./notion-connection-smoke";
 import { verifyPersistenceHistory } from "./persistence-history-smoke";
 import { verifyVoiceDictation } from "./voice-dictation-smoke";
@@ -802,6 +803,7 @@ async function runSmokeTestForMode(mode: "preview" | "dev"): Promise<void> {
     await verifyWeekAvailability(browser, url, mode === "preview" ? outputDir : undefined);
     await verifyCalendarCards(browser, url, mode === "preview" ? outputDir : undefined);
     await verifyPersistenceHistory(browser, url, mode === "preview" ? outputDir : undefined);
+    await verifyGoogleCalendar(browser, url, mode === "preview" ? outputDir : undefined);
     await verifyNotionConnection(browser, url, mode === "preview" ? outputDir : undefined);
     await verifyVoiceDictation(browser, url, mode === "preview" ? outputDir : undefined);
     await verifyTaskSplit(browser, url, mode === "preview" ? outputDir : undefined);

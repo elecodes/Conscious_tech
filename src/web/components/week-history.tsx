@@ -1,3 +1,4 @@
+import { GoogleCalendarConnection } from "./google-calendar-connection";
 import { NotionExportButton } from "./notion-export-button";
 import { useEffect, useRef, useState } from "react";
 import { useWeeklySession } from "../context/weekly-session-context";
@@ -95,6 +96,11 @@ export function WeekHistory({ open, onClose }: { open: boolean; onClose: () => v
               >
                 ← Volver al historial
               </button>
+              <GoogleCalendarConnection
+                plan={selected.plan}
+                schedule={selected.schedule}
+                report={selected.closeReport}
+              />
               <NotionExportButton
                 plan={selected.plan}
                 schedule={selected.schedule}
