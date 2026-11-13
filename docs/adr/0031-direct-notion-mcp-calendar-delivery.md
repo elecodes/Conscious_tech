@@ -1,7 +1,7 @@
 # ADR 0031 — Conectar una cuenta y enviar el calendario a Notion
 
 Fecha: 2026-11-13
-Estado: Implementado para la vista de prueba local; pendiente validación con cuenta real
+Estado: Implementado para la vista de prueba local; funcionamiento confirmado por la persona
 
 ## Contexto y alcance
 
@@ -41,3 +41,7 @@ La comprobación real de solo lectura confirmó una incompatibilidad del parser:
 Los registros anteriores carecen del motivo del fallo y mantienen su bloqueo contra duplicados. Una comprobación explícita puede localizar por búsqueda posibles copias con el mismo título; no crea contenido ni elimina los marcadores. La recuperación se confirma por separado y se limita a una base con título y esquema originales, una única tabla sin filtros y resultados vacíos tanto para tareas activas como archivadas. Si no se puede probar esto, no escribe. Las demás copias se conservan. Se guarda un marcador de recuperación antes de modificar vistas o filas; una respuesta perdida no provoca repetición automática. Los nuevos fallos conservan paso y código seguro, nunca texto bruto del proveedor ni credenciales.
 
 Las pruebas de regresión utilizan una versión anonimizada del documento observado, casos de rechazo, llamadas HTTP reales con proveedor simulado y el recorrido de recuperación en Chromium. La inspección real fue solo de lectura; la finalización real utiliza las tareas del navegador de la persona y su confirmación en la app.
+
+## Estado al cierre del 13 de noviembre de 2026
+
+Tras las correcciones, la persona confirmó que el flujo de Notion ya funciona. Esa validación de uso se distingue de las pruebas automatizadas, que simulan las escrituras del proveedor. No se añade sincronización continua. La sincronización con Google Calendar queda como revisión independiente (ADR 0032).

@@ -21,11 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Local preview: direct Notion MCP account connection through OAuth/PKCE, calendar-send preview and explicit confirmation, private database/calendar creation, encrypted server-local credential persistence, disconnect and duplicate/partial-write guards. Existing CSV export remains available. Account authorization and live workspace delivery still require real-account validation; no automatic synchronization or public hosting was added.
+- Local preview: direct Notion MCP account connection through OAuth/PKCE, calendar-send preview and explicit confirmation, private database/calendar creation, encrypted server-local credential persistence, disconnect and duplicate/partial-write guards. Existing CSV export remains available. The user has confirmed the Notion flow works; automated browser coverage uses simulated provider responses. No automatic synchronization or public hosting was added.
 
 - Optional CSV snapshot for Notion from the active week and closed-week history, with assigned dates, daily hours, fixed-time labels, undated remaining effort and historical completion. In-app import instructions explain the manual calendar-view setup and lack of synchronization.
 
 ### Known limitations
+
+- Google Calendar synchronization remains under review at the session close on 2026-11-13. The active preview keeps the original iCal/ICS workflow; the separate OAuth experiment is not enabled.
 
 - Voice-to-text accuracy still depends on the browser service. The user confirms
   task separation works after updating; transcript names remain manually editable.

@@ -906,8 +906,12 @@ No recordar:
 
 ## Vista de prueba local — Portabilidad a Notion (2026-11-13)
 
-La rama UX incorpora exportación CSV y una conexión opcional al MCP oficial de Notion para enviar explícitamente una copia de la semana como base privada con vista Calendario. El cuaderno local sigue siendo independiente. No hay sincronización continua ni importación de contexto desde Notion. OAuth, credenciales cifradas y marcadores de envío permanecen en el servidor local de un solo proceso; no se ha desplegado un servicio público. Pendiente validación con una cuenta real. Decisiones y límites: ADR 0030 y ADR 0031.
+La rama UX incorpora exportación CSV y una conexión opcional al MCP oficial de Notion para enviar explícitamente una copia de la semana como base privada con vista Calendario. El cuaderno local sigue siendo independiente. No hay sincronización continua ni importación de contexto desde Notion. OAuth, credenciales cifradas y marcadores de envío permanecen en el servidor local de un solo proceso; no se ha desplegado un servicio público. La persona ha confirmado que el flujo de Notion funciona. Las pruebas automatizadas del proveedor siguen siendo simuladas. Decisiones y límites: ADR 0030 y ADR 0031.
 
 ## Google Calendar — Preferencia confirmada (2026-11-13)
 
 La vista de prueba mantiene el flujo anterior de iCal y exportación ICS. La conexión OAuth directa se aparta por su complejidad de configuración, por decisión de la persona. El código se conserva en `codex/google-calendar-oauth-experiment` (`a9bc2ba`), sin UI ni rutas activas en la rama UX. Notion MCP sigue disponible y la persona ha confirmado su funcionamiento.
+
+## Próximo trabajo — cierre del 13 de noviembre de 2026
+
+La sincronización con Google Calendar queda pendiente de revisión. Determinar el alcance útil (envío o actualización, dirección y conflictos) y una experiencia de conexión sencilla antes de introducir otra integración. Se conserva iCal/ICS como flujo activo y OAuth como experimento separado. No hay cambios pendientes de implementación autorizados para esta sesión; se retoma la revisión cuando la persona lo solicite.

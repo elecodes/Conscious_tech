@@ -7,6 +7,9 @@
 ## Estado de la vista de prueba
 
 Trabajo guardado en `codex/ux-step-by-step`; todavía no integrado en `main`.
+
+**Cierre de sesión — 13 de noviembre de 2026:** Notion confirmado funcionando por la persona. Google Calendar mantiene iCal/ICS; **su sincronización queda pendiente de revisión**. El experimento OAuth está guardado aparte en `codex/google-calendar-oauth-experiment` (`a9bc2ba`). Próximo paso: revisar qué sincronización aporta valor y cómo ofrecerla con una conexión sencilla, antes de activar nuevas integraciones.
+
 El calendario permite repartir horas entre días, mover asignaciones y mostrar u
 ocultar el panel de semanas. Las tareas aplazadas o fuera de semana aparecen en
 una bandeja encima de los días: arrástralas o usa «Añadir a un día» y confirma día
@@ -564,7 +567,7 @@ La conexión utiliza el [MCP oficial de Notion con OAuth y PKCE](https://develop
 
 **Configuración local:** mantener `http://localhost:5181`. Si eliges otro origen, configura `NOTION_APP_ORIGIN` en `.env.local` y reinicia el servidor. Las credenciales cifradas y su clave se guardan en `.notion-local/` (excluida de Git); opcionalmente configura `NOTION_STORAGE_DIR` con una ruta privada. No publiques ni compartas esa carpeta. La sesión dura siete días y sobrevive al reinicio del servidor; cambiar origen, borrar cookies o eliminar la carpeta requiere conectar de nuevo. Esto no modifica el almacenamiento local de tareas.
 
-Disponible con el servidor Node de desarrollo y preview; un despliegue estático no incluye las rutas de conexión. Esta implementación es un piloto de un único proceso local, verificado con 1.120 pruebas y recorrido de navegador simulado, pendiente de validar con una cuenta real; no está preparada como servicio público con múltiples réplicas. Detalles en [ADR 0031](docs/adr/0031-direct-notion-mcp-calendar-delivery.md).
+Disponible con el servidor Node de desarrollo y preview; un despliegue estático no incluye las rutas de conexión. Esta implementación es un piloto de un único proceso local, verificado con 1.120 pruebas y recorrido de navegador simulado, con funcionamiento confirmado por la persona; no está preparada como servicio público con múltiples réplicas. Detalles en [ADR 0031](docs/adr/0031-direct-notion-mcp-calendar-delivery.md).
 
 Si la autorización no termina, la ventana muestra un error legible y un enlace para volver. La app comprueba la conexión mientras esperas, aunque Notion separe ambas ventanas. Los códigos `NOTION_AUTH_HTTP_…`, `NOTION_AUTH_RESPONSE` y `NOTION_CALENDAR_TOOLS_UNAVAILABLE` permiten identificar el paso que falla sin compartir claves ni URLs de autorización. Una autorización correcta todavía requiere **Confirmar y enviar** para crear la copia.
 
@@ -579,3 +582,5 @@ El formato de respuesta de Notion puede incluir JSON, enlaces `https://app.notio
 Se mantiene la integración anterior: importar disponibilidad mediante iCal y exportar la semana como `.ics`, con los accesos ya existentes a Google Calendar. No necesitas crear un proyecto de Google Cloud ni configurar credenciales OAuth para este flujo. La conexión de Notion mediante MCP permanece disponible.
 
 El experimento de conexión directa con OAuth se conserva aparte en la rama `codex/google-calendar-oauth-experiment` (commit `a9bc2ba`). Sus instrucciones y pruebas están en esa rama; no forma parte de la interfaz ni del servidor de la vista de prueba actual.
+
+**Pendiente al retomar:** revisar la sincronización de Google Calendar: envío puntual frente a actualización de eventos, dirección de los cambios, conexión sencilla y tratamiento de duplicados/conflictos. El flujo actual iCal/ICS sigue disponible; esta revisión no implica activar el experimento OAuth ni prometer sincronización automática.

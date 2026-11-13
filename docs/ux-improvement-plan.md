@@ -799,3 +799,11 @@ La inspección real confirmó dos bases de la semana creadas, vacías y con la v
 ### 2026-11-13 — Conservar el flujo sencillo de Google Calendar
 
 La persona prefiere la integración anterior a configurar un proyecto OAuth de Google Cloud. Se retira el nuevo panel de conexión y sus rutas de la vista de prueba; se mantienen iCal, ICS y los enlaces existentes. El experimento completo se conserva en `codex/google-calendar-oauth-experiment` (`a9bc2ba`). Notion MCP continúa activo. No se cambia ni borra ningún dato local.
+
+### Cierre de sesión — 13 de noviembre de 2026
+
+- Notion confirmado funcionando por la persona; conservar el flujo corregido de conexión, envío y recuperación.
+- Google Calendar mantiene iCal/ICS. **Pendiente: revisar su sincronización** y una conexión sencilla, decidir qué se actualiza y cómo evitar duplicados/conflictos antes de implementar o activar otra solución.
+- OAuth permanece apartado en `codex/google-calendar-oauth-experiment` (`a9bc2ba`); no requiere configuración para usar la vista de prueba actual.
+- Trabajo activo en `codex/ux-step-by-step`, sin merge a main. Usar `http://localhost:5181` para conservar el cuaderno de este navegador.
+- Última validación técnica: 1.120 pruebas / 92 archivos, tipos, lint, formato, build y recorrido completo de navegador en preview/desarrollo. El cierre actual modifica documentación únicamente.
