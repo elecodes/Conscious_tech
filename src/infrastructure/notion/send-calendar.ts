@@ -1,0 +1,130 @@
+import { mcpParameterHeaders } from "./parameter-headers";
+import { createHash } from "node:crypto";
+import {
+  NOTION_CALENDAR_SCHEMA,
+  notionPageProperties,
+  type NotionSnapshot,
+} from "../../application/notion-snapshot";
+import type { NotionSession } from "./mcp-client";
+
+const requiredTools = [
+  "notion-create-database",
+  "notion-create-pages",
+  "notion-create-view",
+  "notion-fetch",
+] as const;
+type CallTool = (
+  name: string,
+  args: Record<string, unknown>,
+  schema?: unknown
+) => Promise<Record<string, unknown>>;
+const uuid = "[a-fA-F0-9]{8}-?[a-fA-F0-9]{4}-?[a-fA-F0-9]{4}-?[a-fA-F0-9]{4}-?[a-fA-F0-9]{12}";
+function toolText(result: Record<string, unknown>) {
+  const blocks = result.content;
+  return Array.isArray(blocks)
+    ? blocks
+        .filter((b) => b.type === "text")
+        .map((b) => String(b.text))
+        .join("\n")
+    : "";
+}
+export function createdDatabase(result: Record<string, unknown>) {
+  const text = toolText(result);
+  // Remote MCP returns a Notion-flavoured <database> and <data-source> document.
+  const source = text.match(new RegExp(`collection://(${uuid})`))?.[1];
+  const db = text.match(
+    new RegExp(`<database\\b[^>]*url=["'](https://(?:www\\.)?notion\\.so/[^"']+)`)
+  )?.[1];
+  if (!source || !db) throw new Error("Notion database response could not be verified");
+  const parsed = new URL(db);
+  const id = parsed.pathname.match(new RegExp(`(${uuid})$`))?.[1];
+  if (!id) throw new Error("Notion database ID missing");
+  return { source, id, url: parsed.href };
+}
+function calendarLink(result: Record<string, unknown>, databaseUrl: string) {
+  let parsed: Record<string, unknown> | undefined;
+  try {
+    parsed = JSON.parse(toolText(result));
+  } catch {
+    /* Markdown result: keep the verified database link. */
+  }
+  const structured = result.structuredContent ?? parsed;
+  if (!structured || typeof structured !== "object") return databaseUrl;
+  const record = structured as Record<string, unknown>;
+  const view =
+    record.view && typeof record.view === "object"
+      ? (record.view as Record<string, unknown>)
+      : record;
+  const id = view.view_id ?? view.id;
+  if (typeof id !== "string" || !new RegExp(`^${uuid}$`).test(id)) return databaseUrl;
+  const url = new URL(databaseUrl);
+  url.searchParams.set("v", id.replaceAll("-", ""));
+  return url.href;
+}
+/** Never retries ambiguous writes. Persist markers before every remote mutation. */
+export async function sendNotionCalendar(
+  snapshot: NotionSnapshot,
+  session: NotionSession,
+  callRemote: CallTool,
+  list: () => Promise<Record<string, unknown>>,
+  save: () => Promise<void>
+) {
+  const hash = createHash("sha256").update(JSON.stringify(snapshot)).digest("hex");
+  const existing = session.exports[hash];
+  if (existing) return existing;
+  if (Object.keys(session.exports).length >= 100) throw new Error("Notion export limit reached");
+  const tools = await list();
+  const names = new Set(Array.isArray(tools.tools) ? tools.tools.map((t) => t.name) : []);
+  for (const name of requiredTools)
+    if (!names.has(name)) throw new Error("Required Notion tools unavailable");
+  const schemas = new Map<string, unknown>(
+    Array.isArray(tools.tools) ? tools.tools.map((t) => [t.name, t.inputSchema]) : []
+  );
+  for (const name of requiredTools) mcpParameterHeaders(schemas.get(name), {});
+  const call = (name: string, args: Record<string, unknown>) =>
+    callRemote(name, args, schemas.get(name));
+  // Read the server's view syntax before using it, and never evaluate remote instructions.
+  await call("notion-fetch", { id: "notion://docs/view-dsl-spec" });
+  const job: NotionSession["exports"][string] = { status: "sending", sent: 0 };
+  session.exports[hash] = job;
+  await save();
+  try {
+    const result = await call("notion-create-database", {
+      title: snapshot.title,
+      schema: NOTION_CALENDAR_SCHEMA,
+    });
+    const db = createdDatabase(result);
+    job.url = db.url;
+    await save();
+    await call("notion-fetch", { id: db.url });
+    const view = await call("notion-create-view", {
+      database_id: db.id,
+      data_source_id: db.source,
+      name: "Calendario",
+      type: "calendar",
+      configure: 'CALENDAR BY "Fecha"',
+    });
+    job.url = calendarLink(view, db.url);
+    await save();
+    for (let start = 0; start < snapshot.rows.length; start += 10) {
+      await save();
+      const result = await call("notion-create-pages", {
+        parent: { data_source_id: db.source },
+        allow_async: false,
+        pages: snapshot.rows
+          .slice(start, start + 10)
+          .map((row) => ({ properties: notionPageProperties(row) })),
+      });
+      if (result.async_task || /"async_task"\s*:/.test(toolText(result)))
+        throw new Error("Unexpected async Notion result");
+      job.sent += Math.min(10, snapshot.rows.length - start);
+      await save();
+    }
+    job.status = "complete";
+    await save();
+  } catch {
+    job.status = "uncertain";
+    await save();
+  }
+  return job;
+}

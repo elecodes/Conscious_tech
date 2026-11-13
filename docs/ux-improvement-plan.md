@@ -787,3 +787,7 @@ history, complete backup export, cancelled restore, port isolation and mobile fi
 - Importación manual en Notion y vista Calendario sobre `Fecha`; guía desplegable tras descargar.
 - Repartos diarios, estados finales e información sin fecha conservados. No sincroniza ni reemplaza la copia JSON. Véase ADR 0030.
 - Pendiente: validar el resultado importado con una cuenta real de Notion y feedback de uso antes de plantear una conexión permanente.
+
+### 2026-11-13 — Conectar Notion desde la app
+
+Flujo en Calendario y compartir e historial: Conectar Notion → autorizar → Enviar calendario → revisar entradas → Confirmar y enviar → abrir calendario. Conservar CSV como alternativa, cuaderno local y control explícito. La vista de prueba usa MCP OAuth/PKCE con almacén local cifrado, no sincroniza cambios. Pendiente probar autorización, fechas y calendario creados con una cuenta real de Notion. Véase ADR 0031.

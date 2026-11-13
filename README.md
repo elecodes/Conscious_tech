@@ -31,7 +31,8 @@ siguen protegidas. El dictado sigue dependiendo de la precisión del navegador y
 puedes corregir sus resultados con «Editar tarea». Las completadas permanecen
 visibles en el calendario; puedes completar en la tarjeta o abrir su panel local.
 
-Última verificación: 1.092 pruebas en 88 archivos, tipos, lint y compilación.
+Última verificación: consulta el registro de la rama y las secciones de cada funcionalidad;
+las pruebas incluyen tipos, lint, compilación y recorrido de navegador.
 El recorrido completo del navegador pasó en preview y desarrollo, incluida captura,
 edición, recarga y anexado. Las pruebas de voz usan eventos simulados del servicio.
 No se ha publicado una nueva versión.
@@ -548,3 +549,19 @@ En Notion web o escritorio: **Ajustes → Importar → CSV**. Comprueba que `Fec
 Cada reparto diario o bloque tiene su propia fila y horas. Las tareas sin día y las horas pendientes de repartir siguen en la tabla; la fecha límite no asigna un día. Los horarios fijos se incluyen como texto en `Horario`.
 
 Es una copia puntual, sin conexión de cuentas ni sincronización. Reimportar puede duplicar filas. No sustituye la copia JSON del cuaderno y no crea automáticamente la vista de calendario en Notion. Mantén `http://localhost:5181` para seguir usando el mismo guardado local.
+
+### Conectar Notion y enviar directamente (vista de prueba local)
+
+En «Mi semana → Calendario y compartir», o al consultar una semana cerrada:
+
+1. Pulsa **Conectar Notion** y autoriza la conexión en la ventana de Notion.
+2. Pulsa **Enviar calendario a Notion** y revisa las entradas y el espacio de destino.
+3. Pulsa **Confirmar y enviar**. Cuando termine, usa **Abrir calendario en Notion**.
+
+Se crea una base privada nueva con vista Calendario; las entradas sin día quedan en su tabla. Es un envío puntual, no sincronización. Una semana modificada genera otra copia. Si un envío queda incompleto, revisa su enlace: no se repite automáticamente. El CSV sigue disponible como alternativa. Las notas originales y el cuaderno completo no se envían.
+
+La conexión utiliza el [MCP oficial de Notion con OAuth y PKCE](https://developers.notion.com/guides/mcp/build-mcp-client). No pide copiar claves. Los permisos efectivos se muestran al autorizar en Notion. **Desconectar** retira las credenciales de esta sesión de la app; no elimina las copias enviadas. También puedes revocar el permiso desde Notion.
+
+**Configuración local:** mantener `http://localhost:5181`. Si eliges otro origen, configura `NOTION_APP_ORIGIN` en `.env.local` y reinicia el servidor. Las credenciales cifradas y su clave se guardan en `.notion-local/` (excluida de Git); opcionalmente configura `NOTION_STORAGE_DIR` con una ruta privada. No publiques ni compartas esa carpeta. La sesión dura siete días y sobrevive al reinicio del servidor; cambiar origen, borrar cookies o eliminar la carpeta requiere conectar de nuevo. Esto no modifica el almacenamiento local de tareas.
+
+Disponible con el servidor Node de desarrollo y preview; un despliegue estático no incluye las rutas de conexión. Esta implementación es un piloto de un único proceso local, verificado con 1.105 pruebas y recorrido de navegador simulado, pendiente de validar con una cuenta real; no está preparada como servicio público con múltiples réplicas. Detalles en [ADR 0031](docs/adr/0031-direct-notion-mcp-calendar-delivery.md).

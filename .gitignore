@@ -8,3 +8,6 @@ coverage/
 !docs/ui-baseline/*.png
 .smoke-output/
 
+
+# Local encrypted Notion connections (never commit vault or key)
+.notion-local/

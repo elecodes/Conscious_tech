@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Local preview: direct Notion MCP account connection through OAuth/PKCE, calendar-send preview and explicit confirmation, private database/calendar creation, encrypted server-local credential persistence, disconnect and duplicate/partial-write guards. Existing CSV export remains available. Account authorization and live workspace delivery still require real-account validation; no automatic synchronization or public hosting was added.
+
 - Optional CSV snapshot for Notion from the active week and closed-week history, with assigned dates, daily hours, fixed-time labels, undated remaining effort and historical completion. In-app import instructions explain the manual calendar-view setup and lack of synchronization.
 
 ### Known limitations

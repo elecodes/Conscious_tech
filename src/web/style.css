@@ -1796,3 +1796,24 @@ details.calm-details[open] {
 .notion-export ol {
   padding-left: 20px;
 }
+
+.notion-connection h4 {
+  margin: 0 0 8px;
+}
+.notion-connection {
+  margin-bottom: 16px;
+}
+.notion-connection button {
+  margin: 4px 8px 4px 0;
+}
+.notion-send-preview {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.notion-preview-rows {
+  max-height: 220px;
+  overflow: auto;
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+}

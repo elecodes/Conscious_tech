@@ -903,3 +903,7 @@ No recordar:
 - pensamientos fugaces no confirmados;
 - detalles íntimos innecesarios para la planificación;
 - cualquier información que la persona decida olvidar.
+
+## Vista de prueba local — Portabilidad a Notion (2026-11-13)
+
+La rama UX incorpora exportación CSV y una conexión opcional al MCP oficial de Notion para enviar explícitamente una copia de la semana como base privada con vista Calendario. El cuaderno local sigue siendo independiente. No hay sincronización continua ni importación de contexto desde Notion. OAuth, credenciales cifradas y marcadores de envío permanecen en el servidor local de un solo proceso; no se ha desplegado un servicio público. Pendiente validación con una cuenta real. Decisiones y límites: ADR 0030 y ADR 0031.

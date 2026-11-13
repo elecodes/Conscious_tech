@@ -1,3 +1,4 @@
+import { NotionConnection } from "./notion-connection";
 import { useState } from "react";
 import type { StoredWeeklyPlan, StoredCloseWeekReport } from "../../domain/repositories/types";
 import type { WeeklySchedule } from "../../domain/schedule";
@@ -18,6 +19,10 @@ export function NotionExportButton({
   const [error, setError] = useState<string | null>(null);
   return (
     <section className="notion-export" aria-label="Exportar una copia para Notion">
+      <NotionConnection
+        title={`Conscious Tech · ${plan.targetWeek.startDate} – ${plan.targetWeek.endDate}`}
+        getRows={() => notionExportRows(plan, schedule, extractPlanItems(plan, schedule), report)}
+      />
       <button
         type="button"
         className="secondary small"
