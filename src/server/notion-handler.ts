@@ -8,7 +8,10 @@ import {
   NOTION_ISSUER,
   type NotionSession,
 } from "../infrastructure/notion/mcp-client";
-import { sendNotionCalendar } from "../infrastructure/notion/send-calendar";
+import {
+  sendNotionCalendar,
+  NotionCalendarUnavailableError,
+} from "../infrastructure/notion/send-calendar";
 import { NotionSnapshotSchema } from "../application/notion-snapshot";
 import { SimpleRateLimiter } from "./rate-limiter";
 
@@ -58,6 +61,18 @@ export function createNotionHandler(
       res.statusCode = status;
       res.setHeader("Content-Type", "application/json");
       res.end(JSON.stringify(data));
+    };
+    const callbackPage = (message: string, success: boolean, status = 200) => {
+      const nonce = randomBytes(16).toString("hex");
+      res.statusCode = status;
+      res.setHeader("Content-Type", "text/html;charset=utf-8");
+      res.setHeader(
+        "Content-Security-Policy",
+        `default-src 'none'; script-src 'nonce-${nonce}'; base-uri 'none'; frame-ancestors 'none'`
+      );
+      res.end(
+        `<!doctype html><html lang="es"><meta charset="utf-8"><title>Conscious Tech · Notion</title><p>${message}</p><p><a href="/">Volver a Conscious Tech</a></p><script nonce="${nonce}">if(window.opener){window.opener.postMessage({type:"conscious-notion-connected"},${JSON.stringify(origin)});${success ? "window.close();" : ""}}</script></html>`
+      );
     };
     let url: URL;
     try {
@@ -115,6 +130,14 @@ export function createNotionHandler(
       ?.slice(cookieName.length + 1);
     if (sid && !/^[a-f0-9]{64}$/.test(sid)) sid = undefined;
     if (!sid && route !== "/connect") {
+      if (callback) {
+        callbackPage(
+          "La autorización ha caducado. Vuelve a la app y conecta de nuevo.",
+          false,
+          400
+        );
+        return;
+      }
       json(callback ? 400 : route === "/send" ? 401 : 200, {
         available: true,
         connected: false,
@@ -150,6 +173,7 @@ export function createNotionHandler(
           available: true,
           connected: !!session?.tokens,
           workspace: session?.tokens?.workspace_name,
+          ...session?.connectionError,
         });
         return;
       }
@@ -164,6 +188,7 @@ export function createNotionHandler(
       }
       if (route === "/connect" && req.method === "POST") {
         session ??= { expiresAt: Date.now() + 7 * 86400_000, exports: {} };
+        delete session.connectionError;
         const metadata = await client.metadata();
         const authorizationUrl = client.authorize(
           metadata,
@@ -184,21 +209,34 @@ export function createNotionHandler(
           url.searchParams.get("state") !== pending.state ||
           url.searchParams.get("iss") !== NOTION_ISSUER
         ) {
-          json(400, { message: "La autorización no es válida o ha caducado. Conecta de nuevo." });
+          callbackPage(
+            "La autorización no es válida o ha caducado. Vuelve a la app y conecta de nuevo.",
+            false,
+            400
+          );
           return;
         }
         delete session.pending;
         await store.write(key, session);
-        let success = false;
-        if (!url.searchParams.has("error") && url.searchParams.get("code")) {
+        if (url.searchParams.has("error") || !url.searchParams.get("code")) {
+          session.connectionError = {
+            message: "No se ha completado la autorización de Notion. Puedes conectar de nuevo.",
+            code: "NOTION_AUTH_CANCELLED",
+          };
+          await store.write(key, session);
+          callbackPage(session.connectionError.message, false);
+          return;
+        }
+        try {
           const metadata = await client.metadata();
-          session.tokens = await client.token(metadata, await clientId(metadata), {
+          const tokens = await client.token(metadata, await clientId(metadata), {
             grant_type: "authorization_code",
             code: url.searchParams.get("code")!,
             code_verifier: pending.verifier,
             redirect_uri: redirectUri,
           });
-          // A new authorization may belong to a different account/workspace.
+          session.tokens = tokens;
+          delete session.connectionError;
           session.exports = {};
           session.expiresAt = Date.now() + 7 * 86400_000;
           res.setHeader(
@@ -206,17 +244,26 @@ export function createNotionHandler(
             `${cookieName}=${sid}; HttpOnly; SameSite=Lax; Path=/api/notion; Max-Age=604800${originUrl.protocol === "https:" ? "; Secure" : ""}`
           );
           await store.write(key, session);
-          success = true;
+          callbackPage(
+            "Cuenta de Notion conectada. Vuelve a Conscious Tech, revisa la semana y pulsa «Confirmar y enviar». Todavía no se ha creado el calendario.",
+            true
+          );
+        } catch (error) {
+          session.connectionError = {
+            message:
+              "Notion ha devuelto la autorización, pero la app no ha podido terminar de conectar la cuenta. No se ha creado ningún calendario.",
+            code:
+              error instanceof NotionRemoteError
+                ? `NOTION_AUTH_HTTP_${error.status}`
+                : "NOTION_AUTH_RESPONSE",
+          };
+          await store.write(key, session);
+          callbackPage(
+            session.connectionError.message + " Código: " + session.connectionError.code,
+            false,
+            502
+          );
         }
-        const nonce = randomBytes(16).toString("hex");
-        res.setHeader("Content-Type", "text/html;charset=utf-8");
-        res.setHeader(
-          "Content-Security-Policy",
-          `default-src 'none'; script-src 'nonce-${nonce}'; base-uri 'none'; frame-ancestors 'none'`
-        );
-        res.end(
-          `<!doctype html><meta charset="utf-8"><title>Conscious Tech · Notion</title><p>${success ? "Notion conectado. Puedes volver a Conscious Tech." : "Conexión cancelada. Puedes volver a Conscious Tech."}</p><script nonce="${nonce}">if(window.opener){window.opener.postMessage({type:"conscious-notion-connected"},${JSON.stringify(origin)});window.close();}</script>`
-        );
         return;
       }
       if (route !== "/send" || req.method !== "POST") {
@@ -314,11 +361,19 @@ export function createNotionHandler(
             : "El envío no se ha podido confirmar completo. Revisa la copia en Notion antes de volver a enviar; no se repetirá automáticamente.",
       });
     } catch (error) {
+      if (error instanceof NotionCalendarUnavailableError) {
+        json(502, { code: error.code, message: error.message });
+        return;
+      }
       if (error instanceof SyntaxError) {
         json(400, { message: "Los datos no son válidos." });
         return;
       }
       json(error instanceof NotionRemoteError && error.status === 401 ? 401 : 502, {
+        code:
+          error instanceof NotionRemoteError
+            ? `NOTION_HTTP_${error.status}`
+            : "NOTION_CONNECTION_FAILED",
         message:
           "No se pudo completar la conexión con Notion. Tus datos locales se conservan. Revisa la conexión o vuelve a conectar tu cuenta.",
       });

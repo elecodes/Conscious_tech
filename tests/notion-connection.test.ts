@@ -71,6 +71,7 @@ async function harness(
     sse?: boolean;
     toolMissing?: boolean;
     rejectRefresh?: boolean;
+    rejectAuthorization?: boolean;
     viewLink?: boolean;
   } = {}
 ) {
@@ -96,6 +97,11 @@ async function harness(
     if (url.endsWith("/token")) {
       const grant = new URLSearchParams(String(init?.body));
       grants.push(grant);
+      if (options.rejectAuthorization && grant.get("grant_type") === "authorization_code")
+        return Response.json(
+          { error: "invalid_grant", private_detail: "SECRET_ACCESS" },
+          { status: 400 }
+        );
       if (options.rejectRefresh && grant.get("grant_type") === "refresh_token")
         return Response.json({ error: "invalid_grant" }, { status: 401 });
       return Response.json({
@@ -344,6 +350,21 @@ describe("Notion account connection and calendar delivery", () => {
     } finally {
       clock.mockRestore();
     }
+    expect(h.calls).toHaveLength(0);
+  });
+  it("shows an actionable callback failure in the popup and app without leaking provider details", async () => {
+    const h = await harness({ rejectAuthorization: true });
+    const { cookie, callback } = await h.connect();
+    const response = await h.req(callback, undefined, cookie);
+    expect(response.status).toBe(502);
+    expect(response.headers.get("content-type")).toContain("text/html");
+    const text = await response.text();
+    expect(text).toContain("NOTION_AUTH_HTTP_400");
+    expect(text).toContain("Volver a Conscious Tech");
+    expect(text).not.toContain("SECRET_ACCESS");
+    const status = await (await h.req("/status", undefined, cookie)).json();
+    expect(status).toMatchObject({ connected: false, code: "NOTION_AUTH_HTTP_400" });
+    expect(status.message).toContain("No se ha creado");
     expect(h.calls).toHaveLength(0);
   });
   it("keeps undated work and zero hours distinct, validates dates and authenticates vault ciphertext", async () => {

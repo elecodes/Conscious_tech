@@ -24,7 +24,12 @@ async function notebook(page: Page) {
   });
 }
 /** UI boundary simulation; real HTTP/OAuth/PKCE and vault behavior have separate integration tests. */
-export async function verifyNotionConnection(browser: Browser, url: string, output?: string) {
+export async function verifyNotionConnection(
+  browser: Browser,
+  url: string,
+  output?: string,
+  detached = false
+) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const page = await context.newPage();
   const errors: string[] = [];
@@ -38,7 +43,7 @@ export async function verifyNotionConnection(browser: Browser, url: string, outp
       connected = true;
       await route.fulfill({
         contentType: "text/html",
-        body: `<!doctype html><title>Autorización simulada</title><script>window.opener.postMessage({type:"conscious-notion-connected"},${JSON.stringify(new URL(url).origin)});window.close();</script>`,
+        body: `<!doctype html><title>Autorización simulada</title><script>${detached ? "" : `window.opener.postMessage({type:"conscious-notion-connected"},${JSON.stringify(new URL(url).origin)});`}window.close();</script>`,
       });
       return;
     }
@@ -124,6 +129,8 @@ export async function verifyNotionConnection(browser: Browser, url: string, outp
     const section = page.getByTestId("notion-connection");
     await section.getByRole("button", { name: "Conectar Notion", exact: true }).click();
     await section.getByTestId("notion-connected").waitFor();
+    await section.getByTestId("notion-send-preview").waitFor();
+    if (sendCount !== 0) throw new Error("Authorization alone wrote to Notion");
     await section.getByRole("button", { name: "Enviar calendario a Notion", exact: true }).click();
     await section.getByTestId("notion-send-preview").waitFor();
     await section.getByRole("button", { name: "Cancelar", exact: true }).click();

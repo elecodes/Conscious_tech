@@ -7,6 +7,14 @@ import {
 } from "../../application/notion-snapshot";
 import type { NotionSession } from "./mcp-client";
 
+export class NotionCalendarUnavailableError extends Error {
+  readonly code = "NOTION_CALENDAR_TOOLS_UNAVAILABLE";
+  constructor() {
+    super(
+      "La cuenta está conectada, pero Notion no ofrece en esta conexión las herramientas necesarias para crear el calendario. No se ha iniciado la creación."
+    );
+  }
+}
 const requiredTools = [
   "notion-create-database",
   "notion-create-pages",
@@ -76,7 +84,7 @@ export async function sendNotionCalendar(
   const tools = await list();
   const names = new Set(Array.isArray(tools.tools) ? tools.tools.map((t) => t.name) : []);
   for (const name of requiredTools)
-    if (!names.has(name)) throw new Error("Required Notion tools unavailable");
+    if (!names.has(name)) throw new NotionCalendarUnavailableError();
   const schemas = new Map<string, unknown>(
     Array.isArray(tools.tools) ? tools.tools.map((t) => [t.name, t.inputSchema]) : []
   );

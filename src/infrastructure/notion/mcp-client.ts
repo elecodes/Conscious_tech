@@ -22,6 +22,7 @@ export type NotionSession = {
   expiresAt: number;
   pending?: { state: string; verifier: string; expiresAt: number };
   tokens?: NotionTokens;
+  connectionError?: { message: string; code: string };
   exports: Record<
     string,
     { status: "sending" | "complete" | "uncertain"; url?: string; sent: number }

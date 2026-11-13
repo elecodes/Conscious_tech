@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Notion authorization now opens the send review automatically and checks completion even if the provider detaches the popup. It explicitly distinguishes connecting from creating a calendar. Failed callbacks show a return link and safe diagnostic codes in the app; missing calendar tools are identified before creating anything.
+
 ### Added
 
 - Local preview: direct Notion MCP account connection through OAuth/PKCE, calendar-send preview and explicit confirmation, private database/calendar creation, encrypted server-local credential persistence, disconnect and duplicate/partial-write guards. Existing CSV export remains available. Account authorization and live workspace delivery still require real-account validation; no automatic synchronization or public hosting was added.

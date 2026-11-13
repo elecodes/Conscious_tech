@@ -2,7 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import type { NotionExportRow } from "../notion-export";
 import type { NotionSnapshot } from "../../application/notion-snapshot";
 
-type Connection = { available: boolean; connected: boolean; workspace?: string; message?: string };
+type Connection = {
+  available: boolean;
+  connected: boolean;
+  workspace?: string;
+  message?: string;
+  code?: string;
+};
 type SendResult = {
   status: "complete" | "uncertain" | "sending";
   url?: string;
@@ -17,7 +23,10 @@ async function request(path: string, body?: unknown) {
     ...(body === undefined ? {} : { method: "POST", body: JSON.stringify(body) }),
   });
   const data = await response.json();
-  if (!response.ok) throw new Error(data.message ?? "No se pudo conectar con Notion.");
+  if (!response.ok)
+    throw new Error(
+      (data.message ?? "No se pudo conectar con Notion.") + (data.code ? ` (${data.code})` : "")
+    );
   return data;
 }
 const iso = (date: string) =>
@@ -36,12 +45,43 @@ export function NotionConnection({
   const [preview, setPreview] = useState<NotionSnapshot | null>(null);
   const [result, setResult] = useState<SendResult | null>(null);
   const sending = useRef(false);
+  const connectRequested = useRef(false);
+  const refreshVersion = useRef(0);
+  const latest = useRef({ title, getRows });
+  latest.current = { title, getRows };
+  const preparePreview = () => {
+    setError(null);
+    setResult(null);
+    try {
+      setPreview({
+        title: latest.current.title,
+        rows: latest.current
+          .getRows()
+          .map((row) => ({ ...row, date: iso(row.date), deadline: iso(row.deadline) })),
+      });
+    } catch {
+      setError("Revisa las asignaciones antes de enviar la semana.");
+    }
+  };
   const refresh = async () => {
+    const version = ++refreshVersion.current;
     try {
       const data = await request("status");
+      if (version !== refreshVersion.current) return;
       setConnection(data);
-      if (data.connected) setConnecting(false);
+      if (data.message) {
+        setError(data.message + (data.code ? ` (${data.code})` : ""));
+        setConnecting(false);
+        connectRequested.current = false;
+      } else if (data.connected) {
+        setConnecting(false);
+        if (connectRequested.current) {
+          connectRequested.current = false;
+          preparePreview();
+        }
+      }
     } catch {
+      if (version !== refreshVersion.current) return;
       setConnection({
         available: false,
         connected: false,
@@ -73,6 +113,22 @@ export function NotionConnection({
       window.removeEventListener("notion-connection-changed", changed);
     };
   }, []);
+  useEffect(() => {
+    if (!connecting) return;
+    // OAuth providers can detach window.opener. Observe completion without relying on it.
+    const poll = window.setInterval(() => {
+      void refresh();
+    }, 3000);
+    const timeout = window.setTimeout(() => {
+      setConnecting(false);
+      connectRequested.current = false;
+      setError("La autorización ha caducado. Pulsa «Conectar Notion» para intentarlo de nuevo.");
+    }, 10 * 60_000);
+    return () => {
+      window.clearInterval(poll);
+      window.clearTimeout(timeout);
+    };
+  }, [connecting]);
   return (
     <section
       className="notion-connection"
@@ -81,8 +137,8 @@ export function NotionConnection({
     >
       <h4>Tu calendario en Notion</h4>
       <p>
-        Conecta tu cuenta y envía una copia de esta semana. No cambia el cuaderno local ni
-        sincroniza cambios posteriores.
+        Conectar la cuenta no crea el calendario. Revisa esta semana y pulsa «Confirmar y enviar»
+        para crearlo en Notion.
       </p>
       {connection?.connected ? (
         <>
@@ -93,22 +149,7 @@ export function NotionConnection({
             type="button"
             className="secondary small"
             disabled={busy}
-            onClick={() => {
-              setError(null);
-              setResult(null);
-              try {
-                setPreview({
-                  title,
-                  rows: getRows().map((row) => ({
-                    ...row,
-                    date: iso(row.date),
-                    deadline: iso(row.deadline),
-                  })),
-                });
-              } catch {
-                setError("Revisa las asignaciones antes de enviar la semana.");
-              }
-            }}
+            onClick={preparePreview}
           >
             Enviar calendario a Notion
           </button>
@@ -158,6 +199,7 @@ export function NotionConnection({
               setBusy(true);
               setError(null);
               setConnecting(true);
+              connectRequested.current = true;
               try {
                 const data = await request("connect", {});
                 const url = new URL(data.authorizationUrl);
@@ -167,6 +209,7 @@ export function NotionConnection({
               } catch (e) {
                 tab.close();
                 setConnecting(false);
+                connectRequested.current = false;
                 setError((e as Error).message);
               } finally {
                 setBusy(false);

@@ -554,8 +554,8 @@ Es una copia puntual, sin conexión de cuentas ni sincronización. Reimportar pu
 
 En «Mi semana → Calendario y compartir», o al consultar una semana cerrada:
 
-1. Pulsa **Conectar Notion** y autoriza la conexión en la ventana de Notion.
-2. Pulsa **Enviar calendario a Notion** y revisa las entradas y el espacio de destino.
+1. Pulsa **Conectar Notion** y autoriza la conexión en la ventana de Notion. Autorizar por sí solo no crea el calendario.
+2. Al volver se abre la revisión de las entradas y del espacio de destino. Si la cuenta ya estaba conectada, pulsa **Enviar calendario a Notion**.
 3. Pulsa **Confirmar y enviar**. Cuando termine, usa **Abrir calendario en Notion**.
 
 Se crea una base privada nueva con vista Calendario; las entradas sin día quedan en su tabla. Es un envío puntual, no sincronización. Una semana modificada genera otra copia. Si un envío queda incompleto, revisa su enlace: no se repite automáticamente. El CSV sigue disponible como alternativa. Las notas originales y el cuaderno completo no se envían.
@@ -565,3 +565,5 @@ La conexión utiliza el [MCP oficial de Notion con OAuth y PKCE](https://develop
 **Configuración local:** mantener `http://localhost:5181`. Si eliges otro origen, configura `NOTION_APP_ORIGIN` en `.env.local` y reinicia el servidor. Las credenciales cifradas y su clave se guardan en `.notion-local/` (excluida de Git); opcionalmente configura `NOTION_STORAGE_DIR` con una ruta privada. No publiques ni compartas esa carpeta. La sesión dura siete días y sobrevive al reinicio del servidor; cambiar origen, borrar cookies o eliminar la carpeta requiere conectar de nuevo. Esto no modifica el almacenamiento local de tareas.
 
 Disponible con el servidor Node de desarrollo y preview; un despliegue estático no incluye las rutas de conexión. Esta implementación es un piloto de un único proceso local, verificado con 1.105 pruebas y recorrido de navegador simulado, pendiente de validar con una cuenta real; no está preparada como servicio público con múltiples réplicas. Detalles en [ADR 0031](docs/adr/0031-direct-notion-mcp-calendar-delivery.md).
+
+Si la autorización no termina, la ventana muestra un error legible y un enlace para volver. La app comprueba la conexión mientras esperas, aunque Notion separe ambas ventanas. Los códigos `NOTION_AUTH_HTTP_…`, `NOTION_AUTH_RESPONSE` y `NOTION_CALENDAR_TOOLS_UNAVAILABLE` permiten identificar el paso que falla sin compartir claves ni URLs de autorización. Una autorización correcta todavía requiere **Confirmar y enviar** para crear la copia.
